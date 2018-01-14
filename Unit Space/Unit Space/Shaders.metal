@@ -27,9 +27,6 @@ float ellipseDistance(float2 unitPoint) {
 struct Vertex
 {
     float4 position [[position]];
-    float2 unitPoint;
-    float2 size;
-    float2 scale;
     
     float2 edges;
     
@@ -41,14 +38,11 @@ struct Vertex
 
 vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
 {
-    AffineTransform CTM;// = parameters.CTM;
     float2 unitPoint = float2(vid & 1, vid & 2);
     
     Vertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
-    vert.unitPoint = unitPoint;
-//    vert.size = float2(CTM.a, CTM.d);
-//    vert.scale = { ceil(CTM.a / kCellHeight) * kCellHeight / CTM.a, ceil(CTM.d / kCellHeight) * kCellHeight / CTM.d };
+    vert.ellipseUnitPoint = unitPoint;
     vert.flags = 0;
     
     return vert;
@@ -56,7 +50,7 @@ vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[
 
 fragment float4 fragment_main(Vertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    float alpha = ellipseDistance(vert.unitPoint);
+    float alpha = ellipseDistance(vert.ellipseUnitPoint);
     float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));

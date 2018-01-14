@@ -78,6 +78,7 @@
     Uniforms uniforms;
     uniforms.CTM = { 1, 0, 0, 1, 0, 0 };
     uniforms.Color = { 0, 0, 0, 1 };
+    uniforms.drawableBounds = { 0, 0, float(drawable.texture.width), float(drawable.texture.height) };
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     

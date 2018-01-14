@@ -12,8 +12,11 @@ struct RGBA { float r, g, b, a; };
 
 struct AffineTransform    { float a, b, c, d, tx, ty; };
 
+struct Bounds { float llx, lly, urx, ury; };
+
 struct Uniforms
 {
     RGBA                Color;
     AffineTransform     CTM;
+    Bounds              drawableBounds;
 };
