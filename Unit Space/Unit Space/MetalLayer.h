@@ -9,8 +9,9 @@
 #import <QuartzCore/QuartzCore.h>
 
 @protocol LayerDelegate <NSObject>
-- (void)drawLayer;
+- (void)drawLayer:(CALayer *)layer;
 @end
+
 
 @interface MetalLayer : CAMetalLayer
 
