@@ -6,7 +6,8 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
-#include <metal_stdlib>
+#include "Shared.metal"
+
 using namespace metal;
 
 float ellipseDistance(float2 unitPoint) {
