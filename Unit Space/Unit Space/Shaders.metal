@@ -14,7 +14,9 @@ float ellipseDistance(float2 unitPoint) {
     
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    float sd = (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)); // float sd = (0.0809 - abs(0.25 - (x * x + y * y))) * rsqrt(fx * fx + fy * fy);
+//    return 1.0 - abs(0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+    float sd = (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+//    float sd = (0.0809 - abs(0.25 - (x * x + y * y))) * rsqrt(fx * fx + fy * fy);
     
     return sd + 0.5;
 }
@@ -26,8 +28,6 @@ struct Vertex
     float2 unitPoint;
     float2 size;
     float2 scale;
-    
-    float4 clipEdges;
     
     float2 edges;
     
@@ -54,9 +54,6 @@ vertex Vertex vertex_main(uint vid [[vertex_id]])
 
 fragment float4 fragment_main(Vertex vert [[stage_in]])
 {
-    float4 clamped = saturate(vert.clipEdges);
-    float rectClip = clamped.x * clamped.y * clamped.z * clamped.w;
-    
     float alpha = ellipseDistance(vert.unitPoint);
     float4 red = float4(1.0, 0.0, 0.0, 1.0), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
