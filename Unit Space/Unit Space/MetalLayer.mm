@@ -56,6 +56,8 @@
 
 - (void)display {
     @autoreleasepool {
+        self.drawableSize = CGSizeMake(self.bounds.size.width * self.contentsScale, self.bounds.size.height * self.contentsScale);
+        
         [self draw];
     }
 }
