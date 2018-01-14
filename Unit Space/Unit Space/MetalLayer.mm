@@ -14,6 +14,7 @@
 
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
+@property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> pipelineState;
 
 @end
@@ -46,6 +47,10 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"fragment_main"];
     self.pipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
+    self.indexBuffer = [self.device newBufferWithBytes:indices
+                                                length:sizeof(indices)
+                                               options:MTLResourceOptionCPUCacheModeDefault];
     return self;
 }
 
@@ -82,9 +87,11 @@
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     
-    [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
-                       vertexStart:0
-                       vertexCount:6];
+    [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                               indexCount:6
+                                indexType:MTLIndexTypeUInt16
+                              indexBuffer:_indexBuffer
+                        indexBufferOffset:0];
     
     [commandEncoder endEncoding];
     

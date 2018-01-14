@@ -23,6 +23,15 @@ float ellipseDistance(float2 unitPoint) {
     return sd + 0.5;
 }
 
+float quadraticDistance(float2 unitPoint) {
+    float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
+    
+    float fx = 2.0 * x * dfdx(x) - dfdx(y);
+    float fy = 2.0 * x * dfdy(x) - dfdy(y);
+    float sd = (y - x * x) * rsqrt(fx * fx + fy * fy);
+    
+    return sd + 0.5;
+}
 
 struct Vertex
 {
@@ -50,6 +59,8 @@ vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[
 
 fragment float4 fragment_main(Vertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
+    
+//    float alpha = quadraticDistance(vert.ellipseUnitPoint);
     float alpha = ellipseDistance(vert.ellipseUnitPoint);
     float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
