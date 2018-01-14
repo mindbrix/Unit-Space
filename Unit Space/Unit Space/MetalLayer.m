@@ -10,6 +10,14 @@
 #import <Metal/Metal.h>
 #import <simd/simd.h>
 
+@interface MetalLayer ()
+
+@property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
+@property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
+
+@end
+
+
 @implementation MetalLayer
 
 - (id)init {
@@ -26,6 +34,10 @@
                       @"bounds": [NSNull null] };
     self.device = MTLCreateSystemDefaultDevice();
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    
+    self.commandQueue = [self.device newCommandQueue];
+    self.defaultLibrary = [self.device newDefaultLibrary];
+    
     return self;
 }
 
@@ -38,7 +50,31 @@
 - (void)draw {
     if ([self.layerDelegate respondsToSelector:@selector(drawLayer:)])
         [self.layerDelegate drawLayer:self];
-        
+    
+    MTLClearColor zeroes = MTLClearColorMake(0, 1, 0, 1);
+    
+    id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
+    id <CAMetalDrawable> drawable = [self nextDrawable];
+    
+    if (drawable == nil) {
+        return;
+    }
+    
+    MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+    descriptor.colorAttachments[0].texture = drawable.texture;
+    descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+    descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+    descriptor.colorAttachments[0].clearColor = zeroes;
+    
+    id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
+    
+    [commandEncoder endEncoding];
+    
+
+    
+    
+    [commandBuffer presentDrawable:drawable];
+    [commandBuffer commit];
 }
 
 @end
