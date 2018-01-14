@@ -58,5 +58,7 @@ fragment float4 fragment_main(Vertex vert [[stage_in]])
     float rectClip = clamped.x * clamped.y * clamped.z * clamped.w;
     
     float alpha = ellipseDistance(vert.unitPoint);
-    return float4(0.0, 0.0, 0.0, 1.0) * alpha;
+    float4 red = float4(1.0, 0.0, 0.0, 1.0), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
+    
+    return mix(white, black, saturate(alpha));
 }

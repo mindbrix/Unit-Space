@@ -66,7 +66,7 @@
     if ([self.layerDelegate respondsToSelector:@selector(drawLayer:)])
         [self.layerDelegate drawLayer:self];
     
-    MTLClearColor zeroes = MTLClearColorMake(0, 0, 0, 0);
+    MTLClearColor zeroes = MTLClearColorMake(1, 0, 1, 1);
     
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];
@@ -78,8 +78,7 @@
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-    descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-    descriptor.colorAttachments[0].clearColor = zeroes;
+    descriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
