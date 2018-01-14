@@ -66,7 +66,7 @@
     if ([self.layerDelegate respondsToSelector:@selector(drawLayer:)])
         [self.layerDelegate drawLayer:self];
     
-    MTLClearColor zeroes = MTLClearColorMake(0, 1, 0, 1);
+    MTLClearColor zeroes = MTLClearColorMake(0, 0, 0, 0);
     
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];
