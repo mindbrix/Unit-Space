@@ -74,6 +74,13 @@
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
     [commandEncoder setRenderPipelineState:_pipelineState];
+    
+    Uniforms uniforms;
+    uniforms.CTM = { 1, 0, 0, 1, 0, 0 };
+    uniforms.Color = { 0, 0, 0, 1 };
+    [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+    [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+    
     [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                        vertexStart:0
                        vertexCount:6];

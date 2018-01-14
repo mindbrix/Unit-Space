@@ -8,6 +8,12 @@
 
 #import <simd/simd.h>
 
+struct RGBA { float r, g, b, a; };
 
-struct VGAffineTransform    { float a, b, c, d, tx, ty; };
-//struct VGBounds             { float2 ll, ur; };
+struct AffineTransform    { float a, b, c, d, tx, ty; };
+
+struct Uniforms
+{
+    RGBA                Color;
+    AffineTransform     CTM;
+};

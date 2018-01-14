@@ -39,9 +39,9 @@ struct Vertex
     uint32_t flags;
 };
 
-vertex Vertex vertex_main(uint vid [[vertex_id]])
+vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
 {
-//    VGAffineTransform CTM = parameters.CTM;
+    AffineTransform CTM;// = parameters.CTM;
     float2 unitPoint = float2(vid & 1, vid & 2);
     
     Vertex vert;
@@ -54,10 +54,10 @@ vertex Vertex vertex_main(uint vid [[vertex_id]])
     return vert;
 }
 
-fragment float4 fragment_main(Vertex vert [[stage_in]])
+fragment float4 fragment_main(Vertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
     float alpha = ellipseDistance(vert.unitPoint);
-    float4 red = float4(1.0, 0.0, 0.0, 1.0), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
+    float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
-    return mix(white, black, saturate(alpha));
+    return mix(white, color, saturate(alpha));
 }
