@@ -6,7 +6,8 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
-#include <metal_stdlib>
-using namespace metal;
+#import <simd/simd.h>
 
 
+struct VGAffineTransform    { float a, b, c, d, tx, ty; };
+//struct VGBounds             { float2 ll, ur; };

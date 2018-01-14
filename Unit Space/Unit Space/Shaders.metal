@@ -6,7 +6,8 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
-#include "Shared.metal"
+#include "Shared.metal.hpp"
+#include <metal_stdlib>
 
 using namespace metal;
 
