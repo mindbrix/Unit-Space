@@ -8,6 +8,12 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+@protocol LayerDelegate <NSObject>
+- (void)drawLayer;
+@end
+
 @interface MetalLayer : CAMetalLayer
+
+@property(nullable, weak) id <LayerDelegate> layerDelegate;
 
 @end
