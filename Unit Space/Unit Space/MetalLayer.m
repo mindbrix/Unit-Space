@@ -14,6 +14,7 @@
 
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
+@property (nonatomic, strong) id <MTLRenderPipelineState> pipelineState;
 
 @end
 
@@ -35,8 +36,22 @@
     self.device = MTLCreateSystemDefaultDevice();
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
     
+    CGFloat white[] = { 1, 1, 1, 1 };
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGColorRef whiteColor = CGColorCreate(space, white);
+    CGColorSpaceRelease(space);
+    self.backgroundColor = whiteColor;
+    CGColorRelease(whiteColor);
+    
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
+    
+    MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
+    descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    descriptor.colorAttachments[0].blendingEnabled = NO;
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"fragment_main"];
+    self.pipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     return self;
 }
@@ -68,10 +83,12 @@
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
+    [commandEncoder setRenderPipelineState:_pipelineState];
+    [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
+                       vertexStart:0
+                       vertexCount:6];
+    
     [commandEncoder endEncoding];
-    
-
-    
     
     [commandBuffer presentDrawable:drawable];
     [commandBuffer commit];

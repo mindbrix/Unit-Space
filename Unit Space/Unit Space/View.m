@@ -24,7 +24,6 @@
     
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
-    self.metalLayer.backgroundColor = [NSColor redColor].CGColor;
     
     return self;
 }
