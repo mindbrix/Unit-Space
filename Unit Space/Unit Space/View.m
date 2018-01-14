@@ -7,6 +7,13 @@
 //
 
 #import "View.h"
+#import "MetalLayer.h"
+
+@interface View ()
+
+@property(nonatomic) MetalLayer *metalLayer;
+
+@end
 
 @implementation View
 
@@ -16,8 +23,8 @@
         return nil;
     
     [self setWantsLayer:YES];
-    [self setLayer:[CALayer layer]];
-    self.layer.backgroundColor = [NSColor redColor].CGColor;
+    [self setLayer:[MetalLayer layer]];
+    self.metalLayer.backgroundColor = [NSColor redColor].CGColor;
     
     return self;
 }
@@ -26,6 +33,11 @@
     [super drawRect:dirtyRect];
     
     // Drawing code here.
+}
+
+
+-(MetalLayer *)metalLayer {
+    return (MetalLayer *)self.layer;
 }
 
 @end
