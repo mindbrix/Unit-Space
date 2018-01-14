@@ -28,7 +28,7 @@
         return nil;
     
     self.opaque = YES;
-    self.needsDisplayOnBoundsChange = TRUE;
+    self.needsDisplayOnBoundsChange = YES;
     self.actions = @{ @"onOrderIn": [NSNull null],
                       @"onOrderOut": [NSNull null],
                       @"sublayers": [NSNull null],
@@ -41,7 +41,7 @@
     self.defaultLibrary = [self.device newDefaultLibrary];
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
-    descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[0].blendingEnabled = NO;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"fragment_main"];
