@@ -26,7 +26,7 @@
     if (!self)
         return nil;
     
-    self.opaque = NO;
+    self.opaque = YES;
     self.needsDisplayOnBoundsChange = TRUE;
     self.actions = @{ @"onOrderIn": [NSNull null],
                       @"onOrderOut": [NSNull null],
@@ -35,13 +35,6 @@
                       @"bounds": [NSNull null] };
     self.device = MTLCreateSystemDefaultDevice();
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    
-    CGFloat white[] = { 1, 1, 1, 1 };
-    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
-    CGColorRef whiteColor = CGColorCreate(space, white);
-    CGColorSpaceRelease(space);
-    self.backgroundColor = whiteColor;
-    CGColorRelease(whiteColor);
     
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
@@ -65,8 +58,6 @@
 - (void)draw {
     if ([self.layerDelegate respondsToSelector:@selector(drawLayer:)])
         [self.layerDelegate drawLayer:self];
-    
-    MTLClearColor zeroes = MTLClearColorMake(1, 0, 1, 1);
     
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];
