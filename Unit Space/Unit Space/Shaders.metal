@@ -86,10 +86,7 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float dx = x * uniforms.CTM.a + y * uniforms.CTM.c + uniforms.CTM.tx;
     float dy = x * uniforms.CTM.b + y * uniforms.CTM.d + uniforms.CTM.ty;
     
-    float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
-    float offset = 0.7071 / scale;
-    float ux = arc.x - arc.r - offset, uy = arc.y - arc.r - offset, uw = (arc.r + offset) * 2.0;
-    AffineTransform unit = { uw, 0, 0, uw, ux, uy };
+    AffineTransform unit = { arc.r * 2.0, 0, 0, arc.r * 2.0, arc.x - arc.r, arc.y - arc.r };
     AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, uniforms.CTM));
     
     float2 unitPoint = { dx / uniforms.drawableSize.w, dy / uniforms.drawableSize.h };
