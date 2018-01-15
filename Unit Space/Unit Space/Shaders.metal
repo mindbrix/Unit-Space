@@ -77,7 +77,7 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     StrokeVertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     vert.unitPoint = unitPoint;
-    vert.color = { 1, 0, 0, 1 };
+    vert.color = { .1, 0, 0, .1 };
     
     return vert;
 }
