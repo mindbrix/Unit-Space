@@ -122,6 +122,7 @@
     Path path;
     path.count = 1;
     path.quadratics[0] = { 0, 0, float(drawable.texture.width), 0, float(drawable.texture.width), float(drawable.texture.height) };
+    [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                indexCount:6
