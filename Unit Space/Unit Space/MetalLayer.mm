@@ -119,12 +119,16 @@
     [commandEncoder setRenderPipelineState:_strokePipelineState];
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+    Path path;
+    path.count = 1;
+    path.quadratics[0] = { 0, 0, float(drawable.texture.width), 0, float(drawable.texture.width), float(drawable.texture.height) };
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                indexCount:6
                                 indexType:MTLIndexTypeUInt16
                               indexBuffer:_indexBuffer
-                        indexBufferOffset:0];
+                        indexBufferOffset:0
+                            instanceCount:1];
     
     [commandEncoder endEncoding];
     

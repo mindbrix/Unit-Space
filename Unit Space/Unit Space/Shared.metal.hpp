@@ -16,8 +16,14 @@ struct Vector { float x, y; };
 
 struct _Size { float w, h; };
 
-struct Uniforms
-{
+struct Quadratic { float x0, y0, x1, y1, x2, y2; };
+
+struct Path {
+    int         count;
+    Quadratic   quadratics[128];
+};
+
+struct Uniforms {
     RGBA                Color;
     AffineTransform     CTM;
     _Size               drawableSize;

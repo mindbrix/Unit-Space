@@ -70,7 +70,7 @@ struct StrokeVertex
     float2 unitPoint;
 };
 
-vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
+vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Path &path [[buffer(1)]], uint vid [[vertex_id]])
 {
     float2 unitPoint = float2(vid & 1, vid & 2);
     
