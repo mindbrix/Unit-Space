@@ -8,6 +8,8 @@
 
 #import <simd/simd.h>
 
+struct Arc { float x, y, r, t0, t1; };
+
 struct RGBA { float r, g, b, a; };
 
 struct AffineTransform    { float a, b, c, d, tx, ty; };
