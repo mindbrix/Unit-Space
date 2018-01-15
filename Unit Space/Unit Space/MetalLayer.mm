@@ -123,8 +123,9 @@
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Path path;
-    path.count = 1;
+    path.count = 2;
     path.arcs[0] = { 200, 200, 50, 0, 1 };
+    path.arcs[1] = { 300, 200, 50, 0, 0.25 };
     path.quadratics[0] = { 0, 0, float(drawable.texture.width), 0, float(drawable.texture.width), float(drawable.texture.height) };
     [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     
@@ -133,7 +134,7 @@
                                 indexType:MTLIndexTypeUInt16
                               indexBuffer:_indexBuffer
                         indexBufferOffset:0
-                            instanceCount:std::ceil(1.0 / uniforms.flatness)];
+                            instanceCount:std::ceil(1.0 / uniforms.flatness) * path.count];
     
     [commandEncoder endEncoding];
     
