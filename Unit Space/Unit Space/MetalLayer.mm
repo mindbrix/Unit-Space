@@ -129,7 +129,7 @@
                                 indexType:MTLIndexTypeUInt16
                               indexBuffer:_indexBuffer
                         indexBufferOffset:0
-                            instanceCount:1];
+                            instanceCount:8];
     
     [commandEncoder endEncoding];
     
