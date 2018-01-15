@@ -16,9 +16,7 @@ float ellipseDistance(float2 unitPoint) {
     
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    float sd = (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
-    
-    return sd + 0.5;
+    return (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
 }
 
 #pragma mark - Unit
@@ -53,7 +51,7 @@ vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], ui
 
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    float alpha = ellipseDistance(vert.ellipseUnitPoint);
+    float alpha = ellipseDistance(vert.ellipseUnitPoint) + 0.5;
     float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
@@ -100,6 +98,6 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
 
 fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    float alpha = ellipseDistance(vert.unitPoint);
+    float alpha = uniforms.width - abs(ellipseDistance(vert.unitPoint));
     return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 }
