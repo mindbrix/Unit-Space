@@ -107,7 +107,7 @@
     uniforms.Color = { 0, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
-    uniforms.flatness = 0.0125;
+    uniforms.flatness = 0.125;
     uniforms.width = 2;
     uniforms.cap = 8;
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
@@ -124,8 +124,8 @@
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Path path;
     path.count = 2;
-    path.arcs[0] = { 200, 200, 50, 0, 1 };
-    path.arcs[1] = { 300, 200, 50, 0, 0.25 };
+    path.arcs[0] = { 200, 200, 50, 0, 0.35 };
+    path.arcs[1] = { 300, 200, 50, 0, 0.35 };
     path.quadratics[0] = { 0, 0, float(drawable.texture.width), 0, float(drawable.texture.width), float(drawable.texture.height) };
     [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     

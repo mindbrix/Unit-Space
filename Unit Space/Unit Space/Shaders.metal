@@ -72,11 +72,12 @@ struct StrokeVertex
 
 vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Path &path [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    uint index = iid / ceil(1.0 / uniforms.flatness);
+    uint count = ceil(1.0 / uniforms.flatness);
+    uint index = iid / count;
     
     constant Arc& arc = path.arcs[index];
     float dt = (arc.t1 - arc.t0) * uniforms.flatness;
-    float t0 = arc.t0 + dt * float(iid), t1 = t0 + dt;
+    float t0 = arc.t0 + dt * float(iid % count), t1 = t0 + dt;
     
     float t = select(t0, t1, vid & 2);
     float w = select(-uniforms.width, uniforms.width, vid & 1);
