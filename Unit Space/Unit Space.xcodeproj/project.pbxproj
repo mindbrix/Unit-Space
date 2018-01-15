@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */; };
 		E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */; };
 		E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD79200BC63400F2BFB2 /* Document.m */; };
 		E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = E9EEAD7B200BC63400F2BFB2 /* Document.xib */; };
@@ -20,6 +21,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
+		E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
 		E9EEAD72200BC63400F2BFB2 /* Unit Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Unit Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -71,6 +74,8 @@
 		E9EEAD74200BC63400F2BFB2 /* Unit Space */ = {
 			isa = PBXGroup;
 			children = (
+				E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */,
+				E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */,
 				E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */,
 				E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */,
 				E9EEAD78200BC63400F2BFB2 /* Document.h */,
@@ -170,6 +175,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */,
 				E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */,
 				E9EEAD90200BC76C00F2BFB2 /* View.m in Sources */,
 				E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */,

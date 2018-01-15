@@ -15,6 +15,7 @@
 
 @interface MetalLayer : CAMetalLayer
 
-@property(nullable, weak) id <LayerDelegate> layerDelegate;
+@property(weak) id <LayerDelegate> layerDelegate;
+@property(nonatomic) CGAffineTransform viewTransform;
 
 @end

@@ -83,7 +83,13 @@
     [commandEncoder setRenderPipelineState:_pipelineState];
     
     Uniforms uniforms;
-    uniforms.CTM = { float(self.contentsScale), 0, 0, float(self.contentsScale), 0, 0 };
+    AffineTransform retina = { float(self.contentsScale), 0, 0, float(self.contentsScale), 0, 0 };
+    AffineTransform ctm = {
+        float(self.viewTransform.a), float(self.viewTransform.b),
+        float(self.viewTransform.c), float(self.viewTransform.d),
+        float(self.viewTransform.tx), float(self.viewTransform.ty) };
+    
+    uniforms.CTM = AffineTransformConcat(ctm, retina);
     uniforms.Color = { 0, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
