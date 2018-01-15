@@ -96,8 +96,8 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float2 p0 = { x0, y0 }, p1 = { x1, y1 };
     float2 unit = normalize(p1 - p0);
     float2 normal = { unit.y, -unit.x };
-    float w = 4.0, endCap = w;
-    float2 devicePoint = select(p0, p1, vid & 2) + select(normal, -normal, vid & 1) * w + select(-unit, unit, vid & 2) * endCap;
+    
+    float2 devicePoint = select(p0, p1, vid & 2) + select(normal, -normal, vid & 1) * uniforms.width + select(-unit, unit, vid & 2) * uniforms.cap;
     float2 scale = { 1.0 / uniforms.drawableSize.w, 1.0 / uniforms.drawableSize.h };
     
     StrokeVertex vert;
