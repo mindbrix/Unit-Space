@@ -24,8 +24,7 @@ struct Quadratic { float x0, y0, x1, y1, x2, y2; };
 
 struct Path {
     int         count;
-    Arc         arcs[64];
-    Quadratic   quadratics[64];
+    Arc         arcs[128];
 };
 
 struct Uniforms {

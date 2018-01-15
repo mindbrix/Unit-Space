@@ -126,7 +126,6 @@
     path.count = 2;
     path.arcs[0] = { 200, 200, 50, 0, 0.35 };
     path.arcs[1] = { 300, 200, 50, 0, 0.35 };
-    path.quadratics[0] = { 0, 0, float(drawable.texture.width), 0, float(drawable.texture.width), float(drawable.texture.height) };
     [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
