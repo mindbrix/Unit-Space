@@ -86,16 +86,23 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float dx = x * uniforms.CTM.a + y * uniforms.CTM.c + uniforms.CTM.tx;
     float dy = x * uniforms.CTM.b + y * uniforms.CTM.d + uniforms.CTM.ty;
     
+    float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
+    float offset = 0.7071 / scale;
+    float ux = arc.x - arc.r - offset, uy = arc.y - arc.r - offset, uw = (arc.r + offset) * 2.0;
+    AffineTransform unit = { uw, 0, 0, uw, ux, uy };
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, uniforms.CTM));
+    
     float2 unitPoint = { dx / uniforms.drawableSize.w, dy / uniforms.drawableSize.h };
     
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
-    vert.unitPoint = float2(vid & 1, vid & 2);
+    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     
     return vert;
 }
 
 fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a);
+    float alpha = ellipseDistance(vert.unitPoint);
+    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 }
