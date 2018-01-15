@@ -12,11 +12,35 @@ struct RGBA { float r, g, b, a; };
 
 struct AffineTransform    { float a, b, c, d, tx, ty; };
 
-struct Bounds { float llx, lly, urx, ury; };
+struct Vector { float x, y; };
+
+struct _Size { float w, h; };
 
 struct Uniforms
 {
     RGBA                Color;
     AffineTransform     CTM;
-    Bounds              drawableBounds;
+    _Size               drawableSize;
+    AffineTransform     ellipseCTM;
 };
+
+AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
+    return {
+        t0.a * t1.a + t0.b * t1.c,              t0.a * t1.b + t0.b * t1.d,
+        t0.c * t1.a + t0.d * t1.c,              t0.c * t1.b + t0.d * t1.d,
+        t0.tx * t1.a + t0.ty * t1.c + t1.tx,    t0.tx * t1.b + t0.ty * t1.d + t1.ty
+    };
+}
+
+AffineTransform AffineTransformInvert(const AffineTransform t) {
+    float determinant = t.a * t.d - t.b * t.c;
+    if (determinant == 0)
+        return t;
+    
+    float recip = 1.0 / determinant;
+    return {
+        t.d * recip,                            -t.b * recip,
+        -t.c * recip,                           t.a * recip,
+        (t.c * t.ty - t.d * t.tx) * recip,      -(t.a * t.ty - t.b * t.tx) * recip
+    };
+}

@@ -83,9 +83,10 @@
     [commandEncoder setRenderPipelineState:_pipelineState];
     
     Uniforms uniforms;
-    uniforms.CTM = { 1, 0, 0, 1, 0, 0 };
+    uniforms.CTM = { float(self.contentsScale), 0, 0, float(self.contentsScale), 0, 0 };
     uniforms.Color = { 0, 0, 0, 1 };
-    uniforms.drawableBounds = { 0, 0, float(drawable.texture.width), float(drawable.texture.height) };
+    uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
+    uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     

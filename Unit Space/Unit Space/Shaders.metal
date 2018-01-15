@@ -48,10 +48,13 @@ struct Vertex
 vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
 {
     float2 unitPoint = float2(vid & 1, vid & 2);
+    float dx = unitPoint.x * uniforms.drawableSize.w, dy = unitPoint.y * uniforms.drawableSize.h;
     
     Vertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
-    vert.ellipseUnitPoint = unitPoint;
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(uniforms.ellipseCTM, uniforms.CTM));
+    
+    vert.ellipseUnitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     vert.flags = 0;
     
     return vert;
