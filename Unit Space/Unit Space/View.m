@@ -65,8 +65,8 @@
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent {
-    BOOL isInverted = ([ theEvent respondsToSelector:@selector( isDirectionInvertedFromDevice )] && [ theEvent isDirectionInvertedFromDevice ]);
-    CGFloat inversion = (isInverted) ? 1.0f : -1.0f;
+    BOOL isInverted = ([theEvent respondsToSelector:@selector(isDirectionInvertedFromDevice)] && [theEvent isDirectionInvertedFromDevice]);
+    CGFloat inversion = isInverted ? 1.0f : -1.0f;
     
     [self.transform translateByX:theEvent.deltaX * inversion andY:-theEvent.deltaY * inversion];
     [self redraw];
