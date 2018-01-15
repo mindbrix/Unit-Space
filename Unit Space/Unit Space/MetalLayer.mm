@@ -107,6 +107,7 @@
     uniforms.Color = { 0, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
+    uniforms.dt = 0.125;
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     
@@ -129,7 +130,7 @@
                                 indexType:MTLIndexTypeUInt16
                               indexBuffer:_indexBuffer
                         indexBufferOffset:0
-                            instanceCount:8];
+                            instanceCount:std::ceil(1.0 / uniforms.dt)];
     
     [commandEncoder endEncoding];
     

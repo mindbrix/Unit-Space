@@ -28,6 +28,7 @@ struct Uniforms {
     AffineTransform     CTM;
     _Size               drawableSize;
     AffineTransform     ellipseCTM;
+    float               dt;
 };
 
 AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
