@@ -21,7 +21,9 @@ float ellipseDistance(float2 unitPoint) {
     return sd + 0.5;
 }
 
-struct Vertex
+#pragma mark - Unit
+
+struct UnitVertex
 {
     float4 position [[position]];
     
@@ -33,12 +35,12 @@ struct Vertex
     uint32_t flags;
 };
 
-vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
+vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
 {
     float2 unitPoint = float2(vid & 1, vid & 2);
     float dx = unitPoint.x * uniforms.drawableSize.w, dy = unitPoint.y * uniforms.drawableSize.h;
     
-    Vertex vert;
+    UnitVertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
     AffineTransform el = AffineTransformInvert(AffineTransformConcat(uniforms.ellipseCTM, uniforms.CTM));
@@ -49,10 +51,38 @@ vertex Vertex vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[
     return vert;
 }
 
-fragment float4 fragment_main(Vertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
     float alpha = ellipseDistance(vert.ellipseUnitPoint);
     float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
+}
+
+
+#pragma mark - Stroke
+
+struct StrokeVertex
+{
+    float4 position [[position]];
+    
+    float4 color;
+    float2 unitPoint;
+};
+
+vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
+{
+    float2 unitPoint = float2(vid & 1, vid & 2);
+    
+    StrokeVertex vert;
+    vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
+    vert.unitPoint = unitPoint;
+    vert.color = { 1, 0, 0, 1 };
+    
+    return vert;
+}
+
+fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+{
+    return vert.color;
 }

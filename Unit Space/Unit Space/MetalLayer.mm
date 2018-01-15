@@ -15,7 +15,8 @@
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
-@property (nonatomic, strong) id <MTLRenderPipelineState> pipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> strokePipelineState;
 
 @end
 
@@ -43,9 +44,18 @@
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[0].blendingEnabled = NO;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"fragment_main"];
-    self.pipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"unit_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"unit_fragment_main"];
+    self.unitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.colorAttachments[0].blendingEnabled = YES;
+    descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+    descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+    descriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
+    self.strokePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
@@ -80,7 +90,7 @@
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
-    [commandEncoder setRenderPipelineState:_pipelineState];
+    [commandEncoder setRenderPipelineState:_unitPipelineState];
     
     Uniforms uniforms;
     AffineTransform retina = { float(self.contentsScale), 0, 0, float(self.contentsScale), 0, 0 };
