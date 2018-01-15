@@ -8,6 +8,8 @@
 
 #import <simd/simd.h>
 
+#define TWO_PI 6.2831853072
+
 struct Arc { float x, y, r, t0, t1; };
 
 struct RGBA { float r, g, b, a; };
@@ -22,7 +24,8 @@ struct Quadratic { float x0, y0, x1, y1, x2, y2; };
 
 struct Path {
     int         count;
-    Quadratic   quadratics[128];
+    Arc         arcs[64];
+    Quadratic   quadratics[64];
 };
 
 struct Uniforms {

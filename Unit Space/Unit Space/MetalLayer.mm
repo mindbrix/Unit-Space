@@ -122,6 +122,7 @@
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Path path;
     path.count = 1;
+    path.arcs[0] = { 0, 0, float(drawable.texture.width) * 0.5f, 0, 0.25 };
     path.quadratics[0] = { 0, 0, float(drawable.texture.width), 0, float(drawable.texture.width), float(drawable.texture.height) };
     [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     
