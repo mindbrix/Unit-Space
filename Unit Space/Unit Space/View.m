@@ -27,8 +27,9 @@
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
-    _transform = [VGAffineTransform new];
+    self.transform = [VGAffineTransform new];
     [self redraw];
+    
     return self;
 }
 
