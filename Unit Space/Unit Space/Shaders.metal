@@ -80,7 +80,11 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float w = select(-uniforms.width, uniforms.width, vid & 1);
     float x = arc.x + (arc.r + w) * cos(t * TWO_PI);
     float y = arc.y + (arc.r + w) * sin(t * TWO_PI);
-    float2 unitPoint = { x / uniforms.drawableSize.w, y / uniforms.drawableSize.h };
+    
+    float dx = x * uniforms.CTM.a + y * uniforms.CTM.c + uniforms.CTM.tx;
+    float dy = x * uniforms.CTM.b + y * uniforms.CTM.d + uniforms.CTM.ty;
+    
+    float2 unitPoint = { dx / uniforms.drawableSize.w, dy / uniforms.drawableSize.h };
     
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
