@@ -29,6 +29,7 @@ struct Path {
 
 struct Uniforms {
     RGBA                Color;
+    RGBA                strokeColor;
     AffineTransform     CTM;
     _Size               drawableSize;
     AffineTransform     ellipseCTM;

@@ -105,6 +105,7 @@
     
     uniforms.CTM = AffineTransformConcat(ctm, retina);
     uniforms.Color = { 0, 0, 0, 1 };
+    uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
     uniforms.flatness = 0.125;

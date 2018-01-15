@@ -66,7 +66,6 @@ struct StrokeVertex
 {
     float4 position [[position]];
     
-    float4 color;
     float2 unitPoint;
 };
 
@@ -92,12 +91,11 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
     vert.unitPoint = float2(vid & 1, vid & 2);
-    vert.color = { 0.5, 0, 0, 0.5 };
     
     return vert;
 }
 
 fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    return vert.color;
+    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a);
 }
