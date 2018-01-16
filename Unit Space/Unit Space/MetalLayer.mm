@@ -108,8 +108,8 @@
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
-    uniforms.flatness = 0.0125;
-    uniforms.width = 0;
+    uniforms.flatness = 0.025;
+    uniforms.width = 4;
     uniforms.cap = 8;
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
