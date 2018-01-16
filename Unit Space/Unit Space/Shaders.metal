@@ -60,7 +60,7 @@ vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], ui
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
 //    float alpha = ellipseStrokeDistance(vert.ellipseUnitPoint, vert.width);
-    float alpha = ellipseDistance(vert.ellipseUnitPoint) + 0.5;
+    float alpha = ellipseDistance(fmod(vert.ellipseUnitPoint, 0.0)) + 0.5;
     float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
@@ -94,9 +94,9 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float scale = select(rawScale, 1.0, uniforms.width == 0.0);
     
     float dilation = 1.0 / rawScale;
-    float width = select(uniforms.width, 1.0, uniforms.width == 0.0);
-    width = max(width * 0.5, dilation);
-    float w = select(-width - dilation, width + dilation, vid & 1);
+    float width = select(uniforms.width, dilation, uniforms.width == 0.0);
+    float maxedWidth = max(width * 0.5, dilation);
+    float w = select(-maxedWidth - dilation, maxedWidth + dilation, vid & 1);
     float r = max(0.0, arc.r + w);
     r = select(r, r / cos(theta), vid & 1);
     float x = arc.x + r * cos(t * TWO_PI);
@@ -113,8 +113,8 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    vert.unitWidth = width * sqrt(el.a * el.a + el.b * el.b) * scale;
-    vert.alpha = min(1.0, uniforms.width * 0.5 / dilation);
+    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
+    vert.alpha = min(1.0, width / dilation);
     return vert;
 }
 
