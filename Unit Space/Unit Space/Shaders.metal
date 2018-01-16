@@ -94,6 +94,7 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float t = select(t0, t1, vid & 2);
     float dilation = 1.0 / rawScale;
     float width = select(uniforms.width, 1.0, uniforms.width == 0.0);
+    width = max(width * 0.5, dilation);
     float w = select(-width - dilation, width + dilation, vid & 1);
     float r = max(0.0, arc.r + w);
     r = select(r, r / cos(theta), vid & 1);
