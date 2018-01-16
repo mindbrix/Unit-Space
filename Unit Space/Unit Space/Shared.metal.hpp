@@ -8,6 +8,7 @@
 
 #import <simd/simd.h>
 
+#define PI 3.1415926536
 #define TWO_PI 6.2831853072
 
 struct Arc { float x, y, r, t0, t1; };

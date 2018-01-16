@@ -108,8 +108,8 @@
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
-    uniforms.flatness = 0.025;
-    uniforms.width = 4;
+    uniforms.flatness = 0.25;
+    uniforms.width = 2;
     uniforms.cap = 8;
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
@@ -125,8 +125,8 @@
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Path path;
     path.count = 2;
-    path.arcs[0] = { 200, 200, 50, 0, 1.0 };
-    path.arcs[1] = { 300, 200, 50, 0, 0.5 };
+    path.arcs[0] = { 50, 150, 50, 0, 1.0 };
+    path.arcs[1] = { 160, 150, 50, 0, 0.5 };
     [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
