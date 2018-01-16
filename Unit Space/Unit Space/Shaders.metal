@@ -74,24 +74,25 @@ struct StrokeVertex
     float4 position [[position]];
     
     float2 unitPoint;
-    float width;
+    float unitWidth;
+    
+    float alpha;
 };
 
 vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Path &path [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint count = ceil(1.0 / uniforms.flatness);
     uint index = iid / count;
-    
-    float rawScale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
-    float scale = select(rawScale, 1.0, uniforms.width == 0.0);
-    
     constant Arc& arc = path.arcs[index];
     
     float dt = (arc.t1 - arc.t0) * uniforms.flatness;
     float theta = PI * uniforms.flatness * (arc.t1 - arc.t0);
     float t0 = arc.t0 + dt * float(iid % count), t1 = t0 + dt;
-    
     float t = select(t0, t1, vid & 2);
+    
+    float rawScale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
+    float scale = select(rawScale, 1.0, uniforms.width == 0.0);
+    
     float dilation = 1.0 / rawScale;
     float width = select(uniforms.width, 1.0, uniforms.width == 0.0);
     width = max(width * 0.5, dilation);
@@ -112,14 +113,14 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    vert.width = width * sqrt(el.a * el.a + el.b * el.b) * scale;
-    
+    vert.unitWidth = width * sqrt(el.a * el.a + el.b * el.b) * scale;
+    vert.alpha = min(1.0, uniforms.width * 0.5 / dilation);
     return vert;
 }
 
 fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    float alpha = ellipseStrokeDistance(vert.unitPoint, vert.width);
+    float alpha = vert.alpha * saturate(ellipseStrokeDistance(vert.unitPoint, vert.unitWidth));
     return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 //    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
 }

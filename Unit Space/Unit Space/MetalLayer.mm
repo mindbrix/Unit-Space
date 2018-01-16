@@ -109,7 +109,7 @@
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
     uniforms.flatness = 0.03125;
-    uniforms.width = 1;
+    uniforms.width = 0.5;
     uniforms.cap = 8;
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
@@ -124,9 +124,21 @@
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Path path;
-    path.count = 2;
-    path.arcs[0] = { 50, 150, 50, 0, 1.0 };
-    path.arcs[1] = { 160, 150, 50, 0, 0.5 };
+    path.count = 36;
+    
+    float cx = 200, cy = 200, r = 100, theta = TWO_PI / path.count;
+    
+    for (float i = 0; i < path.count; i++) {
+        float rad = i * theta;
+        float x = cx + r * std::cos(rad);
+        float y = cy + r * std::sin(rad);
+        
+        path.arcs[int(i)] = { x, y, r, 0, 1.0 };
+    }
+    
+    
+//    path.arcs[0] = { 50, 150, 50, 0, 1.0 };
+//    path.arcs[1] = { 160, 150, 50, 0, 0.5 };
     [commandEncoder setVertexBytes:&path length:sizeof(Path) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
