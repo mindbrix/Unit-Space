@@ -19,7 +19,7 @@ float ellipseDistance(float2 unitPoint) {
     return (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
 }
 
-float ellipseStrokeDistance2(float2 unitPoint, float w) {
+float cirleStrokeDistance(float2 unitPoint, float w) {
     float2 uv = normalize(float2(unitPoint.x - 0.5, unitPoint.y - 0.5)) * 0.5 + 0.5;
     float x = unitPoint.x - uv.x, y = unitPoint.y - uv.y;
     return ellipseDistance(float2(x, y) / w * 0.5 + 0.5);
@@ -126,7 +126,7 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
 
 fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    float alpha = vert.alpha * saturate(ellipseStrokeDistance2(vert.unitPoint, vert.unitWidth) + 0.5);
+    float alpha = vert.alpha * saturate(cirleStrokeDistance(vert.unitPoint, vert.unitWidth) + 0.5);
     return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 //    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
 }
