@@ -21,7 +21,7 @@ float ellipseDistance(float2 unitPoint) {
 
 float cirleStrokeDistance(float2 unitPoint, float w) {
     unitPoint = unitPoint * 2.0 - 1.0;
-    float2 v = (unitPoint - normalize(unitPoint)) / w;
+    float2 v = (unitPoint - saturate(normalize(unitPoint))) / w;
     
     float fx = -2.0 * (v.x * dfdx(v.x) + v.y * dfdx(v.y));
     float fy = -2.0 * (v.x * dfdy(v.x) + v.y * dfdy(v.y));
