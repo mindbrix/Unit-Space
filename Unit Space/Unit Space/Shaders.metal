@@ -21,7 +21,16 @@ float ellipseDistance(float2 unitPoint) {
 
 float cirleStrokeDistance(float2 unitPoint, float w) {
     unitPoint = unitPoint * 2.0 - 1.0;
-    float2 v = (unitPoint - saturate(normalize(unitPoint))) / w;
+    float2 nu = normalize(unitPoint);
+    
+//    float rad = acos(nu.x);
+//    float t = rad / TWO_PI;
+//    t = clamp(t, 0.20, 0.425);
+//    float x = cos(t * TWO_PI);
+//    float y = sin(t * TWO_PI);
+//    float2 v = (unitPoint - float2(x, y)) / w;
+    
+    float2 v = (unitPoint - (nu)) / w;
     
     float fx = -2.0 * (v.x * dfdx(v.x) + v.y * dfdx(v.y));
     float fy = -2.0 * (v.x * dfdy(v.x) + v.y * dfdy(v.y));
@@ -95,19 +104,18 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     constant Arc& arc = path.arcs[index];
     
     float dt = (arc.t1 - arc.t0) * uniforms.flatness;
-    float theta = PI * uniforms.flatness * (arc.t1 - arc.t0);
     float t0 = arc.t0 + dt * float(iid % count), t1 = t0 + dt;
     float t = select(t0, t1, vid & 2);
     
-    float rawScale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
-    float scale = select(rawScale, 1.0, uniforms.width == 0.0);
+    float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
     
-    float dilation = 1.0 / rawScale;
-    float width = select(uniforms.width, 2.0, uniforms.width == 0.0);
-    float maxedWidth = max(width * 0.5, dilation);
-    float w = select(-maxedWidth - dilation, maxedWidth + dilation, vid & 1);
-    float r = max(0.0, arc.r + w);
-    r = select(r, r / cos(theta), vid & 1);
+    float dilation = 1.0 / scale;
+    float maxedWidth = max(uniforms.width * 0.5, dilation);
+    float r0 = max(0.0, arc.r - maxedWidth - dilation);
+    float theta = PI * uniforms.flatness * (arc.t1 - arc.t0);
+    float r1 = (arc.r + maxedWidth + dilation) / cos(theta);
+    
+    float r = select(r0, r1, vid & 1);
     float x = arc.x + r * cos(t * TWO_PI);
     float y = arc.y + r * sin(t * TWO_PI);
     
@@ -123,14 +131,14 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
-    vert.alpha = min(1.0, width / dilation);
+    vert.alpha = min(1.0, uniforms.width / dilation);
     return vert;
 }
 
 fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-//    float alpha = vert.alpha * saturate(ellipseStrokeDistance(vert.unitPoint, vert.unitWidth));
-    float alpha = vert.alpha * saturate(cirleStrokeDistance(vert.unitPoint, vert.unitWidth) + 0.5);
+    float alpha = vert.alpha * saturate(ellipseStrokeDistance(vert.unitPoint, vert.unitWidth));
+//    float alpha = vert.alpha * saturate(cirleStrokeDistance(vert.unitPoint, vert.unitWidth) + 0.5);
     return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 //    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
 }
