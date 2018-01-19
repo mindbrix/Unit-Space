@@ -109,7 +109,7 @@
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
     uniforms.flatness = 0.125;
-    uniforms.width = 1.0;
+    uniforms.width = 1;
     uniforms.cap = 8;
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];

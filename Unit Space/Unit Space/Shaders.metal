@@ -110,7 +110,7 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
     
     float dilation = 1.0 / scale;
-    float maxedWidth = max(uniforms.width * 0.5, dilation);
+    float maxedWidth = max(uniforms.width, dilation);
     float r0 = max(0.0, arc.r - maxedWidth - dilation);
     float theta = PI * uniforms.flatness * (arc.t1 - arc.t0);
     float r1 = (arc.r + maxedWidth + dilation) / cos(theta);
