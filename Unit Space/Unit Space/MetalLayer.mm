@@ -124,7 +124,7 @@
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Path path;
-    path.count = 36;
+    path.count = 96;
     
     float cx = 200, cy = 200, r = 100, theta = TWO_PI / path.count;
     
@@ -133,7 +133,7 @@
         float x = cx + r * std::cos(rad);
         float y = cy + r * std::sin(rad);
         
-        path.arcs[int(i)] = { x, y, r, 0.0, 1.0 };
+        path.arcs[int(i)] = { x, y, powf(std::abs(x - y), 1.01f), 0, 1 };
     }
     
     
