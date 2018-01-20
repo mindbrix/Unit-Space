@@ -86,7 +86,7 @@ fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Unifor
 }
 
 
-#pragma mark - Stroke
+#pragma mark - Arc
 
 struct StrokeVertex
 {
@@ -143,3 +143,26 @@ fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant Unifo
     return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 //    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
 }
+
+
+#pragma mark - Line
+
+vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Lines &lines [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    constant Line& line = lines.lines[iid];
+    
+    
+    StrokeVertex vert;
+//    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+//    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+//    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
+//    vert.alpha = min(1.0, uniforms.width / dilation);
+    return vert;
+}
+
+fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+{
+    return float4(1, 1, 0, 1);
+}
+
+
