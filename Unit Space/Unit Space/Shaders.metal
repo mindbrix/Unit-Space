@@ -98,7 +98,7 @@ struct StrokeVertex
     float alpha;
 };
 
-vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Arcs &arcs [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex arc_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Arcs &arcs [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint count = ceil(1.0 / uniforms.flatness);
     uint index = iid / count;
@@ -136,7 +136,7 @@ vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]]
     return vert;
 }
 
-fragment float4 stroke_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
     float alpha = vert.alpha * saturate(ellipseStrokeDistance(vert.unitPoint, vert.unitWidth));
 //    float alpha = vert.alpha * saturate(cirleStrokeDistance(vert.unitPoint, vert.unitWidth) + 0.5);

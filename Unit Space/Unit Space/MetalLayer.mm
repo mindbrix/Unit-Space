@@ -16,7 +16,7 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> strokePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 
 @end
 
@@ -56,10 +56,10 @@
     descriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"stroke_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"stroke_fragment_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"arc_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"arc_fragment_main"];
     descriptor.label = @"Stroke";
-    self.strokePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    self.arcPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
@@ -120,7 +120,7 @@
                               indexBuffer:_indexBuffer
                         indexBufferOffset:0];
     
-    [commandEncoder setRenderPipelineState:_strokePipelineState];
+    [commandEncoder setRenderPipelineState:_arcPipelineState];
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Arcs arcs;
