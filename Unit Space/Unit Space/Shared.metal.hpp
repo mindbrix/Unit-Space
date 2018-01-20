@@ -23,9 +23,16 @@ struct _Size { float w, h; };
 
 struct Quadratic { float x0, y0, x1, y1, x2, y2; };
 
+struct Segment { float x0, y0, x1, y1; };
+
 struct Arcs {
     int         count;
-    Arc         arcs[128];
+    Arc         arcs[192];
+};
+
+struct Segments {
+    int         count;
+    Segment     segments[255];
 };
 
 struct Uniforms {
