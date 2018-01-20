@@ -151,9 +151,20 @@ vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], 
 {
     constant Line& line = lines.lines[iid];
     
+    float2 p0 = { line.x0, line.y0 }, p1 = { line.x1, line.y1 };
+    float2 nv = normalize(p1 - p0);
+    float2 lnv = { -nv.y, nv.x };
+    float w2 = uniforms.width * 0.5;
+    
+    float2 up = select(p0, p1, vid & 2) + (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1)) * w2;
+    
+    float dx = up.x * uniforms.CTM.a + up.y * uniforms.CTM.c + uniforms.CTM.tx;
+    float dy = up.x * uniforms.CTM.b + up.y * uniforms.CTM.d + uniforms.CTM.ty;
+    
+    float2 unitPoint = { dx / uniforms.drawableSize.w, dy / uniforms.drawableSize.h };
     
     StrokeVertex vert;
-//    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
 //    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
 //    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
 //    vert.alpha = min(1.0, uniforms.width / dilation);
@@ -162,7 +173,7 @@ vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], 
 
 fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    return float4(1, 1, 0, 1);
+    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a);
 }
 
 

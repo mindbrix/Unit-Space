@@ -154,6 +154,24 @@
                         indexBufferOffset:0
                             instanceCount:std::ceil(1.0 / uniforms.flatness) * arcs.count];
     
+    
+    uniforms.strokeColor = { 0, 0, 1, 1 };
+    uniforms.width = 8;
+    [commandEncoder setRenderPipelineState:_linePipelineState];
+    [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+    [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+    Lines lines;
+    lines.count = 1;
+    lines.lines[0] = { 50, 50, 150, 150 };
+    [commandEncoder setVertexBytes:&lines length:sizeof(Lines) atIndex:1];
+    
+    [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                               indexCount:6
+                                indexType:MTLIndexTypeUInt16
+                              indexBuffer:_indexBuffer
+                        indexBufferOffset:0
+                            instanceCount:lines.count];
+    
     [commandEncoder endEncoding];
     
     [commandBuffer presentDrawable:drawable];
