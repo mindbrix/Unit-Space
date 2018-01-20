@@ -23,7 +23,7 @@ struct _Size { float w, h; };
 
 struct Quadratic { float x0, y0, x1, y1, x2, y2; };
 
-struct Path {
+struct Arcs {
     int         count;
     Arc         arcs[128];
 };

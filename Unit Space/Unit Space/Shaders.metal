@@ -98,11 +98,11 @@ struct StrokeVertex
     float alpha;
 };
 
-vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Path &path [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex stroke_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Arcs &arcs [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint count = ceil(1.0 / uniforms.flatness);
     uint index = iid / count;
-    constant Arc& arc = path.arcs[index];
+    constant Arc& arc = arcs.arcs[index];
     
     float dt = (arc.t1 - arc.t0) * uniforms.flatness;
     float t0 = arc.t0 + dt * float(iid % count), t1 = t0 + dt;
