@@ -79,6 +79,7 @@ fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Unifor
 {
 //    float alpha = ellipseStrokeDistance(vert.ellipseUnitPoint, vert.width);
     float alpha = ellipseDistance(fmod(vert.ellipseUnitPoint, 0.0)) + 0.5;
+//    float alpha = ellipseStrokeDistance(abs(fmod(abs(vert.ellipseUnitPoint), 2.0) - 1.0), 0.01);
     float4 color = float4(uniforms.Color.r, uniforms.Color.g, uniforms.Color.b, uniforms.Color.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
