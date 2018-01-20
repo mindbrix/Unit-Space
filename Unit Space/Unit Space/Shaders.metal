@@ -42,6 +42,16 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
+float rectDistance(float2 unitPoint) {
+    float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
+    
+    float a = dfdx(x), b = dfdy(x), c = dfdx(y), d = dfdy(y);
+    float sx = max(abs(a), abs(b)) / (a * a + b * b), sy = max(abs(c), abs(d)) / (c * c + d * d);
+    
+    float x0 = 0.5 - abs(x), y0 = 0.5 - abs(y);
+    return saturate(x0 * sx + 0.5) * saturate(y0 * sy + 0.5);
+}
+
 #pragma mark - Unit
 
 struct UnitVertex
@@ -152,11 +162,20 @@ vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], 
     constant Line& line = lines.lines[iid];
     
     float2 p0 = { line.x0, line.y0 }, p1 = { line.x1, line.y1 };
-    float2 nv = normalize(p1 - p0);
+    float2 v = p1 - p0, nv = normalize(v);
     float2 lnv = { -nv.y, nv.x };
     float w2 = uniforms.width * 0.5;
+    float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
     
-    float2 up = select(p0, p1, vid & 2) + (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1)) * w2;
+    float dilation = 1.0 / scale;
+    
+    float2 up = select(p0, p1, vid & 2) + (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1)) * (w2 + dilation);
+    
+    float2 nvw = nv * uniforms.width, ab = { nvw.y, -nvw.x };
+    float2 cd = v + nvw, txty = p0 - (nvw + ab) * 0.5;
+    
+    AffineTransform unit = { ab.x, ab.y, cd.x, cd.y, txty.x, txty.y };
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, uniforms.CTM));
     
     float dx = up.x * uniforms.CTM.a + up.y * uniforms.CTM.c + uniforms.CTM.tx;
     float dy = up.x * uniforms.CTM.b + up.y * uniforms.CTM.d + uniforms.CTM.ty;
@@ -165,7 +184,7 @@ vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], 
     
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
-//    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
 //    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
 //    vert.alpha = min(1.0, uniforms.width / dilation);
     return vert;
@@ -173,7 +192,9 @@ vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], 
 
 fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a);
+    float alpha = rectDistance(vert.unitPoint);
+    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
+//    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
 }
 
 
