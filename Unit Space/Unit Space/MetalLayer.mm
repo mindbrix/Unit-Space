@@ -156,13 +156,22 @@
     
     
     uniforms.strokeColor = { 0, 0, 1, 1 };
-    uniforms.width = 8;
+    uniforms.width = 2;
     [commandEncoder setRenderPipelineState:_linePipelineState];
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     Lines lines;
-    lines.count = 1;
-    lines.lines[0] = { 50, 50, 150, 150 };
+    lines.count = 96;
+        
+    for (float i = 0; i < lines.count; i++) {
+        float rad = i * theta;
+        float x = cx + r * std::cos(rad);
+        float y = cy + r * std::sin(rad);
+        
+        lines.lines[int(i)] = { cx, cy, x, y };
+    }
+    
+//    lines.lines[0] = { 50, 50, 150, 150 };
     [commandEncoder setVertexBytes:&lines length:sizeof(Lines) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
