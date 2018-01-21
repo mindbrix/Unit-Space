@@ -109,7 +109,6 @@
     
     AffineTransform CTM = AffineTransformConcat(ctm, retina);
     
-    
     while (count--) {
         size_t instanceCount = 1;
         
@@ -131,6 +130,7 @@
         }
         
         Uniforms uniforms = calls->uniforms;
+        uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
         uniforms.CTM = CTM;
         [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
         [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
@@ -140,86 +140,8 @@
                                   indexBuffer:_indexBuffer
                             indexBufferOffset:0
                                 instanceCount:instanceCount];
+        calls++;
     }
-    
-    
-    
-    
-    [commandEncoder setRenderPipelineState:_unitPipelineState];
-    
-    Uniforms uniforms;
-    uniforms.CTM = CTM;
-    uniforms.fillColor = { 0, 0, 0, 1 };
-    uniforms.strokeColor = { 1, 0, 0, 1 };
-    uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-    uniforms.flatness = 0.03125;
-    uniforms.width = 0.5;
-    uniforms.cap = 8;
-    
-    Units units;
-    units.count = 1;
-    units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
-    [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-    [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-    [commandEncoder setVertexBytes:&units length:sizeof(Units) atIndex:1];
-    
-    [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                               indexCount:6
-                                indexType:MTLIndexTypeUInt16
-                              indexBuffer:_indexBuffer
-                        indexBufferOffset:0];
-    
-    [commandEncoder setRenderPipelineState:_arcPipelineState];
-    [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-    [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-    Arcs arcs;
-    arcs.count = 96;
-    
-    float cx = 200, cy = 200, r = 100, theta = TWO_PI / arcs.count;
-    
-    for (float i = 0; i < arcs.count; i++) {
-        float rad = i * theta;
-        float x = cx + r * std::cos(rad);
-        float y = cy + r * std::sin(rad);
-        
-        arcs.arcs[int(i)] = { x, y, powf(std::abs(x - y), 1.01f), 0, 1 };
-    }
-
-    [commandEncoder setVertexBytes:&arcs length:sizeof(Arcs) atIndex:1];
-    
-    [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                               indexCount:6
-                                indexType:MTLIndexTypeUInt16
-                              indexBuffer:_indexBuffer
-                        indexBufferOffset:0
-                            instanceCount:std::ceil(1.0 / uniforms.flatness) * arcs.count];
-    
-    
-    uniforms.strokeColor = { 0, 0, 1, 1 };
-    uniforms.width = 2;
-    [commandEncoder setRenderPipelineState:_linePipelineState];
-    [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-    [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-    Lines lines;
-    lines.count = 96;
-        
-    for (float i = 0; i < lines.count; i++) {
-        float rad = i * theta;
-        float x = cx + r * std::cos(rad);
-        float y = cy + r * std::sin(rad);
-        
-        lines.lines[int(i)] = { cx, cy, x, y };
-    }
-    
-//    lines.lines[0] = { 50, 50, 150, 150 };
-    [commandEncoder setVertexBytes:&lines length:sizeof(Lines) atIndex:1];
-    
-    [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                               indexCount:6
-                                indexType:MTLIndexTypeUInt16
-                              indexBuffer:_indexBuffer
-                        indexBufferOffset:0
-                            instanceCount:lines.count];
     
     [commandEncoder endEncoding];
     

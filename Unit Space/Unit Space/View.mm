@@ -9,11 +9,15 @@
 #import "View.h"
 #import "MetalLayer.h"
 #import "VGAffineTransform.h"
+#import <vector>
+
+using namespace std;
 
 @interface View () <LayerDelegate>
 
 @property(nonatomic) MetalLayer *metalLayer;
 @property(nonatomic) VGAffineTransform *transform;
+@property(nonatomic, assign) vector<Call> calls;
 
 @end
 
@@ -29,8 +33,53 @@
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
-    [self redraw];
     
+    Uniforms uniforms;
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    uniforms.strokeColor = { 1, 0, 0, 1 };
+    uniforms.flatness = 0.03125;
+    uniforms.width = 0.5;
+    uniforms.cap = 8;
+    
+    _calls.resize(10);
+    _calls[0].type = kCallTypeUnits;
+    _calls[0].uniforms = uniforms;
+    _calls[0].units.count = 1;
+    _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
+    
+    _calls[1].type = kCallTypeArcs;
+    _calls[1].uniforms = uniforms;
+    Arcs& arcs = _calls[1].arcs;
+    arcs.count = 96;
+    
+    float cx = 200, cy = 200, r = 100, theta = TWO_PI / arcs.count;
+    
+    for (float i = 0; i < arcs.count; i++) {
+        float rad = i * theta;
+        float x = cx + r * std::cos(rad);
+        float y = cy + r * std::sin(rad);
+        
+        arcs.arcs[int(i)] = { x, y, powf(std::abs(x - y), 1.01f), 0, 1 };
+    }
+    
+    uniforms.strokeColor = { 0, 0, 1, 1 };
+    uniforms.width = 2;
+    
+    _calls[2].type = kCallTypeLines;
+    _calls[2].uniforms = uniforms;
+    Lines& lines = _calls[2].lines;
+    lines.count = 96;
+    
+    for (float i = 0; i < lines.count; i++) {
+        float rad = i * theta;
+        float x = cx + r * std::cos(rad);
+        float y = cy + r * std::sin(rad);
+        
+        lines.lines[int(i)] = { cx, cy, x, y };
+    }
+    
+    [self redraw];
+
     return self;
 }
 
@@ -86,8 +135,8 @@
 #pragma mark - LayerDelegate
 
 - (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer {
-    *count = 0;
-    return nullptr;
+    *count = 3;
+    return & _calls[0];
 }
 
 #pragma mark - Properties
