@@ -101,47 +101,45 @@ using namespace std;
     return YES;
 }
 
-- (void)magnifyWithEvent:(NSEvent *)theEvent {
-    [self.transform scaleBy:1.0f + theEvent.magnification bounds:self.bounds];
-    [self redraw];
+- (void)magnifyWithEvent:(NSEvent *)event {
+    [self.transform scaleBy:1.0f + event.magnification bounds:self.bounds];
+    [self redrawWithMouseLocation:event.locationInWindow];
 }
 
 - (void)mouseDown:(NSEvent *)event {
 //    NSLog(@"%@", event.locationInWindow);
 }
 
-- (void)mouseDragged:(NSEvent *)theEvent {
-    [self.transform translateByX:theEvent.deltaX andY:-theEvent.deltaY];
+- (void)mouseDragged:(NSEvent *)event {
+    [self.transform translateByX:event.deltaX andY:-event.deltaY];
     [self redraw];
 }
 
 - (void)mouseMoved:(NSEvent *)event {
-    AffineTransform inv = AffineTransformInvert(AffineTransformConcat(_calls[0].units.units[0].unitCTM, self.viewCTM));
-    float x = event.locationInWindow.x * self.layer.contentsScale, y = event.locationInWindow.y * self.layer.contentsScale;
-    float ux = x * inv.a + y * inv.c + inv.tx, uy = x * inv.b + y * inv.d + inv.ty;
-    float vx = ux - 0.5, vy = uy - 0.5;
-    bool outside = vx * vx + vy * vy > 0.25;
-    _calls[0].uniforms.fillColor.r = outside ? 1 : 0;
-    [self redraw];
-    
-//    NSLog(@"(%g, %g)", event.locationInWindow.x, event.locationInWindow.y);
+    [self redrawWithMouseLocation:event.locationInWindow];
 }
 
 - (void)rotateWithEvent:(NSEvent *)event {
     [self.transform rotateBy:event.rotation / 10.f bounds:self.bounds];
-    [self redraw];
+    [self redrawWithMouseLocation:event.locationInWindow];
 }
 
-- (void)scrollWheel:(NSEvent *)theEvent {
-    BOOL isInverted = ([theEvent respondsToSelector:@selector(isDirectionInvertedFromDevice)] && [theEvent isDirectionInvertedFromDevice]);
+- (void)scrollWheel:(NSEvent *)event {
+    BOOL isInverted = ([event respondsToSelector:@selector(isDirectionInvertedFromDevice)] && [event isDirectionInvertedFromDevice]);
     CGFloat inversion = isInverted ? 1.0f : -1.0f;
     
-    [self.transform translateByX:theEvent.deltaX * inversion andY:-theEvent.deltaY * inversion];
-    [self redraw];
+    [self.transform translateByX:event.deltaX * inversion andY:-event.deltaY * inversion];
+    [self redrawWithMouseLocation:event.locationInWindow];
 }
 
 
 #pragma mark -
+
+- (void)redrawWithMouseLocation:(CGPoint)location {
+    BOOL inside = [self isPoint:location inUnitEllipse:_calls[0].units.units[0].unitCTM];
+    _calls[0].uniforms.fillColor.r = inside ? 1 : 0;
+    [self redraw];
+}
 
 - (void)redraw {
     AffineTransform CTM = self.viewCTM;
@@ -149,10 +147,16 @@ using namespace std;
     _calls[1].uniforms.CTM = CTM;
     _calls[2].uniforms.CTM = CTM;
     
-    
     [self.metalLayer setNeedsDisplay];
 }
 
+- (BOOL)isPoint:(CGPoint)point inUnitEllipse:(AffineTransform)unitCTM {
+    AffineTransform inv = AffineTransformInvert(AffineTransformConcat(unitCTM, self.viewCTM));
+    float x = point.x * self.layer.contentsScale, y = point.y * self.layer.contentsScale;
+    float ux = x * inv.a + y * inv.c + inv.tx, uy = x * inv.b + y * inv.d + inv.ty;
+    float vx = ux - 0.5, vy = uy - 0.5;
+    return vx * vx + vy * vy < 0.25;
+}
 
 #pragma mark - LayerDelegate
 
