@@ -7,9 +7,10 @@
 //
 
 #import <QuartzCore/QuartzCore.h>
+#import "Shared.metal.hpp"
 
 @protocol LayerDelegate <NSObject>
-- (void)drawLayer:(CALayer *)layer;
+- (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer;
 @end
 
 

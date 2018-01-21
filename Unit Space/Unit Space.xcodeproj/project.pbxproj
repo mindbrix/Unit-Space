@@ -14,7 +14,7 @@
 		E9EEAD7F200BC63400F2BFB2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E9EEAD7E200BC63400F2BFB2 /* Assets.xcassets */; };
 		E9EEAD82200BC63400F2BFB2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E9EEAD80200BC63400F2BFB2 /* MainMenu.xib */; };
 		E9EEAD85200BC63400F2BFB2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD84200BC63400F2BFB2 /* main.m */; };
-		E9EEAD90200BC76C00F2BFB2 /* View.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD8F200BC76C00F2BFB2 /* View.m */; };
+		E9EEAD90200BC76C00F2BFB2 /* View.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD8F200BC76C00F2BFB2 /* View.mm */; };
 		E9EEAD93200BC96D00F2BFB2 /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */; };
 		E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD94200BD61600F2BFB2 /* Shaders.metal */; };
 		E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */; };
@@ -35,7 +35,7 @@
 		E9EEAD84200BC63400F2BFB2 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		E9EEAD86200BC63400F2BFB2 /* Unit_Space.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Unit_Space.entitlements; sourceTree = "<group>"; };
 		E9EEAD8E200BC76C00F2BFB2 /* View.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = View.h; sourceTree = "<group>"; };
-		E9EEAD8F200BC76C00F2BFB2 /* View.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = View.m; sourceTree = "<group>"; };
+		E9EEAD8F200BC76C00F2BFB2 /* View.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = View.mm; sourceTree = "<group>"; };
 		E9EEAD91200BC96D00F2BFB2 /* MetalLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MetalLayer.h; sourceTree = "<group>"; };
 		E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalLayer.mm; sourceTree = "<group>"; };
 		E9EEAD94200BD61600F2BFB2 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
@@ -87,7 +87,7 @@
 				E9EEAD84200BC63400F2BFB2 /* main.m */,
 				E9EEAD86200BC63400F2BFB2 /* Unit_Space.entitlements */,
 				E9EEAD8E200BC76C00F2BFB2 /* View.h */,
-				E9EEAD8F200BC76C00F2BFB2 /* View.m */,
+				E9EEAD8F200BC76C00F2BFB2 /* View.mm */,
 				E9EEAD91200BC96D00F2BFB2 /* MetalLayer.h */,
 				E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */,
 				E9EEAD94200BD61600F2BFB2 /* Shaders.metal */,
@@ -177,7 +177,7 @@
 			files = (
 				E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */,
 				E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */,
-				E9EEAD90200BC76C00F2BFB2 /* View.m in Sources */,
+				E9EEAD90200BC76C00F2BFB2 /* View.mm in Sources */,
 				E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */,
 				E9EEAD85200BC63400F2BFB2 /* main.m in Sources */,
 				E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */,

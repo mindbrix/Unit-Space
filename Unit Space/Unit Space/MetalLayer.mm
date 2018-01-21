@@ -8,7 +8,6 @@
 
 #import "MetalLayer.h"
 #import <Metal/Metal.h>
-#import "Shared.metal.hpp"
 
 @interface MetalLayer ()
 
@@ -83,8 +82,10 @@
 }
 
 - (void)draw {
-    if ([self.layerDelegate respondsToSelector:@selector(drawLayer:)])
-        [self.layerDelegate drawLayer:self];
+    Call *drawCalls = nullptr;
+    size_t count = 0;
+    if ([self.layerDelegate respondsToSelector:@selector(drawCallsWithCount:forLayer:)])
+        drawCalls = [self.layerDelegate drawCallsWithCount:&count forLayer:self];
     
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];

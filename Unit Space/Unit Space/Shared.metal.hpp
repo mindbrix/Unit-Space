@@ -15,7 +15,7 @@ struct Arc { float x, y, r, t0, t1; };
 
 struct RGBA { float r, g, b, a; };
 
-struct AffineTransform    { float a, b, c, d, tx, ty; };
+struct AffineTransform { float a, b, c, d, tx, ty; };
 
 struct Vector { float x, y; };
 
@@ -55,7 +55,23 @@ struct Uniforms {
 };
 
 
-AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
+enum CallType : unsigned int {
+    kCallTypeArcs = 0,
+    kCallTypeLines,
+    kCallTypeUnits
+};
+
+struct Call {
+    CallType    type;
+    Uniforms    uniforms;
+    union       call {
+        Arcs    arcs;
+        Lines   lines;
+        Units   units;
+    };
+};
+
+static AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
     return {
         t0.a * t1.a + t0.b * t1.c,              t0.a * t1.b + t0.b * t1.d,
         t0.c * t1.a + t0.d * t1.c,              t0.c * t1.b + t0.d * t1.d,
@@ -63,7 +79,7 @@ AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTran
     };
 }
 
-AffineTransform AffineTransformInvert(const AffineTransform t) {
+static AffineTransform AffineTransformInvert(const AffineTransform t) {
     float determinant = t.a * t.d - t.b * t.c;
     if (determinant == 0)
         return t;
