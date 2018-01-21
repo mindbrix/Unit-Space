@@ -136,15 +136,7 @@ using namespace std;
 #pragma mark -
 
 - (void)redraw {
-   CGAffineTransform viewCTM = self.transform.affineTransform;
-    
-    AffineTransform retina = { float(self.layer.contentsScale), 0, 0, float(self.layer.contentsScale), 0, 0 };
-    AffineTransform ctm = {
-        float(viewCTM.a), float(viewCTM.b),
-        float(viewCTM.c), float(viewCTM.d),
-        float(viewCTM.tx), float(viewCTM.ty) };
-    
-    AffineTransform CTM = AffineTransformConcat(ctm, retina);
+    AffineTransform CTM = self.viewCTM;
     _calls[0].uniforms.CTM = CTM;
     _calls[1].uniforms.CTM = CTM;
     _calls[2].uniforms.CTM = CTM;
@@ -166,4 +158,15 @@ using namespace std;
     return (MetalLayer *)self.layer;
 }
 
+- (AffineTransform)viewCTM {
+    CGAffineTransform viewCTM = self.transform.affineTransform;
+    
+    AffineTransform retina = { float(self.layer.contentsScale), 0, 0, float(self.layer.contentsScale), 0, 0 };
+    AffineTransform ctm = {
+        float(viewCTM.a), float(viewCTM.b),
+        float(viewCTM.c), float(viewCTM.d),
+        float(viewCTM.tx), float(viewCTM.ty) };
+    
+    return AffineTransformConcat(ctm, retina);
+}
 @end
