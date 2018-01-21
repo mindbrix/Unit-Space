@@ -45,7 +45,7 @@ struct Units {
 };
 
 struct Uniforms {
-    RGBA                Color;
+    RGBA                fillColor;
     RGBA                strokeColor;
     AffineTransform     CTM;
     _Size               drawableSize;

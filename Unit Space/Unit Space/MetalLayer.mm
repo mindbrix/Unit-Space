@@ -110,7 +110,7 @@
         float(self.viewTransform.tx), float(self.viewTransform.ty) };
     
     uniforms.CTM = AffineTransformConcat(ctm, retina);
-    uniforms.Color = { 0, 0, 0, 1 };
+    uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
     uniforms.flatness = 0.03125;
