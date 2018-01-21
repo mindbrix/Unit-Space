@@ -17,7 +17,7 @@ using namespace std;
 
 @property(nonatomic) MetalLayer *metalLayer;
 @property(nonatomic) VGAffineTransform *transform;
-@property(nonatomic, assign) vector<Call> calls;
+@property(nonatomic) vector<Call> calls;
 
 @end
 
@@ -116,6 +116,14 @@ using namespace std;
 }
 
 - (void)mouseMoved:(NSEvent *)event {
+    AffineTransform inv = AffineTransformInvert(AffineTransformConcat(_calls[0].units.units[0].unitCTM, self.viewCTM));
+    float x = event.locationInWindow.x * self.layer.contentsScale, y = event.locationInWindow.y * self.layer.contentsScale;
+    float ux = x * inv.a + y * inv.c + inv.tx, uy = x * inv.b + y * inv.d + inv.ty;
+    float vx = ux - 0.5, vy = uy - 0.5;
+    bool outside = vx * vx + vy * vy > 0.25;
+    _calls[0].uniforms.fillColor.r = outside ? 1 : 0;
+    [self redraw];
+    
 //    NSLog(@"(%g, %g)", event.locationInWindow.x, event.locationInWindow.y);
 }
 
@@ -140,6 +148,7 @@ using namespace std;
     _calls[0].uniforms.CTM = CTM;
     _calls[1].uniforms.CTM = CTM;
     _calls[2].uniforms.CTM = CTM;
+    
     
     [self.metalLayer setNeedsDisplay];
 }
