@@ -52,17 +52,19 @@ float rectDistance(float2 unitPoint) {
     return saturate(x0 * sx + 0.5) * saturate(y0 * sy + 0.5);
 }
 
+float2 unitRepeat(float2 unit, bool rx, bool ry) {
+    float2 repeated = abs(fmod(abs(unit), 2.0) - 1.0);
+    return { select(unit.x, repeated.x, rx), select(unit.y, repeated.y, ry) };
+}
+
 #pragma mark - Unit
 
 struct UnitVertex
 {
     float4 position [[position]];
     
-    float2 edges;
-    
-    float3 triangleEdges;
     float ellipseScale, width;
-    float2 rectUnitPoint, ellipseUnitPoint, quadraticUnitPoint;
+    float2 unitPoint0, unitPoint1, unitPoint2, unitPoint3;
     uint32_t flags;
 };
 
@@ -77,7 +79,7 @@ vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], co
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
     AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit.unitCTM, uniforms.CTM));
-    vert.ellipseUnitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    vert.unitPoint0 = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     
     float scale = select(sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b), 1.0, uniforms.width == 0.0);
     vert.width = select(uniforms.width, 1.0, uniforms.width == 0.0) * sqrt(el.a * el.a + el.b * el.b) * scale;
@@ -89,9 +91,9 @@ vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], co
 
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
 {
-//    float alpha = ellipseStrokeDistance(vert.ellipseUnitPoint, vert.width);
-    float alpha = ellipseDistance(fmod(vert.ellipseUnitPoint, 0.0)) + 0.5;
-//    float alpha = ellipseStrokeDistance(abs(fmod(abs(vert.ellipseUnitPoint), 2.0) - 1.0), 0.01);
+//    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
+    float alpha = ellipseDistance(unitRepeat(vert.unitPoint0, false, false)) + 0.5;
+//    float alpha = ellipseStrokeDistance(abs(fmod(abs(vert.unitPoint0), 2.0) - 1.0), 0.01);
     float4 color = float4(uniforms.fillColor.r, uniforms.fillColor.g, uniforms.fillColor.b, uniforms.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
