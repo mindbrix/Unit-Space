@@ -90,24 +90,14 @@
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];
     
-    if (drawable == nil) {
+    if (drawable == nil)
         return;
-    }
     
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
-    
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
-    
-    AffineTransform retina = { float(self.contentsScale), 0, 0, float(self.contentsScale), 0, 0 };
-    AffineTransform ctm = {
-        float(self.viewTransform.a), float(self.viewTransform.b),
-        float(self.viewTransform.c), float(self.viewTransform.d),
-        float(self.viewTransform.tx), float(self.viewTransform.ty) };
-    
-    AffineTransform CTM = AffineTransformConcat(ctm, retina);
     
     while (count--) {
         size_t instanceCount = 1;
@@ -131,7 +121,6 @@
         
         Uniforms uniforms = calls->uniforms;
         uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-        uniforms.CTM = CTM;
         [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
         [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
         [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
