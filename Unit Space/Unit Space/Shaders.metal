@@ -66,15 +66,17 @@ struct UnitVertex
     uint32_t flags;
 };
 
-vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], uint vid [[vertex_id]])
+vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Units &units [[buffer(1)]], uint vid [[vertex_id]])
 {
     float2 unitPoint = float2(vid & 1, vid & 2);
     float dx = unitPoint.x * uniforms.drawableSize.w, dy = unitPoint.y * uniforms.drawableSize.h;
     
+    constant Unit& unit = units.units[0];
+    
     UnitVertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(uniforms.ellipseCTM, uniforms.CTM));
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit.unitCTM, uniforms.CTM));
     vert.ellipseUnitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     
     float scale = select(sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b), 1.0, uniforms.width == 0.0);

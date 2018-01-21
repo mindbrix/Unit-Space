@@ -113,12 +113,16 @@
     uniforms.Color = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-    uniforms.ellipseCTM = { 100, 0, 0, 100, 0, 0 };
     uniforms.flatness = 0.03125;
     uniforms.width = 0.5;
     uniforms.cap = 8;
+    
+    Units units;
+    units.count = 1;
+    units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
     [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
     [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+    [commandEncoder setVertexBytes:&units length:sizeof(Units) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                indexCount:6
@@ -141,10 +145,7 @@
         
         arcs.arcs[int(i)] = { x, y, powf(std::abs(x - y), 1.01f), 0, 1 };
     }
-    
-    
-//    path.arcs[0] = { 50, 50, 50, 0, 1.0 };
-//    path.arcs[1] = { 160, 150, 50, 0, 0.5 };
+
     [commandEncoder setVertexBytes:&arcs length:sizeof(Arcs) atIndex:1];
     
     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle

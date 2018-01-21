@@ -25,6 +25,10 @@ struct Quadratic { float x0, y0, x1, y1, x2, y2; };
 
 struct Line { float x0, y0, x1, y1; };
 
+struct Unit {
+    AffineTransform     unitCTM;
+};
+
 struct Arcs {
     int         count;
     Arc         arcs[192];
@@ -35,16 +39,21 @@ struct Lines {
     Line        lines[255];
 };
 
+struct Units {
+    int         count;
+    Unit        units[16];
+};
+
 struct Uniforms {
     RGBA                Color;
     RGBA                strokeColor;
     AffineTransform     CTM;
     _Size               drawableSize;
-    AffineTransform     ellipseCTM;
     float               flatness;
     float               width;
     float               cap;
 };
+
 
 AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
     return {
