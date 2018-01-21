@@ -97,6 +97,7 @@ using namespace std;
 }
 
 - (BOOL)becomeFirstResponder {
+    self.window.acceptsMouseMovedEvents = YES;
     return YES;
 }
 
@@ -105,9 +106,17 @@ using namespace std;
     [self redraw];
 }
 
+- (void)mouseDown:(NSEvent *)event {
+//    NSLog(@"%@", event.locationInWindow);
+}
+
 - (void)mouseDragged:(NSEvent *)theEvent {
     [self.transform translateByX:theEvent.deltaX andY:-theEvent.deltaY];
     [self redraw];
+}
+
+- (void)mouseMoved:(NSEvent *)event {
+//    NSLog(@"(%g, %g)", event.locationInWindow.x, event.locationInWindow.y);
 }
 
 - (void)rotateWithEvent:(NSEvent *)event {
