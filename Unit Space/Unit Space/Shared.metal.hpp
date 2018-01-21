@@ -64,7 +64,7 @@ enum CallType : unsigned int {
 struct Call {
     CallType    type;
     Uniforms    uniforms;
-    union       call {
+    union        {
         Arcs    arcs;
         Lines   lines;
         Units   units;

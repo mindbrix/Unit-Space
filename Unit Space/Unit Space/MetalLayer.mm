@@ -82,11 +82,11 @@
 }
 
 - (void)draw {
-    Call *drawCalls = nullptr;
+    Call *calls = nullptr;
     size_t count = 0;
     if ([self.layerDelegate respondsToSelector:@selector(drawCallsWithCount:forLayer:)])
-        drawCalls = [self.layerDelegate drawCallsWithCount:&count forLayer:self];
-    
+        calls = [self.layerDelegate drawCallsWithCount:&count forLayer:self];
+
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];
     
@@ -101,16 +101,54 @@
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
-    [commandEncoder setRenderPipelineState:_unitPipelineState];
-    
-    Uniforms uniforms;
     AffineTransform retina = { float(self.contentsScale), 0, 0, float(self.contentsScale), 0, 0 };
     AffineTransform ctm = {
         float(self.viewTransform.a), float(self.viewTransform.b),
         float(self.viewTransform.c), float(self.viewTransform.d),
         float(self.viewTransform.tx), float(self.viewTransform.ty) };
     
-    uniforms.CTM = AffineTransformConcat(ctm, retina);
+    AffineTransform CTM = AffineTransformConcat(ctm, retina);
+    
+    
+    while (count--) {
+        size_t instanceCount = 1;
+        
+        switch (calls->type) {
+            case kCallTypeArcs:
+                [commandEncoder setRenderPipelineState:_arcPipelineState];
+                [commandEncoder setVertexBytes:&calls->arcs length:sizeof(Arcs) atIndex:1];
+                instanceCount = std::ceil(1.0 / calls->uniforms.flatness) * calls->arcs.count;
+                break;
+            case kCallTypeLines:
+                [commandEncoder setRenderPipelineState:_linePipelineState];
+                [commandEncoder setVertexBytes:&calls->lines length:sizeof(Lines) atIndex:1];
+                instanceCount = calls->lines.count;
+                break;
+            case kCallTypeUnits:
+                [commandEncoder setRenderPipelineState:_unitPipelineState];
+                [commandEncoder setVertexBytes:&calls->units length:sizeof(Units) atIndex:1];
+                break;
+        }
+        
+        Uniforms uniforms = calls->uniforms;
+        uniforms.CTM = CTM;
+        [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+        [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+        [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                   indexCount:6
+                                    indexType:MTLIndexTypeUInt16
+                                  indexBuffer:_indexBuffer
+                            indexBufferOffset:0
+                                instanceCount:instanceCount];
+    }
+    
+    
+    
+    
+    [commandEncoder setRenderPipelineState:_unitPipelineState];
+    
+    Uniforms uniforms;
+    uniforms.CTM = CTM;
     uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };

@@ -10,7 +10,7 @@
 #import "MetalLayer.h"
 #import "VGAffineTransform.h"
 
-@interface View ()
+@interface View () <LayerDelegate>
 
 @property(nonatomic) MetalLayer *metalLayer;
 @property(nonatomic) VGAffineTransform *transform;
@@ -27,6 +27,7 @@
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
+    self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
     [self redraw];
     
@@ -81,6 +82,13 @@
     [self.metalLayer setNeedsDisplay];
 }
 
+
+#pragma mark - LayerDelegate
+
+- (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer {
+    *count = 0;
+    return nullptr;
+}
 
 #pragma mark - Properties
 
