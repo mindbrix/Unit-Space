@@ -111,7 +111,16 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    [self.transform translateByX:event.deltaX andY:-event.deltaY];
+    BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:_calls[0].units.units[0].unitCTM];
+    AffineTransform inv = AffineTransformInvert(self.viewCTM);
+    float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
+    float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
+    
+    if (inside) {
+        _calls[0].units.units[0].unitCTM.tx += ux;
+        _calls[0].units.units[0].unitCTM.ty += uy;
+    } else
+        [self.transform translateByX:event.deltaX andY:-event.deltaY];
     [self redraw];
 }
 
@@ -181,5 +190,10 @@ using namespace std;
         float(viewCTM.tx), float(viewCTM.ty) };
     
     return AffineTransformConcat(ctm, retina);
+}
+
+- (float)viewScale {
+    AffineTransform CTM = self.viewCTM;
+    return std::sqrt(CTM.a * CTM.a + CTM.b * CTM.b);
 }
 @end
