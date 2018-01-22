@@ -192,8 +192,4 @@ using namespace std;
     return AffineTransformConcat(ctm, retina);
 }
 
-- (float)viewScale {
-    AffineTransform CTM = self.viewCTM;
-    return std::sqrt(CTM.a * CTM.a + CTM.b * CTM.b);
-}
 @end
