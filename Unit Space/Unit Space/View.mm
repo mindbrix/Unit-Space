@@ -83,13 +83,6 @@ using namespace std;
     return self;
 }
 
-- (void)drawRect:(NSRect)dirtyRect {
-    [super drawRect:dirtyRect];
-    
-    // Drawing code here.
-}
-
-
 #pragma mark - NSResponder
 
 - (BOOL)acceptsFirstResponder {
