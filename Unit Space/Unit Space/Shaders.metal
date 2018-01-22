@@ -68,33 +68,33 @@ struct UnitVertex
     uint32_t flags;
 };
 
-vertex UnitVertex unit_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Units &units [[buffer(1)]], uint vid [[vertex_id]])
+vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant Units &units [[buffer(1)]], uint vid [[vertex_id]])
 {
     float2 unitPoint = float2(vid & 1, vid & 2);
-    float dx = unitPoint.x * uniforms.drawableSize.w, dy = unitPoint.y * uniforms.drawableSize.h;
+    float dx = unitPoint.x * state.drawableSize.w, dy = unitPoint.y * state.drawableSize.h;
     
     constant Unit& unit = units.units[0];
     
     UnitVertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit.unitCTM, uniforms.CTM));
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit.unitCTM, state.CTM));
     vert.unitPoint0 = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     
-    float scale = select(sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b), 1.0, uniforms.width == 0.0);
-    vert.width = select(uniforms.width, 1.0, uniforms.width == 0.0) * sqrt(el.a * el.a + el.b * el.b) * scale;
+    float scale = select(sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b), 1.0, state.width == 0.0);
+    vert.width = select(state.width, 1.0, state.width == 0.0) * sqrt(el.a * el.a + el.b * el.b) * scale;
     
     vert.flags = 0;
     
     return vert;
 }
 
-fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
     float alpha = ellipseDistance(unitRepeat(vert.unitPoint0, false, false)) + 0.5;
 //    float alpha = ellipseStrokeDistance(abs(fmod(abs(vert.unitPoint0), 2.0) - 1.0), 0.01);
-    float4 color = float4(uniforms.fillColor.r, uniforms.fillColor.g, uniforms.fillColor.b, uniforms.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
+    float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
 }
@@ -112,93 +112,93 @@ struct StrokeVertex
     float alpha;
 };
 
-vertex StrokeVertex arc_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Arcs &arcs [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex arc_vertex_main(constant State &state [[buffer(0)]], constant Arcs &arcs [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    uint count = ceil(1.0 / uniforms.flatness);
+    uint count = ceil(1.0 / state.flatness);
     uint index = iid / count;
     constant Arc& arc = arcs.arcs[index];
     
-    float dt = (arc.t1 - arc.t0) * uniforms.flatness;
+    float dt = (arc.t1 - arc.t0) * state.flatness;
     float t0 = arc.t0 + dt * float(iid % count), t1 = t0 + dt;
     float t = select(t0, t1, vid & 2);
     
-    float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
+    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
     
     float dilation = 1.0 / scale;
-    float maxedWidth = max(uniforms.width, dilation);
+    float maxedWidth = max(state.width, dilation);
     float r0 = max(0.0, arc.r - maxedWidth - dilation);
-    float theta = PI * uniforms.flatness * (arc.t1 - arc.t0);
+    float theta = PI * state.flatness * (arc.t1 - arc.t0);
     float r1 = (arc.r + maxedWidth + dilation) / cos(theta);
     
     float r = select(r0, r1, vid & 1);
     float x = arc.x + r * cos(t * TWO_PI);
     float y = arc.y + r * sin(t * TWO_PI);
     
-    float dx = x * uniforms.CTM.a + y * uniforms.CTM.c + uniforms.CTM.tx;
-    float dy = x * uniforms.CTM.b + y * uniforms.CTM.d + uniforms.CTM.ty;
+    float dx = x * state.CTM.a + y * state.CTM.c + state.CTM.tx;
+    float dy = x * state.CTM.b + y * state.CTM.d + state.CTM.ty;
     
     AffineTransform unit = { arc.r * 2.0, 0, 0, arc.r * 2.0, arc.x - arc.r, arc.y - arc.r };
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, uniforms.CTM));
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
     
-    float2 unitPoint = { dx / uniforms.drawableSize.w, dy / uniforms.drawableSize.h };
+    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
-    vert.alpha = min(1.0, uniforms.width / dilation);
+    vert.alpha = min(1.0, state.width / dilation);
     return vert;
 }
 
-fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     float alpha = vert.alpha * saturate(ellipseStrokeDistance(vert.unitPoint, vert.unitWidth));
 //    float alpha = vert.alpha * saturate(cirleStrokeDistance(vert.unitPoint, vert.unitWidth) + 0.5);
-    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
-//    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
+    return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
+//    return mix(float4(0, 1, 0, 1), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), alpha);
 }
 
 
 #pragma mark - Line
 
-vertex StrokeVertex line_vertex_main(constant Uniforms &uniforms [[buffer(0)]], constant Lines &lines [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex line_vertex_main(constant State &state [[buffer(0)]], constant Lines &lines [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     constant Line& line = lines.lines[iid];
     
     float2 p0 = { line.x0, line.y0 }, p1 = { line.x1, line.y1 };
     float2 v = p1 - p0, nv = normalize(v);
     float2 lnv = { -nv.y, nv.x };
-    float w2 = uniforms.width * 0.5;
-    float scale = sqrt(uniforms.CTM.a * uniforms.CTM.a + uniforms.CTM.b * uniforms.CTM.b);
+    float w2 = state.width * 0.5;
+    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
     
     float dilation = 1.0 / scale;
     
     float2 up = select(p0, p1, vid & 2) + (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1)) * (w2 + dilation);
     
-    float2 nvw = nv * uniforms.width, ab = { nvw.y, -nvw.x };
+    float2 nvw = nv * state.width, ab = { nvw.y, -nvw.x };
     float2 cd = v + nvw, txty = p0 - (nvw + ab) * 0.5;
     
     AffineTransform unit = { ab.x, ab.y, cd.x, cd.y, txty.x, txty.y };
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, uniforms.CTM));
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
     
-    float dx = up.x * uniforms.CTM.a + up.y * uniforms.CTM.c + uniforms.CTM.tx;
-    float dy = up.x * uniforms.CTM.b + up.y * uniforms.CTM.d + uniforms.CTM.ty;
+    float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
+    float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
     
-    float2 unitPoint = { dx / uniforms.drawableSize.w, dy / uniforms.drawableSize.h };
+    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
 //    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
-//    vert.alpha = min(1.0, uniforms.width / dilation);
+//    vert.alpha = min(1.0, state.width / dilation);
     return vert;
 }
 
-fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant Uniforms &uniforms [[buffer(0)]])
+fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     float alpha = rectDistance(vert.unitPoint);
-//    return mix(float4(0, 1, 0, 1), float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a), alpha);
-    return float4(uniforms.strokeColor.r, uniforms.strokeColor.g, uniforms.strokeColor.b, uniforms.strokeColor.a) * alpha;
+//    return mix(float4(0, 1, 0, 1), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), alpha);
+    return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
 }
 
 

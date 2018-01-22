@@ -44,7 +44,7 @@ struct Units {
     Unit        units[16];
 };
 
-struct Uniforms {
+struct State {
     RGBA                fillColor;
     RGBA                strokeColor;
     AffineTransform     CTM;
@@ -63,7 +63,7 @@ enum CallType : unsigned int {
 
 struct Call {
     CallType    type;
-    Uniforms    uniforms;
+    State       state;
     union        {
         Arcs    arcs;
         Lines   lines;

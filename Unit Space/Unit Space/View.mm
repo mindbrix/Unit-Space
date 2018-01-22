@@ -34,7 +34,7 @@ using namespace std;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
     
-    Uniforms uniforms;
+    State uniforms;
     uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.flatness = 0.03125;
@@ -43,12 +43,12 @@ using namespace std;
     
     _calls.resize(10);
     _calls[0].type = kCallTypeUnits;
-    _calls[0].uniforms = uniforms;
+    _calls[0].state = uniforms;
     _calls[0].units.count = 1;
     _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
     
     _calls[1].type = kCallTypeArcs;
-    _calls[1].uniforms = uniforms;
+    _calls[1].state = uniforms;
     Arcs& arcs = _calls[1].arcs;
     arcs.count = 96;
     
@@ -66,7 +66,7 @@ using namespace std;
     uniforms.width = 2;
     
     _calls[2].type = kCallTypeLines;
-    _calls[2].uniforms = uniforms;
+    _calls[2].state = uniforms;
     Lines& lines = _calls[2].lines;
     lines.count = 96;
     
@@ -146,15 +146,15 @@ using namespace std;
 
 - (void)redrawWithMouseLocation:(CGPoint)location {
     BOOL inside = [self isPoint:location inUnitEllipse:_calls[0].units.units[0].unitCTM];
-    _calls[0].uniforms.fillColor.r = inside ? 1 : 0;
+    _calls[0].state.fillColor.r = inside ? 1 : 0;
     [self redraw];
 }
 
 - (void)redraw {
     AffineTransform CTM = self.viewCTM;
-    _calls[0].uniforms.CTM = CTM;
-    _calls[1].uniforms.CTM = CTM;
-    _calls[2].uniforms.CTM = CTM;
+    _calls[0].state.CTM = CTM;
+    _calls[1].state.CTM = CTM;
+    _calls[2].state.CTM = CTM;
     
     [self.metalLayer setNeedsDisplay];
 }

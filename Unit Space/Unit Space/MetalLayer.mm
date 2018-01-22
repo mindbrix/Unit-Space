@@ -106,7 +106,7 @@
             case kCallTypeArcs:
                 [commandEncoder setRenderPipelineState:_arcPipelineState];
                 [commandEncoder setVertexBytes:&calls->arcs length:sizeof(Arcs) atIndex:1];
-                instanceCount = std::ceil(1.0 / calls->uniforms.flatness) * calls->arcs.count;
+                instanceCount = std::ceil(1.0 / calls->state.flatness) * calls->arcs.count;
                 break;
             case kCallTypeLines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];
@@ -119,10 +119,10 @@
                 break;
         }
         
-        Uniforms uniforms = calls->uniforms;
-        uniforms.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-        [commandEncoder setVertexBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
-        [commandEncoder setFragmentBytes:&uniforms length:sizeof(Uniforms) atIndex:0];
+        State state = calls->state;
+        state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
+        [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
+        [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                    indexCount:6
                                     indexType:MTLIndexTypeUInt16
