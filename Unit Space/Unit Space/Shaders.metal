@@ -92,9 +92,10 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
-    float alpha0 = ellipseDistance(unitRepeat(vert.unitPoint0, true, true)) + 0.5;
-    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint0 + 0.5, true, true)) + 0.5;
-    float alpha = min(alpha0, alpha1);
+    float alpha0 = ellipseDistance(unitRepeat(vert.unitPoint0, true, true));
+    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.25 + 0.25, true, true));
+    float alpha2 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.025 + 0.0125, true, true));
+    float alpha = min(alpha2, min(alpha0, alpha1)) + 0.5;
 //    float alpha = ellipseStrokeDistance(abs(fmod(abs(vert.unitPoint0), 2.0) - 1.0), 0.01);
     float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
