@@ -45,8 +45,8 @@ using namespace std;
     _calls[0].type = kCallTypeUnits;
     _calls[0].state = uniforms;
     _calls[0].units.count = 2;
-    _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
-    _calls[0].units.units[1].unitCTM = { 100, 0, 0, 100, 50, 50 };
+    _calls[0].units.units[0].unitCTM = { 100, 0, 50, 50, 0, 0 };
+    _calls[0].units.units[1].unitCTM = { 50, 0, 0, 100, 50, 50 };
     
     _calls[1].type = kCallTypeArcs;
     _calls[1].state = uniforms;
@@ -105,14 +105,16 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:_calls[0].units.units[0].unitCTM];
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
     
+    AffineTransform& unit0 = _calls[0].units.units[0].unitCTM;
+    BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:unit0];
+    
     if (inside) {
-        _calls[0].units.units[0].unitCTM.tx += ux;
-        _calls[0].units.units[0].unitCTM.ty += uy;
+        unit0.tx += ux;
+        unit0.ty += uy;
     } else
         [self.transform translateByX:event.deltaX andY:-event.deltaY];
     [self redraw];
