@@ -44,8 +44,9 @@ using namespace std;
     _calls.resize(10);
     _calls[0].type = kCallTypeUnits;
     _calls[0].state = uniforms;
-    _calls[0].units.count = 1;
+    _calls[0].units.count = 2;
     _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
+    _calls[0].units.units[1].unitCTM = { 100, 0, 0, 100, 50, 50 };
     
     _calls[1].type = kCallTypeArcs;
     _calls[1].state = uniforms;

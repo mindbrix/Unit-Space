@@ -73,16 +73,20 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
     float2 unitPoint = float2(vid & 1, vid & 2);
     float dx = unitPoint.x * state.drawableSize.w, dy = unitPoint.y * state.drawableSize.h;
     
-    constant Unit& unit = units.units[0];
+    constant Unit& unit0 = units.units[0];
+    constant Unit& unit1 = units.units[1];
     
     UnitVertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit.unitCTM, state.CTM));
-    vert.unitPoint0 = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    AffineTransform el0 = AffineTransformInvert(AffineTransformConcat(unit0.unitCTM, state.CTM));
+    vert.unitPoint0 = { dx * el0.a + dy * el0.c + el0.tx, dx * el0.b + dy * el0.d + el0.ty };
+    
+    AffineTransform el1 = AffineTransformInvert(AffineTransformConcat(unit1.unitCTM, state.CTM));
+    vert.unitPoint1 = { dx * el1.a + dy * el1.c + el1.tx, dx * el1.b + dy * el1.d + el1.ty };
     
     float scale = select(sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b), 1.0, state.width == 0.0);
-    vert.width = select(state.width, 1.0, state.width == 0.0) * sqrt(el.a * el.a + el.b * el.b) * scale;
+    vert.width = select(state.width, 1.0, state.width == 0.0) * sqrt(el0.a * el0.a + el0.b * el0.b) * scale;
     
     vert.flags = 0;
     
@@ -93,10 +97,10 @@ fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State 
 {
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
     float alpha0 = ellipseDistance(unitRepeat(vert.unitPoint0, true, true));
-    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.25 + 0.25, true, true));
-    float alpha2 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.025 + 0.0125, true, true));
+    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint1, true, true));
+//    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.25 + 0.25, true, true));
+    float alpha2 = 1.0;// ellipseDistance(unitRepeat(vert.unitPoint0 * 0.025 + 0.0125, true, true));
     float alpha = min(alpha2, min(alpha0, alpha1)) + 0.5;
-//    float alpha = ellipseStrokeDistance(abs(fmod(abs(vert.unitPoint0), 2.0) - 1.0), 0.01);
     float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
