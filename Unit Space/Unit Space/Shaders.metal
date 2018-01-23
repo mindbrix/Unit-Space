@@ -53,7 +53,12 @@ float rectDistance(float2 unitPoint) {
 }
 
 float2 unitRepeat(float2 unit, bool rx, bool ry) {
-    float2 repeated = abs(fmod(abs(unit), 2.0) - 1.0);
+//    float2 repeated = abs(fmod(abs(unit), 2.0) - 1.0);
+    
+    float2 repeated = abs(fmod(abs(unit * (fract(unit.x) * fract(unit.y) * log2(abs(unit.x * unit.y)))), 2.0) - 1.0);
+//    float2 repeated = abs(fmod(abs(unit * sin(fract(unit.x) * fract(unit.y) * log2(abs(unit.x * unit.y)))), 2.0) - 1.0);
+//    float2 repeated = abs(fmod(abs(unit * sin(log2(abs(unit.x * unit.y)))), 2.0) - 1.0);
+//    float2 repeated = abs(fmod(abs(unit * log2(abs(unit.x * unit.y))), 2.0) - 1.0);
     return { select(unit.x, repeated.x, rx), select(unit.y, repeated.y, ry) };
 }
 
@@ -97,10 +102,10 @@ fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State 
 {
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
     float alpha0 = ellipseDistance(unitRepeat(vert.unitPoint0, true, true));
-    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint1, true, true));
+    float alpha1 = 1.0;// ellipseDistance(unitRepeat(vert.unitPoint1, true, true));
 //    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.25 + 0.25, true, true));
     float alpha2 = 1.0;// ellipseDistance(unitRepeat(vert.unitPoint0 * 0.025 + 0.0125, true, true));
-    float alpha = min(alpha2, min(alpha0, alpha1)) + 0.5;
+    float alpha = min(alpha2, max(-alpha0, -alpha1)) + 0.5;
     float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
