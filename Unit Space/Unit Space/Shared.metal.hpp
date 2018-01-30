@@ -64,7 +64,7 @@ struct State {
 
 enum CallType : unsigned int {
     kCallTypeArcs = 0,
-    kCallTypeCircle,
+    kCallTypeCircles,
     kCallTypeLines,
     kCallTypeUnits
 };

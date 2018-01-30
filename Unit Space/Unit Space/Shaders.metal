@@ -104,8 +104,8 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
-    float alpha0 = ellipseDistance(unitRepeat(vert.unitPoint0, true, true));
-    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint1, true, true));
+    float alpha0 = ellipseDistance(unitRepeat(vert.unitPoint0, false, true));
+    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint1, true, false));
 //    float alpha1 = ellipseDistance(unitRepeat(vert.unitPoint0 * 0.25 + 0.25, true, true));
     float alpha2 = 1.0;// ellipseDistance(unitRepeat(vert.unitPoint0 * 0.025 + 0.0125, true, true));
     float alpha = min(alpha2, min(alpha0, alpha1)) + 0.5;
@@ -172,6 +172,40 @@ fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State
     return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
 //    return mix(float4(0, 1, 0, 1), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), alpha);
 }
+
+
+#pragma mark - Circle
+
+vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant Circles &circles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    constant Circle& circle = circles.circles[iid];
+    
+    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
+    float dilation = 1.0 / scale;
+    float r = circle.r + dilation;
+    
+    float2 up = { circle.x + r * select(-1.0, 1.0, vid & 1), circle.y + r * select(-1.0, 1.0, vid & 2) };
+
+    AffineTransform unit = { circle.r * 2.0, 0.0, 0.0, circle.r * 2.0, circle.x - circle.r, circle.y - circle.r };
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
+    
+    float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
+    float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
+    
+    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
+    
+    StrokeVertex vert;
+    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    return vert;
+}
+
+fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    float alpha = ellipseDistance(vert.unitPoint);
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+}
+
 
 
 #pragma mark - Line

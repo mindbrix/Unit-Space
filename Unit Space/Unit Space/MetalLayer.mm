@@ -16,6 +16,7 @@
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 
 @end
@@ -60,6 +61,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"arc_fragment_main"];
     descriptor.label = @"Arc";
     self.arcPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"circle_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
+    descriptor.label = @"Circle";
+    self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"line_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
@@ -107,6 +113,11 @@
                 [commandEncoder setRenderPipelineState:_arcPipelineState];
                 [commandEncoder setVertexBytes:&calls->arcs length:sizeof(Arcs) atIndex:1];
                 instanceCount = std::ceil(1.0 / calls->state.flatness) * calls->arcs.count;
+                break;
+            case kCallTypeCircles:
+                [commandEncoder setRenderPipelineState:_circlePipelineState];
+                [commandEncoder setVertexBytes:&calls->circles length:sizeof(Circles) atIndex:1];
+                instanceCount = calls->circles.count;
                 break;
             case kCallTypeLines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];

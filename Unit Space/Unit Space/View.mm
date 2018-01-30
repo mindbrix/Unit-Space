@@ -79,6 +79,14 @@ using namespace std;
         lines.lines[int(i)] = { cx, cy, x, y };
     }
     
+    
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    _calls[3].type = kCallTypeCircles;
+    _calls[3].state = uniforms;
+    Circles& circles = _calls[3].circles;
+    circles.circles[0] = { 400, 400, 100 };
+    circles.count = 1;
+    
     [self redraw];
 
     return self;
@@ -179,7 +187,7 @@ using namespace std;
     _calls[0].state.CTM = CTM;
     _calls[1].state.CTM = CTM;
     _calls[2].state.CTM = CTM;
-    
+    _calls[3].state.CTM = CTM;
     [self.metalLayer setNeedsDisplay];
 }
 
@@ -194,7 +202,7 @@ using namespace std;
 #pragma mark - LayerDelegate
 
 - (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer {
-    *count = 3;
+    *count = 4;
     return & _calls[0];
 }
 
