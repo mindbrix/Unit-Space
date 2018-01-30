@@ -13,6 +13,8 @@
 
 struct Arc { float x, y, r, t0, t1; };
 
+struct Circle { float x, y, r; };
+
 struct RGBA { float r, g, b, a; };
 
 struct AffineTransform { float a, b, c, d, tx, ty; };
@@ -32,6 +34,11 @@ struct Unit {
 struct Arcs {
     int         count;
     Arc         arcs[192];
+};
+
+struct Circles {
+    int         count;
+    Circle      circles[340];
 };
 
 struct Lines {
@@ -57,6 +64,7 @@ struct State {
 
 enum CallType : unsigned int {
     kCallTypeArcs = 0,
+    kCallTypeCircle,
     kCallTypeLines,
     kCallTypeUnits
 };
@@ -66,6 +74,7 @@ struct Call {
     State       state;
     union {
         Arcs    arcs;
+        Circles circles;
         Lines   lines;
         Units   units;
     };
