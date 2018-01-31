@@ -41,7 +41,7 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(10);
+    _calls.resize(4);
     _calls[0].type = kCallTypeUnits;
     _calls[0].state = uniforms;
     _calls[0].units.count = 2;
@@ -184,10 +184,9 @@ using namespace std;
 
 - (void)redraw {
     AffineTransform CTM = self.viewCTM;
-    _calls[0].state.CTM = CTM;
-    _calls[1].state.CTM = CTM;
-    _calls[2].state.CTM = CTM;
-    _calls[3].state.CTM = CTM;
+    for (auto &call : _calls)
+        call.state.CTM = CTM;
+    
     [self.metalLayer setNeedsDisplay];
 }
 
@@ -202,7 +201,7 @@ using namespace std;
 #pragma mark - LayerDelegate
 
 - (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer {
-    *count = 4;
+    *count = _calls.size();
     return & _calls[0];
 }
 
