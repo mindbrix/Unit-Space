@@ -46,8 +46,7 @@ using namespace std;
     _calls[0].state = uniforms;
     _calls[0].quadratics.count = 2;
     _calls[0].quadratics.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-    _calls[0].quadratics.ctms[0] = { 100, 0, 0, 100, 50, 50 };
-    
+    _calls[0].quadratics.ctms[1] = { -100, 0, 0, -100, 100, 100 };
     
 //    _calls[0].type = kCallTypeUnits;
 //    _calls[0].state = uniforms;

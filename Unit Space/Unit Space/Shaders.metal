@@ -42,6 +42,30 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
+float quadraticWinding(float2 devicePoint, AffineTransform op) {
+    float recipScale = 1.0 / (op.a * op.d - op.b * op.c);
+    float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
+    
+    float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
+    // Shear = { 0.5, 0.0, 0.5, 1.0 }
+    float x = (ox * (a + b) + oy * (c + d)) * 0.5, y = ox * b + oy * d;
+    //    x = saturate(x);
+    
+    float fx = 2.0 * x * dfdx(x) - dfdx(y);
+    float fy = 2.0 * x * dfdy(x) - dfdy(y);
+    float sd = sign(op.c - op.a) * (y - x * x) * rsqrt(fx * fx + fy * fy) + 0.5;
+    
+    float x0 = op.tx, x2 = op.tx + op.a + op.c;
+    float px1 = devicePoint.x + 0.5;
+    float sx0 = saturate(px1 - min(x0, x2));
+    
+    float py0 = devicePoint.y - 0.5;
+    float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
+    float coverage = sy2 - sy0;
+    
+    return sx0 * sign(coverage) * min(abs(coverage), saturate(sd));
+}
+
 float rectDistance(float2 unitPoint) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
     
@@ -269,8 +293,13 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uin
 
 fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]])
 {
-    float alpha = 0.33;
-    float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
+    float winding = 0.0;
+    
+    for (int i = 0; i < quadratics.count; i++)
+        winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
+    
+    float alpha = abs(winding);
+    float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), white = float4(1.0, 1.0, 1.0, 1.0);
     
     return mix(white, color, saturate(alpha));
 }
