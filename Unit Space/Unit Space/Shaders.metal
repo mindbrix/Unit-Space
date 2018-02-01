@@ -71,6 +71,8 @@ struct UnitVertex
 {
     float4 position [[position]];
     
+    float2 devicePoint;
+    
     float ellipseScale, width;
     float2 unitPoint0, unitPoint1, unitPoint2, unitPoint3;
     uint32_t flags;
@@ -251,3 +253,24 @@ fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant Stat
 }
 
 
+#pragma mark - Quadratics
+
+vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uint vid [[vertex_id]])
+{
+    float2 unitPoint = float2(vid & 1, vid & 2);
+    
+    UnitVertex vert;
+    vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
+    vert.devicePoint = { unitPoint.x * state.drawableSize.w, unitPoint.y * state.drawableSize.h };
+    vert.flags = 0;
+    
+    return vert;
+}
+
+fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]])
+{
+    float alpha = 0.33;
+    float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), black = float4(0.0, 0.0, 0.0, 1.0), white = float4(1.0, 1.0, 1.0, 1.0);
+    
+    return mix(white, color, saturate(alpha));
+}

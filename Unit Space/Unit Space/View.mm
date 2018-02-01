@@ -42,11 +42,18 @@ using namespace std;
     uniforms.cap = 8;
     
     _calls.resize(4);
-    _calls[0].type = kCallTypeUnits;
+    _calls[0].type = kCallTypeQuadratics;
     _calls[0].state = uniforms;
-    _calls[0].units.count = 2;
-    _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
-    _calls[0].units.units[1].unitCTM = { 100, 0, 0, 100, 50, 50 };
+    _calls[0].quadratics.count = 2;
+    _calls[0].quadratics.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+    _calls[0].quadratics.ctms[0] = { 100, 0, 0, 100, 50, 50 };
+    
+    
+//    _calls[0].type = kCallTypeUnits;
+//    _calls[0].state = uniforms;
+//    _calls[0].units.count = 2;
+//    _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
+//    _calls[0].units.units[1].unitCTM = { 100, 0, 0, 100, 50, 50 };
     
     _calls[1].type = kCallTypeArcs;
     _calls[1].state = uniforms;
@@ -177,8 +184,8 @@ using namespace std;
 #pragma mark -
 
 - (void)redrawWithMouseLocation:(CGPoint)location {
-    BOOL inside = [self isPoint:location inUnitEllipse:_calls[0].units.units[0].unitCTM];
-    _calls[0].state.fillColor.r = inside ? 1 : 0;
+//    BOOL inside = [self isPoint:location inUnitEllipse:_calls[0].units.units[0].unitCTM];
+//    _calls[0].state.fillColor.r = inside ? 1 : 0;
     [self redraw];
 }
 

@@ -46,6 +46,11 @@ struct Lines {
     Line        lines[255];
 };
 
+struct Quadratics {
+    int                 count;
+    AffineTransform     ctms[170];
+};
+
 struct Units {
     int         count;
     Unit        units[16];
@@ -66,6 +71,7 @@ enum CallType : unsigned int {
     kCallTypeArcs = 0,
     kCallTypeCircles,
     kCallTypeLines,
+    kCallTypeQuadratics,
     kCallTypeUnits
 };
 
@@ -73,10 +79,11 @@ struct Call {
     CallType    type;
     State       state;
     union {
-        Arcs    arcs;
-        Circles circles;
-        Lines   lines;
-        Units   units;
+        Arcs        arcs;
+        Circles     circles;
+        Lines       lines;
+        Quadratics  quadratics;
+        Units       units;
     };
 };
 

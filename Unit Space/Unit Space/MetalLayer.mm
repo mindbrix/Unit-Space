@@ -18,6 +18,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 
 @end
 
@@ -72,6 +73,11 @@
     descriptor.label = @"Line";
     self.linePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_fragment_main"];
+    descriptor.label = @"Quadratic";
+    self.quadraticPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
                                                 length:sizeof(indices)
@@ -123,6 +129,10 @@
                 [commandEncoder setRenderPipelineState:_linePipelineState];
                 [commandEncoder setVertexBytes:&calls->lines length:sizeof(Lines) atIndex:1];
                 instanceCount = calls->lines.count;
+                break;
+            case kCallTypeQuadratics:
+                [commandEncoder setRenderPipelineState:_quadraticPipelineState];
+                [commandEncoder setFragmentBytes:&calls->quadratics length:sizeof(Quadratics) atIndex:1];
                 break;
             case kCallTypeUnits:
                 [commandEncoder setRenderPipelineState:_unitPipelineState];
