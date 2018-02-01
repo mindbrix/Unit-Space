@@ -73,10 +73,10 @@ using namespace std;
     
     for (float i = 0; i < lines.count; i++) {
         float rad = i * theta;
-        float x = cx + r * std::cos(rad);
-        float y = cy + r * std::sin(rad);
+        float x0 = cx + r * std::cos(rad), x1 = cx + 2.0 * r * std::cos(rad);
+        float y0 = cy + r * std::sin(rad), y1 = cy + 2.0 * r * std::sin(rad);
         
-        lines.lines[int(i)] = { cx, cy, x, y };
+        lines.lines[int(i)] = { x0, y0, x1, y1 };
     }
     
     
@@ -186,6 +186,18 @@ using namespace std;
     AffineTransform CTM = self.viewCTM;
     for (auto &call : _calls)
         call.state.CTM = CTM;
+    
+    Lines& lines = _calls[2].lines;
+    Circles& circles = _calls[3].circles;
+    float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
+    float radius = 4.0 / scale;
+    
+    for (int i = 0; i < lines.count; i++) {
+        Line &line = lines.lines[i];
+        circles.circles[i * 2] = { line.x0, line.y0, radius};
+        circles.circles[i * 2 + 1] = { line.x1, line.y1, radius};
+    }
+    circles.count = lines.count * 2;
     
     [self.metalLayer setNeedsDisplay];
 }
