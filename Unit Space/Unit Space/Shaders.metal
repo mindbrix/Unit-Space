@@ -66,46 +66,6 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     return sx0 * sign(coverage) * min(abs(coverage), saturate(sd));
 }
 
-float2 quadraticSolve01(float y0, float y1, float y2) {
-    float dy02 = y2 - y0, ty1 = max(1e-9, (y1 - y0) / dy02), ty1_squared = ty1 * ty1, c = fma(-2.0, ty1, 1.0);
-    float ty, discriminant, r0, r1;
-    
-    ty = saturate(-y0 / dy02);
-    discriminant = sqrt(fma(ty, c, ty1_squared)); // ty1 * ty1 - ty * (2.0 * ty1 - 1.0)
-    r0 = ty / (ty1 + discriminant);
-    
-    ty = saturate((1.0 - y0) / dy02);
-    discriminant = sqrt(fma(ty, c, ty1_squared));
-    r1 = ty / (ty1 + discriminant);
-    return float2(r0, r1);
-}
-
-float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float sy0 = saturate(y0), sy2 = saturate(y2);
-    float coverage = sy2 - sy0;
-//    float s = saturate(x0) + saturate(x2) - 1.0;
-//    if (coverage == 0.0 || abs(s) == 1.0)
-//        return select(0.0, coverage, s < 0.0);
-    
-    float2 xt0t1 = quadraticSolve01(x0, x1, x2);
-    float2 yt0t1 = quadraticSolve01(y0, y1, y2);
-    float xt0, xt1, yt0, yt1, t0, t1;
-    xt0 = min(xt0t1.x, xt0t1.y), xt1 = max(xt0t1.x, xt0t1.y);
-    yt0 = min(yt0t1.x, yt0t1.y), yt1 = max(yt0t1.x, yt0t1.y);
-    t0 = max(xt0, yt0), t1 = min(xt1, yt1);
-    
-    float dx01 = x1 - x0, dx12 = x2 - x1, ax = dx12 - dx01, bx = 2.0 * dx01;
-    float px0 = saturate(fma(fma(ax, t0, bx), t0, x0));
-    float px1 = saturate(fma(fma(ax, t1, bx), t1, x0));
-    float px0_dash = 1.0 - px0, px1_dash = 1.0 - px1;
-    
-    float dy01 = y1 - y0, dy12 = y2 - y1, ay = dy12 - dy01, by = 2.0 * dy01;
-    float py0 = saturate(fma(fma(ay, t0, by), t0, y0));
-    float py1 = saturate(fma(fma(ay, t1, by), t1, y0));
-    
-    return (px0_dash + px1_dash) * 0.5 * (py1 - py0) + (py0 - sy0) * px0_dash + (sy2 - py1) * px1_dash;
-    
-}
 
 float rectDistance(float2 unitPoint) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
@@ -332,18 +292,10 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uin
     return vert;
 }
 
+
 fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]])
 {
     float winding = 0.0;
-    
-//    for (int i = 0; i < quadratics.count; i++) {
-//        float tx = -(vert.devicePoint.x - 0.5), ty = -(vert.devicePoint.y - 0.5);
-//        float x0 = quadratics.ctms[i].tx, y0 = quadratics.ctms[i].ty;
-//        float x1 = x0 + quadratics.ctms[i].a, y1 = y0 + quadratics.ctms[i].b;
-//        float x2 = x1 + quadratics.ctms[i].c, y2 = y1 + quadratics.ctms[i].d;
-//
-//        winding += quadraticWinding(x0 + tx, y0 + ty, x1 + tx, y1 + ty, x2 + tx, y2 + ty);
-//    }
     
     for (int i = 0; i < quadratics.count; i++)
         winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
