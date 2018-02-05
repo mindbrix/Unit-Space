@@ -45,10 +45,11 @@ using namespace std;
     _calls.resize(4);
     _calls[0].type = kCallTypeQuadratics;
     _calls[0].state = uniforms;
-    _calls[0].quadratics.count = 2;
-    _calls[0].quadratics.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-    _calls[0].quadratics.ctms[1] = { -100, 0, 0, -100, 100, 100 };
     
+    Vector q[5] = {
+        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+    };
+    WriteQuadratics(_calls[0].quadratics, q, 5);
 //    _calls[0].type = kCallTypeUnits;
 //    _calls[0].state = uniforms;
 //    _calls[0].units.count = 2;
