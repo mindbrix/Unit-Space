@@ -9,6 +9,7 @@
 #import "View.h"
 #import "MetalLayer.h"
 #import "VGAffineTransform.h"
+#import "Algorithms.hpp"
 #import <vector>
 
 using namespace std;

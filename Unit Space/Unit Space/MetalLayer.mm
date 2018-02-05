@@ -6,8 +6,8 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
-#import "MetalLayer.h"
 #import <Metal/Metal.h>
+#import "MetalLayer.h"
 
 @interface MetalLayer ()
 

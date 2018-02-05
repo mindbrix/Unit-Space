@@ -23,6 +23,7 @@
 /* Begin PBXFileReference section */
 		E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
+		E90D1DC3202908ED00F9F35B /* Algorithms.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Algorithms.hpp; sourceTree = "<group>"; };
 		E9EEAD72200BC63400F2BFB2 /* Unit Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Unit Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -86,6 +87,7 @@
 				E9EEAD83200BC63400F2BFB2 /* Info.plist */,
 				E9EEAD84200BC63400F2BFB2 /* main.m */,
 				E9EEAD86200BC63400F2BFB2 /* Unit_Space.entitlements */,
+				E90D1DC3202908ED00F9F35B /* Algorithms.hpp */,
 				E9EEAD8E200BC76C00F2BFB2 /* View.h */,
 				E9EEAD8F200BC76C00F2BFB2 /* View.mm */,
 				E9EEAD91200BC96D00F2BFB2 /* MetalLayer.h */,
