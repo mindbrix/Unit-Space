@@ -58,12 +58,13 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, x2 = op.tx + op.a + op.c;
     float px1 = devicePoint.x + 0.5;
     float sx0 = saturate(px1 - min(x0, x2));
+    float sx1 = step(max(x0, x2) + 1.0, px1);
     
     float py0 = devicePoint.y - 0.5;
     float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
     float coverage = sy2 - sy0;
     
-    return sx0 * sign(coverage) * min(abs(coverage), saturate(sd));
+    return sx0 * sign(coverage) * min(abs(coverage), max(sx1, saturate(sd)));
 }
 
 
