@@ -46,10 +46,10 @@ using namespace std;
     _calls[0].type = kCallTypeQuadratics;
     _calls[0].state = uniforms;
     
-    Vector q[5] = {
+    Vector q[] = {
         { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
     };
-    WriteQuadratics(_calls[0].quadratics, q, 5);
+    WriteQuadratics(_calls[0].quadratics, q, sizeof(q) / sizeof(q[0]));
 //    _calls[0].type = kCallTypeUnits;
 //    _calls[0].state = uniforms;
 //    _calls[0].units.count = 2;
