@@ -107,7 +107,7 @@ using namespace std;
 - (void)redraw {
     AffineTransform CTM = self.viewCTM;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
-    float radius = 4.0 / scale;
+    float radius = 8.0 / scale;
     
     State uniforms;
     uniforms.CTM = CTM;
