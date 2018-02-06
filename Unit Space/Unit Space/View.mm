@@ -51,21 +51,7 @@ using namespace std;
 }
 
 - (void)magnifyWithEvent:(NSEvent *)event {
-    AffineTransform& unit0 = _calls[0].units.units[0].unitCTM;
-    BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:unit0];
-    if (inside) {
-        CGAffineTransform _unit0 = { unit0.a, unit0.b, unit0.c, unit0.d, unit0.tx, unit0.ty };
-        CGRect _bounds = CGRectApplyAffineTransform(CGRectMake(0, 0, 1, 1), _unit0);
-        
-        VGAffineTransform *transform = [[VGAffineTransform alloc] initWithTransform:_unit0];
-        [transform scaleBy:1.0f + event.magnification bounds:_bounds];
-        _unit0 = transform.affineTransform;
-        unit0 = {
-            float(_unit0.a), float(_unit0.b),
-            float(_unit0.c), float(_unit0.d),
-            float(_unit0.tx), float(_unit0.ty) };
-    } else
-        [self.transform scaleBy:1.0f + event.magnification bounds:self.bounds];
+    [self.transform scaleBy:1.0f + event.magnification bounds:self.bounds];
     [self redrawWithMouseLocation:event.locationInWindow];
 }
 
@@ -97,22 +83,6 @@ using namespace std;
 }
 
 - (void)rotateWithEvent:(NSEvent *)event {
-    /*
-    AffineTransform& unit0 = _calls[0].units.units[0].unitCTM;
-    BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:unit0];
-    if (inside) {
-        CGAffineTransform _unit0 = { unit0.a, unit0.b, unit0.c, unit0.d, unit0.tx, unit0.ty };
-        CGRect _bounds = CGRectApplyAffineTransform(CGRectMake(0, 0, 1, 1), _unit0);
-        
-        VGAffineTransform *transform = [[VGAffineTransform alloc] initWithTransform:_unit0];
-        [transform rotateBy:event.rotation / 10.f bounds:_bounds];
-        _unit0 = transform.affineTransform;
-        unit0 = {
-            float(_unit0.a), float(_unit0.b),
-            float(_unit0.c), float(_unit0.d),
-            float(_unit0.tx), float(_unit0.ty) };
-    } else
-     */
     [self.transform rotateBy:event.rotation / 10.f bounds:self.bounds];
     [self redrawWithMouseLocation:event.locationInWindow];
 }
