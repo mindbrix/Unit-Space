@@ -42,20 +42,33 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(4);
+    _calls.resize(2);
     _calls[0].type = kCallTypeQuadratics;
     _calls[0].state = uniforms;
     
     Vector q[] = {
         { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
     };
-    WriteQuadratics(_calls[0].quadratics, q, sizeof(q) / sizeof(q[0]));
+    int count = sizeof(q) / sizeof(q[0]);
+    WriteQuadratics(_calls[0].quadratics, q, count);
+    
+    uniforms.fillColor = { 1, 0, 0, 1 };
+    
+    _calls[1].type = kCallTypeCircles;
+    _calls[1].state = uniforms;
+    Circles& circles = _calls[1].circles;
+    for (int i = 0; i < count; i++)
+        circles.circles[i] = { q[i].x, q[i].y, 8 };
+    circles.count = count;
+    
+    
 //    _calls[0].type = kCallTypeUnits;
 //    _calls[0].state = uniforms;
 //    _calls[0].units.count = 2;
 //    _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
 //    _calls[0].units.units[1].unitCTM = { 100, 0, 0, 100, 50, 50 };
     
+    /*
     _calls[1].type = kCallTypeArcs;
     _calls[1].state = uniforms;
     Arcs& arcs = _calls[1].arcs;
@@ -94,6 +107,7 @@ using namespace std;
     Circles& circles = _calls[3].circles;
     circles.circles[0] = { 400, 400, 100 };
     circles.count = 1;
+    */
     
     [self redraw];
 
@@ -135,6 +149,7 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
+    /*
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
@@ -146,7 +161,9 @@ using namespace std;
         unit0.tx += ux;
         unit0.ty += uy;
     } else
-        [self.transform translateByX:event.deltaX andY:-event.deltaY];
+     */
+    
+    [self.transform translateByX:event.deltaX andY:-event.deltaY];
     [self redraw];
 }
 
@@ -155,6 +172,7 @@ using namespace std;
 }
 
 - (void)rotateWithEvent:(NSEvent *)event {
+    /*
     AffineTransform& unit0 = _calls[0].units.units[0].unitCTM;
     BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:unit0];
     if (inside) {
@@ -169,7 +187,8 @@ using namespace std;
             float(_unit0.c), float(_unit0.d),
             float(_unit0.tx), float(_unit0.ty) };
     } else
-        [self.transform rotateBy:event.rotation / 10.f bounds:self.bounds];
+     */
+    [self.transform rotateBy:event.rotation / 10.f bounds:self.bounds];
     [self redrawWithMouseLocation:event.locationInWindow];
 }
 
@@ -195,6 +214,7 @@ using namespace std;
     for (auto &call : _calls)
         call.state.CTM = CTM;
     
+    /*
     Lines& lines = _calls[2].lines;
     Circles& circles = _calls[3].circles;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
@@ -206,7 +226,7 @@ using namespace std;
         circles.circles[i * 2 + 1] = { line.x1, line.y1, radius};
     }
     circles.count = lines.count * 2;
-    
+    */
     [self.metalLayer setNeedsDisplay];
 }
 
