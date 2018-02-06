@@ -34,81 +34,6 @@ using namespace std;
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
-    
-    State uniforms;
-    uniforms.fillColor = { 0, 0, 0, 1 };
-    uniforms.strokeColor = { 1, 0, 0, 1 };
-    uniforms.flatness = 0.03125;
-    uniforms.width = 0.5;
-    uniforms.cap = 8;
-    
-    _calls.resize(2);
-    _calls[0].type = kCallTypeQuadratics;
-    _calls[0].state = uniforms;
-    
-    Vector q[] = {
-        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-    };
-    int count = sizeof(q) / sizeof(q[0]);
-    WriteQuadratics(_calls[0].quadratics, q, count);
-    
-    uniforms.fillColor = { 1, 0, 0, 1 };
-    
-    _calls[1].type = kCallTypeCircles;
-    _calls[1].state = uniforms;
-    Circles& circles = _calls[1].circles;
-    for (int i = 0; i < count; i++)
-        circles.circles[i] = { q[i].x, q[i].y, 8 };
-    circles.count = count;
-    
-    
-//    _calls[0].type = kCallTypeUnits;
-//    _calls[0].state = uniforms;
-//    _calls[0].units.count = 2;
-//    _calls[0].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
-//    _calls[0].units.units[1].unitCTM = { 100, 0, 0, 100, 50, 50 };
-    
-    /*
-    _calls[1].type = kCallTypeArcs;
-    _calls[1].state = uniforms;
-    Arcs& arcs = _calls[1].arcs;
-    arcs.count = 96;
-    
-    float cx = 200, cy = 200, r = 100, theta = TWO_PI / arcs.count;
-    
-    for (float i = 0; i < arcs.count; i++) {
-        float rad = i * theta;
-        float x = cx + r * std::cos(rad);
-        float y = cy + r * std::sin(rad);
-        
-        arcs.arcs[int(i)] = { x, y, powf(std::abs(x - y), 1.01f), 0, 1 };
-    }
-    
-    uniforms.strokeColor = { 0, 0, 1, 1 };
-    uniforms.width = 2;
-    
-    _calls[2].type = kCallTypeLines;
-    _calls[2].state = uniforms;
-    Lines& lines = _calls[2].lines;
-    lines.count = 96;
-    
-    for (float i = 0; i < lines.count; i++) {
-        float rad = i * theta;
-        float x0 = cx + r * std::cos(rad), x1 = cx + 2.0 * r * std::cos(rad);
-        float y0 = cy + r * std::sin(rad), y1 = cy + 2.0 * r * std::sin(rad);
-        
-        lines.lines[int(i)] = { x0, y0, x1, y1 };
-    }
-    
-    
-    uniforms.fillColor = { 0, 0, 0, 1 };
-    _calls[3].type = kCallTypeCircles;
-    _calls[3].state = uniforms;
-    Circles& circles = _calls[3].circles;
-    circles.circles[0] = { 400, 400, 100 };
-    circles.count = 1;
-    */
-    
     [self redraw];
 
     return self;
@@ -211,22 +136,36 @@ using namespace std;
 
 - (void)redraw {
     AffineTransform CTM = self.viewCTM;
-    for (auto &call : _calls)
-        call.state.CTM = CTM;
-    
-    /*
-    Lines& lines = _calls[2].lines;
-    Circles& circles = _calls[3].circles;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float radius = 4.0 / scale;
     
-    for (int i = 0; i < lines.count; i++) {
-        Line &line = lines.lines[i];
-        circles.circles[i * 2] = { line.x0, line.y0, radius};
-        circles.circles[i * 2 + 1] = { line.x1, line.y1, radius};
-    }
-    circles.count = lines.count * 2;
-    */
+    State uniforms;
+    uniforms.CTM = CTM;
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    uniforms.strokeColor = { 1, 0, 0, 1 };
+    uniforms.flatness = 0.03125;
+    uniforms.width = 0.5;
+    uniforms.cap = 8;
+    
+    _calls.resize(2);
+    _calls[0].type = kCallTypeQuadratics;
+    _calls[0].state = uniforms;
+    
+    Vector q[] = {
+        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+    };
+    int count = sizeof(q) / sizeof(q[0]);
+    WriteQuadratics(_calls[0].quadratics, CTM, q, count);
+    
+    uniforms.fillColor = { 1, 0, 0, 1 };
+    
+    _calls[1].type = kCallTypeCircles;
+    _calls[1].state = uniforms;
+    Circles& circles = _calls[1].circles;
+    for (int i = 0; i < count; i++)
+        circles.circles[i] = { q[i].x, q[i].y, radius };
+    circles.count = count;
+
     [self.metalLayer setNeedsDisplay];
 }
 
