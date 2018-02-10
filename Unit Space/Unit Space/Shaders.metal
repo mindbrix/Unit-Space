@@ -53,7 +53,7 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     
     float fx = 2.0 * x * dfdx(x) - dfdx(y);
     float fy = 2.0 * x * dfdy(x) - dfdy(y);
-    float sd = sign(op.c - op.a) * (y - x * x) * rsqrt(fx * fx + fy * fy) + 0.5;
+    float sd = sign((op.b + op.d) * recipScale) * (x * x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
     
     float x0 = op.tx, x2 = op.tx + op.a + op.c;
     float px1 = devicePoint.x + 0.5;
