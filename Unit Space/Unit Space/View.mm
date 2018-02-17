@@ -109,6 +109,11 @@ using namespace std;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float radius = 8.0 / scale;
     
+    Vector q[] = {
+        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+    };
+    int count = sizeof(q) / sizeof(q[0]);
+    
     State uniforms;
     uniforms.CTM = CTM;
     uniforms.strokeColor = { 1, 0, 0, 1 };
@@ -116,27 +121,21 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(3);
+    _calls.resize(2);
     int idx = 0;
     
     uniforms.fillColor = { 0, 0, 1, 1 };
     _calls[idx].type = kCallTypeUnits;
     _calls[idx].state = uniforms;
-    _calls[idx].units.count = 2;
-    _calls[idx].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
-    _calls[idx].units.units[1].unitCTM = { 100, 0, 0, 100, 400, 0 };
+    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
     idx++;
     
-    uniforms.fillColor = { 0, 0, 0, 1 };
-    _calls[idx].type = kCallTypeQuadratics;
-    _calls[idx].state = uniforms;
-
-    Vector q[] = {
-        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-    };
-    int count = sizeof(q) / sizeof(q[0]);
-    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
-    idx++;
+//    uniforms.fillColor = { 0, 0, 0, 1 };
+//    _calls[idx].type = kCallTypeQuadratics;
+//    _calls[idx].state = uniforms;
+//
+//    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+//    idx++;
 
 
     uniforms.fillColor = { 1, 0, 0, 1 };

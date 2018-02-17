@@ -145,6 +145,7 @@ struct UnitVertex
     
     float ellipseScale, width;
     float2 unitPoint0, unitPoint1, unitPoint2, unitPoint3;
+    int count;
     uint32_t flags;
 };
 
@@ -158,11 +159,16 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
     AffineTransform q;
-    q = AffineTransformInvert(units.units[0].unitCTM);
+    q = AffineTransformInvert(units.ctms[0]);
     vert.unitPoint0 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
-    q = AffineTransformInvert(units.units[1].unitCTM);
-    vert.unitPoint0 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
-    
+    q = AffineTransformInvert(units.ctms[1]);
+    vert.unitPoint1 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
+    q = AffineTransformInvert(units.ctms[2]);
+    vert.unitPoint2 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
+    q = AffineTransformInvert(units.ctms[3]);
+    vert.unitPoint3 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
+    vert.count = units.count;
+    /*
     constant Unit& unit0 = units.units[0];
     AffineTransform el0 = AffineTransformInvert(AffineTransformConcat(unit0.unitCTM, state.CTM));
     vert.unitPoint0 = { dx * el0.a + dy * el0.c + el0.tx, dx * el0.b + dy * el0.d + el0.ty };
@@ -173,7 +179,7 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
     
     float scale = select(sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b), 1.0, state.width == 0.0);
     vert.width = select(state.width, 1.0, state.width == 0.0) * sqrt(el0.a * el0.a + el0.b * el0.b) * scale;
-    
+    */
     vert.flags = 0;
     
     return vert;
@@ -184,7 +190,15 @@ fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State 
     float winding = 0.0;
     
     winding += unitQuadraticWinding(vert.unitPoint0);
-    winding += unitQuadraticWinding(vert.unitPoint1);
+    
+//    if (vert.count > 1)
+        winding += unitQuadraticWinding(vert.unitPoint1);
+    
+//    if (vert.count > 2)
+        winding += unitQuadraticWinding(vert.unitPoint2);
+    
+//    if (vert.count > 3)
+        winding += unitQuadraticWinding(vert.unitPoint3);
     
     float alpha = abs(winding);
     

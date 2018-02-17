@@ -52,8 +52,8 @@ struct Quadratics {
 };
 
 struct Units {
-    int         count;
-    Unit        units[16];
+    int                 count;
+    AffineTransform     ctms[170];
 };
 
 struct State {
