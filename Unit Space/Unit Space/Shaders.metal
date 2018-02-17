@@ -80,6 +80,13 @@ float rectDistance(float2 unitPoint) {
     return saturate(x0 * sx + 0.5) * saturate(y0 * sy + 0.5);
 }
 
+float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2) {
+    float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
+    float f = 4.0 * b * d - a * a;
+    float dfx = dfdx(f), dfy = dfdy(f);
+    return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
+}
+
 float unitQuadraticDistance(float2 unitPoint) {
     float ux = unitPoint.x, uy = unitPoint.y;
     float a = dfdx(ux), b = dfdy(ux);
@@ -87,14 +94,14 @@ float unitQuadraticDistance(float2 unitPoint) {
     AffineTransform t = { a, b, c, d, 0, 0 };
     AffineTransform it = AffineTransformInvert(t);
     
-    float x0 = -ux, y0 = -uy;
-    float x1 = 1.0 -ux, y1 = 1.0 - uy;
+    float x0 = -ux, x1 = 1.0 - ux, x2 = x1;
+    float y0 = -uy, y1 = y0, y2 = 1.0 - uy;
     
     float dx0 = x0 * it.a + y0 * it.c, dy0 = x0 * it.b + y0 * it.d;
     float dx1 = x1 * it.a + y1 * it.c, dy1 = x1 * it.b + y1 * it.d;
-    float2 vn = normalize(float2(dx1 - dx0, dy1 - dy0));
-    float d0 = dot(float2(dx0, dy0), float2(vn.y, -vn.x));
-    return saturate(d0 + 0.5);
+    float dx2 = x2 * it.a + y2 * it.c, dy2 = x2 * it.b + y2 * it.d;
+    
+    return quadraticDistance(dx0, dy0, dx1, dy1, dx2, dy2);
 }
 
 float2 unitRepeat(float2 unit, bool rx, bool ry) {
