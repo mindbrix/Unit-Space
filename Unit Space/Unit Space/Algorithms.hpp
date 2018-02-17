@@ -34,9 +34,8 @@ AffineTransform *writeQuadraticCTMs(AffineTransform *ctm, float x0, float y0, fl
     return ctm;
 }
 
-void WriteQuadratics(Quadratics& quadratics, AffineTransform &m, Vector *begin, int count) {
-    AffineTransform *base = & quadratics.ctms[0], *ctm = base;
-    
+int WriteQuadratics(AffineTransform *base, AffineTransform &m, Vector *begin, int count) {
+    AffineTransform *ctm = base;
     float x0, y0, x1, y1, x2, y2;
     float *q = (float *)begin, *end = (float *)(begin + count);
     
@@ -49,7 +48,7 @@ void WriteQuadratics(Quadratics& quadratics, AffineTransform &m, Vector *begin, 
         
         ctm = writeQuadraticCTMs(ctm, _x0, _y0, _x1, _y1, _x2, _y2);
     }
-    quadratics.count = int(ctm - base);
+    return int(ctm - base);
 }
 
 

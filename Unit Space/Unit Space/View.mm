@@ -135,7 +135,7 @@ using namespace std;
         { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
     };
     int count = sizeof(q) / sizeof(q[0]);
-    WriteQuadratics(_calls[idx].quadratics, CTM, q, count);
+    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
     idx++;
 
 
