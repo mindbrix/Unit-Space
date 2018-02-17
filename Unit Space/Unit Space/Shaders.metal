@@ -104,6 +104,24 @@ float unitQuadraticDistance(float2 unitPoint) {
     return quadraticDistance(dx0, dy0, dx1, dy1, dx2, dy2);
 }
 
+float unitQuadraticWinding(float2 unitPoint) {
+    float ux = unitPoint.x, uy = unitPoint.y;
+    float a = dfdx(ux), b = dfdy(ux);
+    float c = dfdx(uy), d = dfdy(uy);
+    AffineTransform t = { a, b, c, d, 0, 0 };
+    AffineTransform it = AffineTransformInvert(t);
+    
+    float x0 = -ux, x1 = 1.0 - ux, x2 = x1;
+    float y0 = -uy, y1 = y0, y2 = 1.0 - uy;
+    
+    float dx0 = x0 * it.a + y0 * it.c, dy0 = x0 * it.b + y0 * it.d;
+    float dx1 = x1 * it.a + y1 * it.c, dy1 = x1 * it.b + y1 * it.d;
+    float dx2 = x2 * it.a + y2 * it.c, dy2 = x2 * it.b + y2 * it.d;
+    
+    AffineTransform op { dx1 - dx0, dy1 - dy0, dx2 - dx1, dy2 - dy1, dx0, dy0 };
+    return quadraticWinding(float2(0, 0), op);
+}
+
 float2 unitRepeat(float2 unit, bool rx, bool ry) {
     float2 repeated = abs(fmod(abs(unit), 2.0) - 1.0);
     
@@ -135,15 +153,21 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
     float2 unitPoint = float2(vid & 1, vid & 2);
     float dx = unitPoint.x * state.drawableSize.w, dy = unitPoint.y * state.drawableSize.h;
     
-    constant Unit& unit0 = units.units[0];
-    constant Unit& unit1 = units.units[1];
     
     UnitVertex vert;
     vert.position = float4(unitPoint * 2.0 - 1.0, 0.0, 1.0);
     
+    AffineTransform q;
+    q = AffineTransformInvert(units.units[0].unitCTM);
+    vert.unitPoint0 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
+    q = AffineTransformInvert(units.units[1].unitCTM);
+    vert.unitPoint0 = { dx * q.a + dy * q.c + q.tx, dx * q.b + dy * q.d + q.ty };
+    
+    constant Unit& unit0 = units.units[0];
     AffineTransform el0 = AffineTransformInvert(AffineTransformConcat(unit0.unitCTM, state.CTM));
     vert.unitPoint0 = { dx * el0.a + dy * el0.c + el0.tx, dx * el0.b + dy * el0.d + el0.ty };
     
+    constant Unit& unit1 = units.units[1];
     AffineTransform el1 = AffineTransformInvert(AffineTransformConcat(unit1.unitCTM, state.CTM));
     vert.unitPoint1 = { dx * el1.a + dy * el1.c + el1.tx, dx * el1.b + dy * el1.d + el1.ty };
     
@@ -157,9 +181,12 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = 0.0;
-    float alpha0 = unitQuadraticDistance(vert.unitPoint0) + 0.5;
-    alpha = max(alpha, alpha0);
+    float winding = 0.0;
+    
+    winding += unitQuadraticWinding(vert.unitPoint0);
+    winding += unitQuadraticWinding(vert.unitPoint1);
+    
+    float alpha = abs(winding);
     
 //    alpha = saturate(alpha + 0.5);
     /*
