@@ -111,31 +111,43 @@ using namespace std;
     
     State uniforms;
     uniforms.CTM = CTM;
-    uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.flatness = 0.03125;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(2);
-    _calls[0].type = kCallTypeQuadratics;
-    _calls[0].state = uniforms;
+    _calls.resize(3);
+    int idx = 0;
     
+    uniforms.fillColor = { 0, 0, 1, 1 };
+    _calls[idx].type = kCallTypeUnits;
+    _calls[idx].state = uniforms;
+    _calls[idx].units.count = 2;
+    _calls[idx].units.units[0].unitCTM = { 100, 0, 0, 100, 0, 0 };
+    _calls[idx].units.units[1].unitCTM = { 100, 0, 0, 100, 400, 0 };
+    idx++;
+    
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    _calls[idx].type = kCallTypeQuadratics;
+    _calls[idx].state = uniforms;
+
     Vector q[] = {
         { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
     };
     int count = sizeof(q) / sizeof(q[0]);
-    WriteQuadratics(_calls[0].quadratics, CTM, q, count);
-    
+    WriteQuadratics(_calls[idx].quadratics, CTM, q, count);
+    idx++;
+
+
     uniforms.fillColor = { 1, 0, 0, 1 };
-    
-    _calls[1].type = kCallTypeCircles;
-    _calls[1].state = uniforms;
-    Circles& circles = _calls[1].circles;
+    _calls[idx].type = kCallTypeCircles;
+    _calls[idx].state = uniforms;
+    Circles& circles = _calls[idx].circles;
     for (int i = 0; i < count; i++)
         circles.circles[i] = { q[i].x, q[i].y, radius };
     circles.count = count;
 
+    
     [self.metalLayer setNeedsDisplay];
 }
 
