@@ -87,32 +87,32 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
     return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
 }
 
-float unitQuadraticDistance(float2 unitPoint) {
-    float ux = unitPoint.x, uy = unitPoint.y;
-    float a = dfdx(ux), b = dfdy(ux);
-    float c = dfdx(uy), d = dfdy(uy);
-    AffineTransform t = { a, b, c, d, 0, 0 };
-    AffineTransform it = AffineTransformInvert(t);
+float unitDistance(float2 unitPoint) {
+    float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
     
-    float x0 = -ux, x1 = 1.0 - ux, x2 = x1;
-    float y0 = -uy, y1 = y0, y2 = 1.0 - uy;
-    
-    float dx0 = x0 * it.a + y0 * it.c, dy0 = x0 * it.b + y0 * it.d;
-    float dx1 = x1 * it.a + y1 * it.c, dy1 = x1 * it.b + y1 * it.d;
-    float dx2 = x2 * it.a + y2 * it.c, dy2 = x2 * it.b + y2 * it.d;
-    
-    return quadraticDistance(dx0, dy0, dx1, dy1, dx2, dy2);
+    float fx = 2.0 * x * dfdx(x) - dfdx(y);
+    float fy = 2.0 * x * dfdy(x) - dfdy(y);
+    return (y - x * x) * rsqrt(fx * fx + fy * fy);
 }
 
+
 float unitQuadraticWinding(float2 unitPoint) {
-    float ux = unitPoint.x, uy = unitPoint.y;
-    float a = dfdx(ux), b = dfdy(ux);
-    float c = dfdx(uy), d = dfdy(uy);
-    AffineTransform t = { a, b, c, d, 0, 0 };
-    AffineTransform it = AffineTransformInvert(t);
+    return unitDistance(unitPoint);
     
+    float ux = unitPoint.x, uy = unitPoint.y;
+
     float x0 = -ux, x1 = 1.0 - ux, x2 = x1;
     float y0 = -uy, y1 = y0, y2 = 1.0 - uy;
+    return quadraticDistance(x0, y0, x1, y1, x2, y2);
+    
+    
+    float a = dfdx(ux), b = dfdy(ux);
+    float c = dfdx(uy), d = dfdy(uy);
+    
+    float determinant = a * d - b * c;
+    float recip = 1.0 / determinant;
+    AffineTransform it = { d * recip, -b * recip, -c * recip, a * recip, 0, 0 };
+    
     
     float dx0 = x0 * it.a + y0 * it.c, dy0 = x0 * it.b + y0 * it.d;
     float dx1 = x1 * it.a + y1 * it.c, dy1 = x1 * it.b + y1 * it.d;
@@ -187,21 +187,18 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
+    float alpha = saturate(unitQuadraticWinding(vert.unitPoint0) + 0.5);
+    
+    /*
     float winding = 0.0;
     
     winding += unitQuadraticWinding(vert.unitPoint0);
-    
-//    if (vert.count > 1)
-        winding += unitQuadraticWinding(vert.unitPoint1);
-    
-//    if (vert.count > 2)
-        winding += unitQuadraticWinding(vert.unitPoint2);
-    
-//    if (vert.count > 3)
-        winding += unitQuadraticWinding(vert.unitPoint3);
+    winding += unitQuadraticWinding(vert.unitPoint1);
+    winding += unitQuadraticWinding(vert.unitPoint2);
+    winding += unitQuadraticWinding(vert.unitPoint3);
     
     float alpha = abs(winding);
-    
+    */
 //    alpha = saturate(alpha + 0.5);
     /*
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
@@ -377,6 +374,6 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
     
     float alpha = abs(winding);
     float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), white = float4(1.0, 1.0, 1.0, 1.0);
-    return color * alpha;
+//    return color * alpha;
     return mix(white, color, saturate(alpha));
 }

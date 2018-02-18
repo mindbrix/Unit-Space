@@ -121,22 +121,21 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(2);
+    _calls.resize(3);
     int idx = 0;
     
-    uniforms.fillColor = { 0, 0, 1, 1 };
-    _calls[idx].type = kCallTypeUnits;
-    _calls[idx].state = uniforms;
-    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
-    idx++;
-    
-//    uniforms.fillColor = { 0, 0, 0, 1 };
-//    _calls[idx].type = kCallTypeQuadratics;
+//    uniforms.fillColor = { 0, 0, 1, 1 };
+//    _calls[idx].type = kCallTypeUnits;
 //    _calls[idx].state = uniforms;
-//
-//    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+//    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
 //    idx++;
+    
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    _calls[idx].type = kCallTypeQuadratics;
+    _calls[idx].state = uniforms;
 
+    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+    idx++;
 
     uniforms.fillColor = { 1, 0, 0, 1 };
     _calls[idx].type = kCallTypeCircles;
@@ -145,7 +144,7 @@ using namespace std;
     for (int i = 0; i < count; i++)
         circles.circles[i] = { q[i].x, q[i].y, radius };
     circles.count = count;
-
+    _calls.resize(idx + 1);
     
     [self.metalLayer setNeedsDisplay];
 }
