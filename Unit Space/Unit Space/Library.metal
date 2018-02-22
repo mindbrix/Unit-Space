@@ -49,35 +49,27 @@ float estimateArea(float dist) {
     return 1.14191 * dist - 0.83570 * dist * dist * dist;
 }
 
-float barycentricWinding(float3 uv) {
+float barycentricWinding(float3 uv, float3 xDist) {
     // Unpack.
     float2 dUVDX = dfdx(uv.xy), dUVDY = dfdy(uv.xy);
     
-    // Calculate the reciprocal of the Jacobian determinant. This will be useful for determining
-    // distance from endpoints.
-    //
-    // http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
-    float recipJ = 1.0 / det2(float2x2(dUVDX, dUVDY));
-    
-    // Calculate X distances between endpoints.
-    float v02DX = dUVDY.y - dUVDY.x, v10DX = -dUVDY.y, v21DX = 2.0 * dUVDY.x - dUVDY.y;
-    float v02X = v02DX * recipJ, v10X = v10DX * recipJ;
+    // Calculate X distances between endpoints (x02, x10, and x21 respectively).
+    float3 vDist = xDist - xDist.zxy;
     
     // Compute winding number and convexity.
     bool inCurve = insideCurve(uv);
-//    return inCurve;
-    float openWinding = fastSign(-v02X);
-    float convex = 1.0;// uv.z != 0.0 ? uv.z : -fastSign(dUVDY.y) * openWinding;
+    float openWinding = fastSign(-vDist.x);
+    float convex = uv.z != 0.0 ? uv.z : fastSign(vDist.x * dUVDY.y);
     
     // Compute open rect area.
-    float2 areas = clamp(float2(det2(float2x2(uv.xy, dUVDY))) * recipJ - float2(0.0, v02X), -0.5, 0.5);
+    float2 areas = clamp(xDist.xz, -0.5, 0.5);
     float openRectArea = openWinding * (areas.y - areas.x);
     
     // Compute closed rect area and winding, if necessary.
     float closedRectArea = 0.0, closedWinding = 0.0;
-    if (inCurve && v10DX * v21DX < 0.0) {
-        closedRectArea = 0.5 - fastSign(v10X) * (v10X * openWinding < 0.0 ? areas.x : areas.y);
-        closedWinding = -fastSign((dUVDX.y - dUVDX.x) * dUVDY.y);
+    if (inCurve && vDist.y * vDist.z < 0.0) {
+        closedRectArea = 0.5 - fastSign(vDist.y) * (vDist.x * vDist.y < 0.0 ? areas.y : areas.x);
+        closedWinding = -fastSign(vDist.y * dUVDY.y);
     }
     
     // Calculate approximate area of the curve covering this pixel square.
@@ -94,7 +86,7 @@ float barycentricWinding(float3 uv) {
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
     // Compute edge vectors.
     float2 v02 = { op.a + op.c, op.b + op.d };
-    float2 v01 = { op.a, op.b }, v21 = { -op.c, -op.d };
+    float2 v01 = { op.a, op.b };
     
     // Compute area of convex hull (w). Change from curve to line if appropriate.
     float w = det2(float2x2(v01, v02));
@@ -107,7 +99,9 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     uv.x = uv.y + 0.5 * det2(float2x2(v03, v02));
     uv.xy /= det2(float2x2(v01, v02));
     
-    return barycentricWinding(uv);
+    float3 xDist = devicePoint.x - float3(op.tx, op.tx + op.a, op.tx + op.a + op.c);
+    
+    return barycentricWinding(uv, xDist);
 }
 
 float ellipseDistance(float2 unitPoint) {
@@ -150,13 +144,13 @@ float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     float x = (ox * (a + b) + oy * (c + d)) * 0.5, y = ox * b + oy * d;
     //    x = saturate(x);
     
-    float fx = dfdx(x) - dfdx(y);
-    float fy = dfdy(x) - dfdy(y);
-    float sd = sign((op.b + op.d) * recipScale) * (x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
+//    float fx = dfdx(x) - dfdx(y);
+//    float fy = dfdy(x) - dfdy(y);
+//    float sd = sign((op.b + op.d) * recipScale) * (x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
     
-    //    float fx = 2.0 * x * dfdx(x) - dfdx(y);
-    //    float fy = 2.0 * x * dfdy(x) - dfdy(y);
-    //    float sd = sign((op.b + op.d) * recipScale) * (x * x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
+    float fx = 2.0 * x * dfdx(x) - dfdx(y);
+    float fy = 2.0 * x * dfdy(x) - dfdy(y);
+    float sd = sign((op.b + op.d) * recipScale) * (x * x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
     
     float x0 = op.tx, x2 = op.tx + op.a + op.c;
     float sx0 = saturate((devicePoint.x + 0.0) - min(x0, x2));
