@@ -88,6 +88,24 @@ float barycentricWinding(float3 uv) {
     return alpha.x + alpha.y;
 }
 
+float quadraticWinding(float2 devicePoint, AffineTransform op) {
+    // Compute edge vectors.
+    float2 v02 = { op.a + op.c, op.b + op.d };//toPosition - fromPosition;
+    float2 v01 = { op.a, op.b }, v21 = { -op.c, -op.d };// ctrlPosition - fromPosition, v21 = ctrlPosition - toPosition;
+    
+    // Compute area of convex hull (w). Change from curve to line if appropriate.
+    float w = det2(float2x2(v01, v02));
+    
+    // Compute UV using Cramer's rule.
+    // https://gamedev.stackexchange.com/a/63203
+    float2 v03 = { devicePoint.x - op.tx, devicePoint.y - op.ty };// position - fromPosition;
+    float3 uv = { 0.0, det2(float2x2(v01, v03)), sign(w) };
+    uv.x = uv.y + 0.5 * det2(float2x2(v03, v02));
+    uv.xy /= det2(float2x2(v01, v02));
+    
+    return barycentricWinding(uv);
+}
+
 float ellipseDistance(float2 unitPoint) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
     
@@ -119,7 +137,7 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float quadraticWinding(float2 devicePoint, AffineTransform op) {
+float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     float recipScale = 1.0 / (op.a * op.d - op.b * op.c);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
     
