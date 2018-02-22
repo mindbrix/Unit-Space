@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */; };
+		E90D1DC5203E9F6D00F9F35B /* Library.metal in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC4203E9F6D00F9F35B /* Library.metal */; };
+		E90D1DC7203E9FA200F9F35B /* Headers.metal in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC6203E9FA100F9F35B /* Headers.metal */; };
 		E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */; };
 		E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD79200BC63400F2BFB2 /* Document.m */; };
 		E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = E9EEAD7B200BC63400F2BFB2 /* Document.xib */; };
@@ -24,6 +26,8 @@
 		E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
 		E90D1DC3202908ED00F9F35B /* Algorithms.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Algorithms.hpp; sourceTree = "<group>"; };
+		E90D1DC4203E9F6D00F9F35B /* Library.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
+		E90D1DC6203E9FA100F9F35B /* Headers.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Headers.metal; sourceTree = "<group>"; };
 		E9EEAD72200BC63400F2BFB2 /* Unit Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Unit Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -94,6 +98,8 @@
 				E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */,
 				E9EEAD94200BD61600F2BFB2 /* Shaders.metal */,
 				E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */,
+				E90D1DC4203E9F6D00F9F35B /* Library.metal */,
+				E90D1DC6203E9FA100F9F35B /* Headers.metal */,
 			);
 			path = "Unit Space";
 			sourceTree = "<group>";
@@ -182,8 +188,10 @@
 				E9EEAD90200BC76C00F2BFB2 /* View.mm in Sources */,
 				E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */,
 				E9EEAD85200BC63400F2BFB2 /* main.m in Sources */,
+				E90D1DC5203E9F6D00F9F35B /* Library.metal in Sources */,
 				E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */,
 				E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */,
+				E90D1DC7203E9FA200F9F35B /* Headers.metal in Sources */,
 				E9EEAD93200BC96D00F2BFB2 /* MetalLayer.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
