@@ -96,10 +96,10 @@
 				E9EEAD8F200BC76C00F2BFB2 /* View.mm */,
 				E9EEAD91200BC96D00F2BFB2 /* MetalLayer.h */,
 				E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */,
+				E90D1DC6203E9FA100F9F35B /* Headers.metal */,
+				E90D1DC4203E9F6D00F9F35B /* Library.metal */,
 				E9EEAD94200BD61600F2BFB2 /* Shaders.metal */,
 				E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */,
-				E90D1DC4203E9F6D00F9F35B /* Library.metal */,
-				E90D1DC6203E9FA100F9F35B /* Headers.metal */,
 			);
 			path = "Unit Space";
 			sourceTree = "<group>";

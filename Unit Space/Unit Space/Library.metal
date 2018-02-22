@@ -11,6 +11,83 @@
 
 using namespace metal;
 
+float det2(float2x2 m) {
+    return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+}
+
+float fastSign(float x) {
+    return x > 0.0 ? 1.0 : -1.0;
+}
+
+// Are we inside the convex hull of the curve? (This will always be false if this is a line.)
+bool insideCurve(float3 uv) {
+    return uv.z != 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0;
+}
+
+float signedDistanceToCurve(float2 uv, float2 dUVDX, float2 dUVDY, bool inCurve) {
+    // u^2 - v for curves inside uv square; u - v otherwise.
+    float g = uv.x;
+    float2 dG = float2(dUVDX.x, dUVDY.x);
+    if (inCurve) {
+        g *= uv.x;
+        dG *= 2.0 * uv.x;
+    }
+    g -= uv.y;
+    dG -= float2(dUVDX.y, dUVDY.y);
+    return g / length(dG);
+}
+
+// Cubic approximation to the square area coverage, accurate to about 4%.
+float estimateArea(float dist) {
+    if (dist >= 0.707107)
+        return 0.5;
+    // Catch NaNs here.
+    if (!(dist > -0.707107))
+        return -0.5;
+    return 1.14191 * dist - 0.83570 * dist * dist * dist;
+}
+
+float barycentricWinding(float3 uv) {
+    // Unpack.
+    float2 dUVDX = dfdx(uv.xy), dUVDY = dfdy(uv.xy);
+    
+    // Calculate the reciprocal of the Jacobian determinant. This will be useful for determining
+    // distance from endpoints.
+    //
+    // http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
+    float recipJ = 1.0 / det2(float2x2(dUVDX, dUVDY));
+    
+    // Calculate X distances between endpoints.
+    float v02DX = dUVDY.y - dUVDY.x, v10DX = -dUVDY.y, v21DX = 2.0 * dUVDY.x - dUVDY.y;
+    float v02X = v02DX * recipJ, v10X = v10DX * recipJ;
+    
+    // Compute winding number and convexity.
+    bool inCurve = insideCurve(uv);
+    float openWinding = fastSign(-v02X);
+    float convex = uv.z != 0.0 ? uv.z : -fastSign(dUVDY.y) * openWinding;
+    
+    // Compute open rect area.
+    float2 areas = clamp(float2(det2(float2x2(uv.xy, dUVDY))) * recipJ - float2(0.0, v02X), -0.5, 0.5);
+    float openRectArea = openWinding * (areas.y - areas.x);
+    
+    // Compute closed rect area and winding, if necessary.
+    float closedRectArea = 0.0, closedWinding = 0.0;
+    if (inCurve && v10DX * v21DX < 0.0) {
+        closedRectArea = 0.5 - fastSign(v10X) * (v10X * openWinding < 0.0 ? areas.x : areas.y);
+        closedWinding = fastSign((dUVDX.y - dUVDX.x) * dUVDY.y);
+    }
+    
+    // Calculate approximate area of the curve covering this pixel square.
+    float curveArea = estimateArea(signedDistanceToCurve(uv.xy, dUVDX, dUVDY, inCurve));
+    
+    // Calculate alpha.
+    float2 alpha = float2(openWinding, closedWinding) * 0.5 + convex * curveArea;
+    alpha *= float2(openRectArea, closedRectArea);
+    
+    // Finish up.
+    return alpha.x + alpha.y;
+}
+
 float ellipseDistance(float2 unitPoint) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
     
