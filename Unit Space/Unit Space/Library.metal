@@ -21,7 +21,9 @@ float fastSign(float x) {
 
 // Are we inside the convex hull of the curve? (This will always be false if this is a line.)
 bool insideCurve(float3 uv) {
-    return uv.z != 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0;
+    float w = 1.0 - uv.x - uv.y;
+    
+    return uv.z != 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0;// && w > 0.0 && w < 1.0;
 }
 
 float signedDistanceToCurve(float2 uv, float2 dUVDX, float2 dUVDY, bool inCurve) {
@@ -63,8 +65,9 @@ float barycentricWinding(float3 uv) {
     
     // Compute winding number and convexity.
     bool inCurve = insideCurve(uv);
+//    return inCurve;
     float openWinding = fastSign(-v02X);
-    float convex = uv.z != 0.0 ? uv.z : -fastSign(dUVDY.y) * openWinding;
+    float convex = 1.0;// uv.z != 0.0 ? uv.z : -fastSign(dUVDY.y) * openWinding;
     
     // Compute open rect area.
     float2 areas = clamp(float2(det2(float2x2(uv.xy, dUVDY))) * recipJ - float2(0.0, v02X), -0.5, 0.5);
@@ -74,7 +77,7 @@ float barycentricWinding(float3 uv) {
     float closedRectArea = 0.0, closedWinding = 0.0;
     if (inCurve && v10DX * v21DX < 0.0) {
         closedRectArea = 0.5 - fastSign(v10X) * (v10X * openWinding < 0.0 ? areas.x : areas.y);
-        closedWinding = fastSign((dUVDX.y - dUVDX.x) * dUVDY.y);
+        closedWinding = -fastSign((dUVDX.y - dUVDX.x) * dUVDY.y);
     }
     
     // Calculate approximate area of the curve covering this pixel square.
@@ -90,16 +93,17 @@ float barycentricWinding(float3 uv) {
 
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
     // Compute edge vectors.
-    float2 v02 = { op.a + op.c, op.b + op.d };//toPosition - fromPosition;
-    float2 v01 = { op.a, op.b }, v21 = { -op.c, -op.d };// ctrlPosition - fromPosition, v21 = ctrlPosition - toPosition;
+    float2 v02 = { op.a + op.c, op.b + op.d };
+    float2 v01 = { op.a, op.b }, v21 = { -op.c, -op.d };
     
     // Compute area of convex hull (w). Change from curve to line if appropriate.
     float w = det2(float2x2(v01, v02));
     
     // Compute UV using Cramer's rule.
     // https://gamedev.stackexchange.com/a/63203
-    float2 v03 = { devicePoint.x - op.tx, devicePoint.y - op.ty };// position - fromPosition;
+    float2 v03 = { devicePoint.x - op.tx, devicePoint.y - op.ty };
     float3 uv = { 0.0, det2(float2x2(v01, v03)), sign(w) };
+//    uv.x = det2(float2x2(v03, v02));
     uv.x = uv.y + 0.5 * det2(float2x2(v03, v02));
     uv.xy /= det2(float2x2(v01, v02));
     
