@@ -21,9 +21,7 @@ float fastSign(float x) {
 
 // Are we inside the convex hull of the curve? (This will always be false if this is a line.)
 bool insideCurve(float3 uv) {
-    float w = 1.0 - uv.x - uv.y;
-    
-    return uv.z != 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0;// && w > 0.0 && w < 1.0;
+    return uv.z != 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0;
 }
 
 float signedDistanceToCurve(float2 uv, float2 dUVDX, float2 dUVDY, bool inCurve) {
@@ -141,42 +139,22 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float x = (ox * (a + b) + oy * (c + d)) * 0.5, y = ox * b + oy * d;
     
     float convex = sign((op.b + op.d) * recipScale);
-    float e = 0.125;// 2.0 * abs(recipScale);
+    float e = 0.5;// 2.0 * abs(recipScale);
     float lower = -e;
     float upper = 1.0 + e;
     bool inCurve = x > lower && x < upper && y > lower && y < upper;
     
-    float fx = dfdx(x); // - dfdx(y);
-    float fy = dfdy(x); // - dfdy(y);
-    float sd = x;
-    
-    if (inCurve) {
-        fx *= 2.0 * x;
-        fy *= 2.0 * x;
-        sd *= x;
-    }
-    
-    fx -= dfdx(y);
-    fy -= dfdy(y);
-    sd -= y;
-    
-//    float fx = 2.0 * x * dfdx(x) - dfdx(y);
-//    float fy = 2.0 * x * dfdy(x) - dfdy(y);
-//    float sd = (x * x - y);
-    
+    float fx = dfdx(x) * select(1.0, 2.0 * x, inCurve) - dfdx(y);
+    float fy = dfdy(x) * select(1.0, 2.0 * x, inCurve) - dfdy(y);
+    float sd = x * select(1.0, x, inCurve) - y;
+        
     float area = estimateArea(sd * rsqrt(fx * fx + fy * fy));
-    
-//    float x0 = op.tx, x2 = op.tx + op.a + op.c;
-//    float sx0 = saturate((devicePoint.x + 0.0) - min(x0, x2));
-//    float sx1 = saturate((devicePoint.x - 0.0) - max(x0, x2));
-    //    float sx1 = step(max(x0, x2), devicePoint.x - 0.5);
     
     float py0 = devicePoint.y - 0.5;
     float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
     float coverage = sy2 - sy0;
     
     return coverage * (0.5 + area * convex);
-//    return sx0 * coverage * max(sx1, saturate(sd));
 }
 
 
