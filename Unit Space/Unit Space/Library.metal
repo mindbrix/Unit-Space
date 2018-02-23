@@ -80,7 +80,7 @@ float barycentricWinding(float3 uv, float3 xDist) {
     return dot(coverage, float2(openRectArea, closedRectArea));
 }
 
-float quadraticWinding(float2 devicePoint, AffineTransform op) {
+float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     // Compute edge vectors.
     float2 v02 = { op.a + op.c, op.b + op.d };
     float2 v01 = { op.a, op.b };
@@ -132,35 +132,51 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float quadraticWinding0(float2 devicePoint, AffineTransform op) {
+float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float recipScale = 1.0 / (op.a * op.d - op.b * op.c);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
     
     float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
     // Shear = { 0.5, 0.0, 0.5, 1.0 }
     float x = (ox * (a + b) + oy * (c + d)) * 0.5, y = ox * b + oy * d;
-    //    x = saturate(x);
     
-//    float fx = dfdx(x) - dfdx(y);
-//    float fy = dfdy(x) - dfdy(y);
-//    float sd = sign((op.b + op.d) * recipScale) * (x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
+    float convex = sign((op.b + op.d) * recipScale);
+    float e = 0.125;// 2.0 * abs(recipScale);
+    float lower = -e;
+    float upper = 1.0 + e;
+    bool inCurve = x > lower && x < upper && y > lower && y < upper;
     
-    float fx = 2.0 * x * dfdx(x) - dfdx(y);
-    float fy = 2.0 * x * dfdy(x) - dfdy(y);
-    float sd = sign((op.b + op.d) * recipScale) * (x * x - y) * rsqrt(fx * fx + fy * fy) + 0.5;
+    float fx = dfdx(x); // - dfdx(y);
+    float fy = dfdy(x); // - dfdy(y);
+    float sd = x;
     
-    float x0 = op.tx, x2 = op.tx + op.a + op.c;
-    float sx0 = saturate((devicePoint.x + 0.0) - min(x0, x2));
-    float sx1 = saturate((devicePoint.x - 0.0) - max(x0, x2));
+    if (inCurve) {
+        fx *= 2.0 * x;
+        fy *= 2.0 * x;
+        sd *= x;
+    }
+    
+    fx -= dfdx(y);
+    fy -= dfdy(y);
+    sd -= y;
+    
+//    float fx = 2.0 * x * dfdx(x) - dfdx(y);
+//    float fy = 2.0 * x * dfdy(x) - dfdy(y);
+//    float sd = (x * x - y);
+    
+    float area = estimateArea(sd * rsqrt(fx * fx + fy * fy));
+    
+//    float x0 = op.tx, x2 = op.tx + op.a + op.c;
+//    float sx0 = saturate((devicePoint.x + 0.0) - min(x0, x2));
+//    float sx1 = saturate((devicePoint.x - 0.0) - max(x0, x2));
     //    float sx1 = step(max(x0, x2), devicePoint.x - 0.5);
     
     float py0 = devicePoint.y - 0.5;
     float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
     float coverage = sy2 - sy0;
     
-    return sx0 * coverage * max(sx1, saturate(sd));
-    //    return sx0 * sign(coverage) * abs(coverage) * max(sx1, saturate(sd));
-    //    return sx0 * sign(coverage) * min(abs(coverage), max(sx1, saturate(sd)));
+    return coverage * (0.5 + area * convex);
+//    return sx0 * coverage * max(sx1, saturate(sd));
 }
 
 
