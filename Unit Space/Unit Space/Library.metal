@@ -63,7 +63,7 @@ float barycentricWinding(float3 uv, float3 xDist) {
     
     // Compute open rect area.
     float2 areas = clamp(xDist.xz, -0.5, 0.5);
-    float openRectArea = openWinding * (areas.y - areas.x);
+    float openRectArea = abs(areas.y - areas.x);
     
     // Compute closed rect area and winding, if necessary.
     float closedRectArea = 0.0, closedWinding = 0.0;
@@ -75,12 +75,9 @@ float barycentricWinding(float3 uv, float3 xDist) {
     // Calculate approximate area of the curve covering this pixel square.
     float curveArea = estimateArea(signedDistanceToCurve(uv.xy, dUVDX, dUVDY, inCurve));
     
-    // Calculate alpha.
-    float2 alpha = float2(openWinding, closedWinding) * 0.5 + convex * curveArea;
-    alpha *= float2(openRectArea, closedRectArea);
-    
-    // Finish up.
-    return alpha.x + alpha.y;
+    // Calculate winding.
+    float2 coverage = float2(openWinding, closedWinding) * 0.5 + convex * curveArea;
+    return dot(coverage, float2(openRectArea, closedRectArea));
 }
 
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
