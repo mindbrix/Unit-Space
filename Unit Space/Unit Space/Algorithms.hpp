@@ -13,13 +13,18 @@
 
 using namespace std;
 
+AffineTransform *writeQuadraticCTM(AffineTransform *ctm, float x0, float y0, float x1, float y1, float x2, float y2) {
+     *ctm++ = { x1 - x0, y1 - y0, x2 - x1, y2 - y1, x0, y0 };
+    return ctm;
+}
+
 AffineTransform *writeQuadraticCTMs(AffineTransform *ctm, float x0, float y0, float x1, float y1, float x2, float y2) {
     float dx01 = x1 - x0, dx12 = x2 - x1, dy01 = y1 - y0, dy12 = y2 - y1;
     bool xMonotone = dx01 * dx12 >= 0.f, yMonotone = dy01 * dy12 >= 0.f;
     
 //    if (true)
     if (xMonotone && yMonotone)
-        *ctm++ = { x1 - x0, y1 - y0, x2 - x1, y2 - y1, x0, y0 };
+        ctm = writeQuadraticCTM(ctm, x0, y0, x1, y1, x2, y2);
     else {
         float tx = xMonotone ? 1.f : -dx01 / (dx12 - dx01);
         float ty = yMonotone ? 1.f : -dy01 / (dy12 - dy01);
@@ -28,8 +33,8 @@ AffineTransform *writeQuadraticCTMs(AffineTransform *ctm, float x0, float y0, fl
         float x12 = x1 + dx12 * t, y12 = y1 + dy12 * t;
         float x012 = x01 + (x12 - x01) * t, y012 = y01 + (y12 - y01) * t;
         
-        *ctm++ = { x01 - x0, y01 - y0, x012 - x01, y012 - y01, x0, y0 };
-        *ctm++ = { x12 - x012, y12 - y012, x2 - x12, y2 - y12, x012, y012 };
+        ctm = writeQuadraticCTM(ctm, x0, y0, x01, y01, x012, y012);
+        ctm = writeQuadraticCTM(ctm, x012, y012, x12, y12, x2, y2);
     }
     
     return ctm;
