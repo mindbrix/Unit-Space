@@ -20,8 +20,8 @@ float fastSign(float x) {
 }
 
 // Are we inside the convex hull of the curve? (This will always be false if this is a line.)
-bool insideCurve(float3 uv) {
-    return uv.z != 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0;
+bool insideCurve(float3 uv, float e) {
+    return uv.z != 0.0 && uv.x > -e && uv.x < (1.0 + e) && uv.y > -e && uv.y < (1.0 + e);
 }
 
 float signedDistanceToCurve(float2 uv, float2 dUVDX, float2 dUVDY, bool inCurve) {
@@ -47,7 +47,7 @@ float estimateArea(float dist) {
     return 1.14191 * dist - 0.83570 * dist * dist * dist;
 }
 
-float barycentricWinding(float3 uv, float3 xDist) {
+float barycentricWinding(float3 uv, float3 xDist, float e) {
     // Unpack.
     float2 dUVDX = dfdx(uv.xy), dUVDY = dfdy(uv.xy);
     
@@ -55,7 +55,7 @@ float barycentricWinding(float3 uv, float3 xDist) {
     float3 vDist = xDist - xDist.zxy;
     
     // Compute winding number and convexity.
-    bool inCurve = insideCurve(uv);
+    bool inCurve = insideCurve(uv, e);
     float openWinding = fastSign(-vDist.x);
     float convex = uv.z != 0.0 ? uv.z : fastSign(vDist.x * dUVDY.y);
     
@@ -78,7 +78,7 @@ float barycentricWinding(float3 uv, float3 xDist) {
     return dot(coverage, float2(openRectArea, closedRectArea));
 }
 
-float quadraticWinding0(float2 devicePoint, AffineTransform op) {
+float quadraticWinding(float2 devicePoint, AffineTransform op) {
     // Compute edge vectors.
     float2 v02 = { op.a + op.c, op.b + op.d };
     float2 v01 = { op.a, op.b };
@@ -96,7 +96,9 @@ float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     
     float3 xDist = devicePoint.x - float3(op.tx, op.tx + op.a, op.tx + op.a + op.c);
     
-    return barycentricWinding(uv, xDist);
+    float e = 0.5 * rsqrt(abs(w));
+    
+    return barycentricWinding(uv, xDist, e);
 }
 
 float ellipseDistance(float2 unitPoint) {
@@ -130,7 +132,7 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float quadraticWinding(float2 devicePoint, AffineTransform op) {
+float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     float det = op.a * op.d - op.b * op.c;
     bool line = abs(det) < 1e-3;
     
