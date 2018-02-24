@@ -34,6 +34,7 @@ using namespace std;
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
+//    [self.transform rotateBy:M_PI bounds:self.bounds];
     [self redraw];
 
     return self;
@@ -109,9 +110,15 @@ using namespace std;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float radius = 8.0 / scale;
     
+//    Vector q[] = {
+//        { 0, 0 }, { 50, 50 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+//    };
+    
     Vector q[] = {
-        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+        { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
     };
+    
+    
     int count = sizeof(q) / sizeof(q[0]);
     
     State uniforms;

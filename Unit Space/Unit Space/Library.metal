@@ -132,7 +132,9 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
 
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float det = op.a * op.d - op.b * op.c;
-    float recipScale = 1.0 / det;
+    bool line = abs(det) < 1e-3;
+    
+    float recipScale = 1.0 / select(det, 1.0, line);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
     
     float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
@@ -141,13 +143,18 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     
     float convex = sign((op.b + op.d) * recipScale);
     float e = 0.5 * rsqrt(abs(det));
-    float lower = -e;
-    float upper = 1.0 + e;
+    float lower = -e, upper = 1.0 + e;
     
 //    float ux = ox * a + oy * c, uy = ox * b + oy * d;
 //    bool inCurve = ux > lower && ux < upper && uy > lower && uy < upper;
     
-    bool inCurve = x > lower && x < upper && y > lower && y < upper;
+    bool inCurve = !line && x > lower && x < upper && y > lower && y < upper;
+
+//    if (convex != 0.0) {
+//        x = clamp(x, lower, upper), y = clamp(y, lower, upper);
+//        inCurve = true;
+//    }
+    
     float m = select(1.0, 2.0 * x, inCurve);
     float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
     float sd = x * select(1.0, x, inCurve) - y;
