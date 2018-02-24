@@ -143,8 +143,11 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float e = 0.5 * rsqrt(abs(det));
     float lower = -e;
     float upper = 1.0 + e;
-    bool inCurve = x > lower && x < upper && y > lower && y < upper;
     
+//    float ux = ox * a + oy * c, uy = ox * b + oy * d;
+//    bool inCurve = ux > lower && ux < upper && uy > lower && uy < upper;
+    
+    bool inCurve = x > lower && x < upper && y > lower && y < upper;
     float m = select(1.0, 2.0 * x, inCurve);
     float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
     float sd = x * select(1.0, x, inCurve) - y;
