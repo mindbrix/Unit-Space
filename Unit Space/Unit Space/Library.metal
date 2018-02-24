@@ -145,8 +145,8 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float upper = 1.0 + e;
     bool inCurve = x > lower && x < upper && y > lower && y < upper;
     
-    float fx = dfdx(x) * select(1.0, 2.0 * x, inCurve) - dfdx(y);
-    float fy = dfdy(x) * select(1.0, 2.0 * x, inCurve) - dfdy(y);
+    float m = select(1.0, 2.0 * x, inCurve);
+    float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
     float sd = x * select(1.0, x, inCurve) - y;
         
     float area = estimateArea(sd * rsqrt(fx * fx + fy * fy));
