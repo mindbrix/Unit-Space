@@ -134,7 +134,7 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
 
 float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     float det = op.a * op.d - op.b * op.c;
-    bool line = abs(det) < 1e-3;
+    bool line = abs(det) < 1e-2;
     
     float recipScale = 1.0 / select(det, 1.0, line);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
