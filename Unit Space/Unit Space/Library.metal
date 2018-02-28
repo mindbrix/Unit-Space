@@ -78,7 +78,7 @@ float barycentricWinding(float3 uv, float3 xDist, float e) {
     return dot(coverage, float2(openRectArea, closedRectArea));
 }
 
-float quadraticWinding(float2 devicePoint, AffineTransform op) {
+float quadraticWinding1(float2 devicePoint, AffineTransform op) {
     // Compute edge vectors.
     float2 v02 = { op.a + op.c, op.b + op.d };
     float2 v01 = { op.a, op.b };
@@ -186,6 +186,20 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
     float f = 4.0 * b * d - a * a;
     float dfx = dfdx(f), dfy = dfdy(f);
     return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
+}
+
+float4 quadraticColor(float2 devicePoint, AffineTransform op) {
+    float x0 = op.tx - devicePoint.x, y0 = op.ty - devicePoint.y;
+    float x1 = op.tx + op.a - devicePoint.x, y1 = op.ty + op.b - devicePoint.y;
+    float x2 = op.tx + op.a + op.c - devicePoint.x, y2 = op.ty + op.b + op.d - devicePoint.y;
+    float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
+    float f = 4.0 * b * d - a * a;
+    float dfx = dfdx(f), dfy = dfdy(f);
+    float coverage = clamp(y2, -0.5, 0.5) - clamp(y0, -0.5, 0.5);
+    
+    float winding = coverage * saturate(0.5 + f * rsqrt(dfx * dfx + dfy * dfy));
+    
+    return mix(1.0, float4(0, 0, 0, 1), saturate(abs(winding)));
 }
 
 float unitDistance(float2 unitPoint) {
