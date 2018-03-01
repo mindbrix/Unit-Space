@@ -197,21 +197,20 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     y0 -= devicePoint.y, y1 -= devicePoint.y, y2 -= devicePoint.y;
     
     float a = x0 * y2 - x2 * y0, Ba = y0 - y2, Ca = x2 - x0;
-    float b = x1 * y0 - x0 * y1, Bb = y1 - y0, Cb = x0 - x1;
-    float d = x2 * y1 - x1 * y2, Bd = y2 - y1, Cd = x1 - x2;
+    float b = 2.0 * (x1 * y0 - x0 * y1), Bb = y1 - y0, Cb = x0 - x1;
+    float d = 2.0 * (x2 * y1 - x1 * y2), Bd = y2 - y1, Cd = x1 - x2;
+
+    float f = b * d - a * a;
+    float dfx = 2.0 * (b * Bd + Bb * d - a * Ba);
+    float dfy = 2.0 * (b * Cd + Cb * d - a * Ca);
     
-    float f = 4.0 * b * d - a * a;
-    float dfx = 4.0 * (b * Bd + Bb * d) - 2.0 * a * Ba;
-    float dfy = 4.0 * (b * Cd + Cb * d) - 2.0 * a * Ca;
-    
-//    float dfx = dfdx(f);
-//    float dfy = dfdy(f);
-//    float coverage = clamp(y2, -0.5, 0.5) - clamp(y0, -0.5, 0.5);
-    
+    float vx = -f * dfy / (dfx * dfx + dfy * dfy);
+    float vy = -f * -dfx / (dfx * dfx + dfy * dfy);
     float winding = 0.5 + f * rsqrt(dfx * dfx + dfy * dfy);
     
-    return mix(1.0, float4(0, 0, 0, 1), saturate((winding)));
-//    return mix(1.0, float4(dfx * 0.25 / (a + b + d), dfy * 0.25 / (a + b + d), 0, 1), saturate((winding)));
+    //    float coverage = clamp(y2, -0.5, 0.5) - clamp(y0, -0.5, 0.5);
+//    return mix(1.0, float4(0, 0, 0, 1), saturate((winding)));
+    return mix(1.0, float4(vx, vy, 0, 1), saturate((winding)));
 //    return mix(1.0, float4(select(0, 1, dfx < 0.0), select(0, 1, dfy < 0.0), 0, 1), saturate((winding)));
 }
 
