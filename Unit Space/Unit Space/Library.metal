@@ -151,7 +151,8 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float yclip = sign(x2 * orientation);
     
     float clipx = select(min(0.0, x2), max(0.0, x2), xclip > 0.0);
-    float clipy = select(min(0.0, y2), max(0.0, y2), yclip > 0.0);
+    float ymin = min(0.0, y2), ymax = max(0.0, y2);
+    float clipy = select(ymin, ymax, yclip > 0.0);
     
     ox = select(max(clipx, ox), min(clipx, ox), xclip > 0.0);
     oy = select(max(clipy, oy), min(clipy, oy), yclip > 0.0);
@@ -166,11 +167,6 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
 //    bool inCurve = ux > lower && ux < upper && uy > lower && uy < upper;
     
     bool inCurve = true;// !line && x > lower && x < upper && y > lower && y < upper;
-
-//    if (convex != 0.0) {
-//        x = clamp(x, lower, upper), y = clamp(y, lower, upper);
-//        inCurve = true;
-//    }
     
     float m = select(1.0, 2.0 * x, inCurve);
     float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
@@ -178,13 +174,16 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
         
     float area = estimateArea(sd * rsqrt(fx * fx + fy * fy));
     
-    float py0 = devicePoint.y - 0.5;
-    float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
-    float coverage = 1.0;//sy2 - sy0;
+    oy = devicePoint.y - op.ty;
+    float sy0 = saturate(ymin - oy + 0.5), sy2 = saturate(ymax - oy + 0.5);
     
-    return sign(y2) * ( 0.5 + area * convex);
+//    float py0 = devicePoint.y - 0.5;
+//    float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
+    float ysub = select(sy0, 1.0 - sy2, yclip < 0.0);
+    ysub = select(0.0, ysub, convex > 0.0);
     
-//    return coverage * sy2 * (0.5 + area * convex - sy0);
+    float ymul = 1.0;// select(1.0 - sy0, sy2, x2 * y2 * orientation > 0.0);
+    return ymul * sign(y2) * (0.5 + area * convex - ysub);
 }
 
 
