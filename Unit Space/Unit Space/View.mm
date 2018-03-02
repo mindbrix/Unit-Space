@@ -111,7 +111,7 @@ using namespace std;
     float radius = 8.0 / scale;
     
     Vector q[] = {
-        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+        { 0, 0 }, { 100, 0 }, { 100, 100 }//, { 0, 100 }, { 0, 0 }
     };
     
 //    Vector q[] = {
@@ -141,15 +141,15 @@ using namespace std;
     _calls[idx].state = uniforms;
 
     _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
-//    idx++;
-//
-//    uniforms.fillColor = { 1, 0, 0, 1 };
-//    _calls[idx].type = kCallTypeCircles;
-//    _calls[idx].state = uniforms;
-//    Circles& circles = _calls[idx].circles;
-//    for (int i = 0; i < count; i++)
-//        circles.circles[i] = { q[i].x, q[i].y, radius };
-//    circles.count = count;
+    idx++;
+
+    uniforms.fillColor = { 1, 0, 0, 1 };
+    _calls[idx].type = kCallTypeCircles;
+    _calls[idx].state = uniforms;
+    Circles& circles = _calls[idx].circles;
+    for (int i = 0; i < count; i++)
+        circles.circles[i] = { q[i].x, q[i].y, radius };
+    circles.count = count;
     _calls.resize(idx + 1);
     
     [self.metalLayer setNeedsDisplay];

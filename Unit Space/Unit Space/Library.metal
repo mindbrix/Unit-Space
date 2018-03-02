@@ -39,6 +39,8 @@ float signedDistanceToCurve(float2 uv, float2 dUVDX, float2 dUVDY, bool inCurve)
 
 // Cubic approximation to the square area coverage, accurate to about 4%.
 float estimateArea(float dist) {
+    return clamp(dist, -0.5, 0.5);
+    
     if (dist >= 0.707107)
         return 0.5;
     // Catch NaNs here.
@@ -132,25 +134,38 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float quadraticWinding0(float2 devicePoint, AffineTransform op) {
+float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float det = op.a * op.d - op.b * op.c;
-    bool line = abs(det) < 1e-2;
+    bool line = false;// abs(det) < 1e-2;
     
     float recipScale = 1.0 / select(det, 1.0, line);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
     
     float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
+    float x2 = op.a + op.c, y2 = op.b + op.d;
+    
+    float orientation = sign(det);
+    
+    float convex = sign(y2 * orientation);
+    float xclip = -convex;
+    float yclip = sign(x2 * orientation);
+    
+    float clipx = select(min(0.0, x2), max(0.0, x2), xclip > 0.0);
+    float clipy = select(min(0.0, y2), max(0.0, y2), yclip > 0.0);
+    
+    ox = select(max(clipx, ox), min(clipx, ox), xclip > 0.0);
+    oy = select(max(clipy, oy), min(clipy, oy), yclip > 0.0);
+    
     // Shear = { 0.5, 0.0, 0.5, 1.0 }
     float x = (ox * (a + b) + oy * (c + d)) * 0.5, y = ox * b + oy * d;
     
-    float convex = sign((op.b + op.d) * recipScale);
-    float e = 0.5 * rsqrt(abs(det));
-    float lower = -e, upper = 1.0 + e;
     
+//    float e = 0.5 * rsqrt(abs(det));
+//    float lower = -e, upper = 1.0 + e;
 //    float ux = ox * a + oy * c, uy = ox * b + oy * d;
 //    bool inCurve = ux > lower && ux < upper && uy > lower && uy < upper;
     
-    bool inCurve = !line && x > lower && x < upper && y > lower && y < upper;
+    bool inCurve = true;// !line && x > lower && x < upper && y > lower && y < upper;
 
 //    if (convex != 0.0) {
 //        x = clamp(x, lower, upper), y = clamp(y, lower, upper);
@@ -165,9 +180,11 @@ float quadraticWinding0(float2 devicePoint, AffineTransform op) {
     
     float py0 = devicePoint.y - 0.5;
     float sy0 = saturate(op.ty - py0), sy2 = saturate(op.ty + op.b + op.d - py0);
-    float coverage = sy2 - sy0;
+    float coverage = 1.0;//sy2 - sy0;
     
-    return coverage * (0.5 + area * convex);
+    return sign(y2) * ( 0.5 + area * convex);
+    
+//    return coverage * sy2 * (0.5 + area * convex - sy0);
 }
 
 

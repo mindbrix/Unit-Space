@@ -245,15 +245,15 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uin
 
 fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]])
 {
-    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
+//    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
-//    float winding = 0.0;
-//
-//    for (int i = 0; i < quadratics.count; i++)
-//        winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
-//
-//    float alpha = abs(winding);
-//    float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), white = float4(1.0, 1.0, 1.0, 1.0);
+    float winding = 0.0;
+
+    for (int i = 0; i < quadratics.count; i++)
+        winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
+
+    float alpha = abs(winding);
+    float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), white = float4(1.0, 1.0, 1.0, 1.0);
 //    return color * alpha;
-//    return mix(white, color, saturate(alpha));
+    return mix(white, color, saturate(alpha));
 }
