@@ -154,10 +154,9 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     // x = (ox * (a + b) + oy * (c + d)) * 0.5, y = (ox * b + oy * d)
     float x = (ox * (op.d - op.b) + oy * (op.a - op.c)) * 0.5 / det, y = (ox * -op.b + oy * op.a) / det;
     
-    float m = select(1.0, 2.0 * x, !line);
-    float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
-    float sd = x * select(1.0, x, !line) - y;
-    float area = clamp(sd * rsqrt(fx * fx + fy * fy), -0.5, 0.5);
+    float2 m = select(float2(2.0 * x, x), 1.0, line);
+    float fx = dfdx(x) * m[0] - dfdx(y), fy = dfdy(x) * m[0] - dfdy(y);
+    float area = clamp((x * m[1] - y) * rsqrt(fx * fx + fy * fy), -0.5, 0.5);
     
     oy = devicePoint.y - op.ty;
     float sy0 = saturate(ymin - oy + 0.5), sy2 = saturate(ymax - oy + 0.5);
