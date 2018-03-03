@@ -135,16 +135,16 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
 }
 
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
-    float det = op.a * op.d - op.b * op.c;
-    bool line = abs(det) < 1e-2;
+    bool line = abs(op.a - op.c) < 1e-3 && abs(op.b - op.d) < 1e-3;
     
+    float det = op.a * op.d - op.b * op.c;
     float recipScale = 1.0 / select(det, 1.0, line);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
     
     float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
     float x2 = op.a + op.c, y2 = op.b + op.d;
     
-    float orientation = sign(det);
+    float orientation = sign(recipScale);
     float convex = sign(y2 * orientation);
     float xclip = -convex;
     float yclip = sign(x2 * orientation);
