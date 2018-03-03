@@ -253,6 +253,8 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
         winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
 
     float alpha = abs(winding);
+    
+//    float alpha = abs(quadraticWinding(vert.devicePoint, quadratics.ctms[0]));
     float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), white = float4(1.0, 1.0, 1.0, 1.0);
 //    return color * alpha;
     return mix(white, color, saturate(alpha));

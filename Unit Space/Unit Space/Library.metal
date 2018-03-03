@@ -134,17 +134,13 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
 
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
     bool line = abs(op.a - op.c) < 1e-3 && abs(op.b - op.d) < 1e-3;
-    
-    float det = op.a * op.d - op.b * op.c;
-    float recipScale = 1.0 / select(det, 1.0, line);
-    float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
+    float det = select(op.a * op.d - op.b * op.c, 1.0, line);
     
     float x2 = op.a + op.c, y2 = op.b + op.d;
     
-    float orientation = sign(recipScale);
-    float convex = sign(y2 * orientation);
+    float convex = sign(y2 * det);
     float xclip = -convex;
-    float yclip = sign(x2 * orientation);
+    float yclip = sign(x2 * det);
     
     float clipx = select(min(0.0, x2), max(0.0, x2), xclip > 0.0);
     float ymin = min(0.0, y2), ymax = max(0.0, y2);
@@ -154,7 +150,9 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     ox = select(max(clipx, ox), min(clipx, ox), xclip > 0.0);
     oy = select(max(clipy, oy), min(clipy, oy), yclip > 0.0);
     // Shear = { 0.5, 0.0, 0.5, 1.0 }
-    float x = (ox * (a + b) + oy * (c + d)) * 0.5, y = ox * b + oy * d;
+    // a = op.d, b = -op.b, c = -op.c, d = op.a
+    // x = (ox * (a + b) + oy * (c + d)) * 0.5, y = (ox * b + oy * d)
+    float x = (ox * (op.d - op.b) + oy * (op.a - op.c)) * 0.5 / det, y = (ox * -op.b + oy * op.a) / det;
     
     float m = select(1.0, 2.0 * x, !line);
     float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
@@ -166,7 +164,7 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float ysub = select(sy0, 1.0 - sy2, yclip < 0.0);
     ysub = select(0.0, ysub, convex > 0.0);
     
-    float ymul = select(1.0 - sy0, sy2, x2 * orientation > 0.0);
+    float ymul = select(1.0 - sy0, sy2, x2 * det > 0.0);
     return ymul * sign(y2) * (0.5 + area * convex - ysub);
 }
 
