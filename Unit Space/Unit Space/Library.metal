@@ -39,8 +39,6 @@ float signedDistanceToCurve(float2 uv, float2 dUVDX, float2 dUVDY, bool inCurve)
 
 // Cubic approximation to the square area coverage, accurate to about 4%.
 float estimateArea(float dist) {
-    return clamp(dist, -0.5, 0.5);
-    
     if (dist >= 0.707107)
         return 0.5;
     // Catch NaNs here.
@@ -141,7 +139,6 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float recipScale = 1.0 / select(det, 1.0, line);
     float a = op.d * recipScale, b = -op.b * recipScale, c = -op.c * recipScale, d = op.a * recipScale;
     
-    float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
     float x2 = op.a + op.c, y2 = op.b + op.d;
     
     float orientation = sign(recipScale);
@@ -153,6 +150,7 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float ymin = min(0.0, y2), ymax = max(0.0, y2);
     float clipy = select(ymin, ymax, yclip > 0.0);
     
+    float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
     ox = select(max(clipx, ox), min(clipx, ox), xclip > 0.0);
     oy = select(max(clipy, oy), min(clipy, oy), yclip > 0.0);
     // Shear = { 0.5, 0.0, 0.5, 1.0 }
@@ -161,7 +159,7 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float m = select(1.0, 2.0 * x, !line);
     float fx = dfdx(x) * m - dfdx(y), fy = dfdy(x) * m - dfdy(y);
     float sd = x * select(1.0, x, !line) - y;
-    float area = estimateArea(sd * rsqrt(fx * fx + fy * fy));
+    float area = clamp(sd * rsqrt(fx * fx + fy * fy), -0.5, 0.5);
     
     oy = devicePoint.y - op.ty;
     float sy0 = saturate(ymin - oy + 0.5), sy2 = saturate(ymax - oy + 0.5);
