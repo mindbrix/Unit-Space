@@ -191,9 +191,9 @@ vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], con
     AffineTransform ctm = state.CTM;
         
     for (uint i = 0; i < iid; i++)
-        ctm = AffineTransformConcat(fractals.ctms[1], ctm);
+        ctm = AffineTransformConcat(fractals.ctms[0], ctm);
     
-    ctm = AffineTransformConcat(fractals.ctms[0], ctm);
+    ctm = AffineTransformConcat(fractals.unitCTM, ctm);
     AffineTransform el = AffineTransformInvert(ctm);
     float scale = sqrt(abs(ctm.a * ctm.d - ctm.b * ctm.c));
     float dilation = 1.0 / scale;

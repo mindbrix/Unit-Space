@@ -156,12 +156,13 @@ using namespace std;
     _calls[idx].type = kCallTypeFractal;
     _calls[idx].state = uniforms;
     Fractals& fractals = _calls[idx].fractals;
-    fractals.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+    fractals.unitCTM = { 100, 0, 0, 100, 0, 0 };
     AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
     float angle =- M_PI / 12.f, cosine = cosf(angle), sine = sinf(angle);
     AffineTransform r = { cosine, sine, -sine, cosine, 0, 0 };
     AffineTransform t = { 1, 0, 0, 1, 100, 100 };
-    fractals.ctms[1] = AffineTransformConcat(r, AffineTransformConcat(s, t));
+    fractals.ctms[0] = AffineTransformConcat(r, AffineTransformConcat(s, t));
+    fractals.counts[0] = 100;
     fractals.count = 100;
     idx++;
     

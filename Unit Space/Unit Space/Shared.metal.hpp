@@ -43,7 +43,9 @@ struct Circles {
 
 struct Fractals {
     int                 count;
-    AffineTransform     ctms[170];
+    AffineTransform     unitCTM;
+    AffineTransform     ctms[8];
+    int                 counts[8];
 };
 
 struct Lines {
