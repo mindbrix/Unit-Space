@@ -17,6 +17,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 
@@ -67,6 +68,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
     descriptor.label = @"Circle";
     self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"fractal_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"fractal_fragment_main"];
+    descriptor.label = @"Fractal";
+    self.fractalPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"line_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
@@ -124,6 +130,11 @@
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
                 [commandEncoder setVertexBytes:&calls->circles length:sizeof(Circles) atIndex:1];
                 instanceCount = calls->circles.count;
+                break;
+            case kCallTypeFractal:
+                [commandEncoder setRenderPipelineState:_fractalPipelineState];
+                [commandEncoder setVertexBytes:&calls->fractals length:sizeof(Fractals) atIndex:1];
+                instanceCount = calls->fractals.count;
                 break;
             case kCallTypeLines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];

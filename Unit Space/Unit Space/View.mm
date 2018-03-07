@@ -150,7 +150,19 @@ using namespace std;
 //    for (int i = 0; i < count; i++)
 //        circles.circles[i] = { q[i].x, q[i].y, radius };
 //    circles.count = count;
+    
+    idx++;
+    
+    uniforms.fillColor = { 1, 0, 1, 1 };
+    _calls[idx].type = kCallTypeFractal;
+    _calls[idx].state = uniforms;
+    Fractals& fractals = _calls[idx].fractals;
+    fractals.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+    fractals.count = 1;
+
+    
     _calls.resize(idx + 1);
+    
     
     [self.metalLayer setNeedsDisplay];
 }

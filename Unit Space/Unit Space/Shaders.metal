@@ -184,6 +184,35 @@ fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant St
 }
 
 
+#pragma mark - Fractal
+
+vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], constant Fractals &fractals [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    AffineTransform ctm = AffineTransformConcat(fractals.ctms[0], state.CTM);
+    AffineTransform el = AffineTransformInvert(ctm);
+    float scale = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+    float dilation = 1.0 / scale;
+    
+    
+    float2 up = { float(vid & 1), float(vid & 2) };
+    
+    float dx = up.x * ctm.a + up.y * ctm.c + ctm.tx;
+    float dy = up.x * ctm.b + up.y * ctm.d + ctm.ty;
+    
+    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
+    
+    StrokeVertex vert;
+    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    return vert;
+}
+
+fragment float4 fractal_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    float alpha = ellipseDistance(vert.unitPoint);
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+}
+
 
 #pragma mark - Line
 
