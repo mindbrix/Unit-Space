@@ -152,18 +152,22 @@ using namespace std;
 //    circles.count = count;
 //    idx++;
 //
-    uniforms.fillColor = { 0, 0, 0, 1 };
+    uniforms.fillColor = { 0, 0, 0, 0.333 };
     _calls[idx].type = kCallTypeFractal;
     _calls[idx].state = uniforms;
     Fractals& fractals = _calls[idx].fractals;
     fractals.unitCTM = { 100, 0, 0, 100, 0, 0 };
     AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
-    float angle =- M_PI / 12.f, cosine = cosf(angle), sine = sinf(angle);
-    AffineTransform r = { cosine, sine, -sine, cosine, 0, 0 };
+    float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
+    AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
     AffineTransform t = { 1, 0, 0, 1, 100, 100 };
     fractals.ctms[0] = AffineTransformConcat(r, AffineTransformConcat(s, t));
-    fractals.counts[0] = 100;
-    fractals.count = 100;
+    float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
+    AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
+    fractals.ctms[1] = r1;// AffineTransformConcat(s, r);
+    fractals.counts[0] = 30;
+    fractals.counts[1] = 24;
+    fractals.count = fractals.counts[0] * fractals.counts[1];
     idx++;
     
     _calls.resize(idx);

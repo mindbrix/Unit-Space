@@ -189,8 +189,14 @@ fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant St
 vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], constant Fractals &fractals [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     AffineTransform ctm = state.CTM;
-        
-    for (uint i = 0; i < iid; i++)
+    
+    uint i0 = iid % uint(fractals.counts[0]);
+    uint i1 = iid / uint(fractals.counts[0]);
+    
+    for (uint i = 0; i <= i1; i++)
+        ctm = AffineTransformConcat(fractals.ctms[1], ctm);
+    
+    for (uint i = 0; i <= i0; i++)
         ctm = AffineTransformConcat(fractals.ctms[0], ctm);
     
     ctm = AffineTransformConcat(fractals.unitCTM, ctm);
