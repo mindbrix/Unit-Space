@@ -114,7 +114,9 @@
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-    descriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+    descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+    descriptor.colorAttachments[0].clearColor = MTLClearColorMake(1, 1, 1, 1);
+    
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
     while (count--) {

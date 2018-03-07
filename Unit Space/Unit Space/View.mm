@@ -136,11 +136,11 @@ using namespace std;
 //    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
 //    idx++;
     
-    uniforms.fillColor = { 0, 0, 0, 1 };
-    _calls[idx].type = kCallTypeQuadratics;
-    _calls[idx].state = uniforms;
-
-    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+//    uniforms.fillColor = { 0, 0, 0, 1 };
+//    _calls[idx].type = kCallTypeQuadratics;
+//    _calls[idx].state = uniforms;
+//
+//    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
 //    idx++;
 //
 //    uniforms.fillColor = { 1, 0, 0, 1 };
@@ -150,21 +150,22 @@ using namespace std;
 //    for (int i = 0; i < count; i++)
 //        circles.circles[i] = { q[i].x, q[i].y, radius };
 //    circles.count = count;
-    
-    idx++;
-    uniforms.fillColor = { 0.5, 0, 0, 0.5 };
+//    idx++;
+//
+    uniforms.fillColor = { 0, 0, 0, 1 };
     _calls[idx].type = kCallTypeFractal;
     _calls[idx].state = uniforms;
     Fractals& fractals = _calls[idx].fractals;
     fractals.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-    AffineTransform s = { sqrtf(0.5f), 0, 0, sqrtf(0.5f), 0, 0 };
+    AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
     float angle =- M_PI / 12.f, cosine = cosf(angle), sine = sinf(angle);
     AffineTransform r = { cosine, sine, -sine, cosine, 0, 0 };
-    AffineTransform t = { 1, 0, 0, 1, 100, 0 };
+    AffineTransform t = { 1, 0, 0, 1, 100, 100 };
     fractals.ctms[1] = AffineTransformConcat(r, AffineTransformConcat(s, t));
     fractals.count = 100;
-
-    _calls.resize(idx + 1);
+    idx++;
+    
+    _calls.resize(idx);
     
     [self.metalLayer setNeedsDisplay];
 }
