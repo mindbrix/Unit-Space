@@ -195,11 +195,11 @@ vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], con
     
     ctm = AffineTransformConcat(fractals.ctms[0], ctm);
     AffineTransform el = AffineTransformInvert(ctm);
-//    float scale = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
-//    float dilation = 1.0 / scale;
+    float scale = sqrt(abs(ctm.a * ctm.d - ctm.b * ctm.c));
+    float dilation = 1.0 / scale;
     
     float2 up = { float(vid & 1), float(vid >> 1) };
-    
+    up += (up - 0.5) * dilation;
     float dx = up.x * ctm.a + up.y * ctm.c + ctm.tx;
     float dy = up.x * ctm.b + up.y * ctm.d + ctm.ty;
     
@@ -213,7 +213,7 @@ vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], con
 
 fragment float4 fractal_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = saturate(ellipseDistance(vert.unitPoint));
+    float alpha = saturate(rectDistance(vert.unitPoint));
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
 
