@@ -152,17 +152,15 @@ using namespace std;
 //    circles.count = count;
     
     idx++;
-    
-    uniforms.fillColor = { 1, 0, 1, 1 };
+    uniforms.fillColor = { 0.5, 0, 0, 0.5 };
     _calls[idx].type = kCallTypeFractal;
     _calls[idx].state = uniforms;
     Fractals& fractals = _calls[idx].fractals;
     fractals.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-    fractals.count = 1;
+    fractals.ctms[1] = { 0.9, 0, 0, 0.9, 50, 50 };
+    fractals.count = 100;
 
-    
     _calls.resize(idx + 1);
-    
     
     [self.metalLayer setNeedsDisplay];
 }
