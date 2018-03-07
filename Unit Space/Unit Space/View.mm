@@ -165,9 +165,12 @@ using namespace std;
     float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
     AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
     fractals.ctms[1] = r1;// AffineTransformConcat(s, r);
+    fractals.ctms[2] =  { 1, 0, 0, 1, 2000, 0 };
+    
     fractals.counts[0] = 30;
     fractals.counts[1] = 24;
-    fractals.count = fractals.counts[0] * fractals.counts[1];
+    fractals.counts[2] = 10;
+    fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2];
     idx++;
     
     _calls.resize(idx);

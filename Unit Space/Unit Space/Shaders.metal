@@ -192,11 +192,15 @@ vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], con
     
     uint i0 = iid % uint(fractals.counts[0]);
     uint i1 = iid / uint(fractals.counts[0]);
+    uint i2 = iid / uint(fractals.counts[0] * fractals.counts[1]);
     
-    for (uint i = 0; i <= i1; i++)
+    for (uint i = 0; i < i2; i++)
+        ctm = AffineTransformConcat(fractals.ctms[2], ctm);
+    
+    for (uint i = 0; i < i1; i++)
         ctm = AffineTransformConcat(fractals.ctms[1], ctm);
     
-    for (uint i = 0; i <= i0; i++)
+    for (uint i = 0; i < i0; i++)
         ctm = AffineTransformConcat(fractals.ctms[0], ctm);
     
     ctm = AffineTransformConcat(fractals.unitCTM, ctm);
