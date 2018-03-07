@@ -41,6 +41,11 @@ struct Circles {
     Circle      circles[340];
 };
 
+struct Fractals {
+    int                 count;
+    AffineTransform     ctms[170];
+};
+
 struct Lines {
     int         count;
     Line        lines[255];
@@ -70,9 +75,10 @@ struct State {
 enum CallType : unsigned int {
     kCallTypeArcs = 0,
     kCallTypeCircles,
+    kCallTypeFractal,
     kCallTypeLines,
     kCallTypeQuadratics,
-    kCallTypeUnits
+    kCallTypeUnits,
 };
 
 struct Call {
@@ -81,6 +87,7 @@ struct Call {
     union {
         Arcs        arcs;
         Circles     circles;
+        Fractals    fractals;
         Lines       lines;
         Quadratics  quadratics;
         Units       units;
