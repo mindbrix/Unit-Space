@@ -139,7 +139,6 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float x2 = op.a + op.c, y2 = op.b + op.d;
     
     float convex = sign(y2 * det);
-    float yclip = sign(x2 * det);
     
     float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
     // Shear = { 0.5, 0.0, 0.5, 1.0 }
@@ -167,10 +166,10 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     oy = devicePoint.y - op.ty - 0.5;
     float ymin = min(0.0, y2), ymax = max(0.0, y2);
     float sy0 = saturate(ymin - oy), sy2 = saturate(ymax - oy);
-    float ysub = select(sy0, 1.0 - sy2, yclip < 0.0);
+    float ysub = select(sy0, 1.0 - sy2, x2 * det < 0.0);
     ysub = select(0.0, ysub, convex > 0.0);
     
-    float ymul = select(1.0 - sy0, sy2, x2 * det > 0.0);
+    float ymul = select(1.0 - sy0, sy2, x2 * det > 0.0); // yclip
     return ymul * sign(y2) * saturate(0.5 + area * convex - ysub);
 }
 
