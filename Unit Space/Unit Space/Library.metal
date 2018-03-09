@@ -163,9 +163,8 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     
     float area = clamp(-min(-sd, box), -0.5, 0.5);
     
-    oy = devicePoint.y - op.ty - 0.5;
     float ymin = min(0.0, y2), ymax = max(0.0, y2);
-    float sy0 = saturate(ymin - oy), sy2 = saturate(ymax - oy);
+    float sy0 = saturate(ymin - oy + 0.5), sy2 = saturate(ymax - oy + 0.5);
     float ysub = select(sy0, 1.0 - sy2, x2 * det < 0.0);
     ysub = select(0.0, ysub, convex > 0.0);
     
