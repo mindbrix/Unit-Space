@@ -136,12 +136,12 @@ using namespace std;
 //    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
 //    idx++;
     
-//    uniforms.fillColor = { 0, 0, 0, 1 };
-//    _calls[idx].type = kCallTypeQuadratics;
-//    _calls[idx].state = uniforms;
-//
-//    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
-//    idx++;
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    _calls[idx].type = kCallTypeQuadratics;
+    _calls[idx].state = uniforms;
+
+    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+    idx++;
 //
 //    uniforms.fillColor = { 1, 0, 0, 1 };
 //    _calls[idx].type = kCallTypeCircles;
@@ -152,28 +152,28 @@ using namespace std;
 //    circles.count = count;
 //    idx++;
 //
-    uniforms.fillColor = { 0, 0, 0, 0.333 };
-    _calls[idx].type = kCallTypeFractal;
-    _calls[idx].state = uniforms;
-    Fractals& fractals = _calls[idx].fractals;
-    fractals.unitCTM = { 100, 0, 0, 100, 0, 0 };
-    AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
-    float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
-    AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
-    AffineTransform t = { 1, 0, 0, 1, 100, 100 };
-    fractals.ctms[0] = AffineTransformConcat(r, AffineTransformConcat(s, t));
-    float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
-    AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
-    fractals.ctms[1] = r1;// AffineTransformConcat(s, r);
-    fractals.ctms[2] =  { 1, 0, 0, 1, 2000, 0 };
-    fractals.ctms[3] =  { 1, 0, 0, 1, -20000, 2000 };
-    
-    fractals.counts[0] = 30;
-    fractals.counts[1] = 24;
-    fractals.counts[2] = 10;
-    fractals.counts[3] = 2;
-    fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
-    idx++;
+//    uniforms.fillColor = { 0, 0, 0, 0.333 };
+//    _calls[idx].type = kCallTypeFractal;
+//    _calls[idx].state = uniforms;
+//    Fractals& fractals = _calls[idx].fractals;
+//    fractals.unitCTM = { 100, 0, 0, 100, 0, 0 };
+//    AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
+//    float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
+//    AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
+//    AffineTransform t = { 1, 0, 0, 1, 100, 100 };
+//    fractals.ctms[0] = AffineTransformConcat(r, AffineTransformConcat(s, t));
+//    float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
+//    AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
+//    fractals.ctms[1] = r1;// AffineTransformConcat(s, r);
+//    fractals.ctms[2] =  { 1, 0, 0, 1, 2000, 0 };
+//    fractals.ctms[3] =  { 1, 0, 0, 1, -20000, 2000 };
+//
+//    fractals.counts[0] = 30;
+//    fractals.counts[1] = 24;
+//    fractals.counts[2] = 10;
+//    fractals.counts[3] = 2;
+//    fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
+//    idx++;
     
     _calls.resize(idx);
     

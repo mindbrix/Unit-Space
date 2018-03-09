@@ -146,20 +146,33 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float clipy = select(0.0, y2, yclip * y2 > 0.0);
     
     float ox = devicePoint.x - op.tx, oy = devicePoint.y - op.ty;
-    ox = select(max(clipx, ox), min(clipx, ox), xclip > 0.0);
-    oy = select(max(clipy, oy), min(clipy, oy), yclip > 0.0);
+//    ox = select(max(clipx, ox), min(clipx, ox), xclip > 0.0);
+//    oy = select(max(clipy, oy), min(clipy, oy), yclip > 0.0);
     // Shear = { 0.5, 0.0, 0.5, 1.0 }
     // a = op.d, b = -op.b, c = -op.c, d = op.a
     // x = (ox * (a + b) + oy * (c + d)) * 0.5, y = (ox * b + oy * d)
     float x = (ox * (op.d - op.b) + oy * (op.a - op.c)) * 0.5 / det, y = (ox * -op.b + oy * op.a) / det;
 //    x = saturate(x);
 //    y = saturate(y);
-//    float e = 0.5 * rsqrt(abs(det));
-//    float lower = -e, upper = 1.0 + e;
-//    line = x < lower || x > upper || y < lower || y > upper;
+    float e = 0.5 * rsqrt(abs(det));
+    float lower = -e, upper = 1.0 + e;
+    line |= x < lower || x > upper || y < lower || y > upper;
+    
+//    float2 nab = normalize(float2(op.b, -op.a));
+//    float area = clamp(dot(float2(ox, oy), nab), -0.5, 0.5);
+    
     float2 m = select(float2(2.0 * x, x), 1.0, line);
     float fx = dfdx(x) * m[0] - dfdx(y), fy = dfdy(x) * m[0] - dfdy(y);
-    float area = clamp((x * m[1] - y) * rsqrt(fx * fx + fy * fy), -0.5, 0.5);
+    float sd = (x * m[1] - y) * rsqrt(fx * fx + fy * fy);
+    float bxsign = x2 * y2 * det;
+    float bx = select(x2 - ox, -ox, bxsign < 0.0);
+    bx *= sign(y2);
+    float by = select(y2 - oy, -oy, bxsign > 0.0);
+    by *= -sign(x2);
+    
+    float box = min(bx, by);
+    
+    float area = clamp(-min(-sd, box), -0.5, 0.5);
     
     oy = devicePoint.y - op.ty - 0.5;
     float ymin = min(0.0, y2), ymax = max(0.0, y2);
