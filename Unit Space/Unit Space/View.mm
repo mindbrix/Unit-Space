@@ -130,18 +130,20 @@ using namespace std;
     _calls.resize(3);
     int idx = 0;
     
-//    uniforms.fillColor = { 0, 0, 1, 1 };
-//    _calls[idx].type = kCallTypeUnits;
-//    _calls[idx].state = uniforms;
-//    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
-//    idx++;
-    
-    uniforms.fillColor = { 0, 0, 0, 1 };
-    _calls[idx].type = kCallTypeQuadratics;
+    uniforms.fillColor = { 0, 0, 1, 1 };
+    _calls[idx].type = kCallTypeUnits;
     _calls[idx].state = uniforms;
-
-    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+    _calls[idx].units.count = 1;
+    _calls[idx].units.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+//    _calls[idx].units.count = WriteQuadratics(& _calls[idx].units.ctms[0], CTM, q, count);
     idx++;
+    
+//    uniforms.fillColor = { 0, 0, 0, 1 };
+//    _calls[idx].type = kCallTypeQuadratics;
+//    _calls[idx].state = uniforms;
+//
+//    _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+//    idx++;
 //
 //    uniforms.fillColor = { 1, 0, 0, 1 };
 //    _calls[idx].type = kCallTypeCircles;

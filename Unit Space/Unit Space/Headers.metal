@@ -20,3 +20,4 @@ float quadraticWinding(float2 devicePoint, AffineTransform op);
 float rectDistance(float2 unitPoint);
 float unitDistance(float2 unitPoint);
 float unitQuadraticWinding(float2 unitPoint);
+float2 unitRepeat(float2 unit, bool rx, bool ry);
