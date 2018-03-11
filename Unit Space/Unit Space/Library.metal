@@ -157,8 +157,8 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float bxsign = x2 * y2 * det;
     float bx = select(x2 - ox, -ox, bxsign < 0.0);
     bx *= fastSign(y2);
-    float by = select(y2 - oy, -oy, bxsign > 0.0);
-    by *= -fastSign(x2);
+    float by = select(oy - y2, oy, bxsign > 0.0);
+    by *= fastSign(x2);
     float box = min(bx, by);
     
     float area = clamp(-min(-sd, box), -0.5, 0.5);
