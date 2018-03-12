@@ -21,6 +21,7 @@ using namespace std;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) BOOL showPoints;
+@property(nonatomic) BOOL showTriangle;
 
 @end
 
@@ -131,6 +132,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleTriangle:(id)sender {
+    _showTriangle = !_showTriangle;
+    [self redraw];
+}
+
 #pragma mark -
 
 - (void)redrawWithMouseLocation:(CGPoint)location {
@@ -143,16 +149,6 @@ using namespace std;
     AffineTransform CTM = self.viewCTM;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float radius = 8.0 / scale;
-    
-    Vector q[] = {
-        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-    };
-    
-//    Vector q[] = {
-//        { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
-//    };
-    
-    int count = sizeof(q) / sizeof(q[0]);
     
     State uniforms;
     uniforms.CTM = CTM;
@@ -174,6 +170,17 @@ using namespace std;
     }
     
     if (_flags & 2) {
+        Vector lozenge[] = {
+            { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+        };
+        
+        Vector triangle[] = {
+            { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
+        };
+        
+        Vector *q = _showTriangle ? triangle : lozenge;
+        int count = _showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
+        
         uniforms.fillColor = { 0, 0, 0, 1 };
         _calls[idx].type = kCallTypeQuadratics;
         _calls[idx].state = uniforms;

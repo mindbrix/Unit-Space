@@ -18,5 +18,6 @@
 - (IBAction)toggleThree:(id)sender;
 
 - (IBAction)togglePoints:(id)sender;
+- (IBAction)toggleTriangle:(id)sender;
 
 @end

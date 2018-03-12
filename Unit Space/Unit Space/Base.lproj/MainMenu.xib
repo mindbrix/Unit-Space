@@ -658,6 +658,12 @@
                                     <action selector="togglePoints:" target="-1" id="5vF-BT-mWq"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleTriangle:" target="-1" id="SuQ-9U-pav"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="mYK-Jo-Aue"/>
                             <menuItem title="Show Sidebar" keyEquivalent="s" id="kIP-vf-haE">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
