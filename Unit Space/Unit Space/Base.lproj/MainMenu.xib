@@ -652,6 +652,12 @@
                                     <action selector="toggleThree:" target="-1" id="l9M-W6-KKE"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Points" keyEquivalent="p" id="87r-mG-RYi">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="togglePoints:" target="-1" id="5vF-BT-mWq"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="mYK-Jo-Aue"/>
                             <menuItem title="Show Sidebar" keyEquivalent="s" id="kIP-vf-haE">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>

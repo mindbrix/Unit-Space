@@ -17,4 +17,6 @@
 - (IBAction)toggleTwo:(id)sender;
 - (IBAction)toggleThree:(id)sender;
 
+- (IBAction)togglePoints:(id)sender;
+
 @end

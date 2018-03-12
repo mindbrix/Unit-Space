@@ -20,6 +20,7 @@ using namespace std;
 @property(nonatomic) VGAffineTransform *transform;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
+@property(nonatomic) BOOL showPoints;
 
 @end
 
@@ -125,6 +126,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)togglePoints:(id)sender {
+    _showPoints = !_showPoints;
+    [self redraw];
+}
+
 #pragma mark -
 
 - (void)redrawWithMouseLocation:(CGPoint)location {
@@ -174,18 +180,19 @@ using namespace std;
         
         _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
         idx++;
+        
+        if (_showPoints) {
+            uniforms.fillColor = { 1, 0, 0, 1 };
+            _calls[idx].type = kCallTypeCircles;
+            _calls[idx].state = uniforms;
+            Circles& circles = _calls[idx].circles;
+            for (int i = 0; i < count; i++)
+                circles.circles[i] = { q[i].x, q[i].y, radius };
+            circles.count = count;
+            idx++;
+        }
     }
     
-//
-//    uniforms.fillColor = { 1, 0, 0, 1 };
-//    _calls[idx].type = kCallTypeCircles;
-//    _calls[idx].state = uniforms;
-//    Circles& circles = _calls[idx].circles;
-//    for (int i = 0; i < count; i++)
-//        circles.circles[i] = { q[i].x, q[i].y, radius };
-//    circles.count = count;
-//    idx++;
-//
     if (_flags & 4) {
         uniforms.fillColor = { 0, 0, 0, 0.333 };
         _calls[idx].type = kCallTypeFractal;
@@ -210,6 +217,8 @@ using namespace std;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
         idx++;
     }
+    
+    
     
     
     _calls.resize(idx);
