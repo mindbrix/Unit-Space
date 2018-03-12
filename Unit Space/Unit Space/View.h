@@ -10,4 +10,7 @@
 
 @interface View : NSView
 
+- (IBAction)clockwise:(id)sender;
+- (IBAction)anticlockwise:(id)sender;
+
 @end
