@@ -108,16 +108,19 @@ using namespace std;
 }
 
 - (IBAction)toggleOne:(id)sender {
+    _flags &= 1;
     _flags ^= 1;
     [self redraw];
 }
 
 - (IBAction)toggleTwo:(id)sender {
+    _flags &= 2;
     _flags ^= 2;
     [self redraw];
 }
 
 - (IBAction)toggleThree:(id)sender {
+    _flags &= 4;
     _flags ^= 4;
     [self redraw];
 }
