@@ -256,7 +256,7 @@ using namespace std;
     AffineTransform CTM = self.viewCTM;
     float ex = x * CTM.a + y * CTM.c + CTM.tx;
     float ey = x * CTM.b + y * CTM.d + CTM.ty;
-    float lx = event.locationInWindow.x * self.layer.contentsScale, ly = event.locationInWindow.y * self.layer.contentsScale;
+    float lx = (event.locationInWindow.x - event.deltaX) * self.layer.contentsScale, ly = (event.locationInWindow.y + event.deltaY) * self.layer.contentsScale;
     float dx = ex - lx, dy = ey - ly;
     return std::sqrt(dx * dx + dy * dy);
 }
