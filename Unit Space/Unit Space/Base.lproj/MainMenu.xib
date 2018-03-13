@@ -634,6 +634,13 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="hB3-LF-h0Y"/>
+                            <menuItem title="Reset Model" keyEquivalent="r" id="KiN-W0-YhM">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="resetModel:" target="-1" id="bpQ-rO-R5g"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="dE8-xK-Qcr"/>
                             <menuItem title="Toggle 1" keyEquivalent="1" id="6g3-WI-1Dt">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

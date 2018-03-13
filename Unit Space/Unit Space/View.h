@@ -13,6 +13,8 @@
 - (IBAction)clockwise:(id)sender;
 - (IBAction)anticlockwise:(id)sender;
 
+- (IBAction)resetModel:(id)sender;
+
 - (IBAction)toggleOne:(id)sender;
 - (IBAction)toggleTwo:(id)sender;
 - (IBAction)toggleThree:(id)sender;

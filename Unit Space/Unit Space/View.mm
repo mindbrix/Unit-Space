@@ -33,7 +33,7 @@ using namespace std;
     if (! self)
         return nil;
     
-    _unitCTM = { 100, 0, 0, 100, 0, 0 };
+    [self reset];
     
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
@@ -119,6 +119,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)resetModel:(id)sender {
+    [self reset];
+    [self redraw];
+}
+
 - (IBAction)toggleOne:(id)sender {
     _flags &= 1;
     _flags ^= 1;
@@ -156,7 +161,10 @@ using namespace std;
 }
 
 - (void)reset {
-    
+    _unitCTM = { 100, 0, 0, 100, 0, 0 };
+}
+
+- (void)update {
     AffineTransform CTM = self.viewCTM;
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
@@ -252,7 +260,7 @@ using namespace std;
 }
 
 - (void)redraw {
-    [self reset];
+    [self update];
     
     AffineTransform CTM = self.viewCTM;
     for (Call& call : _calls)
