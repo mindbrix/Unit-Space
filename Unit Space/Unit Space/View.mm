@@ -22,6 +22,7 @@ using namespace std;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
+@property(nonatomic) AffineTransform unitCTM;
 
 @end
 
@@ -146,7 +147,9 @@ using namespace std;
 }
 
 - (void)reset {
+    _unitCTM = { 100, 0, 0, 100, 0, 0 };
     AffineTransform CTM = self.viewCTM;
+    
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float radius = 8.0 / scale;
     
@@ -164,7 +167,7 @@ using namespace std;
         _calls[idx].type = kCallTypeUnits;
         _calls[idx].state = uniforms;
         _calls[idx].units.count = 1;
-        _calls[idx].units.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+        _calls[idx].units.ctms[0] = _unitCTM;
         idx++;
     }
     
@@ -204,7 +207,7 @@ using namespace std;
         _calls[idx].type = kCallTypeFractal;
         _calls[idx].state = uniforms;
         Fractals& fractals = _calls[idx].fractals;
-        fractals.unitCTM = { 100, 0, 0, 100, 0, 0 };
+        fractals.unitCTM = _unitCTM;
         AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
         float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
         AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
@@ -228,7 +231,7 @@ using namespace std;
             _calls[idx].type = kCallTypeCircles;
             _calls[idx].state = uniforms;
             Circles& circles = _calls[idx].circles;
-            AffineTransform& unit = fractals.unitCTM;
+            AffineTransform& unit = _unitCTM;
             circles.circles[0] = { unit.tx, unit.ty, radius };
             circles.circles[1] = { unit.tx + unit.a, unit.ty + unit.b, radius };
             circles.circles[2] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
