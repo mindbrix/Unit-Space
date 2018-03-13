@@ -223,6 +223,19 @@ using namespace std;
         fractals.counts[3] = 2;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
         idx++;
+        
+        if (_showPoints) {
+            uniforms.fillColor = { 1, 0, 0, 1 };
+            _calls[idx].type = kCallTypeCircles;
+            _calls[idx].state = uniforms;
+            Circles& circles = _calls[idx].circles;
+            AffineTransform& unit = fractals.unitCTM;
+            circles.circles[0] = { unit.tx, unit.ty, radius };
+            circles.circles[1] = { unit.tx + unit.a, unit.ty + unit.b, radius };
+            circles.circles[2] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
+            circles.count = 3;
+            idx++;
+        }
     }
     _calls.resize(idx);
 }
