@@ -66,15 +66,25 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    float d = [self deviceDistance:event userX:_unitCTM.tx userY:_unitCTM.ty];
+    float d0 = [self deviceDistance:event userX:_unitCTM.tx userY:_unitCTM.ty];
+    float d1 = [self deviceDistance:event userX:_unitCTM.tx + _unitCTM.a userY:_unitCTM.ty + _unitCTM.b];
+    float d2 = [self deviceDistance:event userX:_unitCTM.tx + _unitCTM.a + _unitCTM.c userY:_unitCTM.ty + _unitCTM.b + _unitCTM.d];
     
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
     
-    if (d < 8.0f) {
+    if (d0 < 8.0f) {
         _unitCTM.tx += ux;
         _unitCTM.ty += uy;
+    } else if (d1 < 8.0f) {
+        _unitCTM.a += ux;
+        _unitCTM.b += uy;
+        _unitCTM.c -= ux;
+        _unitCTM.d -= uy;
+    } else if (d2 < 8.0f) {
+        _unitCTM.c += ux;
+        _unitCTM.d += uy;
     } else {
         [self.transform translateByX:event.deltaX andY:-event.deltaY];
     }
