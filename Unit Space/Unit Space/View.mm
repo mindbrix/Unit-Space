@@ -33,6 +33,8 @@ using namespace std;
     if (! self)
         return nil;
     
+    _unitCTM = { 100, 0, 0, 100, 0, 0 };
+    
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
@@ -64,21 +66,18 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    /*
+    float d = [self deviceDistance:event userX:_unitCTM.tx userY:_unitCTM.ty];
+    
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
     
-    AffineTransform& unit0 = _calls[0].units.units[0].unitCTM;
-    BOOL inside = [self isPoint:event.locationInWindow inUnitEllipse:unit0];
-    
-    if (inside) {
-        unit0.tx += ux;
-        unit0.ty += uy;
-    } else
-     */
-    
-    [self.transform translateByX:event.deltaX andY:-event.deltaY];
+    if (d < 8.0f) {
+        _unitCTM.tx += ux;
+        _unitCTM.ty += uy;
+    } else {
+        [self.transform translateByX:event.deltaX andY:-event.deltaY];
+    }
     [self redraw];
 }
 
@@ -147,7 +146,7 @@ using namespace std;
 }
 
 - (void)reset {
-    _unitCTM = { 100, 0, 0, 100, 0, 0 };
+    
     AffineTransform CTM = self.viewCTM;
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
@@ -250,6 +249,16 @@ using namespace std;
         call.state.CTM = CTM;
     
     [self.metalLayer setNeedsDisplay];
+}
+
+
+- (float)deviceDistance:(NSEvent *)event userX:(float)x userY:(float)y {
+    AffineTransform CTM = self.viewCTM;
+    float ex = x * CTM.a + y * CTM.c + CTM.tx;
+    float ey = x * CTM.b + y * CTM.d + CTM.ty;
+    float lx = event.locationInWindow.x * self.layer.contentsScale, ly = event.locationInWindow.y * self.layer.contentsScale;
+    float dx = ex - lx, dy = ey - ly;
+    return std::sqrt(dx * dx + dy * dy);
 }
 
 - (BOOL)isPoint:(CGPoint)point inUnitEllipse:(AffineTransform)unitCTM {
