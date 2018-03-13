@@ -145,7 +145,7 @@ using namespace std;
     [self redraw];
 }
 
-- (void)redraw {
+- (void)reset {
     AffineTransform CTM = self.viewCTM;
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float radius = 8.0 / scale;
@@ -224,12 +224,11 @@ using namespace std;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
         idx++;
     }
-    
-    
-    
-    
     _calls.resize(idx);
-    
+}
+
+- (void)redraw {
+    [self reset];
     [self.metalLayer setNeedsDisplay];
 }
 
