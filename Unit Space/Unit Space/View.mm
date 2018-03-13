@@ -23,6 +23,10 @@ using namespace std;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
 @property(nonatomic) AffineTransform unitCTM;
+@property(nonatomic) AffineTransform ctm0;
+@property(nonatomic) AffineTransform ctm1;
+@property(nonatomic) AffineTransform ctm2;
+@property(nonatomic) AffineTransform ctm3;
 
 @end
 
@@ -66,29 +70,37 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    float d0 = [self deviceDistance:event userX:_unitCTM.tx userY:_unitCTM.ty];
-    float d1 = [self deviceDistance:event userX:_unitCTM.tx + _unitCTM.a userY:_unitCTM.ty + _unitCTM.b];
-    float d2 = [self deviceDistance:event userX:_unitCTM.tx + _unitCTM.a + _unitCTM.c userY:_unitCTM.ty + _unitCTM.b + _unitCTM.d];
+    
+    if (![self mouseDragCTM:event CTM:_unitCTM])
+        [self.transform translateByX:event.deltaX andY:-event.deltaY];
+    
+    [self redraw];
+}
+
+- (BOOL)mouseDragCTM:(NSEvent *)event CTM:(AffineTransform &)CTM {
+    float d0 = [self deviceDistance:event userX:CTM.tx userY:CTM.ty];
+    float d1 = [self deviceDistance:event userX:CTM.tx + CTM.a userY:CTM.ty + CTM.b];
+    float d2 = [self deviceDistance:event userX:CTM.tx + CTM.a + CTM.c userY:CTM.ty + CTM.b + CTM.d];
     
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
     
     if (d0 < 8.0f) {
-        _unitCTM.tx += ux;
-        _unitCTM.ty += uy;
+        CTM.tx += ux;
+        CTM.ty += uy;
     } else if (d1 < 8.0f) {
-        _unitCTM.a += ux;
-        _unitCTM.b += uy;
-        _unitCTM.c -= ux;
-        _unitCTM.d -= uy;
+        CTM.a += ux;
+        CTM.b += uy;
+        CTM.c -= ux;
+        CTM.d -= uy;
     } else if (d2 < 8.0f) {
-        _unitCTM.c += ux;
-        _unitCTM.d += uy;
-    } else {
-        [self.transform translateByX:event.deltaX andY:-event.deltaY];
-    }
-    [self redraw];
+        CTM.c += ux;
+        CTM.d += uy;
+    } else
+        return NO;
+    
+    return YES;
 }
 
 - (void)mouseMoved:(NSEvent *)event {
@@ -162,6 +174,17 @@ using namespace std;
 
 - (void)reset {
     _unitCTM = { 100, 0, 0, 100, 0, 0 };
+    
+    AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
+    float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
+    AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
+    AffineTransform t = { 1, 0, 0, 1, 100, 100 };
+    _ctm0 = AffineTransformConcat(r, AffineTransformConcat(s, t));
+    float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
+    AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
+    _ctm1 = r1;// AffineTransformConcat(s, r);
+    _ctm2 =  { 1, 0, 0, 1, 2000, 0 };
+    _ctm3 =  { 1, 0, 0, 1, -20000, 2000 };
 }
 
 - (void)update {
@@ -225,16 +248,11 @@ using namespace std;
         _calls[idx].state = uniforms;
         Fractals& fractals = _calls[idx].fractals;
         fractals.unitCTM = _unitCTM;
-        AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
-        float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
-        AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
-        AffineTransform t = { 1, 0, 0, 1, 100, 100 };
-        fractals.ctms[0] = AffineTransformConcat(r, AffineTransformConcat(s, t));
-        float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
-        AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
-        fractals.ctms[1] = r1;// AffineTransformConcat(s, r);
-        fractals.ctms[2] =  { 1, 0, 0, 1, 2000, 0 };
-        fractals.ctms[3] =  { 1, 0, 0, 1, -20000, 2000 };
+        
+        fractals.ctms[0] = _ctm0;
+        fractals.ctms[1] = _ctm1;
+        fractals.ctms[2] = _ctm2;
+        fractals.ctms[3] = _ctm3;
         
         fractals.counts[0] = 30;
         fractals.counts[1] = 24;
