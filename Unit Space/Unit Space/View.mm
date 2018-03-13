@@ -151,7 +151,6 @@ using namespace std;
     float radius = 8.0 / scale;
     
     State uniforms;
-    uniforms.CTM = CTM;
     uniforms.strokeColor = { 1, 0, 0, 1 };
     uniforms.flatness = 0.03125;
     uniforms.width = 0.5;
@@ -242,6 +241,11 @@ using namespace std;
 
 - (void)redraw {
     [self reset];
+    
+    AffineTransform CTM = self.viewCTM;
+    for (Call& call : _calls)
+        call.state.CTM = CTM;
+    
     [self.metalLayer setNeedsDisplay];
 }
 
