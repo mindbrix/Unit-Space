@@ -71,7 +71,11 @@ using namespace std;
 
 - (void)mouseDragged:(NSEvent *)event {
     
-    if (![self mouseDragCTM:event CTM:_unitCTM])
+    AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
+    if ([self mouseDragCTM:event CTM:ctm0]) {
+        AffineTransform t = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
+        _ctm0 = t;
+    } else if (![self mouseDragCTM:event CTM:_unitCTM])
         [self.transform translateByX:event.deltaX andY:-event.deltaY];
     
     [self redraw];
@@ -254,10 +258,10 @@ using namespace std;
         fractals.ctms[2] = _ctm2;
         fractals.ctms[3] = _ctm3;
         
-        fractals.counts[0] = 30;
+        fractals.counts[0] = 60;
         fractals.counts[1] = 24;
-        fractals.counts[2] = 10;
-        fractals.counts[3] = 2;
+        fractals.counts[2] = 1;
+        fractals.counts[3] = 1;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
         idx++;
         
@@ -267,10 +271,17 @@ using namespace std;
             _calls[idx].state = uniforms;
             Circles& circles = _calls[idx].circles;
             AffineTransform& unit = _unitCTM;
-            circles.circles[0] = { unit.tx, unit.ty, radius };
-            circles.circles[1] = { unit.tx + unit.a, unit.ty + unit.b, radius };
-            circles.circles[2] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
-            circles.count = 3;
+            int i = 0;
+            circles.circles[i++] = { unit.tx, unit.ty, radius };
+            circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
+            circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
+            
+            AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
+            circles.circles[i++] = { ctm0.tx, ctm0.ty, radius };
+            circles.circles[i++] = { ctm0.tx + ctm0.a, ctm0.ty + ctm0.b, radius };
+            circles.circles[i++] = { ctm0.tx + ctm0.a + ctm0.c, ctm0.ty + ctm0.b + ctm0.d, radius };
+            
+            circles.count = i;
             idx++;
         }
     }
