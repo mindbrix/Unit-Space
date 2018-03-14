@@ -225,9 +225,9 @@ vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], con
     return vert;
 }
 
-fragment float4 fractal_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 fractal_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Fractals &fractals [[buffer(1)]])
 {
-    float alpha = saturate(rectDistance(vert.unitPoint));
+    float alpha = saturate(fractals.ellipse ? ellipseDistance(vert.unitPoint) : rectDistance(vert.unitPoint));
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
 

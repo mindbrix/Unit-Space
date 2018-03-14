@@ -46,6 +46,7 @@ struct Fractals {
     AffineTransform     unitCTM;
     AffineTransform     ctms[8];
     int                 counts[8];
+    bool                ellipse;
 };
 
 struct Lines {

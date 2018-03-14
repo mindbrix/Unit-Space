@@ -136,6 +136,7 @@
             case kCallTypeFractal:
                 [commandEncoder setRenderPipelineState:_fractalPipelineState];
                 [commandEncoder setVertexBytes:&calls->fractals length:sizeof(Fractals) atIndex:1];
+                [commandEncoder setFragmentBytes:&calls->fractals length:sizeof(Fractals) atIndex:1];
                 instanceCount = calls->fractals.count;
                 break;
             case kCallTypeLines:

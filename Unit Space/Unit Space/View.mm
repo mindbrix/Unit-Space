@@ -263,6 +263,7 @@ using namespace std;
         fractals.counts[2] = 1;
         fractals.counts[3] = 1;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
+        fractals.ellipse = true;
         idx++;
         
         if (_showPoints) {
