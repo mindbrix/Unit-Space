@@ -19,6 +19,7 @@
 - (IBAction)toggleTwo:(id)sender;
 - (IBAction)toggleThree:(id)sender;
 
+- (IBAction)toggleEllipse:(id)sender;
 - (IBAction)togglePoints:(id)sender;
 - (IBAction)toggleTriangle:(id)sender;
 

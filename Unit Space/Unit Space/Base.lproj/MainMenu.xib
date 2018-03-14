@@ -659,10 +659,16 @@
                                     <action selector="toggleThree:" target="-1" id="l9M-W6-KKE"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Points" keyEquivalent="p" id="87r-mG-RYi">
+                            <menuItem title="Toggle Ellipse" keyEquivalent="e" id="87r-mG-RYi">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="togglePoints:" target="-1" id="5vF-BT-mWq"/>
+                                    <action selector="toggleEllipse:" target="-1" id="enF-8W-rvS"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Points" keyEquivalent="p" id="FEL-y9-7ve">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="togglePoints:" target="-1" id="YNN-Gr-sSm"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">

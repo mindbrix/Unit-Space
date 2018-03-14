@@ -20,6 +20,7 @@ using namespace std;
 @property(nonatomic) VGAffineTransform *transform;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
+@property(nonatomic) BOOL showEllipse;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
 @property(nonatomic) AffineTransform unitCTM;
@@ -158,6 +159,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleEllipse:(id)sender {
+    _showEllipse = !_showEllipse;
+    [self redraw];
+}
+
 - (IBAction)togglePoints:(id)sender {
     _showPoints = !_showPoints;
     [self redraw];
@@ -263,7 +269,7 @@ using namespace std;
         fractals.counts[2] = 1;
         fractals.counts[3] = 1;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
-        fractals.ellipse = true;
+        fractals.ellipse = _showEllipse;
         idx++;
         
         if (_showPoints) {
