@@ -12,6 +12,9 @@
 #import "Algorithms.hpp"
 #import <vector>
 
+constexpr float kPointDeviceRadius = 8;
+constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
+
 using namespace std;
 
 @interface View () <LayerDelegate>
@@ -91,15 +94,15 @@ using namespace std;
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
     
-    if (d0 < 8.0f) {
+    if (d0 < kLargePointDeviceRadius) {
         CTM.tx += ux;
         CTM.ty += uy;
-    } else if (d1 < 8.0f) {
+    } else if (d1 < kPointDeviceRadius) {
         CTM.a += ux;
         CTM.b += uy;
         CTM.c -= ux;
         CTM.d -= uy;
-    } else if (d2 < 8.0f) {
+    } else if (d2 < kPointDeviceRadius) {
         CTM.c += ux;
         CTM.d += uy;
     } else
@@ -201,7 +204,8 @@ using namespace std;
     AffineTransform CTM = self.viewCTM;
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
-    float radius = 8.0 / scale;
+    float largeRadius = kLargePointDeviceRadius / scale;
+    float radius = kPointDeviceRadius / scale;
     
     State uniforms;
     uniforms.strokeColor = { 1, 0, 0, 1 };
@@ -278,13 +282,14 @@ using namespace std;
             _calls[idx].state = uniforms;
             Circles& circles = _calls[idx].circles;
             AffineTransform& unit = _unitCTM;
+            
             int i = 0;
-            circles.circles[i++] = { unit.tx, unit.ty, radius };
+            circles.circles[i++] = { unit.tx, unit.ty, largeRadius };
             circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
             circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
             
             AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
-            circles.circles[i++] = { ctm0.tx, ctm0.ty, radius };
+            circles.circles[i++] = { ctm0.tx, ctm0.ty, largeRadius };
             circles.circles[i++] = { ctm0.tx + ctm0.a, ctm0.ty + ctm0.b, radius };
             circles.circles[i++] = { ctm0.tx + ctm0.a + ctm0.c, ctm0.ty + ctm0.b + ctm0.d, radius };
             
