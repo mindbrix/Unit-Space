@@ -74,12 +74,10 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    
     AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
-    if ([self mouseDragCTM:event CTM:ctm0]) {
-        AffineTransform t = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
-        _ctm0 = t;
-    } else if (![self mouseDragCTM:event CTM:_unitCTM])
+    if ([self mouseDragCTM:event CTM:ctm0])
+        _ctm0 = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
+    else if (![self mouseDragCTM:event CTM:_unitCTM])
         [self.transform translateByX:event.deltaX andY:-event.deltaY];
     
     [self redraw];
