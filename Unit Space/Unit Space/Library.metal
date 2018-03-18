@@ -251,6 +251,13 @@ float unitQuadraticWinding(float2 unitPoint) {
     return quadraticWinding(float2(0, 0), op);
 }
 
+float2 unitInverse(float2 unit) {
+    unit = (unit - 0.5) * 2.0;
+    unit = unit / dot(unit, unit);
+    unit = unit * 0.5 + 0.5;
+    return unit;
+}
+
 float2 unitRepeat(float2 unit, bool rx, bool ry) {
     float2 repeated = abs(fmod(abs(unit), 2.0) - 1.0);
     
