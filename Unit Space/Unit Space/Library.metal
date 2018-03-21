@@ -251,6 +251,16 @@ float unitQuadraticWinding(float2 unitPoint) {
     return quadraticWinding(float2(0, 0), op);
 }
 
+float2 unitComplexMultiply(float2 unit) {
+    unit = (unit - 0.5) * 2.0;
+    
+    float2 u2 = unit * 10.0;
+    unit = { unit.x * u2.x - unit.y * u2.y, unit.x * u2.y + unit.y * u2.x };
+    
+    unit = unit * 0.5 + 0.5;
+    return unit;
+}
+
 float2 unitInverse(float2 unit) {
     unit = (unit - 0.5) * 2.0;
     unit = unit / dot(unit, unit);
