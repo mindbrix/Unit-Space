@@ -198,6 +198,44 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     x0 -= devicePoint.x, x1 -= devicePoint.x, x2 -= devicePoint.x;
     y0 -= devicePoint.y, y1 -= devicePoint.y, y2 -= devicePoint.y;
     
+    float2 from = { x0, y0 }, ctrl = { x1, y1 }, to = { x2, y2 };
+    
+    // Determine winding, and sort into a consistent order so we only need to find one root below.
+    bool positive = from.x < to.x;
+    float2 left = positive ? from : to, right = positive ? to : from;
+    float2 v0 = ctrl - left, v1 = right - ctrl;
+    
+    // Shoot a vertical ray toward the curve.
+    float2 window = clamp(float2(from.x, to.x), -0.5, 0.5);
+    float offset = mix(window.x, window.y, 0.5) - left.x;
+    float t = offset / (v0.x + sqrt(v1.x * offset - v0.x * (offset - v0.x)));
+    
+    // Look up area under that line, and scale horizontally to the window size.
+    float dX = window.x - window.y;
+    
+    // Compute position and derivative to form a line approximation.
+    float y = -mix(mix(left.y, ctrl.y, t), mix(ctrl.y, right.y, t), t);
+    float d = -abs(mix(v0.y, v1.y, t) / mix(v0.x, v1.x, t));
+    
+    float a0 = 0.5 - y;
+    float h = 0.5 * d;
+    float e0 = max(0.0, h - a0), e1 = max(0.0, h - (1.0 - a0));
+    float A = saturate(a0 + 0.25 / h * (e0 * e0 - e1 * e1));
+    float winding = dX * A;
+    
+    float4 black = { 0, 0, 0, 1 }, white = 1;
+    
+    return mix(white, black, abs(winding));
+}
+
+float4 quadraticColor0(float2 devicePoint, AffineTransform op) {
+    float x0 = op.tx, y0 = op.ty;
+    float x1 = op.tx + op.a, y1 = op.ty + op.b;
+    float x2 = x1 + op.c, y2 = y1 + op.d;
+    
+    x0 -= devicePoint.x, x1 -= devicePoint.x, x2 -= devicePoint.x;
+    y0 -= devicePoint.y, y1 -= devicePoint.y, y2 -= devicePoint.y;
+    
     float a = x0 * y2 - x2 * y0, Ba = y0 - y2, Ca = x2 - x0;
     float b = 2.0 * (x1 * y0 - x0 * y1), Bb = y1 - y0, Cb = x0 - x1;
     float d = 2.0 * (x2 * y1 - x1 * y2), Bd = y2 - y1, Cd = x1 - x2;

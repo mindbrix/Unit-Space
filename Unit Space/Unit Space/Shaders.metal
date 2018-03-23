@@ -295,7 +295,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uin
 
 fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]])
 {
-//    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
+    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
     float winding = 0.0;
 
