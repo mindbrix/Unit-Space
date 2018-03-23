@@ -214,13 +214,13 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     float dX = window.x - window.y;
     
     // Compute position and derivative to form a line approximation.
-    float y = -mix(mix(left.y, ctrl.y, t), mix(ctrl.y, right.y, t), t);
-    float d = -abs(mix(v0.y, v1.y, t) / mix(v0.x, v1.x, t));
+    float y = mix(mix(left.y, ctrl.y, t), mix(ctrl.y, right.y, t), t);
+    float d = abs(mix(v0.y, v1.y, t) / mix(v0.x, v1.x, t));
     
-    float a0 = 0.5 - y;
+    float a0 = 0.5 + y;
     float h = 0.5 * d;
     float e0 = max(0.0, h - a0), e1 = max(0.0, h - (1.0 - a0));
-    float A = saturate(a0 + 0.25 / h * (e0 * e0 - e1 * e1));
+    float A = saturate(a0 - 0.25 / h * (e0 * e0 - e1 * e1));
     float winding = dX * A;
     
     float4 black = { 0, 0, 0, 1 }, white = 1;
