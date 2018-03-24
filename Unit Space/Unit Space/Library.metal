@@ -84,10 +84,12 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float y = mix(mix(left.y, ctrl.y, t), mix(ctrl.y, right.y, t), t);
     float d = abs(mix(v0.y, v1.y, t) / mix(v0.x, v1.x, t));
     
-    float a0 = 0.5 + y;
-    float h = 0.5 * d;
-    float e0 = max(0.0, h - a0), e1 = max(0.0, h - (1.0 - a0));
-    return (window.x - window.y) * saturate(a0 - 0.25 / h * (e0 * e0 - e1 * e1));
+    float u0 = -y + 0.5, u1 = -y - 0.5;
+    float xl = clamp(u0 / d, -0.5, 0.5), xu = clamp(u1 / d, -0.5, 0.5);
+    float xmin = min(xl, xu), xmax = max(xl, xu);
+    float yl = clamp(y + 0.5 * d, -0.5, 0.5), yu = clamp(y - 0.5 * d, -0.5, 0.5);
+    float ymin = min(yl, yu), ymax = max(yl, yu);
+    return (window.x - window.y) * saturate(0.5 - xmax + (xmax - xmin) * (ymax - ymin) * 0.5 + 0.5 + ymin);
 }
 
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
