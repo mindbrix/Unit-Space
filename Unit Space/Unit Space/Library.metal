@@ -80,9 +80,6 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float offset = mix(window.x, window.y, 0.5) - left.x;
     float t = offset / (v0.x + sqrt(v1.x * offset - v0.x * (offset - v0.x)));
     
-    // Look up area under that line, and scale horizontally to the window size.
-    float dX = window.x - window.y;
-    
     // Compute position and derivative to form a line approximation.
     float y = mix(mix(left.y, ctrl.y, t), mix(ctrl.y, right.y, t), t);
     float d = abs(mix(v0.y, v1.y, t) / mix(v0.x, v1.x, t));
@@ -90,10 +87,7 @@ float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float a0 = 0.5 + y;
     float h = 0.5 * d;
     float e0 = max(0.0, h - a0), e1 = max(0.0, h - (1.0 - a0));
-    float A = saturate(a0 - 0.25 / h * (e0 * e0 - e1 * e1));
-    float winding = dX * A;
-    
-    return winding;
+    return (window.x - window.y) * saturate(a0 - 0.25 / h * (e0 * e0 - e1 * e1));
 }
 
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
