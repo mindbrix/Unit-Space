@@ -132,7 +132,7 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float quadraticWinding(float2 devicePoint, AffineTransform op) {
+float quadraticWinding3(float2 devicePoint, AffineTransform op) {
     bool line = abs(op.a - op.c) < 1e-3 && abs(op.b - op.d) < 1e-3;
     float det = select(op.a * op.d - op.b * op.c, 1.0, line);
     
@@ -190,7 +190,7 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
     return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
 }
 
-float4 quadraticColor(float2 devicePoint, AffineTransform op) {
+float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, y0 = op.ty;
     float x1 = op.tx + op.a, y1 = op.ty + op.b;
     float x2 = x1 + op.c, y2 = y1 + op.d;
@@ -223,12 +223,10 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     float A = saturate(a0 - 0.25 / h * (e0 * e0 - e1 * e1));
     float winding = dX * A;
     
-    float4 black = { 0, 0, 0, 1 }, white = 1;
-    
-    return mix(white, black, abs(winding));
+    return winding;
 }
 
-float4 quadraticColor0(float2 devicePoint, AffineTransform op) {
+float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, y0 = op.ty;
     float x1 = op.tx + op.a, y1 = op.ty + op.b;
     float x2 = x1 + op.c, y2 = y1 + op.d;
