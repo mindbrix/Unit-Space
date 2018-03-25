@@ -137,6 +137,49 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op) {
 //    return mix(1.0, float4(select(0, 1, dfx < 0.0), select(0, 1, dfy < 0.0), 0, 1), saturate((winding)));
 }
 
+// http://hhoppe.com/ravg.pdf
+//
+float implicitDistance(float px, float py, float x0, float y0, float x1, float y1, float x2, float y2) {
+    x0 -= px, y0 -= py, x1 -= px, y1 -= py, x2 -= px, y2 -= py;
+    float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
+    float f = 4.0 * b * d - a * a;
+    
+    //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, r = 512.0, f = -(x * x + y * y - r * r);
+    //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, a = 512, b = 512.0, f = -(x * x / (a * a) + y * y / (b * b) - 1.0);
+    //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, c = 256.0, f = -(abs(x) + abs(y) - c);
+    //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, c = 256.0, f = -(max(abs(x), abs(y)) - c);
+    // http://benice-equation.blogspot.co.uk/2016/10/equation-of-rounded-rectangle.html
+    //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, a = 0.0, b = 256.0, c = 64.0, mx = max(abs(x) - a, 0.0), my = max(abs(y) - b, 0.0),  f = -(mx * mx + my * my - c * c);
+    
+    //    float A = 4, B = -12, C = 9, D = 3, E = -2, F = -6;
+    //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py;
+    //    float f = -(A * x * x + B * x * y + C * y * y + D * x + E * y + F);
+    
+    float dfx = dfdx(f), dfy = dfdy(f);
+    return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
+}
+
+float det(float2 a, float2 b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float y2) {
+    float2 b0 = { x0, y0 }, b1 = { x1, y1 }, b2 = { x2, y2 };
+    
+    float a = det(b0, b2), b = det(b1, b0), d = det(b2, b1);
+    float f = 4.0 * b * d - a * a;
+    
+    float2 gf = { dfdx(f), dfdy(f) };
+    float2 pp = -f * gf / dot(gf, gf);
+    
+    float2 d0p = b0 - pp;
+    float2 d10 = b1 - b0, d20 = b2 - b0;
+    float ap = det(d0p, d20), bp = det(d10, d0p);
+    // (note that ap + bp + dp = a + b + d = 2 * area(b0, b1, b2))
+    return (0.5 * ap + bp) / (a + b + d);
+}
+
+
 float unitDistance(float2 unitPoint) {
     float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
     
