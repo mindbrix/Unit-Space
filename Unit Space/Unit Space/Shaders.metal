@@ -65,7 +65,8 @@ vertex UnitVertex unit_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 unit_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = saturate(unitRoundedRectDistance(vert.unitPoint0, 0.25) + 0.5);
+    float alpha = saturate(implicitDistance(vert.unitPoint0.x, vert.unitPoint0.y, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0) + 0.5);
+//    float alpha = saturate(unitRoundedRectDistance(vert.unitPoint0, 0.25) + 0.5);
     
 //    float alpha = ellipseStrokeDistance(vert.unitPoint0, vert.width);
 //    float alpha = saturate(unitQuadraticWinding(vert.unitPoint0) + 0.5);
