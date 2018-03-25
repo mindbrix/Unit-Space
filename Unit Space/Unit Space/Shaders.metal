@@ -300,12 +300,20 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 {
 //    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
-    float winding = 0.0;
-
-    for (int i = 0; i < quadratics.count; i++)
-        winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
-
-    float alpha = abs(winding);
+    float x = vert.devicePoint.x, y = vert.devicePoint.y;
+    float d = 1;
+    for (int i = 0; i < quadratics.count; i++) {
+        AffineTransform inv = AffineTransformInvert(quadratics.ctms[i]);
+        d = min(d, unitQuadraticDistanceChainRule(float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty)));
+    }
+    float alpha = saturate(d + 0.5);
+    
+//    float winding = 0.0;
+//
+//    for (int i = 0; i < quadratics.count; i++)
+//        winding += quadraticWinding(vert.devicePoint, quadratics.ctms[i]);
+//
+//    float alpha = abs(winding);
     
 //    float alpha = abs(quadraticWinding(vert.devicePoint, quadratics.ctms[0]));
     float4 color = float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), white = float4(1.0, 1.0, 1.0, 1.0);

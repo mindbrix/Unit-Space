@@ -19,7 +19,7 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op);
 float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2);
 float quadraticWinding(float2 devicePoint, AffineTransform op);
 float rectDistance(float2 unitPoint);
-float unitDistance(float2 unitPoint);
+float unitQuadraticDistanceChainRule(float2 unitPoint);
 float unitQuadraticWinding(float2 unitPoint);
 float2 unitComplexMultiply(float2 unit);
 float2 unitInverse(float2 unit);

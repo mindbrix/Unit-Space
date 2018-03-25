@@ -60,14 +60,6 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
     return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
 }
 
-float unitQuadraticDistanceChainRule(float2 unitPoint) {
-    float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
-    
-    float fx = 2.0 * x * dfdx(x) - dfdx(y);
-    float fy = 2.0 * x * dfdy(x) - dfdy(y);
-    return (y - x * x) * rsqrt(fx * fx + fy * fy);
-}
-
 float unitRoundedRectDistance(float2 unitPoint, float radius) {
     float scale = sqrt(abs(dfdx(unitPoint.x) * dfdy(unitPoint.y) - dfdy(unitPoint.x) * dfdx(unitPoint.y)));
     float rmin = min(0.5, scale), r = max(radius, rmin), b = 0.5 - r;
@@ -180,7 +172,7 @@ float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float 
 }
 
 
-float unitDistance(float2 unitPoint) {
+float unitQuadraticDistanceChainRule(float2 unitPoint) {
     float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
     
     float fx = 2.0 * x * dfdx(x) - dfdx(y);
@@ -188,9 +180,8 @@ float unitDistance(float2 unitPoint) {
     return (y - x * x) * rsqrt(fx * fx + fy * fy);
 }
 
-
 float unitQuadraticWinding(float2 unitPoint) {
-    return unitDistance(unitPoint);
+    return unitQuadraticDistanceChainRule(unitPoint);
     
     float ux = unitPoint.x, uy = unitPoint.y;
     
