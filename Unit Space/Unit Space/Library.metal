@@ -60,6 +60,25 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
     return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
 }
 
+float unitQuadraticDistanceChainRule(float2 unitPoint) {
+    float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
+    
+    float fx = 2.0 * x * dfdx(x) - dfdx(y);
+    float fy = 2.0 * x * dfdy(x) - dfdy(y);
+    return (y - x * x) * rsqrt(fx * fx + fy * fy);
+}
+
+float unitRoundedRectDistance(float2 unitPoint, float radius) {
+    float scale = sqrt(abs(dfdx(unitPoint.x) * dfdy(unitPoint.y) - dfdy(unitPoint.x) * dfdx(unitPoint.y)));
+    float rmin = min(0.5, scale), r = max(radius, rmin), b = 0.5 - r;
+    float x = max(0.0, abs(0.5 - unitPoint.x) - b), y = max(0.0, abs(0.5 - unitPoint.y) - b);
+    
+    float fx = x * dfdx(x) + y * dfdx(y);
+    float fy = x * dfdy(x) + y * dfdy(y);
+    return (r * r - (x * x + y * y)) * rsqrt(2.0 * max(1e-13, fx * fx + fy * fy));
+}
+
+
 float quadraticWinding(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, y0 = op.ty;
     float x1 = op.tx + op.a, y1 = op.ty + op.b;
