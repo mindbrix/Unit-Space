@@ -39,7 +39,6 @@ AffineTransform *writeQuadraticCTMs(AffineTransform *ctm, float x0, float y0, fl
         ctm = writeQuadraticCTM(ctm, x0, y0, x01, y01, x012, y012);
         ctm = writeQuadraticCTM(ctm, x012, y012, x12, y12, x2, y2);
     }
-    
     return ctm;
 }
 
@@ -59,5 +58,3 @@ int WriteQuadratics(AffineTransform *base, AffineTransform &m, Vector *begin, in
     }
     return int(ctm - base);
 }
-
-
