@@ -172,16 +172,19 @@ float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float 
 }
 
 
-float unitQuadraticDistanceChainRule(float2 unitPoint) {
-    float y = min(1.0, unitPoint.y), x = (max(0.0, unitPoint.x) + y) * 0.5;
+float unitQuadraticDistanceChainRule(float2 unitPoint, bool line) {
+    float y = select(min(1.0, unitPoint.y), unitPoint.y, line);
+    float x = (select(max(0.0, unitPoint.x), unitPoint.x, line) + y) * 0.5;
     
-    float fx = 2.0 * x * dfdx(x) - dfdx(y);
-    float fy = 2.0 * x * dfdy(x) - dfdy(y);
-    return (y - x * x) * rsqrt(fx * fx + fy * fy);
+    float mx = select(2.0 * x, 1.0, line);
+    float xx = select(x * x, x, line);
+    float fx = mx * dfdx(x) - dfdx(y);
+    float fy = mx * dfdy(x) - dfdy(y);
+    return (y - xx) * rsqrt(fx * fx + fy * fy);
 }
 
 float unitQuadraticWinding(float2 unitPoint) {
-    return unitQuadraticDistanceChainRule(unitPoint);
+    return unitQuadraticDistanceChainRule(unitPoint, false);
     
     float ux = unitPoint.x, uy = unitPoint.y;
     

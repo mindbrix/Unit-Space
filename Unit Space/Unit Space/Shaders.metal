@@ -304,7 +304,7 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
     float d = 1;
     for (int i = 0; i < quadratics.count; i++) {
         AffineTransform inv = AffineTransformInvert(quadratics.ctms[i]);
-        d = min(d, unitQuadraticDistanceChainRule(float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty)));
+        d = min(d, unitQuadraticDistanceChainRule(float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty), false));
     }
     float alpha = saturate(d + 0.5);
     
