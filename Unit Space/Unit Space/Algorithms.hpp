@@ -26,8 +26,7 @@ AffineTransform *writeQuadraticCTMs(AffineTransform *ctm, float x0, float y0, fl
     float dx01 = x1 - x0, dx12 = x2 - x1, dy01 = y1 - y0, dy12 = y2 - y1;
     bool xMonotone = dx01 * dx12 >= 0.f, yMonotone = dy01 * dy12 >= 0.f;
     
-    if (true)
-//    if (xMonotone && yMonotone)
+    if (xMonotone && yMonotone)
         ctm = writeQuadraticCTM(ctm, x0, y0, x1, y1, x2, y2);
     else {
         float tx = xMonotone ? 1.f : -dx01 / (dx12 - dx01);
@@ -56,7 +55,7 @@ int WriteQuadratics(AffineTransform *base, AffineTransform &m, Vector *begin, in
         float _x1 = x1 * m.a + y1 * m.c + m.tx, _y1 = x1 * m.b + y1 * m.d + m.ty;
         float _x2 = x2 * m.a + y2 * m.c + m.tx, _y2 = x2 * m.b + y2 * m.d + m.ty;
         
-        ctm = writeQuadraticCTMs(ctm, _x0, _y0, _x1, _y1, _x2, _y2);
+        ctm = writeQuadraticCTM(ctm, _x0, _y0, _x1, _y1, _x2, _y2);
     }
     return int(ctm - base);
 }
