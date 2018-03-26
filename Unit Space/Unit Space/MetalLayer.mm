@@ -146,7 +146,7 @@
                 break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
-                [commandEncoder setFragmentBytes:&calls->quadratics length:sizeof(Quadratics) atIndex:1];
+                [commandEncoder setVertexBytes:&calls->quadratics length:sizeof(Quadratics) atIndex:1];
                 break;
             case kCallTypeUnits:
                 [commandEncoder setRenderPipelineState:_unitPipelineState];

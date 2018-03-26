@@ -283,7 +283,7 @@ fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant Stat
 
 #pragma mark - Quadratics
 
-vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uint vid [[vertex_id]])
+vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]], uint vid [[vertex_id]])
 {
     float2 unitPoint = float2(vid & 1, vid & 2);
     
@@ -292,20 +292,42 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], uin
     vert.devicePoint = { unitPoint.x * state.drawableSize.w, unitPoint.y * state.drawableSize.h };
     vert.flags = 0;
     
+    float x = vert.devicePoint.x, y = vert.devicePoint.y;
+    AffineTransform inv;
+    
+    inv = AffineTransformInvert(quadratics.ctms[0]);
+    vert.unitPoint0 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    
+    inv = AffineTransformInvert(quadratics.ctms[1]);
+    vert.unitPoint1 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    
+    inv = AffineTransformInvert(quadratics.ctms[2]);
+    vert.unitPoint2 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    
+    inv = AffineTransformInvert(quadratics.ctms[3]);
+    vert.unitPoint3 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    
+    vert.count = quadratics.count;
+    
     return vert;
 }
 
 
-fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Quadratics &quadratics [[buffer(1)]])
+fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
 //    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
-    float x = vert.devicePoint.x, y = vert.devicePoint.y;
+    bool line = false;
+    
     float d = 1;
-    for (int i = 0; i < quadratics.count; i++) {
-        AffineTransform inv = AffineTransformInvert(quadratics.ctms[i]);
-        d = min(d, unitQuadraticDistanceChainRule(float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty), false));
-    }
+    d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint0, line));
+    if (vert.count > 1)
+        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint1, line));
+    if (vert.count > 2)
+        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint2, line));
+    if (vert.count > 3)
+        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint3, line));
+    
     float alpha = saturate(d + 0.5);
     
 //    float winding = 0.0;
