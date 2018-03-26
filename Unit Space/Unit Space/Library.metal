@@ -173,7 +173,8 @@ float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float 
 
 
 float unitQuadraticDistanceChainRule(float2 unitPoint) {
-    float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
+    float y = min(1.0, unitPoint.y), x = (max(0.0, unitPoint.x) + y) * 0.5;
+//    float x = (unitPoint.x + unitPoint.y) * 0.5, y = unitPoint.y;
     
     float fx = 2.0 * x * dfdx(x) - dfdx(y);
     float fy = 2.0 * x * dfdy(x) - dfdy(y);
