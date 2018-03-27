@@ -297,7 +297,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     bool line;
     
     ctm = quadratics.ctms[0];
-    line = abs(ctm.a * ctm.d - ctm.b * ctm.c) < 1e-1;
+    line = isLine(ctm);
     if (line) {
         vert.flags |= 1;
         float vx = ctm.a + ctm.c, vy = ctm.b + ctm.d;
@@ -308,7 +308,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     vert.unitPoint0 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
     
     ctm = quadratics.ctms[1];
-    line = abs(ctm.a * ctm.d - ctm.b * ctm.c) < 1e-1;
+    line = isLine(ctm);
     if (line) {
         vert.flags |= 2;
         float vx = ctm.a + ctm.c, vy = ctm.b + ctm.d;
@@ -320,7 +320,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     
     
     ctm = quadratics.ctms[2];
-    line = abs(ctm.a * ctm.d - ctm.b * ctm.c) < 1e-1;
+    line = isLine(ctm);
     if (line) {
         vert.flags |= 4;
         float vx = ctm.a + ctm.c, vy = ctm.b + ctm.d;
@@ -332,7 +332,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
 
     
     ctm = quadratics.ctms[3];
-    line = abs(ctm.a * ctm.d - ctm.b * ctm.c) < 1e-1;
+    line = isLine(ctm);
     if (line) {
         vert.flags |= 8;
         float vx = ctm.a + ctm.c, vy = ctm.b + ctm.d;

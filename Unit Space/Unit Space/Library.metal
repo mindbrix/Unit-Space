@@ -238,3 +238,7 @@ float2 unitRepeat(float2 unit, bool rx, bool ry) {
     //    float2 repeated = abs(fmod(abs(unit * log2(abs(unit.x * unit.y))), 2.0) - 1.0);
     return { select(unit.x, repeated.x, rx), select(unit.y, repeated.y, ry) };
 }
+
+bool isLine(AffineTransform ctm) {
+    return abs(ctm.c - ctm.a) < 1e-1 && abs(ctm.d - ctm.b) < 1e-1;
+}
