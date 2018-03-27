@@ -132,11 +132,11 @@ float4 quadraticColor(float2 devicePoint, AffineTransform op) {
 // http://hhoppe.com/ravg.pdf
 //
 float implicitDistance(float px, float py, float x0, float y0, float x1, float y1, float x2, float y2) {
-//    x0 -= px, y0 -= py, x1 -= px, y1 -= py, x2 -= px, y2 -= py;
-//    float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
-//    float f = 4.0 * b * d - a * a;
+    x0 -= px, y0 -= py, x1 -= px, y1 -= py, x2 -= px, y2 -= py;
+    float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
+    float f = 4.0 * b * d - a * a;
     
-        float cx = 0.5, cy = 0.5, x = cx - px, y = cy - py, r = 0.5, f = -(x * x + y * y - r * r);
+//        float cx = 0.5, cy = 0.5, x = cx - px, y = cy - py, r = 0.5, f = -(x * x + y * y - r * r);
     //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, a = 512, b = 512.0, f = -(x * x / (a * a) + y * y / (b * b) - 1.0);
     //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, c = 256.0, f = -(abs(x) + abs(y) - c);
     //    float cx = 512.0, cy = 512.0, x = cx - px, y = cy - py, c = 256.0, f = -(max(abs(x), abs(y)) - c);
@@ -173,6 +173,8 @@ float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float 
 
 
 float unitQuadraticDistanceChainRule(float2 unitPoint, bool line) {
+//    return implicitDistance(max(0.0, unitPoint.x), min(1.0, unitPoint.y), 0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
+    
     float y = select(min(1.0, unitPoint.y), unitPoint.y, line);
     float x = (select(max(0.0, unitPoint.x), unitPoint.x, line) + y) * 0.5;
     
