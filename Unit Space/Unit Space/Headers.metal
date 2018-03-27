@@ -26,3 +26,5 @@ float2 unitInverse(float2 unit);
 float2 unitRepeat(float2 unit, bool rx, bool ry);
 float unitRoundedRectDistance(float2 unitPoint, float radius);
 bool isLine(AffineTransform ctm);
+AffineTransform lineCTM(AffineTransform ctm);
+

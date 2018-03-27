@@ -242,3 +242,10 @@ float2 unitRepeat(float2 unit, bool rx, bool ry) {
 bool isLine(AffineTransform ctm) {
     return abs(ctm.c - ctm.a) < 1e-1 && abs(ctm.d - ctm.b) < 1e-1;
 }
+
+AffineTransform lineCTM(AffineTransform ctm) {
+    float vx = ctm.a + ctm.c, vy = ctm.b + ctm.d;
+    ctm.a = (vx + vy) * 0.5, ctm.b = (vy - vx) * 0.5;
+    ctm.c = -ctm.b, ctm.d = ctm.a;
+    return ctm;
+}
