@@ -294,12 +294,9 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     
     float x = vert.devicePoint.x, y = vert.devicePoint.y;
     AffineTransform ctm, inv;
-    bool line;
     
     ctm = quadratics.ctms[0];
-    line = isLine(ctm);
-    
-    if (line) {
+    if (isLine(ctm)) {
         vert.flags |= 1;
         ctm = lineCTM(ctm);
     }
@@ -307,28 +304,23 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     vert.unitPoint0 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
     
     ctm = quadratics.ctms[1];
-    line = isLine(ctm);
-    if (line) {
+    if (isLine(ctm)) {
         vert.flags |= 2;
         ctm = lineCTM(ctm);
     }
     inv = AffineTransformInvert(ctm);
     vert.unitPoint1 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
     
-    
     ctm = quadratics.ctms[2];
-    line = isLine(ctm);
-    if (line) {
+    if (isLine(ctm)) {
         vert.flags |= 4;
         ctm = lineCTM(ctm);
     }
     inv = AffineTransformInvert(ctm);
     vert.unitPoint2 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
 
-    
     ctm = quadratics.ctms[3];
-    line = isLine(ctm);
-    if (line) {
+    if (isLine(ctm)) {
         vert.flags |= 8;
         ctm = lineCTM(ctm);
     }
