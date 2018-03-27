@@ -297,15 +297,19 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     
     inv = AffineTransformInvert(quadratics.ctms[0]);
     vert.unitPoint0 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+//    vert.flags |= 1;
     
     inv = AffineTransformInvert(quadratics.ctms[1]);
     vert.unitPoint1 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+//    vert.flags |= 2;
     
     inv = AffineTransformInvert(quadratics.ctms[2]);
     vert.unitPoint2 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+//    vert.flags |= 4;
     
     inv = AffineTransformInvert(quadratics.ctms[3]);
     vert.unitPoint3 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+//    vert.flags |= 8;
     
     vert.count = quadratics.count;
     
@@ -317,16 +321,14 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 {
 //    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
-    bool line = false;
-    
     float d = 1;
-    d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint0, line));
+    d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint0, vert.flags & 1));
     if (vert.count > 1)
-        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint1, line));
+        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint1, vert.flags & 2));
     if (vert.count > 2)
-        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint2, line));
+        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint2, vert.flags & 4));
     if (vert.count > 3)
-        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint3, line));
+        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint3, vert.flags & 8));
     
     float alpha = saturate(d + 0.5);
     
