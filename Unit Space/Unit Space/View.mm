@@ -31,6 +31,7 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm1;
 @property(nonatomic) AffineTransform ctm2;
 @property(nonatomic) AffineTransform ctm3;
+@property(nonatomic) Quadratics quadratics;
 
 @end
 
@@ -74,11 +75,20 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
-    if ([self mouseDragCTM:event CTM:ctm0])
-        _ctm0 = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
-    else if (![self mouseDragCTM:event CTM:_unitCTM])
-        [self.transform translateByX:event.deltaX andY:-event.deltaY];
+    if (_flags & 4) {
+        AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
+        if ([self mouseDragCTM:event CTM:ctm0])
+            _ctm0 = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
+        else if (![self mouseDragCTM:event CTM:_unitCTM])
+            [self.transform translateByX:event.deltaX andY:-event.deltaY];
+    } else {
+        for (int j = 0; j < _quadratics.count; j++) {
+            AffineTransform& ctm = _quadratics.ctms[j];
+            
+            if ([self mouseDragCTM:event CTM:ctm])
+                break;
+        }
+    }
     
     [self redraw];
 }
@@ -172,6 +182,7 @@ using namespace std;
 
 - (IBAction)toggleTriangle:(id)sender {
     _showTriangle = !_showTriangle;
+    [self reset];
     [self redraw];
 }
 
@@ -196,6 +207,20 @@ using namespace std;
     _ctm1 = r1;// AffineTransformConcat(s, r);
     _ctm2 =  { 1, 0, 0, 1, 2000, 0 };
     _ctm3 =  { 1, 0, 0, 1, -20000, 2000 };
+    
+    Vector lozenge[] = {
+        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+    };
+    
+    Vector triangle[] = {
+        { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
+    };
+    
+    Vector *q = _showTriangle ? triangle : lozenge;
+    int count = _showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
+    
+    AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
+    _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
 }
 
 - (void)update {
@@ -224,23 +249,10 @@ using namespace std;
     }
     
     if (_flags & 2) {
-        Vector lozenge[] = {
-            { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-        };
-        
-        Vector triangle[] = {
-            { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
-        };
-        
-        Vector *q = _showTriangle ? triangle : lozenge;
-        int count = _showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
-        
         uniforms.fillColor = { 0, 0, 0, 1 };
         _calls[idx].type = kCallTypeQuadratics;
         _calls[idx].state = uniforms;
-        
-        AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
-        _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], identity, q, count);
+        _calls[idx].quadratics = _quadratics;
         idx++;
         
         if (_showPoints) {
@@ -248,9 +260,16 @@ using namespace std;
             _calls[idx].type = kCallTypeCircles;
             _calls[idx].state = uniforms;
             Circles& circles = _calls[idx].circles;
-            for (int i = 0; i < count; i++)
-                circles.circles[i] = { q[i].x, q[i].y, radius };
-            circles.count = count;
+            
+            int i = 0;
+            for (int j = 0; j < _quadratics.count; j++) {
+                AffineTransform unit = _quadratics.ctms[j];
+                
+                circles.circles[i++] = { unit.tx, unit.ty, largeRadius };
+                circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
+                circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
+            }
+            circles.count = i;
             idx++;
         }
     }
