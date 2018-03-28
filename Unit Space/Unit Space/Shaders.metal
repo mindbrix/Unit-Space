@@ -23,6 +23,7 @@ struct UnitVertex
     
     float ellipseScale, width;
     float2 unitPoint0, unitPoint1, unitPoint2, unitPoint3;
+    char sign0, sign1, sign2, sign3;
     int count;
     uint32_t flags;
 };
@@ -303,6 +304,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     }
     inv = AffineTransformInvert(ctm);
     vert.unitPoint0 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    vert.sign0 = ctm.a * ctm.d - ctm.b * ctm.c < 0.0 ? -1 : 1;
     
     ctm = quadratics.ctms[1];
     ctm = AffineTransformConcat(ctm, state.CTM);
@@ -312,6 +314,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     }
     inv = AffineTransformInvert(ctm);
     vert.unitPoint1 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    vert.sign1 = ctm.a * ctm.d - ctm.b * ctm.c < 0.0 ? -1 : 1;
     
     ctm = quadratics.ctms[2];
     ctm = AffineTransformConcat(ctm, state.CTM);
@@ -321,7 +324,8 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     }
     inv = AffineTransformInvert(ctm);
     vert.unitPoint2 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
-
+    vert.sign2 = ctm.a * ctm.d - ctm.b * ctm.c < 0.0 ? -1 : 1;
+    
     ctm = quadratics.ctms[3];
     ctm = AffineTransformConcat(ctm, state.CTM);
     if (isLine(ctm)) {
@@ -330,6 +334,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     }
     inv = AffineTransformInvert(ctm);
     vert.unitPoint3 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
+    vert.sign3 = ctm.a * ctm.d - ctm.b * ctm.c < 0.0 ? -1 : 1;
     
     vert.count = quadratics.count;
     
@@ -342,13 +347,13 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 //    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
     float d = 1;
-    d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint0, vert.flags & 1));
+    d = min(d, vert.sign0 * unitQuadraticDistanceChainRule(vert.unitPoint0, vert.flags & 1));
     if (vert.count > 1)
-        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint1, vert.flags & 2));
+        d = min(d, vert.sign1 * unitQuadraticDistanceChainRule(vert.unitPoint1, vert.flags & 2));
     if (vert.count > 2)
-        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint2, vert.flags & 4));
+        d = min(d, vert.sign2 * unitQuadraticDistanceChainRule(vert.unitPoint2, vert.flags & 4));
     if (vert.count > 3)
-        d = min(d, unitQuadraticDistanceChainRule(vert.unitPoint3, vert.flags & 8));
+        d = min(d, vert.sign3 * unitQuadraticDistanceChainRule(vert.unitPoint3, vert.flags & 8));
     
     float alpha = saturate(d + 0.5);
     
