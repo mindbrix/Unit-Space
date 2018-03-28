@@ -239,7 +239,8 @@ using namespace std;
         _calls[idx].type = kCallTypeQuadratics;
         _calls[idx].state = uniforms;
         
-        _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], CTM, q, count);
+        AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
+        _calls[idx].quadratics.count = WriteQuadratics(& _calls[idx].quadratics.ctms[0], identity, q, count);
         idx++;
         
         if (_showPoints) {

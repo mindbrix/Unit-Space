@@ -296,6 +296,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     AffineTransform ctm, inv;
     
     ctm = quadratics.ctms[0];
+    ctm = AffineTransformConcat(ctm, state.CTM);
     if (isLine(ctm)) {
         vert.flags |= 1;
         ctm = lineCTM(ctm);
@@ -304,6 +305,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     vert.unitPoint0 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
     
     ctm = quadratics.ctms[1];
+    ctm = AffineTransformConcat(ctm, state.CTM);
     if (isLine(ctm)) {
         vert.flags |= 2;
         ctm = lineCTM(ctm);
@@ -312,6 +314,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     vert.unitPoint1 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
     
     ctm = quadratics.ctms[2];
+    ctm = AffineTransformConcat(ctm, state.CTM);
     if (isLine(ctm)) {
         vert.flags |= 4;
         ctm = lineCTM(ctm);
@@ -320,6 +323,7 @@ vertex UnitVertex quadratic_vertex_main(constant State &state [[buffer(0)]], con
     vert.unitPoint2 = float2(x * inv.a + y * inv.c + inv.tx, x * inv.b + y * inv.d + inv.ty);
 
     ctm = quadratics.ctms[3];
+    ctm = AffineTransformConcat(ctm, state.CTM);
     if (isLine(ctm)) {
         vert.flags |= 8;
         ctm = lineCTM(ctm);
