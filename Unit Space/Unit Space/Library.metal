@@ -252,3 +252,10 @@ AffineTransform lineCTM(AffineTransform ctm) {
     ctm.c = -ctm.b, ctm.d = ctm.a;
     return ctm;
 }
+
+float distanceBoolean(float d0, float d1, int op) {
+    float anded = min(d0, d1);
+    float ored = max(d0, d1);
+    float xored = min(ored, -anded);
+    return select(select(xored, ored, op == 1), anded, op == 0);
+}

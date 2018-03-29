@@ -27,4 +27,4 @@ float2 unitRepeat(float2 unit, bool rx, bool ry);
 float unitRoundedRectDistance(float2 unitPoint, float radius);
 bool isLine(AffineTransform ctm);
 AffineTransform lineCTM(AffineTransform ctm);
-
+float distanceBoolean(float d0, float d1, int op /* AND = 0, OR = 1, XOR = 2 */);
