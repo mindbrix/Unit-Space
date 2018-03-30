@@ -368,3 +368,45 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 //    return color * alpha;
     return mix(white, color, saturate(alpha));
 }
+
+#pragma mark - Triangle
+
+vertex StrokeVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Lines &lines [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    constant Line& line = lines.lines[iid];
+    
+    float2 p0 = { line.x0, line.y0 }, p1 = { line.x1, line.y1 };
+    float2 v = p1 - p0, nv = normalize(v);
+    float2 lnv = { -nv.y, nv.x };
+    float w2 = state.width * 0.5;
+    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
+    
+    float dilation = 1.0 / scale;
+    
+    float2 up = select(p0, p1, vid & 2) + (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1)) * (w2 + dilation);
+    
+    float2 nvw = nv * state.width, ab = { nvw.y, -nvw.x };
+    float2 cd = v + nvw, txty = p0 - (nvw + ab) * 0.5;
+    
+    AffineTransform unit = { ab.x, ab.y, cd.x, cd.y, txty.x, txty.y };
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
+    
+    float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
+    float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
+    
+    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
+    
+    StrokeVertex vert;
+    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    //    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
+    //    vert.alpha = min(1.0, state.width / dilation);
+    return vert;
+}
+
+fragment float4 triangle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    float alpha = rectDistance(vert.unitPoint);
+    //    return mix(float4(0, 1, 0, 1), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), alpha);
+    return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
+}

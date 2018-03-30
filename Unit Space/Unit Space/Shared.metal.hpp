@@ -64,6 +64,11 @@ struct Units {
     AffineTransform     ctms[170];
 };
 
+struct Triangles {
+    int                 count;
+    AffineTransform     ctms[170];
+};
+
 struct State {
     RGBA                fillColor;
     RGBA                strokeColor;
@@ -82,6 +87,7 @@ enum CallType : unsigned int {
     kCallTypeLines,
     kCallTypeQuadratics,
     kCallTypeUnits,
+    kCallTypeTriangles,
 };
 
 struct Call {
@@ -94,6 +100,7 @@ struct Call {
         Lines       lines;
         Quadratics  quadratics;
         Units       units;
+        Triangles   triangles;
     };
 };
 
