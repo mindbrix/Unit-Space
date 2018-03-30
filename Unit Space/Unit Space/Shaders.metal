@@ -373,7 +373,7 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 
 vertex StrokeVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    float2 up = { float(vid & 1), float(vid >> 1) };
+    float2 up = { float(vid > 0), float(vid > 1) };
     
     AffineTransform unit = triangles.ctms[iid];
     AffineTransform el = AffineTransformConcat(unit, state.CTM);
