@@ -170,6 +170,12 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleFour:(id)sender {
+    _flags &= 8;
+    _flags ^= 8;
+    [self redraw];
+}
+
 - (IBAction)toggleEllipse:(id)sender {
     _showEllipse = !_showEllipse;
     [self redraw];
@@ -314,6 +320,18 @@ using namespace std;
             circles.count = i;
             idx++;
         }
+    }
+    
+    if (_flags & 8) {
+        uniforms.fillColor = { 1, 0, 0, 1 };
+        _calls[idx].type = kCallTypeTriangles;
+        _calls[idx].state = uniforms;
+        Triangles& triangles = _calls[idx].triangles;
+        
+        triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+        triangles.count = 1;
+        
+        idx++;
     }
     _calls.resize(idx);
 }

@@ -87,7 +87,7 @@
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangle_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
-    descriptor.label = @"Quadratic";
+    descriptor.label = @"Triangle";
     self.trianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
