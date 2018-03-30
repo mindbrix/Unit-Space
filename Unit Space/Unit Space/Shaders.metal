@@ -371,7 +371,16 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 
 #pragma mark - Triangle
 
-vertex StrokeVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+struct TriangleVertex
+{
+    float4 position [[position]];
+    
+    float2 unitPoint;
+    float3 distance;
+    float alpha;
+};
+
+vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     float2 up = { float(vid > 0), float(vid > 1) };
     
@@ -383,14 +392,20 @@ vertex StrokeVertex triangle_vertex_main(constant State &state [[buffer(0)]], co
     
     float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
-    StrokeVertex vert;
+    TriangleVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    float area = abs(el.a * el.d - el.b * el.c);
+    float h_v0 = area * rsqrt(el.c * el.c + el.d * el.d);
+    float h_v1 = area / length(float2(el.a + el.c, el.b + el.d));
+    float h_v2 = area * rsqrt(el.a * el.a + el.b * el.b);
+    vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
 //    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     return vert;
 }
 
-fragment float4 triangle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = 1.0;
+    float3 d = saturate(vert.distance);
+    float alpha = d.x * d.y * d.z;
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
