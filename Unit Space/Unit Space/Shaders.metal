@@ -375,7 +375,6 @@ struct TriangleVertex
 {
     float4 position [[position]];
     
-    float2 unitPoint;
     float3 distance;
     float alpha;
 };
@@ -383,23 +382,20 @@ struct TriangleVertex
 vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     float2 up = { float(vid > 0), float(vid > 1) };
+    AffineTransform unit = AffineTransformConcat(triangles.ctms[iid], state.CTM);
     
-    AffineTransform unit = triangles.ctms[iid];
-    AffineTransform el = AffineTransformConcat(unit, state.CTM);
-    
-    float dx = up.x * el.a + up.y * el.c + el.tx;
-    float dy = up.x * el.b + up.y * el.d + el.ty;
+    float dx = up.x * unit.a + up.y * unit.c + unit.tx;
+    float dy = up.x * unit.b + up.y * unit.d + unit.ty;
     
     float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
     TriangleVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
-    float area = abs(el.a * el.d - el.b * el.c);
-    float h_v0 = area * rsqrt(el.c * el.c + el.d * el.d);
-    float h_v1 = area / length(float2(el.a + el.c, el.b + el.d));
-    float h_v2 = area * rsqrt(el.a * el.a + el.b * el.b);
+    float area = abs(unit.a * unit.d - unit.b * unit.c);
+    float h_v0 = area * rsqrt(unit.c * unit.c + unit.d * unit.d);
+    float h_v1 = area / length(float2(unit.a + unit.c, unit.b + unit.d));
+    float h_v2 = area * rsqrt(unit.a * unit.a + unit.b * unit.b);
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
-//    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     return vert;
 }
 
