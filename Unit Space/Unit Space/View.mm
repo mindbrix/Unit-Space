@@ -236,7 +236,8 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-    _triangles.count = 1;
+    _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
+    _triangles.count = 2;
 }
 
 - (void)update {
