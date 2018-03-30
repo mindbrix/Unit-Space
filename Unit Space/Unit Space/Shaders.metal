@@ -392,5 +392,5 @@ vertex StrokeVertex triangle_vertex_main(constant State &state [[buffer(0)]], co
 fragment float4 triangle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     float alpha = 1.0;
-    return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }

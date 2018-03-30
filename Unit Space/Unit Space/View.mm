@@ -32,6 +32,7 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm2;
 @property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) Quadratics quadratics;
+@property(nonatomic) Triangles triangles;
 
 @end
 
@@ -75,20 +76,24 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
+    BOOL dragged = NO;
     if (_flags & 4) {
         AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
-        if ([self mouseDragCTM:event CTM:ctm0])
+        if ((dragged = [self mouseDragCTM:event CTM:ctm0]))
             _ctm0 = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
-        else if (![self mouseDragCTM:event CTM:_unitCTM])
-            [self.transform translateByX:event.deltaX andY:-event.deltaY];
-    } else {
-        for (int j = 0; j < _quadratics.count; j++) {
-            AffineTransform& ctm = _quadratics.ctms[j];
-            
-            if ([self mouseDragCTM:event CTM:ctm])
+        else
+            dragged = [self mouseDragCTM:event CTM:_unitCTM];
+    } else if (_flags & 2)  {
+        for (int j = 0; j < _quadratics.count; j++)
+            if ((dragged = [self mouseDragCTM:event CTM:_quadratics.ctms[j]]))
                 break;
-        }
+    } else if (_flags & 8)  {
+        for (int j = 0; j < _triangles.count; j++)
+            if ((dragged = [self mouseDragCTM:event CTM:_triangles.ctms[j]]))
+                break;
     }
+    if (!dragged)
+        [self.transform translateByX:event.deltaX andY:-event.deltaY];
     
     [self redraw];
 }
@@ -227,6 +232,9 @@ using namespace std;
     
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
+    
+    _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+    _triangles.count = 1;
 }
 
 - (void)update {
@@ -323,15 +331,29 @@ using namespace std;
     }
     
     if (_flags & 8) {
-        uniforms.fillColor = { 1, 0, 0, 1 };
+        uniforms.fillColor = { 0, 0, 0, 1 };
         _calls[idx].type = kCallTypeTriangles;
         _calls[idx].state = uniforms;
-        Triangles& triangles = _calls[idx].triangles;
-        
-        triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-        triangles.count = 1;
-        
+        _calls[idx].triangles = _triangles;
         idx++;
+        
+        if (_showPoints) {
+            uniforms.fillColor = { 1, 0, 0, 1 };
+            _calls[idx].type = kCallTypeCircles;
+            _calls[idx].state = uniforms;
+            Circles& circles = _calls[idx].circles;
+            
+            int i = 0;
+            for (int j = 0; j < _triangles.count; j++) {
+                AffineTransform unit = _triangles.ctms[j];
+                
+                circles.circles[i++] = { unit.tx, unit.ty, largeRadius };
+                circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
+                circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
+            }
+            circles.count = i;
+            idx++;
+        }
     }
     _calls.resize(idx);
 }
