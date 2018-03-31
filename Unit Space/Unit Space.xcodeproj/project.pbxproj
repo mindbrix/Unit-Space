@@ -20,6 +20,8 @@
 		E9EEAD93200BC96D00F2BFB2 /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */; };
 		E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD94200BD61600F2BFB2 /* Shaders.metal */; };
 		E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */; };
+		E9F50F73207016F800C26317 /* nano.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F71207016F800C26317 /* nano.svg */; };
+		E9F50F74207016F800C26317 /* 23.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F72207016F800C26317 /* 23.svg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +48,9 @@
 		E9EEAD94200BD61600F2BFB2 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Shared.metal.hpp; sourceTree = "<group>"; };
 		E9EEAD99200BE9F700F2BFB2 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		E9F50F702070165900C26317 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
+		E9F50F71207016F800C26317 /* nano.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nano.svg; sourceTree = "<group>"; };
+		E9F50F72207016F800C26317 /* 23.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = 23.svg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +84,9 @@
 		E9EEAD74200BC63400F2BFB2 /* Unit Space */ = {
 			isa = PBXGroup;
 			children = (
+				E9F50F72207016F800C26317 /* 23.svg */,
+				E9F50F71207016F800C26317 /* nano.svg */,
+				E9F50F702070165900C26317 /* nanosvg.h */,
 				E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */,
 				E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */,
 				E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */,
@@ -170,8 +178,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9F50F74207016F800C26317 /* 23.svg in Resources */,
 				E9EEAD7F200BC63400F2BFB2 /* Assets.xcassets in Resources */,
 				E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */,
+				E9F50F73207016F800C26317 /* nano.svg in Resources */,
 				E9EEAD82200BC63400F2BFB2 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

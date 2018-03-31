@@ -12,6 +12,9 @@
 #import "Algorithms.hpp"
 #import <vector>
 
+#define NANOSVG_IMPLEMENTATION    // Expands implementation
+#import "nanosvg.h"
+
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
 
@@ -51,6 +54,25 @@ using namespace std;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
     [self redraw];
+
+    // Load
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil];
+    
+    struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
+    if (image) {
+        printf("size: %f x %f\n", image->width, image->height);
+        // Use...
+        for (auto shape = image->shapes; shape != NULL; shape = shape->next) {
+            for (auto path = shape->paths; path != NULL; path = path->next) {
+                for (int i = 0; i < path->npts-1; i += 3) {
+                    float* p = &path->pts[i*2];
+                    //drawCubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7]);
+                }
+            }
+        }
+        // Delete
+        nsvgDelete(image);
+    }
 
     return self;
 }
