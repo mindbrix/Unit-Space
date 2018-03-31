@@ -376,18 +376,33 @@ struct TriangleVertex
     float4 position [[position]];
     
     float3 distance;
-    float alpha;
+    float  alpha;
+    float4 color;
 };
 
 vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    float2 up = { float(vid > 0), float(vid > 1) };
     AffineTransform unit = AffineTransformConcat(triangles.ctms[iid], state.CTM);
     
-    float dx = up.x * unit.a + up.y * unit.c + unit.tx;
-    float dy = up.x * unit.b + up.y * unit.d + unit.ty;
+    float2 t[3] =  {
+        { unit.tx, unit.ty },
+        { unit.tx + unit.a, unit.ty + unit.b },
+        { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d }
+    };
     
-    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
+    float2 p1 = t[vid];
+    float2 p2 = t[(vid + 1) % 3];
+    float2 p0 = t[(vid + 2) % 3];
+    
+    float2 _v0n = normalize(p1 - p0), _v1n = normalize(p2 - p1);
+    float2 _tangent = normalize(_v0n + _v1n);
+    float2 _miter = { _tangent.y, -_tangent.x };
+    float2 _normal = { _v0n.y, -_v0n.x };
+    float miterLength = 1.0 / max(1e-3, dot(_miter, _normal));
+    
+    float2 p = p1 + _miter * miterLength;
+    
+    float2 unitPoint = { p.x / state.drawableSize.w, p.y / state.drawableSize.h };
     
     TriangleVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
@@ -396,6 +411,8 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     float h_v1 = area / length(float2(unit.a + unit.c, unit.b + unit.d));
     float h_v2 = area * rsqrt(unit.a * unit.a + unit.b * unit.b);
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
+    
+    vert.color = float4(triangles.colors[iid].r, triangles.colors[iid].g, triangles.colors[iid].b, triangles.colors[iid].a);
     return vert;
 }
 
@@ -403,5 +420,5 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float3 d = saturate(vert.distance);
     float alpha = d.x * d.y * d.z;
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+    return vert.color * alpha;
 }

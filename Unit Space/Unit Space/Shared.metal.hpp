@@ -66,7 +66,8 @@ struct Units {
 
 struct Triangles {
     int                 count;
-    AffineTransform     ctms[170];
+    AffineTransform     ctms[102];
+    RGBA                colors[102];
 };
 
 struct State {
