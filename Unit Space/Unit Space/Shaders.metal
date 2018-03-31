@@ -375,6 +375,7 @@ struct TriangleVertex
 {
     float4 position [[position]];
     
+    float2 p0, p1, p2;
     float3 distance;
     float  alpha;
     float4 color;
@@ -410,6 +411,10 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     float h_v0 = area * rsqrt(unit.c * unit.c + unit.d * unit.d);
     float h_v1 = area / length(float2(unit.a + unit.c, unit.b + unit.d));
     float h_v2 = area * rsqrt(unit.a * unit.a + unit.b * unit.b);
+    
+    p -= 0.5;
+    vert.p0 = t[0] - p, vert.p1 = t[1] - p, vert.p2 = t[2] - p;
+    
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
     
     vert.color = float4(triangles.colors[iid].r, triangles.colors[iid].g, triangles.colors[iid].b, triangles.colors[iid].a);
@@ -418,7 +423,13 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float3 d = saturate(vert.distance);
-    float alpha = d.x * d.y * d.z;
+    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 2.0)
+        return vert.color;
+    
+    float winding = fragmentWinding(vert.p0, vert.p1);
+    winding += fragmentWinding(vert.p1, vert.p2);
+    winding += fragmentWinding(vert.p2, vert.p0);
+    float alpha = abs(winding);
+    
     return vert.color * alpha;
 }
