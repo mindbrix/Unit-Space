@@ -32,7 +32,7 @@
     if (!self)
         return nil;
     
-    self.opaque = YES;
+    self.opaque = NO;
     self.needsDisplayOnBoundsChange = YES;
     self.actions = @{ @"onOrderIn": [NSNull null],
                       @"onOrderOut": [NSNull null],
@@ -85,6 +85,8 @@
     descriptor.label = @"Quadratic";
     self.quadraticPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangle_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
@@ -121,7 +123,7 @@
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-    descriptor.colorAttachments[0].clearColor = MTLClearColorMake(1, 1, 1, 1);
+    descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     

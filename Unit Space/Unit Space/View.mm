@@ -249,10 +249,11 @@ using namespace std;
         int k = 0;
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                float tx = (path->bounds[0] + path->bounds[2]) * 0.5;
+                float ty = (path->bounds[1] + path->bounds[3]) * 0.5;
+                
                 for (int i = 0; i < path->npts-1; i += 3) {
                     if (k < 100) {
-                        float tx = (path->bounds[0] + path->bounds[2]) * 0.5;
-                        float ty = (path->bounds[1] + path->bounds[3]) * 0.5;
                         float* p = &path->pts[i*2];
                         for (int j = 0; j < 5; j += 2) {
                             float x0 = p[j], y0 = p[j + 1], x1 = p[j + 2], y1 = p[j + 3];
@@ -263,7 +264,7 @@ using namespace std;
                             
                             float a = x0 - tx, b = y0 - ty, c = x1 - x0, d = y1 - y0;
                             _triangles.ctms[k] = { a, b, c, d, tx, ty };
-                            _triangles.colors[k++] = { 0, 0, 0, 1 };
+                            _triangles.colors[k++] = { 0, 0, 0, 0.333 };
                         }
                     }
                     
@@ -273,17 +274,17 @@ using namespace std;
         _triangles.count = k;
         // Delete
         nsvgDelete(image);
+    } else {
+        _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+        _triangles.colors[0] = { 1, 0, 0, 1 };
+        _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
+        _triangles.colors[1] = { 0, 1, 0, 1 };
+        _triangles.ctms[2] = { 0, -100, 100, 0, 100, 100 };
+        _triangles.colors[2] = { 0, 0, 1, 1 };
+        _triangles.ctms[3] = { 0, 100, -100, 0, 200, 0 };
+        _triangles.colors[3] = { 0, 0, 0, 1 };
+        _triangles.count = 4;
     }
-    
-//    _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-//    _triangles.colors[0] = { 1, 0, 0, 1 };
-//    _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
-//    _triangles.colors[1] = { 0, 1, 0, 1 };
-//    _triangles.ctms[2] = { 0, -100, 100, 0, 100, 100 };
-//    _triangles.colors[2] = { 0, 0, 1, 1 };
-//    _triangles.ctms[3] = { 0, 100, -100, 0, 200, 0 };
-//    _triangles.colors[3] = { 0, 0, 0, 1 };
-//    _triangles.count = 4;
 }
 
 - (void)update {
