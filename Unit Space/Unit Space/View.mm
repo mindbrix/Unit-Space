@@ -239,7 +239,9 @@ using namespace std;
     _triangles.colors[0] = { 1, 0, 0, 1 };
     _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
     _triangles.colors[1] = { 0, 1, 0, 1 };
-    _triangles.count = 2;
+    _triangles.ctms[2] = { 0, -100, 100, 0, 100, 100 };
+    _triangles.colors[2] = { 0, 0, 1, 1 };
+    _triangles.count = 3;
 }
 
 - (void)update {
