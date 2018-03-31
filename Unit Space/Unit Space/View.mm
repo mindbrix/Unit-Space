@@ -55,25 +55,6 @@ using namespace std;
     self.transform = [VGAffineTransform new];
     [self redraw];
 
-    // Load
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil];
-    
-    struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
-    if (image) {
-        printf("size: %f x %f\n", image->width, image->height);
-        // Use...
-        for (auto shape = image->shapes; shape != NULL; shape = shape->next) {
-            for (auto path = shape->paths; path != NULL; path = path->next) {
-                for (int i = 0; i < path->npts-1; i += 3) {
-                    float* p = &path->pts[i*2];
-                    //drawCubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7]);
-                }
-            }
-        }
-        // Delete
-        nsvgDelete(image);
-    }
-
     return self;
 }
 
@@ -257,15 +238,52 @@ using namespace std;
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
-    _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-    _triangles.colors[0] = { 1, 0, 0, 1 };
-    _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
-    _triangles.colors[1] = { 0, 1, 0, 1 };
-    _triangles.ctms[2] = { 0, -100, 100, 0, 100, 100 };
-    _triangles.colors[2] = { 0, 0, 1, 1 };
-    _triangles.ctms[3] = { 0, 100, -100, 0, 200, 0 };
-    _triangles.colors[3] = { 0, 0, 0, 1 };
-    _triangles.count = 4;
+    // Load
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"nano.svg" ofType:nil];
+    
+    struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
+    if (image) {
+        printf("size: %f x %f\n", image->width, image->height);
+        // Use...
+        
+        int k = 0;
+        for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
+            for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                for (int i = 0; i < path->npts-1; i += 3) {
+                    if (k < 100) {
+                        float tx = (path->bounds[0] + path->bounds[2]) * 0.5;
+                        float ty = (path->bounds[1] + path->bounds[3]) * 0.5;
+                        float* p = &path->pts[i*2];
+                        for (int j = 0; j < 5; j += 2) {
+                            float x0 = p[j], y0 = p[j + 1], x1 = p[j + 2], y1 = p[j + 3];
+                            
+                            float area = tx * (y0 - y1) + x0 * (y1 - ty) + x1 * (ty - y0);
+                            if (area < 0)
+                                std::swap(x0, x1), std::swap(y0, y1);
+                            
+                            float a = x0 - tx, b = y0 - ty, c = x1 - x0, d = y1 - y0;
+                            _triangles.ctms[k] = { a, b, c, d, tx, ty };
+                            _triangles.colors[k++] = { 0, 0, 0, 1 };
+                        }
+                    }
+                    
+                }
+            }
+        }
+        _triangles.count = k;
+        // Delete
+        nsvgDelete(image);
+    }
+    
+//    _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
+//    _triangles.colors[0] = { 1, 0, 0, 1 };
+//    _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
+//    _triangles.colors[1] = { 0, 1, 0, 1 };
+//    _triangles.ctms[2] = { 0, -100, 100, 0, 100, 100 };
+//    _triangles.colors[2] = { 0, 0, 1, 1 };
+//    _triangles.ctms[3] = { 0, 100, -100, 0, 200, 0 };
+//    _triangles.colors[3] = { 0, 0, 0, 1 };
+//    _triangles.count = 4;
 }
 
 - (void)update {
