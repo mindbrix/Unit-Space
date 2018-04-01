@@ -15,6 +15,8 @@
 #define NANOSVG_IMPLEMENTATION    // Expands implementation
 #import "nanosvg.h"
 
+#import "tesselator.h"
+
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
 

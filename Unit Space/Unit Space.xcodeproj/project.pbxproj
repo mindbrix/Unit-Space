@@ -22,6 +22,13 @@
 		E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */; };
 		E9F50F73207016F800C26317 /* nano.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F71207016F800C26317 /* nano.svg */; };
 		E9F50F74207016F800C26317 /* 23.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F72207016F800C26317 /* 23.svg */; };
+		E9F50F89207104D700C26317 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F7B207104D700C26317 /* bucketalloc.c */; };
+		E9F50F8A207104D700C26317 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F7D207104D700C26317 /* dict.c */; };
+		E9F50F8B207104D700C26317 /* geom.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F7F207104D700C26317 /* geom.c */; };
+		E9F50F8C207104D700C26317 /* mesh.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F81207104D700C26317 /* mesh.c */; };
+		E9F50F8D207104D700C26317 /* priorityq.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F83207104D700C26317 /* priorityq.c */; };
+		E9F50F8E207104D700C26317 /* sweep.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F85207104D700C26317 /* sweep.c */; };
+		E9F50F8F207104D700C26317 /* tess.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F87207104D700C26317 /* tess.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +58,21 @@
 		E9F50F702070165900C26317 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
 		E9F50F71207016F800C26317 /* nano.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nano.svg; sourceTree = "<group>"; };
 		E9F50F72207016F800C26317 /* 23.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = 23.svg; sourceTree = "<group>"; };
+		E9F50F79207104D700C26317 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
+		E9F50F7B207104D700C26317 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
+		E9F50F7C207104D700C26317 /* bucketalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bucketalloc.h; sourceTree = "<group>"; };
+		E9F50F7D207104D700C26317 /* dict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dict.c; sourceTree = "<group>"; };
+		E9F50F7E207104D700C26317 /* dict.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dict.h; sourceTree = "<group>"; };
+		E9F50F7F207104D700C26317 /* geom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = geom.c; sourceTree = "<group>"; };
+		E9F50F80207104D700C26317 /* geom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = geom.h; sourceTree = "<group>"; };
+		E9F50F81207104D700C26317 /* mesh.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mesh.c; sourceTree = "<group>"; };
+		E9F50F82207104D700C26317 /* mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mesh.h; sourceTree = "<group>"; };
+		E9F50F83207104D700C26317 /* priorityq.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = priorityq.c; sourceTree = "<group>"; };
+		E9F50F84207104D700C26317 /* priorityq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = priorityq.h; sourceTree = "<group>"; };
+		E9F50F85207104D700C26317 /* sweep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sweep.c; sourceTree = "<group>"; };
+		E9F50F86207104D700C26317 /* sweep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sweep.h; sourceTree = "<group>"; };
+		E9F50F87207104D700C26317 /* tess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tess.c; sourceTree = "<group>"; };
+		E9F50F88207104D700C26317 /* tess.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tess.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +106,7 @@
 		E9EEAD74200BC63400F2BFB2 /* Unit Space */ = {
 			isa = PBXGroup;
 			children = (
+				E9F50F77207104D700C26317 /* libTess */,
 				E9F50F72207016F800C26317 /* 23.svg */,
 				E9F50F71207016F800C26317 /* nano.svg */,
 				E9F50F702070165900C26317 /* nanosvg.h */,
@@ -118,6 +141,44 @@
 				E9EEAD99200BE9F700F2BFB2 /* Metal.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E9F50F77207104D700C26317 /* libTess */ = {
+			isa = PBXGroup;
+			children = (
+				E9F50F78207104D700C26317 /* Include */,
+				E9F50F7A207104D700C26317 /* Source */,
+			);
+			path = libTess;
+			sourceTree = "<group>";
+		};
+		E9F50F78207104D700C26317 /* Include */ = {
+			isa = PBXGroup;
+			children = (
+				E9F50F79207104D700C26317 /* tesselator.h */,
+			);
+			path = Include;
+			sourceTree = "<group>";
+		};
+		E9F50F7A207104D700C26317 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				E9F50F7B207104D700C26317 /* bucketalloc.c */,
+				E9F50F7C207104D700C26317 /* bucketalloc.h */,
+				E9F50F7D207104D700C26317 /* dict.c */,
+				E9F50F7E207104D700C26317 /* dict.h */,
+				E9F50F7F207104D700C26317 /* geom.c */,
+				E9F50F80207104D700C26317 /* geom.h */,
+				E9F50F81207104D700C26317 /* mesh.c */,
+				E9F50F82207104D700C26317 /* mesh.h */,
+				E9F50F83207104D700C26317 /* priorityq.c */,
+				E9F50F84207104D700C26317 /* priorityq.h */,
+				E9F50F85207104D700C26317 /* sweep.c */,
+				E9F50F86207104D700C26317 /* sweep.h */,
+				E9F50F87207104D700C26317 /* tess.c */,
+				E9F50F88207104D700C26317 /* tess.h */,
+			);
+			path = Source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -193,13 +254,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9F50F8F207104D700C26317 /* tess.c in Sources */,
+				E9F50F8B207104D700C26317 /* geom.c in Sources */,
+				E9F50F8D207104D700C26317 /* priorityq.c in Sources */,
+				E9F50F89207104D700C26317 /* bucketalloc.c in Sources */,
 				E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */,
 				E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */,
+				E9F50F8A207104D700C26317 /* dict.c in Sources */,
 				E9EEAD90200BC76C00F2BFB2 /* View.mm in Sources */,
 				E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */,
 				E9EEAD85200BC63400F2BFB2 /* main.m in Sources */,
 				E90D1DC5203E9F6D00F9F35B /* Library.metal in Sources */,
 				E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */,
+				E9F50F8C207104D700C26317 /* mesh.c in Sources */,
+				E9F50F8E207104D700C26317 /* sweep.c in Sources */,
 				E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */,
 				E90D1DC7203E9FA200F9F35B /* Headers.metal in Sources */,
 				E9EEAD93200BC96D00F2BFB2 /* MetalLayer.mm in Sources */,
