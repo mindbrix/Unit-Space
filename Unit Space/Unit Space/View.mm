@@ -248,8 +248,6 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        
-        
         int k = 0;
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
@@ -260,7 +258,7 @@ using namespace std;
                 TESStesselator *tess = tessNewTess(NULL);
                 tessAddContour(tess, 2, path->pts, sizeof(float) * 2, (int)path->npts, false);
                 
-                if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(tess);
                     const int nelems = tessGetElementCount(tess);
                     auto polygon = (TESSindex *)tessGetElements(tess);

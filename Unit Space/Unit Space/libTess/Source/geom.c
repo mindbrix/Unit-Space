@@ -79,7 +79,7 @@ TESSreal tesedgeSign( TESSvertex *u, TESSvertex *v, TESSvertex *w )
 	*/
 	TESSreal gapL, gapR;
 
-	assert( VertLeq( u, v ) && VertLeq( v, w ));
+    assert( VertLeq( u, v ) && VertLeq( v, w ));
 
 	gapL = v->s - u->s;
 	gapR = w->s - v->s;

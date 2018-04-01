@@ -20,8 +20,6 @@
 		E9EEAD93200BC96D00F2BFB2 /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */; };
 		E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD94200BD61600F2BFB2 /* Shaders.metal */; };
 		E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */; };
-		E9F50F73207016F800C26317 /* nano.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F71207016F800C26317 /* nano.svg */; };
-		E9F50F74207016F800C26317 /* 23.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F72207016F800C26317 /* 23.svg */; };
 		E9F50F89207104D700C26317 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F7B207104D700C26317 /* bucketalloc.c */; };
 		E9F50F8A207104D700C26317 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F7D207104D700C26317 /* dict.c */; };
 		E9F50F8B207104D700C26317 /* geom.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F7F207104D700C26317 /* geom.c */; };
@@ -29,6 +27,10 @@
 		E9F50F8D207104D700C26317 /* priorityq.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F83207104D700C26317 /* priorityq.c */; };
 		E9F50F8E207104D700C26317 /* sweep.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F85207104D700C26317 /* sweep.c */; };
 		E9F50F8F207104D700C26317 /* tess.c in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F87207104D700C26317 /* tess.c */; };
+		E9F50F952071221200C26317 /* 23.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F912071221200C26317 /* 23.svg */; };
+		E9F50F962071221200C26317 /* contour.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F922071221200C26317 /* contour.svg */; };
+		E9F50F972071221200C26317 /* nano.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F932071221200C26317 /* nano.svg */; };
+		E9F50F982071221200C26317 /* reschart.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9F50F942071221200C26317 /* reschart.svg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,8 +58,6 @@
 		E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Shared.metal.hpp; sourceTree = "<group>"; };
 		E9EEAD99200BE9F700F2BFB2 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		E9F50F702070165900C26317 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
-		E9F50F71207016F800C26317 /* nano.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nano.svg; sourceTree = "<group>"; };
-		E9F50F72207016F800C26317 /* 23.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = 23.svg; sourceTree = "<group>"; };
 		E9F50F79207104D700C26317 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
 		E9F50F7B207104D700C26317 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
 		E9F50F7C207104D700C26317 /* bucketalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bucketalloc.h; sourceTree = "<group>"; };
@@ -73,6 +73,10 @@
 		E9F50F86207104D700C26317 /* sweep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sweep.h; sourceTree = "<group>"; };
 		E9F50F87207104D700C26317 /* tess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tess.c; sourceTree = "<group>"; };
 		E9F50F88207104D700C26317 /* tess.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tess.h; sourceTree = "<group>"; };
+		E9F50F912071221200C26317 /* 23.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = 23.svg; sourceTree = "<group>"; };
+		E9F50F922071221200C26317 /* contour.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = contour.svg; sourceTree = "<group>"; };
+		E9F50F932071221200C26317 /* nano.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nano.svg; sourceTree = "<group>"; };
+		E9F50F942071221200C26317 /* reschart.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = reschart.svg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,9 +110,8 @@
 		E9EEAD74200BC63400F2BFB2 /* Unit Space */ = {
 			isa = PBXGroup;
 			children = (
+				E9F50F902071221200C26317 /* SVG */,
 				E9F50F77207104D700C26317 /* libTess */,
-				E9F50F72207016F800C26317 /* 23.svg */,
-				E9F50F71207016F800C26317 /* nano.svg */,
 				E9F50F702070165900C26317 /* nanosvg.h */,
 				E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */,
 				E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */,
@@ -181,6 +184,17 @@
 			path = Source;
 			sourceTree = "<group>";
 		};
+		E9F50F902071221200C26317 /* SVG */ = {
+			isa = PBXGroup;
+			children = (
+				E9F50F912071221200C26317 /* 23.svg */,
+				E9F50F922071221200C26317 /* contour.svg */,
+				E9F50F932071221200C26317 /* nano.svg */,
+				E9F50F942071221200C26317 /* reschart.svg */,
+			);
+			path = SVG;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -239,10 +253,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E9F50F74207016F800C26317 /* 23.svg in Resources */,
 				E9EEAD7F200BC63400F2BFB2 /* Assets.xcassets in Resources */,
+				E9F50F952071221200C26317 /* 23.svg in Resources */,
+				E9F50F982071221200C26317 /* reschart.svg in Resources */,
 				E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */,
-				E9F50F73207016F800C26317 /* nano.svg in Resources */,
+				E9F50F962071221200C26317 /* contour.svg in Resources */,
+				E9F50F972071221200C26317 /* nano.svg in Resources */,
 				E9EEAD82200BC63400F2BFB2 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
