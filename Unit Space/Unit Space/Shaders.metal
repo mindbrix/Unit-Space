@@ -401,19 +401,17 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     float2 _normal = { _v0n.y, -_v0n.x };
     float miterLength = 0.7071067812 / max(1e-3, dot(_miter, _normal));
     
-    float2 p = p1 + _miter * miterLength;
-    
-    float2 unitPoint = { p.x / state.drawableSize.w, p.y / state.drawableSize.h };
+    float2 devicePoint = p1 + _miter * miterLength;
     
     TriangleVertex vert;
-    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     float area = abs(unit.a * unit.d - unit.b * unit.c);
     float h_v0 = area * rsqrt(unit.c * unit.c + unit.d * unit.d);
     float h_v1 = area / length(float2(unit.a + unit.c, unit.b + unit.d));
     float h_v2 = area * rsqrt(unit.a * unit.a + unit.b * unit.b);
     
-    p -= 0.5;
-    vert.p0 = t[0] - p, vert.p1 = t[1] - p, vert.p2 = t[2] - p;
+    devicePoint -= 0.5;
+    vert.p0 = t[0] - devicePoint, vert.p1 = t[1] - devicePoint, vert.p2 = t[2] - devicePoint;
     
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
     
@@ -426,10 +424,6 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 2.0)
         return vert.color;
     
-    float winding = fragmentWinding(vert.p0, vert.p1);
-    winding += fragmentWinding(vert.p1, vert.p2);
-    winding += fragmentWinding(vert.p2, vert.p0);
-    float alpha = abs(winding);
-    
-    return vert.color * alpha;
+    float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
+    return vert.color * abs(winding);
 }
