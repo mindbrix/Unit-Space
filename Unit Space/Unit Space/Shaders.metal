@@ -381,13 +381,13 @@ struct TriangleVertex
     float4 color;
 };
 
-vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], constant Triangles2 &triangles2 [[buffer(2)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    uint i0 = triangles2.i0[iid], i1 = triangles2.i1[iid], i2 = triangles2.i2[iid], c0 = triangles2.c0[iid];
-    RGBA color = triangles2.colors[c0];
-    float x0 = triangles2.points[i0].x, y0 = triangles2.points[i0].y;
-    float x1 = triangles2.points[i1].x, y1 = triangles2.points[i1].y;
-    float x2 = triangles2.points[i2].x, y2 = triangles2.points[i2].y;
+    uint i0 = triangles.i0[iid], i1 = triangles.i1[iid], i2 = triangles.i2[iid], c0 = triangles.c0[iid];
+    RGBA color = triangles.colors[c0];
+    float x0 = triangles.points[i0].x, y0 = triangles.points[i0].y;
+    float x1 = triangles.points[i1].x, y1 = triangles.points[i1].y;
+    float x2 = triangles.points[i2].x, y2 = triangles.points[i2].y;
     
     constant AffineTransform& ctm = state.CTM;
     float2 t[3] =  {

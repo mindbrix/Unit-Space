@@ -38,7 +38,6 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) Quadratics quadratics;
 @property(nonatomic) Triangles triangles;
-@property(nonatomic) Triangles2 triangles2;
 
 @end
 
@@ -96,8 +95,9 @@ using namespace std;
                     break;
         } else if (_flags & 8)  {
             for (int j = 0; j < _triangles.count; j++)
-                if ((dragged = [self mouseDragCTM:event CTM:_triangles.ctms[j]]))
-                    break;
+                ;
+//                if ((dragged = [self mouseDragCTM:event CTM:_triangles.ctms[j]]))
+//                    break;
         }
     }
     if (!dragged)
@@ -250,7 +250,7 @@ using namespace std;
         // Use...
         
         int k = 0, pi = 0;
-        _triangles2.colors[0] = { 0, 0, 0, 0.333 };
+        _triangles.colors[0] = { 0, 0, 0, 0.333 };
         
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
@@ -266,14 +266,14 @@ using namespace std;
                     int npoints = tessGetVertexCount(tess);
                     
                     if (pi + npoints < kTrianglesPointsSize) {
-                        memcpy(& _triangles2.points[pi], points, sizeof(Vector) * npoints);
+                        memcpy(& _triangles.points[pi], points, sizeof(Vector) * npoints);
                         
                         const int nelems = tessGetElementCount(tess);
                         auto polygon = (TESSindex *)tessGetElements(tess);
                         
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-                                _triangles2.add(k++, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0);
+                                _triangles.add(k++, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0);
                             }
                         }
                         pi += npoints;
@@ -282,28 +282,28 @@ using namespace std;
                 tessDeleteTess(tess);
             }
         }
-        _triangles2.count = k;
+        _triangles.count = k;
         // Delete
         nsvgDelete(image);
     } else {
-        _triangles2.colors[0] = { 1, 0, 0, 1 };
-        _triangles2.colors[1] = { 0, 1, 0, 1 };
-        _triangles2.colors[2] = { 0, 0, 1, 1 };
-        _triangles2.colors[3] = { 0, 0, 0, 1 };
+        _triangles.colors[0] = { 1, 0, 0, 1 };
+        _triangles.colors[1] = { 0, 1, 0, 1 };
+        _triangles.colors[2] = { 0, 0, 1, 1 };
+        _triangles.colors[3] = { 0, 0, 0, 1 };
         
-        _triangles2.points[0] = { 0, 0 };
-        _triangles2.points[1] = { 100, 0 };
-        _triangles2.points[2] = { 100, 100 };
-        _triangles2.points[3] = { 0, 100 };
-        _triangles2.points[4] = { 200, 0 };
-        _triangles2.points[5] = { 200, 100 };
+        _triangles.points[0] = { 0, 0 };
+        _triangles.points[1] = { 100, 0 };
+        _triangles.points[2] = { 100, 100 };
+        _triangles.points[3] = { 0, 100 };
+        _triangles.points[4] = { 200, 0 };
+        _triangles.points[5] = { 200, 100 };
         
-        _triangles2.add(0, 0, 1, 2, 0);
-        _triangles2.add(1, 2, 3, 0, 1);
-        _triangles2.add(2, 2, 1, 4, 2);
-        _triangles2.add(3, 4, 5, 2, 3);
+        _triangles.add(0, 0, 1, 2, 0);
+        _triangles.add(1, 2, 3, 0, 1);
+        _triangles.add(2, 2, 1, 4, 2);
+        _triangles.add(3, 4, 5, 2, 3);
         
-        _triangles2.count = 4;
+        _triangles.count = 4;
     }
 }
 
@@ -405,7 +405,6 @@ using namespace std;
         _calls[idx].type = kCallTypeTriangles;
         _calls[idx].state = uniforms;
         _calls[idx].triangles = _triangles;
-        _calls[idx].triangles2 = _triangles2;
         idx++;
         
         if (_showPoints) {
@@ -415,12 +414,13 @@ using namespace std;
             Circles& circles = _calls[idx].circles;
             
             int i = 0;
-            for (int j = 0; j < _triangles.count; j++) {
-                AffineTransform unit = _triangles.ctms[j];
+            for (int j = 0; j < _triangles.count && j < kCirclesSize / 3; j++) {
+                int i0 = _triangles.i0[j], i1 = _triangles.i1[j], i2 = _triangles.i2[j];
+                Vector p0 = _triangles.points[i0], p1 = _triangles.points[i1], p2 = _triangles.points[i2];
                 
-                circles.circles[i++] = { unit.tx, unit.ty, largeRadius };
-                circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
-                circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
+                circles.circles[i++] = { p0.x, p0.y, largeRadius };
+                circles.circles[i++] = { p1.x, p1.y, radius };
+                circles.circles[i++] = { p2.x, p2.y, radius };
             }
             circles.count = i;
             idx++;

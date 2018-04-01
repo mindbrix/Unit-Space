@@ -36,9 +36,11 @@ struct Arcs {
     Arc         arcs[192];
 };
 
+#define kCirclesSize 340
+
 struct Circles {
     int         count;
-    Circle      circles[340];
+    Circle      circles[kCirclesSize];
 };
 
 struct Fractals {
@@ -64,17 +66,11 @@ struct Units {
     AffineTransform     ctms[170];
 };
 
-struct Triangles {
-    int                 count;
-    AffineTransform     ctms[102];
-    RGBA                colors[102];
-};
-
 #define kTrianglesIndexSize 384
 #define kTrianglesPointsSize 256
 #define kTrianglesColorsSize 16
 
-struct Triangles2 {
+struct Triangles {
     int                 count;
     unsigned char       i0[kTrianglesIndexSize];
     unsigned char       i1[kTrianglesIndexSize];
@@ -127,7 +123,6 @@ struct Call {
         Quadratics  quadratics;
         Units       units;
         Triangles   triangles;
-        Triangles2   triangles2;
     };
 };
 

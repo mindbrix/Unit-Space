@@ -163,8 +163,7 @@
             case kCallTypeTriangles:
                 [commandEncoder setRenderPipelineState:_trianglePipelineState];
                 [commandEncoder setVertexBytes:&calls->triangles length:sizeof(Triangles) atIndex:1];
-                [commandEncoder setVertexBytes:&calls->triangles2 length:sizeof(Triangles2) atIndex:2];
-                instanceCount = calls->triangles2.count;
+                instanceCount = calls->triangles.count;
                 break;
         }
         
