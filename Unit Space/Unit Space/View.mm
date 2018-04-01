@@ -94,10 +94,17 @@ using namespace std;
                 if ((dragged = [self mouseDragCTM:event CTM:_quadratics.ctms[j]]))
                     break;
         } else if (_flags & 8)  {
-            for (int j = 0; j < _triangles.count; j++)
-                ;
-//                if ((dragged = [self mouseDragCTM:event CTM:_triangles.ctms[j]]))
-//                    break;
+            for (int j = 0; j < _triangles.count; j++) {
+                int i0 = _triangles.i0[j], i1 = _triangles.i1[j], i2 = _triangles.i2[j];
+                Vector p0 = _triangles.points[i0], p1 = _triangles.points[i1], p2 = _triangles.points[i2];
+                AffineTransform ctm = { p1.x - p0.x, p1.y - p0.y, p2.x - p1.x, p2.y - p1.y, p0.x, p0.y };
+                if ((dragged = [self mouseDragCTM:event CTM:ctm])) {
+                    _triangles.points[i0] = { ctm.tx, ctm.ty };
+                    _triangles.points[i1] = { ctm.tx + ctm.a, ctm.ty + ctm.b };
+                    _triangles.points[i2] = { ctm.tx + ctm.a + ctm.c, ctm.ty + ctm.b + ctm.d };
+                    break;
+                }
+            }
         }
     }
     if (!dragged)
