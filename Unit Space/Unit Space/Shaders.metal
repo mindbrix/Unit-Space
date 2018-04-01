@@ -399,7 +399,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     float2 _tangent = normalize(_v0n + _v1n);
     float2 _miter = { _tangent.y, -_tangent.x };
     float2 _normal = { _v0n.y, -_v0n.x };
-    float miterLength = 1.0 / max(1e-3, dot(_miter, _normal));
+    float miterLength = 0.7071067812 / max(1e-3, dot(_miter, _normal));
     
     float2 p = p1 + _miter * miterLength;
     
