@@ -253,7 +253,8 @@ using namespace std;
         int k = 0;
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
-                path = path->next;
+                for (int i = 0; i < path->npts; i++)
+                    path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                 static const TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
                 constexpr int kPolySize = 6;
                 TESStesselator *tess = tessNewTess(NULL);
@@ -266,22 +267,21 @@ using namespace std;
                     
                     for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                         for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-                            if (k < 100) {
-                                float *p = points + polygon[0] * 2;
-                                float x0 = p[0], y0 = p[1];
+                            if (k < 102) {
+                                float x0 = points[polygon[0] * 2];
+                                float y0 = points[polygon[0] * 2 + 1];
                                 float x1 = points[polygon[(j + 1)] * 2];
                                 float y1 = points[polygon[(j + 1)] * 2 + 1];
                                 float x2 = points[polygon[(j + 2)] * 2];
                                 float y2 = points[polygon[(j + 2)] * 2 + 1];
                                 
                                 float area = x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1);
-                                
-                                if (area > 0) {
+
+                                if (area != 0) {
                                     float a = x1 - x0, b = y1 - y0, c = x2 - x1, d = y2 - y1;
                                     _triangles.ctms[k] = { a, b, c, d, x0, y0 };
                                     _triangles.colors[k++] = { 0, 0, 0, 0.333 };
                                 }
-                                
                             }
                         }
                     }
