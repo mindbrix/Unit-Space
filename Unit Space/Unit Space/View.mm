@@ -278,11 +278,11 @@ using namespace std;
                         const int nelems = tessGetElementCount(tess);
                         auto polygon = (TESSindex *)tessGetElements(tess);
                         
-                        for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                            for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-                                _triangles.add(k++, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0);
-                            }
-                        }
+                        for (int i = 0; i < nelems; i++, polygon += kPolySize) 
+                            for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
+                                if (_triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0))
+                                    k++;
+                        
                         pi += npoints;
                     }
                 }
