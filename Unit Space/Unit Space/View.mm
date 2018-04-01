@@ -38,6 +38,7 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) Quadratics quadratics;
 @property(nonatomic) Triangles triangles;
+@property(nonatomic) Triangles2 triangles2;
 
 @end
 
@@ -248,7 +249,9 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        int k = 0;
+        int k = 0, pi = 0;
+        _triangles2.colors[0] = { 0, 0, 0, 0.333 };
+        
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                 for (int i = 0; i < path->npts; i++)
@@ -261,67 +264,46 @@ using namespace std;
                 if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(tess);
                     int npoints = tessGetVertexCount(tess);
-                    const int nelems = tessGetElementCount(tess);
-                    auto polygon = (TESSindex *)tessGetElements(tess);
                     
-                    for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                        for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-                            if (k < 102) {
-                                float x0 = points[polygon[0] * 2];
-                                float y0 = points[polygon[0] * 2 + 1];
-                                float x1 = points[polygon[(j + 1)] * 2];
-                                float y1 = points[polygon[(j + 1)] * 2 + 1];
-                                float x2 = points[polygon[(j + 2)] * 2];
-                                float y2 = points[polygon[(j + 2)] * 2 + 1];
-                                
-                                float area = x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1);
-
-                                if (area != 0) {
-                                    float a = x1 - x0, b = y1 - y0, c = x2 - x1, d = y2 - y1;
-                                    _triangles.ctms[k] = { a, b, c, d, x0, y0 };
-                                    _triangles.colors[k++] = { 0, 0, 0, 0.333 };
-                                }
+                    if (pi + npoints < kTrianglesPointsSize) {
+                        memcpy(& _triangles2.points[pi], points, sizeof(Vector) * npoints);
+                        
+                        const int nelems = tessGetElementCount(tess);
+                        auto polygon = (TESSindex *)tessGetElements(tess);
+                        
+                        for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                            for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
+                                _triangles2.add(k++, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0);
                             }
                         }
+                        pi += npoints;
                     }
                 }
-                
                 tessDeleteTess(tess);
-                
-//                float tx = (path->bounds[0] + path->bounds[2]) * 0.5;
-//                float ty = (path->bounds[1] + path->bounds[3]) * 0.5;
-//
-//                for (int i = 0; i < path->npts-1; i += 3) {
-//                    if (k < 100) {
-//                        float* p = &path->pts[i*2];
-//                        for (int j = 0; j < 5; j += 2) {
-//                            float x0 = p[j], y0 = p[j + 1], x1 = p[j + 2], y1 = p[j + 3];
-//
-//                            float area = tx * (y0 - y1) + x0 * (y1 - ty) + x1 * (ty - y0);
-//                            if (area < 0)
-//                                std::swap(x0, x1), std::swap(y0, y1);
-//
-//                            float a = x0 - tx, b = y0 - ty, c = x1 - x0, d = y1 - y0;
-//                            _triangles.ctms[k] = { a, b, c, d, tx, ty };
-//                            _triangles.colors[k++] = { 0, 0, 0, 0.333 };
-//                        }
-//                    }
-//                }
             }
         }
-        _triangles.count = k;
+        _triangles2.count = k;
         // Delete
         nsvgDelete(image);
     } else {
-        _triangles.ctms[0] = { 100, 0, 0, 100, 0, 0 };
-        _triangles.colors[0] = { 1, 0, 0, 1 };
-        _triangles.ctms[1] = { -100, 0, 0, -100, 100, 100 };
-        _triangles.colors[1] = { 0, 1, 0, 1 };
-        _triangles.ctms[2] = { 0, -100, 100, 0, 100, 100 };
-        _triangles.colors[2] = { 0, 0, 1, 1 };
-        _triangles.ctms[3] = { 0, 100, -100, 0, 200, 0 };
-        _triangles.colors[3] = { 0, 0, 0, 1 };
-        _triangles.count = 4;
+        _triangles2.colors[0] = { 1, 0, 0, 1 };
+        _triangles2.colors[1] = { 0, 1, 0, 1 };
+        _triangles2.colors[2] = { 0, 0, 1, 1 };
+        _triangles2.colors[3] = { 0, 0, 0, 1 };
+        
+        _triangles2.points[0] = { 0, 0 };
+        _triangles2.points[1] = { 100, 0 };
+        _triangles2.points[2] = { 100, 100 };
+        _triangles2.points[3] = { 0, 100 };
+        _triangles2.points[4] = { 200, 0 };
+        _triangles2.points[5] = { 200, 100 };
+        
+        _triangles2.add(0, 0, 1, 2, 0);
+        _triangles2.add(1, 2, 3, 0, 1);
+        _triangles2.add(2, 2, 1, 4, 2);
+        _triangles2.add(3, 4, 5, 2, 3);
+        
+        _triangles2.count = 4;
     }
 }
 
@@ -423,6 +405,7 @@ using namespace std;
         _calls[idx].type = kCallTypeTriangles;
         _calls[idx].state = uniforms;
         _calls[idx].triangles = _triangles;
+        _calls[idx].triangles2 = _triangles2;
         idx++;
         
         if (_showPoints) {

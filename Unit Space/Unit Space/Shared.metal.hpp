@@ -71,8 +71,8 @@ struct Triangles {
 };
 
 #define kTrianglesIndexSize 384
-#define kTrianglesPointsSize 192
-#define kTrianglesColorsSize 32
+#define kTrianglesPointsSize 256
+#define kTrianglesColorsSize 16
 
 struct Triangles2 {
     int                 count;
@@ -82,6 +82,17 @@ struct Triangles2 {
     unsigned char       c0[kTrianglesIndexSize];
     Vector              points[kTrianglesPointsSize];
     RGBA                colors[kTrianglesColorsSize];
+    
+    bool add(int i, int _i0, int _i1, int _i2, int _c0) {
+        if (i >= kTrianglesIndexSize)
+            return false;
+        
+        i0[i] = (unsigned char)_i0;
+        i1[i] = (unsigned char)_i1;
+        i2[i] = (unsigned char)_i2;
+        c0[i] = (unsigned char)_c0;
+        return true;
+    }
 };
 
 struct State {
@@ -116,6 +127,7 @@ struct Call {
         Quadratics  quadratics;
         Units       units;
         Triangles   triangles;
+        Triangles2   triangles2;
     };
 };
 

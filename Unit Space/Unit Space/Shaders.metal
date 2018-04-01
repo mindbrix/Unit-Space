@@ -384,27 +384,19 @@ struct TriangleVertex
 vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], constant Triangles2 &triangles2 [[buffer(2)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint i0 = triangles2.i0[iid], i1 = triangles2.i1[iid], i2 = triangles2.i2[iid], c0 = triangles2.c0[iid];
-    RGBA c2 = triangles2.colors[c0];
+    RGBA color = triangles2.colors[c0];
     float x0 = triangles2.points[i0].x, y0 = triangles2.points[i0].y;
     float x1 = triangles2.points[i1].x, y1 = triangles2.points[i1].y;
     float x2 = triangles2.points[i2].x, y2 = triangles2.points[i2].y;
     
     constant AffineTransform& ctm = state.CTM;
-    float2 t2[3] =  {
+    float2 t[3] =  {
         { x0 * ctm.a + y0 * ctm.c + ctm.tx, x0 * ctm.b + y0 * ctm.d + ctm.ty },
         { x1 * ctm.a + y1 * ctm.c + ctm.tx, x1 * ctm.b + y1 * ctm.d + ctm.ty },
         { x2 * ctm.a + y2 * ctm.c + ctm.tx, x2 * ctm.b + y2 * ctm.d + ctm.ty }
     };
     
-    AffineTransform unit2 = { t2[1].x - t2[0].x, t2[1].y - t2[0].y, t2[2].x - t2[1].x, t2[2].y - t2[1].y, t2[0].x, t2[0].y };
-    
-    AffineTransform unit = AffineTransformConcat(triangles.ctms[iid], state.CTM);
-    
-    float2 t[3] =  {
-        { unit.tx, unit.ty },
-        { unit.tx + unit.a, unit.ty + unit.b },
-        { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d }
-    };
+    AffineTransform unit = { t[1].x - t[0].x, t[1].y - t[0].y, t[2].x - t[1].x, t[2].y - t[1].y, t[0].x, t[0].y };
     
     float2 p1 = t[vid];
     float2 p2 = t[(vid + 1) % 3];
@@ -430,7 +422,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
     
-    vert.color = float4(triangles.colors[iid].r, triangles.colors[iid].g, triangles.colors[iid].b, triangles.colors[iid].a);
+    vert.color = float4(color.r, color.g, color.b, color.a);
     return vert;
 }
 
