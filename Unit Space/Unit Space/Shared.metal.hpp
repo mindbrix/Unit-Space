@@ -70,6 +70,20 @@ struct Triangles {
     RGBA                colors[102];
 };
 
+#define kTrianglesIndexSize 384
+#define kTrianglesPointsSize 192
+#define kTrianglesColorsSize 32
+
+struct Triangles2 {
+    int                 count;
+    unsigned char       i0[kTrianglesIndexSize];
+    unsigned char       i1[kTrianglesIndexSize];
+    unsigned char       i2[kTrianglesIndexSize];
+    unsigned char       c0[kTrianglesIndexSize];
+    Vector              points[kTrianglesPointsSize];
+    RGBA                colors[kTrianglesColorsSize];
+};
+
 struct State {
     RGBA                fillColor;
     RGBA                strokeColor;

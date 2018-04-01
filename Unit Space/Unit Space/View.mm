@@ -260,6 +260,7 @@ using namespace std;
                 
                 if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(tess);
+                    int npoints = tessGetVertexCount(tess);
                     const int nelems = tessGetElementCount(tess);
                     auto polygon = (TESSindex *)tessGetElements(tess);
                     
