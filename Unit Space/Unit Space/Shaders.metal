@@ -428,7 +428,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 2.0)
+    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 1.41)
         return vert.color;
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
