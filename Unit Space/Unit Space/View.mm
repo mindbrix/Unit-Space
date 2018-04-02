@@ -249,7 +249,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"contour.svg" ofType:nil];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"nano.svg" ofType:nil];
     
     struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
     if (image) {
@@ -258,6 +258,7 @@ using namespace std;
         
         constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
         constexpr int kPolySize = 6;
+        constexpr float kCollinearTolerance = 1e-2;
         
         int k = 0, pi = 0;
         _triangles.colors[0] = { 0, 0, 0, 0.333 };
@@ -269,7 +270,7 @@ using namespace std;
                 for (int i = 0; i < path->npts; i++)
                     path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                 
-                int count = filterCollinearPoints(path->pts, path->pts, path->npts, 1e-2);
+                int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
                 
                 tessAddContour(tess, 2, path->pts, sizeof(float) * 2, count, false);
             }
