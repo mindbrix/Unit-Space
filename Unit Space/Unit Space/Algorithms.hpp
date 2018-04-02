@@ -13,6 +13,31 @@
 
 using namespace std;
 
+int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
+    float x0, y0, x1, y1, x2, y2, area;
+    float *begin = dst;
+    x0 = *src++, y0 = *src++;
+    x1 = *src++, y1 = *src++;
+    
+    *dst++ = x0, *dst++ = y0;
+    
+    while (count-- > 2) {
+        x2 = *src++, y2 = *src++;
+        
+        area = x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1);
+        
+        if (std::abs(area) < tolerance) {
+            x1 = x2, y1 = y2;
+        } else {
+            *dst++ = x1, *dst++ = y1;
+            x0 = x1, y0 = y1;
+            x1 = x2, y1 = y2;
+        }
+    }
+    *dst++ = x2, *dst++ = y2;
+    return (dst - begin) / 2;
+}
+
 AffineTransform *writeQuadraticCTM(AffineTransform *ctm, float x0, float y0, float x1, float y1, float x2, float y2) {
     *ctm++ = { x1 - x0, y1 - y0, x2 - x1, y2 - y1, x0, y0 };
     return ctm;

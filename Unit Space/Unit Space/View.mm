@@ -263,10 +263,13 @@ using namespace std;
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                 for (int i = 0; i < path->npts; i++)
                     path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
+                
+                int count = filterCollinearPoints(path->pts, path->pts, path->npts, 1e-3);
+                
                 static const TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
                 constexpr int kPolySize = 6;
                 TESStesselator *tess = tessNewTess(NULL);
-                tessAddContour(tess, 2, path->pts, sizeof(float) * 2, (int)path->npts, false);
+                tessAddContour(tess, 2, path->pts, sizeof(float) * 2, count, false);
                 
                 if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(tess);
