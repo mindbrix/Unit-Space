@@ -13,11 +13,11 @@
 
 using namespace std;
 
+#pragma clang diagnostic ignored "-Wcomma"
+
 int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
-    float x0, y0, x1, y1, x2, y2, area;
+    float x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
     float *begin = dst;
-    x0 = *src++, y0 = *src++;
-    x1 = *src++, y1 = *src++;
     
     *dst++ = x0, *dst++ = y0;
     
@@ -26,13 +26,11 @@ int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
         
         area = x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1);
         
-        if (std::abs(area) < tolerance) {
-            x1 = x2, y1 = y2;
-        } else {
+        if (std::abs(area) > tolerance) {
             *dst++ = x1, *dst++ = y1;
             x0 = x1, y0 = y1;
-            x1 = x2, y1 = y2;
         }
+        x1 = x2, y1 = y2;
     }
     *dst++ = x2, *dst++ = y2;
     return (dst - begin) / 2;
