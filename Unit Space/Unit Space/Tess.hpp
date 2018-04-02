@@ -16,15 +16,20 @@ constexpr float kCollinearTolerance = 1e-2;
 
 
 struct SubPath {
-    SubPath() {}
     SubPath(const float *points, const int npoints) {
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
         _area = pointsSignedArea(points, points + npoints * 2, sizeof(float) * 2);
+        boundsLimits(& _llx, points, points + npoints * 2, sizeof(float) * 2);
         tessAddContour(_tess.get(), 2, points, sizeof(float) * 2, npoints, false);
     }
     
+    void maskOut(SubPath &mask) {
+        if ((_urx > mask._llx) && (mask._urx > _llx) && (_ury > mask._lly) && (mask._ury > _lly))
+            ;
+    }
     shared_ptr<TESStesselator>  _tess;
     float                       _area;
+    float                       _llx, _lly, _urx, _ury;
 };
 
 struct Path {
@@ -34,6 +39,12 @@ struct Path {
     
     void addContour(float *points, int npoints) {
         tessAddContour(_tess.get(), 2, points, sizeof(float) * 2, npoints, false);
+    }
+    
+    void maskOut(Path &mask) {
+        for (SubPath& maskSubPath : mask._subPaths)
+            for (SubPath& subPath : _subPaths)
+                subPath.maskOut(maskSubPath);
     }
     
     void writeSubpaths(bool evenOdd) {
@@ -56,5 +67,14 @@ struct Path {
 };
 
 struct Mesh {
+    void addPath(Path& path) {
+        for (Path& p : _paths)
+            p.maskOut(path);
+        
+        _paths.emplace_back(path);
+    }
+    void triangulate(Triangles& triangles) {
+        
+    }
     vector<Path>             _paths;
 };
