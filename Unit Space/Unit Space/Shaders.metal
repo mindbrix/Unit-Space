@@ -406,8 +406,9 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     float2 _tangent = normalize(_v0n + _v1n);
     float2 _miter = { _tangent.y, -_tangent.x };
     float2 _normal = { _v0n.y, -_v0n.x };
-    float miterLength = 0.7071067812 / max(1e-3, dot(_miter, _normal));
-    
+    float cosine = dot(_miter, _normal);
+    float miterLength = 0.7071067812 / max(1e-3, cosine);
+    miterLength = select(miterLength, 0.0, cosine < 1e-3);
     float2 devicePoint = p1 + _miter * miterLength;
     
     TriangleVertex vert;
