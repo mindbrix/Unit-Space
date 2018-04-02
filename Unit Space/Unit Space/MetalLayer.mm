@@ -32,6 +32,10 @@
     if (!self)
         return nil;
     
+    CGColorRef white = CGColorGetConstantColor(kCGColorWhite);
+    self.backgroundColor = white;
+    CGColorRelease(white);
+    
     self.opaque = NO;
     self.needsDisplayOnBoundsChange = YES;
     self.actions = @{ @"onOrderIn": [NSNull null],
