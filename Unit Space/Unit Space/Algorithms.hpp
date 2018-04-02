@@ -36,6 +36,16 @@ int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
     return (dst - begin) / 2;
 }
 
+float pointsSignedArea(const float *begin, const float *end, size_t stride) {
+    double sum = 0.0;
+    auto prev = (const float *)((char *)end - stride);
+    for (auto it = begin; it < end; it = (float *)((char *)it + stride)) {
+        sum += (double)prev[0] * (double)it[1] - (double)prev[1] * (double)it[0];
+        prev = it;
+    }
+    return sum * 0.5;
+}
+
 AffineTransform *writeQuadraticCTM(AffineTransform *ctm, float x0, float y0, float x1, float y1, float x2, float y2) {
     *ctm++ = { x1 - x0, y1 - y0, x2 - x1, y2 - y1, x0, y0 };
     return ctm;
