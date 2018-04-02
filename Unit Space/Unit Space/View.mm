@@ -249,48 +249,49 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"nano.svg" ofType:nil];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"contour.svg" ofType:nil];
     
     struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
+        constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
+        constexpr int kPolySize = 6;
+        
         int k = 0, pi = 0;
         _triangles.colors[0] = { 0, 0, 0, 0.333 };
         
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
+            TESStesselator *tess = tessNewTess(NULL);
+            
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                 for (int i = 0; i < path->npts; i++)
                     path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                 
                 int count = filterCollinearPoints(path->pts, path->pts, path->npts, 1e-2);
                 
-                static const TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
-                constexpr int kPolySize = 6;
-                TESStesselator *tess = tessNewTess(NULL);
                 tessAddContour(tess, 2, path->pts, sizeof(float) * 2, count, false);
-                
-                if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
-                    float *points = (float *)tessGetVertices(tess);
-                    int npoints = tessGetVertexCount(tess);
-                    
-                    if (pi + npoints < kTrianglesPointsSize) {
-                        memcpy(& _triangles.points[pi], points, sizeof(Vector) * npoints);
-                        
-                        const int nelems = tessGetElementCount(tess);
-                        auto polygon = (TESSindex *)tessGetElements(tess);
-                        
-                        for (int i = 0; i < nelems; i++, polygon += kPolySize) 
-                            for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
-                                if (_triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0))
-                                    k++;
-                        
-                        pi += npoints;
-                    }
-                }
-                tessDeleteTess(tess);
             }
+            if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                float *points = (float *)tessGetVertices(tess);
+                int npoints = tessGetVertexCount(tess);
+                
+                if (pi + npoints < kTrianglesPointsSize) {
+                    memcpy(& _triangles.points[pi], points, sizeof(Vector) * npoints);
+                    
+                    const int nelems = tessGetElementCount(tess);
+                    auto polygon = (TESSindex *)tessGetElements(tess);
+                    
+                    for (int i = 0; i < nelems; i++, polygon += kPolySize)
+                        for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
+                            if (_triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0))
+                                k++;
+                    
+                    pi += npoints;
+                }
+            }
+            tessDeleteTess(tess);
         }
         _triangles.count = k;
         // Delete
