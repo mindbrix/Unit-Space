@@ -15,7 +15,7 @@
 #define NANOSVG_IMPLEMENTATION    // Expands implementation
 #import "nanosvg.h"
 
-#import "tesselator.h"
+#import "Tess.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -256,9 +256,7 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
-        constexpr int kPolySize = 6;
-        constexpr float kCollinearTolerance = 1e-2;
+        Path p;
         
         int k = 0, pi = 0;
         _triangles.colors[0] = { 0, 0, 0, 0.333 };
@@ -273,6 +271,8 @@ using namespace std;
                 int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
                 
                 float area = pointsSignedArea(path->pts, path->pts + count * 2, sizeof(float) * 2);
+                
+                p.addContour(path->pts, count);
                 
                 tessAddContour(tess, 2, path->pts, sizeof(float) * 2, count, false);
             }
@@ -294,6 +294,7 @@ using namespace std;
                     pi += npoints;
                 }
             }
+            p.writeSubpaths(shape->fillRule == NSVG_FILLRULE_EVENODD);
             tessDeleteTess(tess);
         }
         _triangles.count = k;
