@@ -15,6 +15,18 @@ using namespace std;
 
 #pragma clang diagnostic ignored "-Wcomma"
 
+void boundsLimits(float *limits, const float *begin, const float *end, size_t stride) {
+    float maxX = -FLT_MAX, maxY = -FLT_MAX, minX= FLT_MAX, minY= FLT_MAX;
+    
+    for (auto it = begin; it < end; it = (float *)((char *)it + stride)) {
+        if (it[0] > maxX) maxX = it[0];
+        if (it[0] < minX) minX = it[0];
+        if (it[1] > maxY) maxY = it[1];
+        if (it[1] < minY) minY = it[1];
+    }
+    limits[0] = minX;  limits[1] = minY;  limits[2] = maxX;  limits[3] = maxY;
+}
+
 int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
     float x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
     float *begin = dst;
