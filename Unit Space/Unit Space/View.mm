@@ -249,7 +249,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"nano.svg" ofType:nil];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"paper-2.svg" ofType:nil];
     
     struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
     if (image) {
@@ -261,7 +261,7 @@ using namespace std;
         constexpr float kCollinearTolerance = 1e-2;
         
         int k = 0, pi = 0;
-        _triangles.colors[0] = { 0, 0, 0, 0.333 };
+        _triangles.colors[0] = { 0, 0, 0, 1 };
         
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             TESStesselator *tess = tessNewTess(NULL);
