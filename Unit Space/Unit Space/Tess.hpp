@@ -109,11 +109,26 @@ struct Path {
 struct Mesh {
     void addPath(Path& path) {
         path.writeSubpaths();
-        path.findOuterIndex();
+        if (path._subPaths.size() == 0)
+            return;
+        
+        path._outerIndex = path.findOuterIndex();
+        
+        float maskOuterArea = path._subPaths[path._outerIndex]._area;
         
         for (Path& p : _paths)
-            if (path.intersects(p))
-                p.maskOut(path);
+            if (path.intersects(p)) {
+                for (SubPath& maskSubPath : path._subPaths) {
+                    bool maskIsHole = maskSubPath._area * maskOuterArea < 0;
+                    for (SubPath& subPath : p._subPaths) {
+                        if (maskIsHole && maskSubPath.contains(subPath))
+                            ;
+                        else {
+                            subPath.maskOut(maskSubPath);
+                        }
+                    }
+                }
+            }
         
         _paths.emplace_back(path);
     }

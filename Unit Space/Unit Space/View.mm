@@ -249,7 +249,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"nano.svg" ofType:nil];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil];
     
     struct NSVGimage* image = nsvgParseFromFile([path UTF8String], "px", 96);
     if (image) {
