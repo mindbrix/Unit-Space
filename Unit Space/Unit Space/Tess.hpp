@@ -5,7 +5,6 @@
 //  Created by Nigel Barber on 02/04/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-
 #import "tesselator.h"
 #import "Algorithms.hpp"
 
@@ -33,7 +32,8 @@ struct SubPath {
 };
 
 struct Path {
-    Path() {
+    Path(bool evenOdd) {
+        _evenOdd = evenOdd;
         _outerIndex = INT_MAX;
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
     }
@@ -63,8 +63,8 @@ struct Path {
         return index;
     }
     
-    void writeSubpaths(bool evenOdd) {
-        if (tessTesselate(_tess.get(), evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+    void writeSubpaths() {
+        if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
             const float *verts = tessGetVertices(_tess.get());
             const int *elems = tessGetElements(_tess.get());
             const int nelems = tessGetElementCount(_tess.get());
@@ -80,12 +80,15 @@ struct Path {
     }
     
     shared_ptr<TESStesselator>  _tess;
+    bool                        _evenOdd;
     size_t                      _outerIndex;
     vector<SubPath>             _subPaths;
 };
 
 struct Mesh {
     void addPath(Path& path) {
+        path.writeSubpaths();
+        
         for (Path& p : _paths)
             p.maskOut(path);
         

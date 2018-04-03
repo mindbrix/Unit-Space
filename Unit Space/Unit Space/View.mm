@@ -256,26 +256,28 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        Path p;
+        Mesh mesh;
         
         int k = 0, pi = 0;
         _triangles.colors[0] = { 0, 0, 0, 0.333 };
         
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
             TESStesselator *tess = tessNewTess(NULL);
+            Path p(shape->fillRule == NSVG_FILLRULE_EVENODD);
             
             for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                 for (int i = 0; i < path->npts; i++)
                     path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                 
                 int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
-                
-                float area = pointsSignedArea(path->pts, path->pts + count * 2, sizeof(float) * 2);
-                
+                                
                 p.addContour(path->pts, count);
                 
                 tessAddContour(tess, 2, path->pts, sizeof(float) * 2, count, false);
             }
+            
+            mesh.addPath(p);
+            
             if (tessTesselate(tess, shape->fillRule == NSVG_FILLRULE_EVENODD ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
                 int npoints = tessGetVertexCount(tess);
@@ -294,9 +296,11 @@ using namespace std;
                     pi += npoints;
                 }
             }
-            p.writeSubpaths(shape->fillRule == NSVG_FILLRULE_EVENODD);
             tessDeleteTess(tess);
         }
+        
+        mesh.triangulate(_triangles);
+        
         _triangles.count = k;
         // Delete
         nsvgDelete(image);
