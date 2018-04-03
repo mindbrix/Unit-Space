@@ -39,7 +39,8 @@ struct Path {
     }
     
     void addContour(float *points, int npoints) {
-        tessAddContour(_tess.get(), 2, points, sizeof(float) * 2, npoints, false);
+        if (npoints > 2)
+            tessAddContour(_tess.get(), 2, points, sizeof(float) * 2, npoints, false);
     }
     
     void maskOut(Path &mask) {
@@ -72,7 +73,8 @@ struct Path {
                 int base = elems[i * 2], npoints = elems[i * 2 + 1];
                 const float *points = verts + base * 2;
                 
-                _subPaths.emplace_back(points, npoints);
+                if (npoints > 2)
+                    _subPaths.emplace_back(points, npoints);
             }
         }
     }
