@@ -114,6 +114,7 @@ struct Mesh {
         
         _paths.emplace_back(path);
     }
+    
     void triangulate(Triangles& triangles) {
         TESStesselator *tess = tessNewTess(NULL);
         
@@ -128,7 +129,7 @@ struct Mesh {
                 float *points = (float *)tessGetVertices(tess);
                 int npoints = tessGetVertexCount(tess);
                 const int nelems = tessGetElementCount(tess);
-                auto polygon = (TESSindex *)tessGetElements(tess);
+                const TESSindex *polygon = tessGetElements(tess);
                 
                 if (pi + npoints < kTrianglesPointsSize) {
                     memcpy(& triangles.points[pi], points, kPointStride * npoints);
@@ -145,5 +146,6 @@ struct Mesh {
         triangles.count = k;
         tessDeleteTess(tess);
     }
+    
     vector<Path>             _paths;
 };
