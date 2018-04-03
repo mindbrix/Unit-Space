@@ -17,6 +17,10 @@ constexpr float kCollinearTolerance = 1e-2;
 
 struct SubPath {
     SubPath(const float *points, const int npoints) {
+        init(points, npoints);
+    }
+    
+    void init(const float *points, const int npoints) {
         _npoints = npoints;
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
         memcpy(_points.get(), points, npoints * kPointStride);
@@ -24,9 +28,9 @@ struct SubPath {
         bounds(& _llx);
     }
     
-    void maskOut(SubPath &mask) {
-        if (intersects(mask))
-            ;
+    void empty() {
+        _points = nullptr;
+        _npoints = _area = 0;
     }
     
     float area() const {
@@ -78,25 +82,22 @@ struct Path {
         return _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
     }
     
-    void maskOut(Path &mask) {
-        for (SubPath& maskSubPath : mask._subPaths)
-            for (SubPath& subPath : _subPaths)
-                subPath.maskOut(maskSubPath);
-    }
-
     void writeSubpaths() {
-        if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-            const float *verts = tessGetVertices(_tess.get());
-            const int *elems = tessGetElements(_tess.get());
-            const int nelems = tessGetElementCount(_tess.get());
+        if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+            writeSubpaths(_tess.get());
+    }
+    
+    void writeSubpaths(TESStesselator *tess) {
+        const float *verts = tessGetVertices(tess);
+        const int *elems = tessGetElements(tess);
+        const int nelems = tessGetElementCount(tess);
+        
+        for (int i = 0; i < nelems; i++) {
+            int base = elems[i * 2], npoints = elems[i * 2 + 1];
+            const float *points = verts + base * 2;
             
-            for (int i = 0; i < nelems; i++) {
-                int base = elems[i * 2], npoints = elems[i * 2 + 1];
-                const float *points = verts + base * 2;
-                
-                if (npoints > 2)
-                    _subPaths.emplace_back(points, npoints);
-            }
+            if (npoints > 2)
+                _subPaths.emplace_back(points, npoints);
         }
     }
     
@@ -121,10 +122,23 @@ struct Mesh {
                 for (SubPath& maskSubPath : path._subPaths) {
                     bool maskIsHole = maskSubPath._area * maskOuterArea < 0;
                     for (SubPath& subPath : p._subPaths) {
+                        if (subPath._points == nullptr)
+                            continue;
                         if (maskIsHole && maskSubPath.contains(subPath))
                             ;
-                        else {
-                            subPath.maskOut(maskSubPath);
+                        else if (maskSubPath.intersects(subPath)) {
+                            TESStesselator *tess = tessNewTess(NULL);
+                            
+                            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, subPath._area < 0);
+                            tessAddContour(tess, 2, maskSubPath._points.get(), kPointStride, maskSubPath._npoints, maskSubPath._area > 0);
+                            
+                            if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+                                subPath.empty();
+                                p.writeSubpaths(tess);
+                                p._outerIndex = p.findOuterIndex();
+                            }
+                            
+                            tessDeleteTess(tess);
                         }
                     }
                 }
@@ -141,7 +155,8 @@ struct Mesh {
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
-                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
+                if (s._points)
+                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
