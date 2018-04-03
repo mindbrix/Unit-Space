@@ -63,12 +63,6 @@ struct Path {
             tessAddContour(_tess.get(), 2, points, kPointStride, npoints, false);
     }
     
-    void maskOut(Path &mask) {
-        for (SubPath& maskSubPath : mask._subPaths)
-            for (SubPath& subPath : _subPaths)
-                subPath.maskOut(maskSubPath);
-    }
-    
     size_t findOuterIndex() const {
         float maxArea = 0;
         size_t index = 0;
@@ -80,6 +74,16 @@ struct Path {
         return index;
     }
     
+    bool intersects(Path& path) const {
+        return _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
+    }
+    
+    void maskOut(Path &mask) {
+        for (SubPath& maskSubPath : mask._subPaths)
+            for (SubPath& subPath : _subPaths)
+                subPath.maskOut(maskSubPath);
+    }
+
     void writeSubpaths() {
         if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
             const float *verts = tessGetVertices(_tess.get());
