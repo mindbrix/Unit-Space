@@ -11,16 +11,16 @@
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 6;
+constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kCollinearTolerance = 1e-2;
 
 
 struct SubPath {
     SubPath(const float *points, const int npoints) {
-        constexpr int stride = 2 * sizeof(float);
-        _points = shared_ptr<float>((float *)malloc(npoints * stride), free);
-        memcpy(_points.get(), points, npoints * stride);
-        _area = pointsSignedArea(points, points + npoints * 2, stride);
-        boundsLimits(& _llx, points, points + npoints * 2, stride);
+        _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
+        memcpy(_points.get(), points, npoints * kPointStride);
+        _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
+        boundsLimits(& _llx, points, points + npoints * 2, kPointStride);
     }
     
     void maskOut(SubPath &mask) {
