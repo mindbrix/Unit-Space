@@ -64,9 +64,6 @@ struct Path {
     }
     
     void maskOut(Path &mask) {
-        if (_outerIndex == INT_MAX)
-            _outerIndex = findOuterIndex();
-        
         for (SubPath& maskSubPath : mask._subPaths)
             for (SubPath& subPath : _subPaths)
                 subPath.maskOut(maskSubPath);
@@ -108,6 +105,7 @@ struct Path {
 struct Mesh {
     void addPath(Path& path) {
         path.writeSubpaths();
+        path.findOuterIndex();
         
         for (Path& p : _paths)
             p.maskOut(path);
