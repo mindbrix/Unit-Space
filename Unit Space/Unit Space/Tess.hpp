@@ -20,8 +20,8 @@ struct SubPath {
         _npoints = npoints;
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
         memcpy(_points.get(), points, npoints * kPointStride);
-        _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
-        boundsLimits(& _llx, points, points + npoints * 2, kPointStride);
+        _area = area();
+        bounds(& _llx);
     }
     
     void maskOut(SubPath &mask) {
@@ -29,11 +29,19 @@ struct SubPath {
             ;
     }
     
-    bool contains(SubPath& subPath) {
+    float area() const {
+        return pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
+    }
+    
+    void bounds(float *limits) const {
+        boundsLimits(limits, _points.get(), _points.get() + _npoints * 2, kPointStride);
+    }
+    
+    bool contains(SubPath& subPath) const {
         return (_llx <= subPath._llx) && (_lly <= subPath._lly) && (_urx >= subPath._urx) && (_ury >= subPath._ury);
     }
     
-    bool intersects(SubPath& subPath) {
+    bool intersects(SubPath& subPath) const {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
