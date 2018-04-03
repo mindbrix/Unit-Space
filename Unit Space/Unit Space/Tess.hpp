@@ -112,7 +112,8 @@ struct Mesh {
         path.findOuterIndex();
         
         for (Path& p : _paths)
-            p.maskOut(path);
+            if (path.intersects(p))
+                p.maskOut(path);
         
         _paths.emplace_back(path);
     }
