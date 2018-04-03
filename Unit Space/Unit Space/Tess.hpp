@@ -16,17 +16,19 @@ constexpr float kCollinearTolerance = 1e-2;
 
 struct SubPath {
     SubPath(const float *points, const int npoints) {
-        _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
-        _area = pointsSignedArea(points, points + npoints * 2, sizeof(float) * 2);
-        boundsLimits(& _llx, points, points + npoints * 2, sizeof(float) * 2);
-        tessAddContour(_tess.get(), 2, points, sizeof(float) * 2, npoints, false);
+        constexpr int stride = 2 * sizeof(float);
+        _points = shared_ptr<float>((float *)malloc(npoints * stride), free);
+        memcpy(_points.get(), points, npoints * stride);
+        _area = pointsSignedArea(points, points + npoints * 2, stride);
+        boundsLimits(& _llx, points, points + npoints * 2, stride);
     }
     
     void maskOut(SubPath &mask) {
         if ((_urx > mask._llx) && (mask._urx > _llx) && (_ury > mask._lly) && (mask._ury > _lly))
             ;
     }
-    shared_ptr<TESStesselator>  _tess;
+    
+    shared_ptr<float>           _points;
     float                       _area;
     float                       _llx, _lly, _urx, _ury;
 };
