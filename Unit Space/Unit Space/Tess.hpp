@@ -25,8 +25,16 @@ struct SubPath {
     }
     
     void maskOut(SubPath &mask) {
-        if ((_urx > mask._llx) && (mask._urx > _llx) && (_ury > mask._lly) && (mask._ury > _lly))
+        if (intersects(mask))
             ;
+    }
+    
+    bool contains(SubPath& subPath) {
+        return (_llx <= subPath._llx) && (_lly <= subPath._lly) && (_urx >= subPath._urx) && (_ury >= subPath._ury);
+    }
+    
+    bool intersects(SubPath& subPath) {
+        return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
     shared_ptr<float>           _points;
