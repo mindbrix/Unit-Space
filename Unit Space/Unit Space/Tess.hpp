@@ -171,17 +171,16 @@ struct Mesh {
                 const TESSindex *polygon = tessGetElements(tess);
                 
                 if (pi + npoints < kTrianglesPointsSize) {
-                    triangles.colors[c] = p._color;
-                    
                     memcpy(& triangles.points[pi], points, kPointStride * npoints);
                     
                     for (int i = 0; i < nelems; i++, polygon += kPolySize)
                         for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
-                            if (triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, c))
+                            if (triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, c % kTrianglesColorsSize))
                                 k++;
                     
                     pi += npoints;
-                    c++;
+                    
+                    triangles.colors[c++ % kTrianglesColorsSize] = p._color;
                 }
             }
         }
