@@ -34,6 +34,7 @@ struct SubPath {
 
 struct Path {
     Path() {
+        _outerIndex = INT_MAX;
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
     }
     
@@ -42,9 +43,23 @@ struct Path {
     }
     
     void maskOut(Path &mask) {
+        if (_outerIndex == INT_MAX)
+            _outerIndex = findOuterIndex();
+        
         for (SubPath& maskSubPath : mask._subPaths)
             for (SubPath& subPath : _subPaths)
                 subPath.maskOut(maskSubPath);
+    }
+    
+    size_t findOuterIndex() const {
+        float maxArea = 0;
+        size_t index = 0;
+        
+        for (size_t i = 0; i < _subPaths.size(); i++)
+            if (std::abs(_subPaths[i]._area) > maxArea)
+                maxArea = std::abs(_subPaths[i]._area), index = i;
+        
+        return index;
     }
     
     void writeSubpaths(bool evenOdd) {
@@ -63,6 +78,7 @@ struct Path {
     }
     
     shared_ptr<TESStesselator>  _tess;
+    size_t                      _outerIndex;
     vector<SubPath>             _subPaths;
 };
 
