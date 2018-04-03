@@ -56,7 +56,8 @@ struct SubPath {
 };
 
 struct Path {
-    Path(bool evenOdd) {
+    Path(bool evenOdd, RGBA color) {
+        _color = color;
         _evenOdd = evenOdd;
         _outerIndex = INT_MAX;
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
@@ -101,6 +102,7 @@ struct Path {
         }
     }
     
+    RGBA                        _color;
     shared_ptr<TESStesselator>  _tess;
     bool                        _evenOdd;
     size_t                      _outerIndex;
@@ -119,13 +121,18 @@ struct Mesh {
         
         for (Path& p : _paths)
             if (path.intersects(p)) {
+                float pOuterArea = p._subPaths[p._outerIndex]._area;
                 for (SubPath& maskSubPath : path._subPaths) {
                     bool maskIsHole = maskSubPath._area * maskOuterArea < 0;
                     for (SubPath& subPath : p._subPaths) {
+                        bool pIsHole = subPath._area * pOuterArea < 0;
+                        
+                        if (pIsHole)
+                            continue;
                         if (subPath._points == nullptr)
                             continue;
                         if (maskIsHole && maskSubPath.contains(subPath))
-                            ;
+                            continue;
                         else if (maskSubPath.intersects(subPath)) {
                             TESStesselator *tess = tessNewTess(NULL);
                             
@@ -150,8 +157,7 @@ struct Mesh {
     void triangulate(Triangles& triangles) {
         TESStesselator *tess = tessNewTess(NULL);
         
-        int k = 0, pi = 0;
-        triangles.colors[0] = { 0, 0, 0, 0.333 };
+        int k = 0, pi = 0, c = 0;
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
@@ -165,14 +171,17 @@ struct Mesh {
                 const TESSindex *polygon = tessGetElements(tess);
                 
                 if (pi + npoints < kTrianglesPointsSize) {
+                    triangles.colors[c] = p._color;
+                    
                     memcpy(& triangles.points[pi], points, kPointStride * npoints);
                     
                     for (int i = 0; i < nelems; i++, polygon += kPolySize)
                         for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
-                            if (triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0))
+                            if (triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, c))
                                 k++;
                     
                     pi += npoints;
+                    c++;
                 }
             }
         }

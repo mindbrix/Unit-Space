@@ -249,7 +249,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"nano.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
@@ -257,17 +257,22 @@ using namespace std;
         Mesh mesh;
         
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
-            Path p(shape->fillRule == NSVG_FILLRULE_EVENODD);
-            
-            for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
-                for (int i = 0; i < path->npts; i++)
-                    path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
+            if (shape->fill.type == NSVG_PAINT_COLOR) {
+                RGBA color = { ((shape->fill.color ) & 0xFF) / 255.f, ((shape->fill.color >> 8) & 0xFF) / 255.f, ((shape->fill.color >> 16) & 0xFF) / 255.f, (shape->fill.color >> 24) / 255.f };
+//                RGBA color = { 0, 0, 0, 1 };
+                Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
-                int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
-                                
-                p.addContour(path->pts, count);
+                for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                    for (int i = 0; i < path->npts; i++)
+                        path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
+                    
+                    int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
+                    
+                    p.addContour(path->pts, count);
+                }
+                mesh.addPath(p);
             }
-            mesh.addPath(p);
+            
         }
         mesh.triangulate(_triangles);
         
