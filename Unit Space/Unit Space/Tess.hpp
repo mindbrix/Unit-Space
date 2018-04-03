@@ -17,6 +17,7 @@ constexpr float kCollinearTolerance = 1e-2;
 
 struct SubPath {
     SubPath(const float *points, const int npoints) {
+        _npoints = npoints;
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
         memcpy(_points.get(), points, npoints * kPointStride);
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
@@ -29,6 +30,7 @@ struct SubPath {
     }
     
     shared_ptr<float>           _points;
+    int                         _npoints;
     float                       _area;
     float                       _llx, _lly, _urx, _ury;
 };
@@ -42,7 +44,7 @@ struct Path {
     
     void addContour(float *points, int npoints) {
         if (npoints > 2)
-            tessAddContour(_tess.get(), 2, points, sizeof(float) * 2, npoints, false);
+            tessAddContour(_tess.get(), 2, points, kPointStride, npoints, false);
     }
     
     void maskOut(Path &mask) {
@@ -97,7 +99,35 @@ struct Mesh {
         _paths.emplace_back(path);
     }
     void triangulate(Triangles& triangles) {
+        TESStesselator *tess = tessNewTess(NULL);
         
+        int k = 0, pi = 0;
+        triangles.colors[0] = { 0, 0, 0, 0.333 };
+        
+        for (Path& p : _paths) {
+            for (SubPath& s : p._subPaths)
+                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
+            
+            if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                float *points = (float *)tessGetVertices(tess);
+                int npoints = tessGetVertexCount(tess);
+                const int nelems = tessGetElementCount(tess);
+                auto polygon = (TESSindex *)tessGetElements(tess);
+                
+                if (pi + npoints < kTrianglesPointsSize) {
+                    memcpy(& triangles.points[pi], points, kPointStride * npoints);
+                    
+                    for (int i = 0; i < nelems; i++, polygon += kPolySize)
+                        for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
+                            if (triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, 0))
+                                k++;
+                    
+                    pi += npoints;
+                }
+            }
+        }
+        triangles.count = k;
+        tessDeleteTess(tess);
     }
     vector<Path>             _paths;
 };
