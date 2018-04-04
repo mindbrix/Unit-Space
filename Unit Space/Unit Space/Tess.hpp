@@ -142,9 +142,8 @@ struct Mesh {
     void triangulate(vector<Triangles>& vtriangles) {
         TESStesselator *tess = tessNewTess(NULL);
         
-        Triangles& triangles = vtriangles[0];
-        
-        int k = 0, pi = 0, c = 0;
+        int t = 0, k = 0, pi = 0, c = 0;
+        Triangles* triangles = & vtriangles[t];
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
@@ -156,17 +155,23 @@ struct Mesh {
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
                 
+                if (pi + npoints > kTrianglesPointsSize) {
+                    vtriangles.resize(++t + 1);
+                    triangles = & vtriangles[t];
+                    k = 0, pi = 0, c = 0;
+                }
+                    
                 if (pi + npoints < kTrianglesPointsSize) {
-                    memcpy(& triangles.points[pi], points, kPointStride * npoints);
+                    memcpy(& triangles->points[pi], points, kPointStride * npoints);
                     
                     for (int i = 0; i < nelems; i++, polygon += kPolySize)
                         for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++)
-                            if (triangles.add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, c % kTrianglesColorsSize))
+                            if (triangles->add(k, polygon[0] + pi, polygon[j + 1] + pi, polygon[j + 2] + pi, c % kTrianglesColorsSize))
                                 k++;
                     
                     pi += npoints;
                     
-                    triangles.colors[c++ % kTrianglesColorsSize] = p._color;
+                    triangles->colors[c++ % kTrianglesColorsSize] = p._color;
                 }
             }
         }

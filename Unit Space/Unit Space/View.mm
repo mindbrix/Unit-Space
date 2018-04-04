@@ -257,7 +257,7 @@ using namespace std;
         // Use...
         
         Mesh mesh;
-        int limit = 82;
+        int limit = 40000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;
@@ -316,7 +316,7 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(10);
+    _calls.resize(1000);
     int idx = 0;
     
     if (_flags & 1) {
@@ -400,10 +400,12 @@ using namespace std;
         uniforms.fillColor = { 0, 0, 0, 1 };
         
         for (Triangles& triangles : _triangles) {
-            _calls[idx].type = kCallTypeTriangles;
-            _calls[idx].state = uniforms;
-            _calls[idx].triangles = triangles;
-            idx++;
+            if (triangles.count) {
+                _calls[idx].type = kCallTypeTriangles;
+                _calls[idx].state = uniforms;
+                _calls[idx].triangles = triangles;
+                idx++;
+            }
         }
         
         if (_showPoints) {
