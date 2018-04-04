@@ -83,7 +83,7 @@ struct Triangles {
     bool add(int i, int _i0, int _i1, int _i2, int _c0) {
         if (i >= kTrianglesIndexSize)
             return false;
-        
+        count = i + 1;
         i0[i] = (unsigned char)_i0;
         i1[i] = (unsigned char)_i1;
         i2[i] = (unsigned char)_i2;

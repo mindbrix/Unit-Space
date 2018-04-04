@@ -139,8 +139,10 @@ struct Mesh {
         _paths.emplace_back(path);
     }
     
-    void triangulate(Triangles& triangles) {
+    void triangulate(vector<Triangles>& vtriangles) {
         TESStesselator *tess = tessNewTess(NULL);
+        
+        Triangles& triangles = vtriangles[0];
         
         int k = 0, pi = 0, c = 0;
         
@@ -168,7 +170,6 @@ struct Mesh {
                 }
             }
         }
-        triangles.count = k;
         tessDeleteTess(tess);
     }
     

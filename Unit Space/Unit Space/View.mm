@@ -277,7 +277,7 @@ using namespace std;
                 mesh.addPath(p);
             }
         }
-        mesh.triangulate(_triangles[0]);
+        mesh.triangulate(_triangles);
         
         // Delete
         nsvgDelete(image);
@@ -300,8 +300,6 @@ using namespace std;
         triangles.add(1, 2, 3, 0, 1);
         triangles.add(2, 2, 1, 4, 2);
         triangles.add(3, 4, 5, 2, 3);
-        
-        triangles.count = 4;
     }
 }
 
@@ -400,10 +398,13 @@ using namespace std;
     
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
-        _calls[idx].type = kCallTypeTriangles;
-        _calls[idx].state = uniforms;
-        _calls[idx].triangles = _triangles[0];
-        idx++;
+        
+        for (Triangles& triangles : _triangles) {
+            _calls[idx].type = kCallTypeTriangles;
+            _calls[idx].state = uniforms;
+            _calls[idx].triangles = triangles;
+            idx++;
+        }
         
         if (_showPoints) {
             uniforms.fillColor = { 1, 0, 0, 1 };
