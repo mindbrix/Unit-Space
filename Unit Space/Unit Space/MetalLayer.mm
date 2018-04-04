@@ -33,7 +33,7 @@
         return nil;
     
     CGColorRef white = CGColorGetConstantColor(kCGColorWhite);
-    self.backgroundColor = white;
+//    self.backgroundColor = white;
     CGColorRelease(white);
     
     self.opaque = NO;
