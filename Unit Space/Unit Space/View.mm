@@ -255,7 +255,7 @@ using namespace std;
         // Use...
         
         Mesh mesh;
-        int limit = 80;
+        int limit = 100;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;

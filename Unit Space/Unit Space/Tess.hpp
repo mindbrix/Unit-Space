@@ -16,6 +16,7 @@ constexpr float kCollinearTolerance = 1e-2;
 
 
 struct SubPath {
+    SubPath() {}
     SubPath(const float *points, const int npoints) {
         init(points, npoints);
     }
@@ -26,11 +27,6 @@ struct SubPath {
         memcpy(_points.get(), points, npoints * kPointStride);
         _area = area();
         bounds(& _llx);
-    }
-    
-    void empty() {
-        _points = nullptr;
-        _npoints = _area = 0;
     }
     
     float area() const {
@@ -80,7 +76,26 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
-        return _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
+        return _subPaths.size() && path._subPaths.size() && _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
+    }
+    
+    void maskOut(Path& mask) {
+        TESStesselator *tess = tessNewTess(NULL);
+        bool isPositive = _subPaths[_outerIndex]._area > 0;
+        bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
+        
+        for (SubPath& subPath : _subPaths)
+            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, !isPositive);
+        
+        for (SubPath& subPath : mask._subPaths)
+            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, maskIsPositive);
+        
+        if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+            _subPaths.resize(0);
+            writeSubpaths(tess);
+            _outerIndex = findOuterIndex();
+        }
+        tessDeleteTess(tess);
     }
     
     void writeSubpaths() {
@@ -117,40 +132,10 @@ struct Mesh {
         
         path._outerIndex = path.findOuterIndex();
         
-        float maskOuterArea = path._subPaths[path._outerIndex]._area;
-        
         for (Path& p : _paths)
-            if (path.intersects(p)) {
-                float pOuterArea = p._subPaths[p._outerIndex]._area;
-                for (SubPath& maskSubPath : path._subPaths) {
-                    bool maskIsHole = maskSubPath._area * maskOuterArea < 0;
-                    for (SubPath& subPath : p._subPaths) {
-                        bool pIsHole = subPath._area * pOuterArea < 0;
-                        
-                        if (pIsHole)
-                            continue;
-                        if (subPath._points == nullptr)
-                            continue;
-                        if (maskIsHole && maskSubPath.contains(subPath))
-                            continue;
-                        else if (maskSubPath.intersects(subPath)) {
-                            TESStesselator *tess = tessNewTess(NULL);
-                            
-                            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, subPath._area < 0);
-                            tessAddContour(tess, 2, maskSubPath._points.get(), kPointStride, maskSubPath._npoints, maskSubPath._area > 0);
-                            
-                            if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-                                subPath.empty();
-                                p.writeSubpaths(tess);
-                                p._outerIndex = p.findOuterIndex();
-                            }
-                            
-                            tessDeleteTess(tess);
-                        }
-                    }
-                }
-            }
-        
+            if (path.intersects(p))
+                p.maskOut(path);
+
         _paths.emplace_back(path);
     }
     
