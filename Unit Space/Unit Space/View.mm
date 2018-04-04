@@ -316,30 +316,38 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     
-    _calls.resize(1000);
-    int idx = 0;
+    _calls.resize(0);
     
     if (_flags & 1) {
         uniforms.fillColor = { 0, 0, 1, 1 };
-        _calls[idx].type = kCallTypeUnits;
-        _calls[idx].state = uniforms;
-        _calls[idx].units.count = 1;
-        _calls[idx].units.ctms[0] = _unitCTM;
-        idx++;
+        
+        _calls.emplace_back();
+        Call& call = _calls.back();
+        
+        call.type = kCallTypeUnits;
+        call.state = uniforms;
+        call.units.count = 1;
+        call.units.ctms[0] = _unitCTM;
     }
     
     if (_flags & 2) {
         uniforms.fillColor = { 0, 0, 0, 1 };
-        _calls[idx].type = kCallTypeQuadratics;
-        _calls[idx].state = uniforms;
-        _calls[idx].quadratics = _quadratics;
-        idx++;
+        
+        _calls.emplace_back();
+        Call& call = _calls.back();
+        
+        call.type = kCallTypeQuadratics;
+        call.state = uniforms;
+        call.quadratics = _quadratics;
         
         if (_showPoints) {
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            
             uniforms.fillColor = { 1, 0, 0, 1 };
-            _calls[idx].type = kCallTypeCircles;
-            _calls[idx].state = uniforms;
-            Circles& circles = _calls[idx].circles;
+            call.type = kCallTypeCircles;
+            call.state = uniforms;
+            Circles& circles = call.circles;
             
             int i = 0;
             for (int j = 0; j < _quadratics.count; j++) {
@@ -350,15 +358,16 @@ using namespace std;
                 circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
             }
             circles.count = i;
-            idx++;
         }
     }
     
     if (_flags & 4) {
         uniforms.fillColor = { 0, 0, 0, 0.333 };
-        _calls[idx].type = kCallTypeFractal;
-        _calls[idx].state = uniforms;
-        Fractals& fractals = _calls[idx].fractals;
+        _calls.emplace_back();
+        Call& call = _calls.back();
+        call.type = kCallTypeFractal;
+        call.state = uniforms;
+        Fractals& fractals = call.fractals;
         fractals.unitCTM = _unitCTM;
         
         fractals.ctms[0] = _ctm0;
@@ -372,13 +381,14 @@ using namespace std;
         fractals.counts[3] = 1;
         fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
         fractals.ellipse = _showEllipse;
-        idx++;
         
         if (_showPoints) {
             uniforms.fillColor = { 1, 0, 0, 1 };
-            _calls[idx].type = kCallTypeCircles;
-            _calls[idx].state = uniforms;
-            Circles& circles = _calls[idx].circles;
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            call.type = kCallTypeCircles;
+            call.state = uniforms;
+            Circles& circles = call.circles;
             AffineTransform& unit = _unitCTM;
             
             int i = 0;
@@ -392,7 +402,6 @@ using namespace std;
             circles.circles[i++] = { ctm0.tx + ctm0.a + ctm0.c, ctm0.ty + ctm0.b + ctm0.d, radius };
             
             circles.count = i;
-            idx++;
         }
     }
     
@@ -401,18 +410,22 @@ using namespace std;
         
         for (Triangles& triangles : _triangles) {
             if (triangles.count) {
-                _calls[idx].type = kCallTypeTriangles;
-                _calls[idx].state = uniforms;
-                _calls[idx].triangles = triangles;
-                idx++;
+                _calls.emplace_back();
+                Call& call = _calls.back();
+                
+                call.type = kCallTypeTriangles;
+                call.state = uniforms;
+                call.triangles = triangles;
             }
         }
         
         if (_showPoints) {
             uniforms.fillColor = { 1, 0, 0, 1 };
-            _calls[idx].type = kCallTypeCircles;
-            _calls[idx].state = uniforms;
-            Circles& circles = _calls[idx].circles;
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            call.type = kCallTypeCircles;
+            call.state = uniforms;
+            Circles& circles = call.circles;
             
             int i = 0;
             Triangles& triangles = _triangles[0];
@@ -425,10 +438,8 @@ using namespace std;
                 circles.circles[i++] = { p2.x, p2.y, radius };
             }
             circles.count = i;
-            idx++;
         }
     }
-    _calls.resize(idx);
 }
 
 - (void)redraw {
