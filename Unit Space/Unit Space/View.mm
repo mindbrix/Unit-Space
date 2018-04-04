@@ -249,13 +249,13 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"contour.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
         Mesh mesh;
-        int limit = 80;
+        int limit = 81;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;

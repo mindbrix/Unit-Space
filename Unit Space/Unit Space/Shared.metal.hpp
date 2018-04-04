@@ -69,7 +69,7 @@ struct Units {
 
 #define kTrianglesIndexSize 384
 #define kTrianglesPointsSize 256
-#define kTrianglesColorsSize 64
+#define kTrianglesColorsSize 127
 
 struct Triangles {
     int                 count;
