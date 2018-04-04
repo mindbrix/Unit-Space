@@ -16,6 +16,7 @@ struct Arc { float x, y, r, t0, t1; };
 struct Circle { float x, y, r; };
 
 struct RGBA { float r, g, b, a; };
+struct RGBA8 { unsigned char r, g, b, a; };
 
 struct AffineTransform { float a, b, c, d, tx, ty; };
 
@@ -68,7 +69,7 @@ struct Units {
 
 #define kTrianglesIndexSize 384
 #define kTrianglesPointsSize 256
-#define kTrianglesColorsSize 16
+#define kTrianglesColorsSize 64
 
 struct Triangles {
     int                 count;
@@ -77,7 +78,7 @@ struct Triangles {
     unsigned char       i2[kTrianglesIndexSize];
     unsigned char       c0[kTrianglesIndexSize];
     Vector              points[kTrianglesPointsSize];
-    RGBA                colors[kTrianglesColorsSize];
+    RGBA8               colors[kTrianglesColorsSize];
     
     bool add(int i, int _i0, int _i1, int _i2, int _c0) {
         if (i >= kTrianglesIndexSize)

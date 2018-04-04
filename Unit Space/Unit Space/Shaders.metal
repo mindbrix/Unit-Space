@@ -384,7 +384,7 @@ struct TriangleVertex
 vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], constant Triangles &triangles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint i0 = triangles.i0[iid], i1 = triangles.i1[iid], i2 = triangles.i2[iid], c0 = triangles.c0[iid];
-    RGBA color = triangles.colors[c0];
+    RGBA8 color = triangles.colors[c0];
     float x0 = triangles.points[i0].x, y0 = triangles.points[i0].y;
     float x1 = triangles.points[i1].x, y1 = triangles.points[i1].y;
     float x2 = triangles.points[i2].x, y2 = triangles.points[i2].y;
@@ -423,7 +423,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
     
-    vert.color = float4(color.r, color.g, color.b, color.a);
+    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
 

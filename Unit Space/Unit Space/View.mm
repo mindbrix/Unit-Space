@@ -249,7 +249,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"contour.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
@@ -259,7 +259,7 @@ using namespace std;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;
-                RGBA color = { ((shape->fill.color ) & 0xFF) / 255.f, ((shape->fill.color >> 8) & 0xFF) / 255.f, ((shape->fill.color >> 16) & 0xFF) / 255.f, (shape->fill.color >> 24) / 255.f };
+                RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
 //                RGBA color = { 0, 0, 0, 0.333 };
                 Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
