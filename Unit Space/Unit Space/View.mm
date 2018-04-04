@@ -37,7 +37,7 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm2;
 @property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) Quadratics quadratics;
-@property(nonatomic) Triangles triangles;
+@property(nonatomic) vector<Triangles> triangles;
 
 @end
 
@@ -94,14 +94,15 @@ using namespace std;
                 if ((dragged = [self mouseDragCTM:event CTM:_quadratics.ctms[j]]))
                     break;
         } else if (_flags & 8)  {
-            for (int j = 0; j < _triangles.count; j++) {
-                int i0 = _triangles.i0[j], i1 = _triangles.i1[j], i2 = _triangles.i2[j];
-                Vector p0 = _triangles.points[i0], p1 = _triangles.points[i1], p2 = _triangles.points[i2];
+            Triangles& triangles = _triangles[0];
+            for (int j = 0; j < triangles.count; j++) {
+                int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
+                Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
                 AffineTransform ctm = { p1.x - p0.x, p1.y - p0.y, p2.x - p1.x, p2.y - p1.y, p0.x, p0.y };
                 if ((dragged = [self mouseDragCTM:event CTM:ctm])) {
-                    _triangles.points[i0] = { ctm.tx, ctm.ty };
-                    _triangles.points[i1] = { ctm.tx + ctm.a, ctm.ty + ctm.b };
-                    _triangles.points[i2] = { ctm.tx + ctm.a + ctm.c, ctm.ty + ctm.b + ctm.d };
+                    triangles.points[i0] = { ctm.tx, ctm.ty };
+                    triangles.points[i1] = { ctm.tx + ctm.a, ctm.ty + ctm.b };
+                    triangles.points[i2] = { ctm.tx + ctm.a + ctm.c, ctm.ty + ctm.b + ctm.d };
                     break;
                 }
             }
@@ -248,6 +249,7 @@ using namespace std;
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
+    _triangles.resize(1);
     // Load
     struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
@@ -255,11 +257,12 @@ using namespace std;
         // Use...
         
         Mesh mesh;
-        int limit = 81;
+        int limit = 82;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;
-                RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
+                
+               RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
 //                RGBA color = { 0, 0, 0, 0.333 };
                 Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
@@ -273,31 +276,32 @@ using namespace std;
                 }
                 mesh.addPath(p);
             }
-            
         }
-        mesh.triangulate(_triangles);
+        mesh.triangulate(_triangles[0]);
         
         // Delete
         nsvgDelete(image);
     } else {
-        _triangles.colors[0] = { 1, 0, 0, 1 };
-        _triangles.colors[1] = { 0, 1, 0, 1 };
-        _triangles.colors[2] = { 0, 0, 1, 1 };
-        _triangles.colors[3] = { 0, 0, 0, 1 };
+        Triangles& triangles = _triangles[0];
         
-        _triangles.points[0] = { 0, 0 };
-        _triangles.points[1] = { 100, 0 };
-        _triangles.points[2] = { 100, 100 };
-        _triangles.points[3] = { 0, 100 };
-        _triangles.points[4] = { 200, 0 };
-        _triangles.points[5] = { 200, 100 };
+        triangles.colors[0] = { 255, 0, 0, 255 };
+        triangles.colors[1] = { 0, 255, 0, 255 };
+        triangles.colors[2] = { 0, 0, 255, 255 };
+        triangles.colors[3] = { 0, 0, 0, 255 };
         
-        _triangles.add(0, 0, 1, 2, 0);
-        _triangles.add(1, 2, 3, 0, 1);
-        _triangles.add(2, 2, 1, 4, 2);
-        _triangles.add(3, 4, 5, 2, 3);
+        triangles.points[0] = { 0, 0 };
+        triangles.points[1] = { 100, 0 };
+        triangles.points[2] = { 100, 100 };
+        triangles.points[3] = { 0, 100 };
+        triangles.points[4] = { 200, 0 };
+        triangles.points[5] = { 200, 100 };
         
-        _triangles.count = 4;
+        triangles.add(0, 0, 1, 2, 0);
+        triangles.add(1, 2, 3, 0, 1);
+        triangles.add(2, 2, 1, 4, 2);
+        triangles.add(3, 4, 5, 2, 3);
+        
+        triangles.count = 4;
     }
 }
 
@@ -398,7 +402,7 @@ using namespace std;
         uniforms.fillColor = { 0, 0, 0, 1 };
         _calls[idx].type = kCallTypeTriangles;
         _calls[idx].state = uniforms;
-        _calls[idx].triangles = _triangles;
+        _calls[idx].triangles = _triangles[0];
         idx++;
         
         if (_showPoints) {
@@ -408,9 +412,10 @@ using namespace std;
             Circles& circles = _calls[idx].circles;
             
             int i = 0;
-            for (int j = 0; j < _triangles.count && j < kCirclesSize / 3; j++) {
-                int i0 = _triangles.i0[j], i1 = _triangles.i1[j], i2 = _triangles.i2[j];
-                Vector p0 = _triangles.points[i0], p1 = _triangles.points[i1], p2 = _triangles.points[i2];
+            Triangles& triangles = _triangles[0];
+            for (int j = 0; j < triangles.count && j < kCirclesSize / 3; j++) {
+                int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
+                Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
                 
                 circles.circles[i++] = { p0.x, p0.y, largeRadius };
                 circles.circles[i++] = { p1.x, p1.y, radius };
