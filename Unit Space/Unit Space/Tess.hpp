@@ -146,8 +146,7 @@ struct Mesh {
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
-                if (s._points)
-                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
+                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
