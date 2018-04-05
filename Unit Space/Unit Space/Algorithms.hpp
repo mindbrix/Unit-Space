@@ -37,8 +37,8 @@ float deCasteljauCubic(float t, float n0, float n1, float n2, float n3) {
     return lerp(t, n012, n123);
 }
 
-int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
-    float x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
+int filterCollinearPoints(float *dst, float *src, int count, double tolerance) {
+    double x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
     float *begin = dst;
     
     *dst++ = x0, *dst++ = y0;
