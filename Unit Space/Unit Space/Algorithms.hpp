@@ -27,6 +27,16 @@ void boundsLimits(float *limits, const float *begin, const float *end, size_t st
     limits[0] = minX;  limits[1] = minY;  limits[2] = maxX;  limits[3] = maxY;
 }
 
+inline float lerp(float t, float n0, float n1) {
+    return n0 + t * (n1 - n0);
+}
+
+float deCasteljauCubic(float t, float n0, float n1, float n2, float n3) {
+    float n01 = lerp(t, n0, n1), n12 = lerp(t, n1, n2), n23 = lerp(t, n2, n3);
+    float n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+    return lerp(t, n012, n123);
+}
+
 int filterCollinearPoints(float *dst, float *src, int count, float tolerance) {
     float x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
     float *begin = dst;

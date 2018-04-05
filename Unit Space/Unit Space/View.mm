@@ -270,6 +270,16 @@ using namespace std;
                     for (int i = 0; i < path->npts; i++)
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                     
+                    for (int i = 0; i < path->npts - 1; i += 3) {
+                        float* p = &path->pts[i * 2];
+                        float x1 = deCasteljauCubic(0.33333, p[0], p[2], p[4], p[6]);
+                        float y1 = deCasteljauCubic(0.33333, p[1], p[3], p[5], p[7]);
+                        float x2 = deCasteljauCubic(0.66666, p[0], p[2], p[4], p[6]);
+                        float y2 = deCasteljauCubic(0.66666, p[1], p[3], p[5], p[7]);
+                        
+                        p[2] = x1, p[3] = y1, p[4] = x2, p[5] = y2;
+                    }
+                    
                     int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
                     
                     p.addContour(path->pts, count);
