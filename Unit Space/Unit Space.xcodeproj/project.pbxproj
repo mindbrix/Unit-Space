@@ -10,6 +10,8 @@
 		E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */; };
 		E90D1DC5203E9F6D00F9F35B /* Library.metal in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC4203E9F6D00F9F35B /* Library.metal */; };
 		E90D1DC7203E9FA200F9F35B /* Headers.metal in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC6203E9FA100F9F35B /* Headers.metal */; };
+		E9DF4DC42075877400DF2668 /* hawaii.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9DF4DC22075877400DF2668 /* hawaii.svg */; };
+		E9DF4DC52075877400DF2668 /* paris-30k.svg in Resources */ = {isa = PBXBuildFile; fileRef = E9DF4DC32075877400DF2668 /* paris-30k.svg */; };
 		E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */; };
 		E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD79200BC63400F2BFB2 /* Document.m */; };
 		E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = E9EEAD7B200BC63400F2BFB2 /* Document.xib */; };
@@ -41,6 +43,8 @@
 		E90D1DC3202908ED00F9F35B /* Algorithms.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Algorithms.hpp; sourceTree = "<group>"; };
 		E90D1DC4203E9F6D00F9F35B /* Library.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
 		E90D1DC6203E9FA100F9F35B /* Headers.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Headers.metal; sourceTree = "<group>"; };
+		E9DF4DC22075877400DF2668 /* hawaii.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = hawaii.svg; sourceTree = "<group>"; };
+		E9DF4DC32075877400DF2668 /* paris-30k.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "paris-30k.svg"; sourceTree = "<group>"; };
 		E9EEAD72200BC63400F2BFB2 /* Unit Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Unit Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -194,8 +198,10 @@
 			children = (
 				E9F50F912071221200C26317 /* 23.svg */,
 				E9F50F922071221200C26317 /* contour.svg */,
+				E9DF4DC22075877400DF2668 /* hawaii.svg */,
 				E9F50F932071221200C26317 /* nano.svg */,
 				E9F50F9920726DAD00C26317 /* paper-2.svg */,
+				E9DF4DC32075877400DF2668 /* paris-30k.svg */,
 				E9F50F942071221200C26317 /* reschart.svg */,
 			);
 			path = SVG;
@@ -264,8 +270,10 @@
 				E9F50F952071221200C26317 /* 23.svg in Resources */,
 				E9F50F982071221200C26317 /* reschart.svg in Resources */,
 				E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */,
+				E9DF4DC52075877400DF2668 /* paris-30k.svg in Resources */,
 				E9F50F962071221200C26317 /* contour.svg in Resources */,
 				E9F50F972071221200C26317 /* nano.svg in Resources */,
+				E9DF4DC42075877400DF2668 /* hawaii.svg in Resources */,
 				E9EEAD82200BC63400F2BFB2 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

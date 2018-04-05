@@ -251,19 +251,19 @@ using namespace std;
     
     _triangles.resize(1);
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
         Mesh mesh;
-        int limit = 40000;
+        int limit = 20000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;
                 
                RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
-//                RGBA color = { 0, 0, 0, 0.333 };
+//                RGBA8 color = { 0, 0, 0, 64 };
                 Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
@@ -278,6 +278,10 @@ using namespace std;
             }
         }
         mesh.triangulate(_triangles);
+        
+        int count = 0;
+        for (Triangles& triangles : _triangles)
+            count += triangles.count;
         
         // Delete
         nsvgDelete(image);
