@@ -160,6 +160,8 @@ struct Mesh {
         Triangles* triangles = & vtriangles[t];
         
         for (Path& p : _paths) {
+//            if (p._subPaths.size() > 4)
+//                continue;
             for (SubPath& s : p._subPaths)
                 tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
             
