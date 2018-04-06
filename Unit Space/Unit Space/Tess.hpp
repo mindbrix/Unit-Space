@@ -12,7 +12,6 @@
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 6;
 constexpr int kPointStride = 2 * sizeof(float);
-constexpr float kCollinearTolerance = 1e-2;
 
 
 struct SubPath {
@@ -206,10 +205,6 @@ struct Mesh {
             if (path.intersects(_paths[i]))
                 _paths[i].maskOut(path);
         
-//        for (Path& p : _paths)
-//            if (path.intersects(p))
-//                p.maskOut(path);
-
         _quadtree->add(size_t(_paths.size()), outer._llx, outer._lly, outer._urx, outer._ury);
         _paths.emplace_back(path);
     }
