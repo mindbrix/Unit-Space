@@ -16,12 +16,12 @@ constexpr float kCollinearTolerance = 1e-2;
 
 
 struct SubPath {
-    SubPath() {}
-    SubPath(const float *points, const int npoints) {
-        init(points, npoints);
-    }
+    enum Type {
+        kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose
+    };
     
-    void init(const float *points, const int npoints) {
+    SubPath() {}
+    SubPath(const float *points, const int npoints, Type type) {
         _npoints = npoints;
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
         memcpy(_points.get(), points, npoints * kPointStride);
@@ -51,6 +51,10 @@ struct SubPath {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
+    bool polygonIntersects(SubPath& subPath) const {
+        return true;
+    }
+    
     shared_ptr<float>           _points;
     int                         _npoints;
     float                       _area;
@@ -65,9 +69,9 @@ struct Path {
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
     }
     
-    void addContour(float *points, int npoints) {
+    void addContour(float *points, int npoints, SubPath::Type type) {
         if (npoints > 2)
-            _subPaths.emplace_back(points, npoints);
+            _subPaths.emplace_back(points, npoints, type);
     }
     
     size_t findOuterIndex() const {
@@ -126,7 +130,7 @@ struct Path {
             const float *points = verts + base * 2;
             
             if (npoints > 2)
-                _subPaths.emplace_back(points, npoints);
+                _subPaths.emplace_back(points, npoints, SubPath::kLine);
         }
         _outerIndex = findOuterIndex();
     }
