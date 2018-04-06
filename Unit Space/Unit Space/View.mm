@@ -251,7 +251,7 @@ using namespace std;
     
     _triangles.resize(1);
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"contour.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...

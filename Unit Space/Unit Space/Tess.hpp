@@ -27,16 +27,16 @@ struct SubPath {
         memcpy(_points.get(), points, npoints * kPointStride);
         
         if (type == kCubic)
-            _npoints = flattenCubics(_points.get(), _points.get(), _npoints);
+            _npoints = flattenCubics(_points.get(), (float *)points, _npoints);
             
         _area = area();
         bounds(& _llx);
         
-        _npoints = filterCollinearPoints(_points.get(), _points.get(), _npoints, std::abs(_area) * 1e-6);
-        
-        if (_npoints < 3) {
-            _npoints = 0;
-        }
+//        _npoints = filterCollinearPoints(_points.get(), _points.get(), _npoints, std::abs(_area) * 1e-6);
+//        
+//        if (_npoints < 3) {
+//            _npoints = 0;
+//        }
     }
     
     float area() const {
@@ -56,16 +56,31 @@ struct SubPath {
     }
     
     int flattenCubics(float *dst, float *src, int npoints) {
-        for (int i = 0; i < _npoints - 1; i += 3) {
-            float *p = dst + i * 2;
-            float x1 = deCasteljauCubic(0.33333, p[0], p[2], p[4], p[6]);
-            float y1 = deCasteljauCubic(0.33333, p[1], p[3], p[5], p[7]);
-            float x2 = deCasteljauCubic(0.66666, p[0], p[2], p[4], p[6]);
-            float y2 = deCasteljauCubic(0.66666, p[1], p[3], p[5], p[7]);
+        float *begin = dst;
+        float x0, y0, x1, y1, x2, y2, x3, y3;
+        
+        *dst++ = src[0], *dst++ = src[1];
+        
+        for (int i = 0; i < npoints - 1; i += 3) {
+            float *p = src + i * 2;
             
-            p[2] = x1, p[3] = y1, p[4] = x2, p[5] = y2;
+            x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+            
+            float ax0 = x0 + x2 - x1 - x1, ay0 = y0 + y2 - y1 - y1;
+            float ax1 = x1 + x3 - x2 - x2, ay1 = y1 + y3 - y2 - y2;
+            float flatness = ax0 * ax0 + ay0 * ay0 + ax1 * ax1 + ay1 * ay1;
+            
+            if (flatness > 1e-3) {
+                float _x1 = deCasteljauCubic(0.33333, x0, x1, x2, x3);
+                float _y1 = deCasteljauCubic(0.33333, y0, y1, y2, y3);
+                float _x2 = deCasteljauCubic(0.66666, x0, x1, x2, x3);
+                float _y2 = deCasteljauCubic(0.66666, y0, y1, y2, y3);
+                
+                *dst++ = _x1, *dst++ = _y1, *dst++ = _x2, *dst++ = _y2;
+            }
+            *dst++ = x3, *dst++ = y3;
         }
-        return npoints;
+        return int(dst - begin) / 2;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
