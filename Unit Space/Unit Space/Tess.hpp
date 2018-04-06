@@ -106,7 +106,7 @@ struct Path {
         tessDeleteTess(tess);
     }
     
-    void writeSubpaths() {
+    void writeBoundaryContours() {
         for (SubPath& subPath : _subPaths)
             tessAddContour(_tess.get(), 2, subPath._points.get(), kPointStride, subPath._npoints, false);
         
@@ -140,7 +140,7 @@ struct Path {
 
 struct Mesh {
     void addPath(Path& path) {
-        path.writeSubpaths();
+        path.writeBoundaryContours();
         if (path._subPaths.size() == 0)
             return;
         
