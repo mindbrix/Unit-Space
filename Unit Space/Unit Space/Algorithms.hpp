@@ -37,6 +37,14 @@ float deCasteljauCubic(float t, float n0, float n1, float n2, float n3) {
     return lerp(t, n012, n123);
 }
 
+inline bool doLinesIntersect(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy) {
+    double vabx = bx - ax, vaby = by - ay, vacx = cx - ax, vacy = cy - ay, vadx = dx - ax, vady = dy - ay;
+    double vcdx = dx - cx, vcdy = dy - cy, vcax = ax - cx, vcay = ay - cy, vcbx = bx - cx, vcby = by - cy;
+    double cabc = vabx * vacy - vaby * vacx, cabd = vabx * vady - vaby * vadx;
+    double ccda = vcdx * vcay - vcdy * vcax, ccdb = vcdx * vcby - vcdy * vcbx;
+    return cabc * cabd < 0 && ccda * ccdb < 0;
+}
+
 int filterCollinearPoints(float *dst, float *src, int count, double tolerance) {
     double x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
     float *begin = dst;
