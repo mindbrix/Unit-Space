@@ -24,11 +24,12 @@ struct SubPath {
     SubPath(const float *points, const int npoints, Type type) {
         _npoints = npoints;
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
-        memcpy(_points.get(), points, npoints * kPointStride);
         
         if (type == kCubic)
-            _npoints = flattenCubics(_points.get(), (float *)points, _npoints);
-            
+            _npoints = flattenCubics(_points.get(), points, _npoints);
+        else
+            memcpy(_points.get(), points, npoints * kPointStride);
+        
         _area = area();
         bounds(& _llx);
         
@@ -55,14 +56,14 @@ struct SubPath {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
-    int flattenCubics(float *dst, float *src, int npoints) {
+    int flattenCubics(float *dst, const float *src, int npoints) {
         float *begin = dst;
         float x0, y0, x1, y1, x2, y2, x3, y3;
         
         *dst++ = src[0], *dst++ = src[1];
         
         for (int i = 0; i < npoints - 1; i += 3) {
-            float *p = src + i * 2;
+            const float *p = src + i * 2;
             
             x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
             
@@ -71,12 +72,10 @@ struct SubPath {
             float flatness = ax0 * ax0 + ay0 * ay0 + ax1 * ax1 + ay1 * ay1;
             
             if (flatness > 1e-3) {
-                float _x1 = deCasteljauCubic(0.33333, x0, x1, x2, x3);
-                float _y1 = deCasteljauCubic(0.33333, y0, y1, y2, y3);
-                float _x2 = deCasteljauCubic(0.66666, x0, x1, x2, x3);
-                float _y2 = deCasteljauCubic(0.66666, y0, y1, y2, y3);
-                
-                *dst++ = _x1, *dst++ = _y1, *dst++ = _x2, *dst++ = _y2;
+                *dst++ = deCasteljauCubic(0.33333, x0, x1, x2, x3);
+                *dst++ = deCasteljauCubic(0.33333, y0, y1, y2, y3);
+                *dst++ = deCasteljauCubic(0.66666, x0, x1, x2, x3);
+                *dst++ = deCasteljauCubic(0.66666, y0, y1, y2, y3);
             }
             *dst++ = x3, *dst++ = y3;
         }
