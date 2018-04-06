@@ -26,17 +26,9 @@ struct SubPath {
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
         memcpy(_points.get(), points, npoints * kPointStride);
         
-        if (type == kCubic) {
-            for (int i = 0; i < _npoints - 1; i += 3) {
-                float *p = _points.get() + i * 2;
-                float x1 = deCasteljauCubic(0.33333, p[0], p[2], p[4], p[6]);
-                float y1 = deCasteljauCubic(0.33333, p[1], p[3], p[5], p[7]);
-                float x2 = deCasteljauCubic(0.66666, p[0], p[2], p[4], p[6]);
-                float y2 = deCasteljauCubic(0.66666, p[1], p[3], p[5], p[7]);
-                
-                p[2] = x1, p[3] = y1, p[4] = x2, p[5] = y2;
-            }
-        }
+        if (type == kCubic)
+            _npoints = flattenCubics(_points.get(), _points.get(), _npoints);
+            
         _area = area();
         bounds(& _llx);
         
@@ -61,6 +53,19 @@ struct SubPath {
     
     bool intersects(SubPath& subPath) const {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
+    }
+    
+    int flattenCubics(float *dst, float *src, int npoints) {
+        for (int i = 0; i < _npoints - 1; i += 3) {
+            float *p = dst + i * 2;
+            float x1 = deCasteljauCubic(0.33333, p[0], p[2], p[4], p[6]);
+            float y1 = deCasteljauCubic(0.33333, p[1], p[3], p[5], p[7]);
+            float x2 = deCasteljauCubic(0.66666, p[0], p[2], p[4], p[6]);
+            float y2 = deCasteljauCubic(0.66666, p[1], p[3], p[5], p[7]);
+            
+            p[2] = x1, p[3] = y1, p[4] = x2, p[5] = y2;
+        }
+        return npoints;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
