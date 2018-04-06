@@ -43,6 +43,7 @@
 		E90D1DC3202908ED00F9F35B /* Algorithms.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Algorithms.hpp; sourceTree = "<group>"; };
 		E90D1DC4203E9F6D00F9F35B /* Library.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
 		E90D1DC6203E9FA100F9F35B /* Headers.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Headers.metal; sourceTree = "<group>"; };
+		E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VGQuadTree.hpp; sourceTree = "<group>"; };
 		E9DF4DC22075877400DF2668 /* hawaii.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = hawaii.svg; sourceTree = "<group>"; };
 		E9DF4DC32075877400DF2668 /* paris-30k.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "paris-30k.svg"; sourceTree = "<group>"; };
 		E9EEAD72200BC63400F2BFB2 /* Unit Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Unit Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -123,6 +124,7 @@
 				E9F50F702070165900C26317 /* nanosvg.h */,
 				E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */,
 				E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */,
+				E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */,
 				E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */,
 				E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */,
 				E9EEAD78200BC63400F2BFB2 /* Document.h */,

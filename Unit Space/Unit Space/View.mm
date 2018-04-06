@@ -256,8 +256,8 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        Mesh mesh;
-        int limit = 2000;
+        Mesh mesh(image->width, image->height);
+        int limit = 60000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;

@@ -7,7 +7,7 @@
 //
 #import "tesselator.h"
 #import "Algorithms.hpp"
-
+#import "VGQuadTree.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 6;
@@ -87,7 +87,15 @@ struct SubPath {
     }
     
     bool polygonIntersects(SubPath& subPath) const {
-        return true;
+        for (int i = 0; i < _npoints - 1; i++) {
+            float *pts = _points.get() + i * 2;
+            for (int j = 0; j < subPath._npoints - 1; j++) {
+                float *spts = subPath._points.get() + j * 2;
+                if (doLinesIntersect(pts[0], pts[1], pts[2], pts[3], spts[0], spts[1], spts[2], spts[3]))
+                    return true;
+            }
+        }
+        return false;
     }
     
     shared_ptr<float>           _points;
@@ -121,10 +129,12 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
-//        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3 && path._subPaths.size() == 1 && path._subPaths[0]._npoints == 3)
-//            return false;
+        bool bboxIntersects = _subPaths.size() && path._subPaths.size() && _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
         
-        return _subPaths.size() && path._subPaths.size() && _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
+        if (bboxIntersects && _subPaths.size() == 1 && _subPaths[0]._npoints == 4 && path._subPaths.size() == 1 && path._subPaths[0]._npoints == 4)
+            return _subPaths[0].polygonIntersects(path._subPaths[0]);
+        
+        return bboxIntersects;
     }
     
     void maskOut(Path& mask) {
@@ -138,16 +148,16 @@ struct Path {
         for (SubPath& subPath : mask._subPaths)
             tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, maskIsPositive);
         
-        if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+        if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeSubpaths(tess);
-            
-        }
+        
         tessDeleteTess(tess);
     }
     
     void writeBoundaryContours() {
         for (SubPath& subPath : _subPaths)
-            tessAddContour(_tess.get(), 2, subPath._points.get(), kPointStride, subPath._npoints, false);
+            if (subPath._npoints > 3)
+                tessAddContour(_tess.get(), 2, subPath._points.get(), kPointStride, subPath._npoints, false);
         
         if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeSubpaths(_tess.get());
@@ -178,17 +188,29 @@ struct Path {
 };
 
 struct Mesh {
+    Mesh(float w, float h) {
+        _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
+        
+    }
     void addPath(Path& path) {
         path.writeBoundaryContours();
         if (path._subPaths.size() == 0)
             return;
         
         path._outerIndex = path.findOuterIndex();
+        SubPath& outer = path._subPaths[path._outerIndex];
         
-        for (Path& p : _paths)
-            if (path.intersects(p))
-                p.maskOut(path);
+        auto matches = _quadtree->find(outer._llx, outer._lly, outer._urx, outer._ury);
+        
+        for (size_t i : matches)
+            if (path.intersects(_paths[i]))
+                _paths[i].maskOut(path);
+        
+//        for (Path& p : _paths)
+//            if (path.intersects(p))
+//                p.maskOut(path);
 
+        _quadtree->add(size_t(_paths.size()), outer._llx, outer._lly, outer._urx, outer._ury);
         _paths.emplace_back(path);
     }
     
@@ -202,7 +224,8 @@ struct Mesh {
 //            if (p._subPaths.size() > 4)
 //                continue;
             for (SubPath& s : p._subPaths)
-                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
+                if (s._npoints > 3)
+                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
@@ -252,5 +275,6 @@ struct Mesh {
         return true;
     }
     
-    vector<Path>             _paths;
+    shared_ptr<VG::QuadTree<size_t>>    _quadtree;
+    vector<Path>                        _paths;
 };
