@@ -153,7 +153,7 @@ struct Path {
     }
     
     void writeBoundaryContours() {
-        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 4)
+        if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0]))))
             return;
         
         TESStesselator *tess = tessNewTess(NULL);
