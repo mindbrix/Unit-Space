@@ -108,7 +108,6 @@ struct Path {
         _color = color;
         _evenOdd = evenOdd;
         _outerIndex = INT_MAX;
-        _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
     }
     
     void addContour(float *points, int npoints, SubPath::Type type) {
@@ -154,12 +153,17 @@ struct Path {
     }
     
     void writeBoundaryContours() {
+        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 4)
+            return;
+        
+        TESStesselator *tess = tessNewTess(NULL);
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 3)
-                tessAddContour(_tess.get(), 2, subPath._points.get(), kPointStride, subPath._npoints, false);
+                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, false);
         
-        if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeSubpaths(_tess.get());
+        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+            writeSubpaths(tess);
+        tessDeleteTess(tess);
     }
     
     void writeSubpaths(TESStesselator *tess) {
@@ -180,7 +184,6 @@ struct Path {
     }
     
     RGBA8                       _color;
-    shared_ptr<TESStesselator>  _tess;
     bool                        _evenOdd;
     size_t                      _outerIndex;
     vector<SubPath>             _subPaths;
