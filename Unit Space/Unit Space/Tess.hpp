@@ -22,8 +22,10 @@ struct SubPath {
     
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type) {
+        bool closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
+        
         _npoints = npoints;
-        _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
+        _points = shared_ptr<float>((float *)malloc((npoints + (closed ? 0 : 1)) * kPointStride), free);
         
         if (type == kCubic)
             _npoints = flattenCubics(_points.get(), points, _npoints);
@@ -33,11 +35,13 @@ struct SubPath {
         _area = area();
         bounds(& _llx);
         
-//        _npoints = filterCollinearPoints(_points.get(), _points.get(), _npoints, std::abs(_area) * 1e-6);
-//        
-//        if (_npoints < 3) {
-//            _npoints = 0;
-//        }
+        if (!closed) {
+            float *p = _points.get(), *dst = p + _npoints * 2;
+            *dst++ = *p++, *dst++ = *p++;
+            _npoints++;
+            
+            assert(_area == area());
+        }
     }
     
     float area() const {
