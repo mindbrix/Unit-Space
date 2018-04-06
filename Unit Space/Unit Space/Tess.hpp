@@ -25,6 +25,18 @@ struct SubPath {
         _npoints = npoints;
         _points = shared_ptr<float>((float *)malloc(npoints * kPointStride), free);
         memcpy(_points.get(), points, npoints * kPointStride);
+        
+        if (type == kCubic) {
+            for (int i = 0; i < _npoints - 1; i += 3) {
+                float *p = _points.get() + i * 2;
+                float x1 = deCasteljauCubic(0.33333, p[0], p[2], p[4], p[6]);
+                float y1 = deCasteljauCubic(0.33333, p[1], p[3], p[5], p[7]);
+                float x2 = deCasteljauCubic(0.66666, p[0], p[2], p[4], p[6]);
+                float y2 = deCasteljauCubic(0.66666, p[1], p[3], p[5], p[7]);
+                
+                p[2] = x1, p[3] = y1, p[4] = x2, p[5] = y2;
+            }
+        }
         _area = area();
         bounds(& _llx);
         
