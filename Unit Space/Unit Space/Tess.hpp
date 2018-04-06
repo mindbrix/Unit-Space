@@ -27,6 +27,12 @@ struct SubPath {
         memcpy(_points.get(), points, npoints * kPointStride);
         _area = area();
         bounds(& _llx);
+        
+        _npoints = filterCollinearPoints(_points.get(), _points.get(), _npoints, std::abs(_area) * 1e-6);
+        
+        if (_npoints < 3) {
+            _npoints = 0;
+        }
     }
     
     float area() const {
@@ -36,7 +42,7 @@ struct SubPath {
     void bounds(float *limits) const {
         boundsLimits(limits, _points.get(), _points.get() + _npoints * 2, kPointStride);
     }
-    
+        
     bool contains(SubPath& subPath) const {
         return (_llx <= subPath._llx) && (_lly <= subPath._lly) && (_urx >= subPath._urx) && (_ury >= subPath._ury);
     }

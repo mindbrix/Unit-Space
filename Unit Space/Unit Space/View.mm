@@ -257,12 +257,12 @@ using namespace std;
         // Use...
         
         Mesh mesh;
-        int limit = 20000;
+        int limit = 2000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;
                 
-               RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
+                RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
 //                RGBA8 color = { 0, 0, 0, 64 };
                 Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
@@ -276,13 +276,11 @@ using namespace std;
                         float y1 = deCasteljauCubic(0.33333, p[1], p[3], p[5], p[7]);
                         float x2 = deCasteljauCubic(0.66666, p[0], p[2], p[4], p[6]);
                         float y2 = deCasteljauCubic(0.66666, p[1], p[3], p[5], p[7]);
-                        
+
                         p[2] = x1, p[3] = y1, p[4] = x2, p[5] = y2;
                     }
                     
-                    int count = filterCollinearPoints(path->pts, path->pts, path->npts, kCollinearTolerance);
-                    
-                    p.addContour(path->pts, count);
+                    p.addContour(path->pts, path->npts);
                 }
                 mesh.addPath(p);
             }
