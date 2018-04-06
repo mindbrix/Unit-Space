@@ -61,7 +61,7 @@ struct Path {
     
     void addContour(float *points, int npoints) {
         if (npoints > 2)
-            tessAddContour(_tess.get(), 2, points, kPointStride, npoints, false);
+            _subPaths.emplace_back(points, npoints);
     }
     
     size_t findOuterIndex() const {
@@ -76,6 +76,9 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
+//        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3 && path._subPaths.size() == 1 && path._subPaths[0]._npoints == 3)
+//            return false;
+        
         return _subPaths.size() && path._subPaths.size() && _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
     }
     
@@ -91,19 +94,23 @@ struct Path {
             tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, maskIsPositive);
         
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-            _subPaths.resize(0);
             writeSubpaths(tess);
-            _outerIndex = findOuterIndex();
+            
         }
         tessDeleteTess(tess);
     }
     
     void writeSubpaths() {
+        for (SubPath& subPath : _subPaths)
+            tessAddContour(_tess.get(), 2, subPath._points.get(), kPointStride, subPath._npoints, false);
+        
         if (tessTesselate(_tess.get(), _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeSubpaths(_tess.get());
     }
     
     void writeSubpaths(TESStesselator *tess) {
+        _subPaths.resize(0);
+        
         const float *verts = tessGetVertices(tess);
         const int *elems = tessGetElements(tess);
         const int nelems = tessGetElementCount(tess);
@@ -115,6 +122,7 @@ struct Path {
             if (npoints > 2)
                 _subPaths.emplace_back(points, npoints);
         }
+        _outerIndex = findOuterIndex();
     }
     
     RGBA8                       _color;
@@ -187,7 +195,6 @@ struct Mesh {
         }
         
         for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-            
             if (triangles->add(k, indices[polygon[0]], indices[polygon[j + 1]], indices[polygon[j + 2]], c % kTrianglesColorsSize))
                 k++;
             else
