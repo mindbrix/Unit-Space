@@ -423,7 +423,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
     vert.showInterior = triangles.showInterior;
-    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
+    vert.color = select(float4(0, 0, 0, 0.25), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), triangles.showColors);
     return vert;
 }
 

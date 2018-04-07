@@ -22,6 +22,7 @@
 
 - (IBAction)toggleEllipse:(id)sender;
 - (IBAction)togglePoints:(id)sender;
+- (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowInterior:(id)sender;
 - (IBAction)toggleTriangle:(id)sender;
 

@@ -69,10 +69,11 @@ struct Units {
 
 #define kTrianglesIndexSize 384
 #define kTrianglesPointsSize 256
-#define kTrianglesColorsSize 126
+#define kTrianglesColorsSize 125
 
 struct Triangles {
     int                 count;
+    bool                showColors;
     bool                showInterior;
     unsigned char       i0[kTrianglesIndexSize];
     unsigned char       i1[kTrianglesIndexSize];

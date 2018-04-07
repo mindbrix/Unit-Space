@@ -28,6 +28,7 @@ using namespace std;
 @property(nonatomic) VGAffineTransform *transform;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
+@property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEllipse;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
@@ -56,6 +57,7 @@ using namespace std;
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
+    self.showColors = YES;
     self.showInterior = YES;
     [self redraw];
 
@@ -199,6 +201,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleShowColors:(id)sender {
+    _showColors = !_showColors;
+    [self redraw];
+}
+
 - (IBAction)toggleEllipse:(id)sender {
     _showEllipse = !_showEllipse;
     [self redraw];
@@ -258,7 +265,7 @@ using namespace std;
     
     _triangles.resize(1);
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil] UTF8String], "px", 96);
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
@@ -419,6 +426,7 @@ using namespace std;
         
         for (Triangles& triangles : _triangles) {
             if (triangles.count) {
+                triangles.showColors = _showColors;
                 triangles.showInterior = _showInterior;
                 _calls.emplace_back();
                 Call& call = _calls.back();

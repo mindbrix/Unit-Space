@@ -677,10 +677,16 @@
                                     <action selector="togglePoints:" target="-1" id="YNN-Gr-sSm"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Show Interior" keyEquivalent="i" id="HuF-rl-ijO">
+                            <menuItem title="Toggle Show Colors" keyEquivalent="c" id="HuF-rl-ijO">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleShowInterior:" target="-1" id="quq-wC-JBc"/>
+                                    <action selector="toggleShowColors:" target="-1" id="nTC-XR-Jl6"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Show Interior" keyEquivalent="i" id="iqo-KW-y8W">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleShowInterior:" target="-1" id="Fvw-t5-c8n"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">
