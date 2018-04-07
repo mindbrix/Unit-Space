@@ -29,6 +29,7 @@ using namespace std;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) BOOL showEllipse;
+@property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
 @property(nonatomic) AffineTransform unitCTM;
@@ -55,6 +56,7 @@ using namespace std;
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
+    self.showInterior = YES;
     [self redraw];
 
     return self;
@@ -204,6 +206,11 @@ using namespace std;
 
 - (IBAction)togglePoints:(id)sender {
     _showPoints = !_showPoints;
+    [self redraw];
+}
+
+- (IBAction)toggleShowInterior:(id)sender {
+    _showInterior = !_showInterior;
     [self redraw];
 }
 
@@ -412,6 +419,7 @@ using namespace std;
         
         for (Triangles& triangles : _triangles) {
             if (triangles.count) {
+                triangles.showInterior = _showInterior;
                 _calls.emplace_back();
                 Call& call = _calls.back();
                 
