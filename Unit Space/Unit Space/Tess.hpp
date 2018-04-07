@@ -129,8 +129,8 @@ struct Path {
     bool intersects(Path& path) const {
         bool bboxIntersects = _subPaths.size() && path._subPaths.size() && _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
         
-//        if (bboxIntersects && _subPaths.size() == 1 && _subPaths[0]._npoints < 5 && path._subPaths.size() == 1 && path._subPaths[0]._npoints < 5)
-//            return _subPaths[0].polygonIntersects(path._subPaths[0]);
+        if (bboxIntersects && _subPaths.size() == 1 && _subPaths[0]._npoints < 7 && path._subPaths.size() == 1 && path._subPaths[0]._npoints < 7)
+            return _subPaths[0].polygonIntersects(path._subPaths[0]);
         
         return bboxIntersects;
     }
@@ -204,8 +204,8 @@ struct Mesh {
         
         auto matches = _quadtree->find(outer._llx, outer._lly, outer._urx, outer._ury);
         
-        for (size_t i : matches)
-            if (path.intersects(_paths[i]))
+        for (auto i : matches)
+//            if (path.intersects(_paths[i]))
                 _paths[i].maskOut(path);
         
         _quadtree->add(size_t(_paths.size()), outer._llx, outer._lly, outer._urx, outer._ury);
@@ -250,6 +250,9 @@ struct Mesh {
     }
     
     bool writePolygon(Triangles *triangles, float *points, int& pi, int& k, int& c, RGBA8 color, const TESSindex *polygon, TESSindex *indices) {
+        if (c == kTrianglesColorsSize)
+            return false;
+        
         for (int j = 0; j < kPolySize && polygon[j] != TESS_UNDEF; j++) {
             TESSindex index = polygon[j];
             
