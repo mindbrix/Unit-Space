@@ -203,6 +203,7 @@ using namespace std;
 
 - (IBAction)toggleShowColors:(id)sender {
     _showColors = !_showColors;
+    [self updateFromState];
     [self redraw];
 }
 
@@ -218,6 +219,7 @@ using namespace std;
 
 - (IBAction)toggleShowInterior:(id)sender {
     _showInterior = !_showInterior;
+    [self updateFromState];
     [self redraw];
 }
 
@@ -225,6 +227,10 @@ using namespace std;
     _showTriangle = !_showTriangle;
     [self reset];
     [self redraw];
+}
+
+- (void)updateFromState {
+    self.metalLayer.backgroundColor = CGColorGetConstantColor(!_showInterior && !_showColors ? kCGColorWhite : kCGColorClear);
 }
 
 #pragma mark -
@@ -277,7 +283,6 @@ using namespace std;
                 limit--;
                 
                 RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
-//                RGBA8 color = { 0, 0, 0, 64 };
                 Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
