@@ -280,7 +280,7 @@ using namespace std;
         [data appendBytes:&zeroByte length:1];
     }
 
-    struct NSVGimage* image =data ? nsvgParse((char *)data.bytes, "px", 96) : NULL;
+    struct NSVGimage* image = data ? nsvgParse((char *)data.bytes, "px", 96) : NULL;
     
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
