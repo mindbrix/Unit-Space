@@ -271,7 +271,16 @@ using namespace std;
     
     _triangles.resize(1);
     // Load
-    struct NSVGimage* image = self.svgData ? nsvgParse((char *)self.svgData.bytes, "px", 96) : NULL;// nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil] UTF8String], "px", 96);
+    NSMutableData *data = nil;
+    
+    if (_svgData) {
+        data = [NSMutableData data];
+        unsigned char zeroByte = 0;
+        [data appendData:_svgData];
+        [data appendBytes:&zeroByte length:1];
+    }
+
+    struct NSVGimage* image =data ? nsvgParse((char *)data.bytes, "px", 96) : NULL;
     
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
@@ -508,12 +517,7 @@ using namespace std;
 }
 
 - (void)setSvgData:(NSData *)svgData {
-    NSMutableData *data = [NSMutableData data];
-    unsigned char zeroByte = 0;
-    [data appendData:svgData];
-    [data appendBytes:&zeroByte length:1];
-    
-    _svgData = data;
+    _svgData = svgData;
     _flags |= 8;
     [self reset];
     [self redraw];
