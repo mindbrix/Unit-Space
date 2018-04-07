@@ -10,6 +10,8 @@
 
 @interface View : NSView
 
+@property(nonatomic, strong) NSData *svgData;
+
 - (IBAction)clockwise:(id)sender;
 - (IBAction)anticlockwise:(id)sender;
 

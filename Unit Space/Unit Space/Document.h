@@ -7,9 +7,11 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "View.h"
 
 @interface Document : NSDocument
 
+@property(nonatomic, strong) IBOutlet View *view;
 
 @end
 

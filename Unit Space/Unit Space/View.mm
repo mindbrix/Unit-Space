@@ -271,7 +271,8 @@ using namespace std;
     
     _triangles.resize(1);
     // Load
-    struct NSVGimage* image = nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"reschart.svg" ofType:nil] UTF8String], "px", 96);
+    struct NSVGimage* image = self.svgData ? nsvgParse((char *)self.svgData.bytes, "px", 96) : NULL;// nsvgParseFromFile([[[NSBundle mainBundle] pathForResource:@"23.svg" ofType:nil] UTF8String], "px", 96);
+    
     if (image) {
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
@@ -504,6 +505,18 @@ using namespace std;
 
 -(MetalLayer *)metalLayer {
     return (MetalLayer *)self.layer;
+}
+
+- (void)setSvgData:(NSData *)svgData {
+    NSMutableData *data = [NSMutableData data];
+    unsigned char zeroByte = 0;
+    [data appendData:svgData];
+    [data appendBytes:&zeroByte length:1];
+    
+    _svgData = data;
+    _flags |= 8;
+    [self reset];
+    [self redraw];
 }
 
 - (AffineTransform)viewCTM {
