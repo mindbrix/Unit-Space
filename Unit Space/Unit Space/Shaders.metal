@@ -377,7 +377,7 @@ struct TriangleVertex
     
     float2 p0, p1, p2;
     float3 distance;
-    float  alpha;
+    bool showInterior;
     float4 color;
 };
 
@@ -422,7 +422,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     vert.p0 = t[0] - devicePoint, vert.p1 = t[1] - devicePoint, vert.p2 = t[2] - devicePoint;
     
     vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
-    
+    vert.showInterior = false;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -430,7 +430,7 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 1.41)
-        return vert.color;
+        return select(0, vert.color, vert.showInterior);
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
