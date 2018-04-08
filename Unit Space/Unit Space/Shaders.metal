@@ -387,28 +387,28 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     RGBA8 color = triangles.colors[c0];
     constant AffineTransform& ctm = state.CTM;
     
-    float2 _p0 = {
+    float2 p0 = {
         triangles.points[i0].x * ctm.a + triangles.points[i0].y * ctm.c + ctm.tx,
         triangles.points[i0].x * ctm.b + triangles.points[i0].y * ctm.d + ctm.ty
     };
     
-    float2 _p1 = {
+    float2 p1 = {
         triangles.points[i1].x * ctm.a + triangles.points[i1].y * ctm.c + ctm.tx,
         triangles.points[i1].x * ctm.b + triangles.points[i1].y * ctm.d + ctm.ty
     };
     
-    float2 _p2 = {
+    float2 p2 = {
         triangles.points[i2].x * ctm.a + triangles.points[i2].y * ctm.c + ctm.tx,
         triangles.points[i2].x * ctm.b + triangles.points[i2].y * ctm.d + ctm.ty
     };
     
-    float2 v01 = _p1 - _p0;
+    float2 v01 = p1 - p0;
     float2 n01 = normalize(float2(v01.y, -v01.x));
     
-    float2 v12 = _p2 - _p1;
+    float2 v12 = p2 - p1;
     float2 n12 = normalize(float2(v12.y, -v12.x));
     
-    float2 v20 = _p0 - _p2;
+    float2 v20 = p0 - p2;
     float2 n20 = normalize(float2(v20.y, -v20.x));
     
     float h0 = dot(n12, v01);
@@ -425,20 +425,20 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     h0 = max(hmin, h0), h1 = max(hmin, h1), h2 = max(hmin, h2);
     
     
-    float2 v0 = _p0 - v01 * dilation / h1 + v20 * dilation / h2;
-    float2 v1 = _p1 - v12 * dilation / h2 + v01 * dilation / h0;
-    float2 v2 = _p2 - v20 * dilation / h0 + v12 * dilation / h1;
+    float2 v0 = p0 - v01 * dilation / h1 + v20 * dilation / h2;
+    float2 v1 = p1 - v12 * dilation / h2 + v01 * dilation / h0;
+    float2 v2 = p2 - v20 * dilation / h0 + v12 * dilation / h1;
     
     float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
-    float d0 = dot(_p0 - devicePoint, n01);
-    float d1 = dot(_p1 - devicePoint, n12);
-    float d2 = dot(_p2 - devicePoint, n20);
+    float d0 = dot(p0 - devicePoint, n01);
+    float d1 = dot(p1 - devicePoint, n12);
+    float d2 = dot(p2 - devicePoint, n20);
     
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     
     devicePoint -= 0.5;
-    vert.p0 = _p0 - devicePoint, vert.p1 = _p1 - devicePoint, vert.p2 = _p2 - devicePoint;
+    vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
     
     vert.distance = { d0, d1, d2 };
     vert.showInterior = triangles.showInterior;
