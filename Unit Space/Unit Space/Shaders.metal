@@ -415,19 +415,17 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
     float h1 = dot(n20, v12);
     float h2 = dot(n01, v20);
     
-//    float hmax = max(h0, max(h1, h2));
-//    float hmin = min(h0, min(h1, h2));
     
     const float r = 10.0;
     const float dilation = 0.7071067812;
     const float hmin = 0.1;
     
-    h0 = max(hmin, h0), h1 = max(hmin, h1), h2 = max(hmin, h2);
+    float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
     
     
-    float2 v0 = p0 - v01 * dilation / h1 + v20 * dilation / h2;
-    float2 v1 = p1 - v12 * dilation / h2 + v01 * dilation / h0;
-    float2 v2 = p2 - v20 * dilation / h0 + v12 * dilation / h1;
+    float2 v0 = p0 - v01 * dh1 + v20 * dh2;
+    float2 v1 = p1 - v12 * dh2 + v01 * dh0;
+    float2 v2 = p2 - v20 * dh0 + v12 * dh1;
     
     float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
     float d0 = dot(p0 - devicePoint, n01);
