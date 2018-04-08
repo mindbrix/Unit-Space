@@ -328,9 +328,9 @@ using namespace std;
         triangles.points[5] = { 200, 100 };
         
         triangles.add(0, 0, 1, 2, 0);
-//        triangles.add(1, 2, 3, 0, 1);
-//        triangles.add(2, 2, 1, 4, 2);
-//        triangles.add(3, 4, 5, 2, 3);
+        triangles.add(1, 2, 3, 0, 1);
+        triangles.add(2, 2, 1, 4, 2);
+        triangles.add(3, 4, 5, 2, 3);
     }
 }
 
