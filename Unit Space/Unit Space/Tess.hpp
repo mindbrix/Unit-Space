@@ -59,9 +59,10 @@ struct SubPath {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
-    int flattenCubics(float *dst, const float *src, int npoints) {
+    int flattenCubics(float *dst, const float *src, int npoints, int subdivisions = 3) {
         float *begin = dst;
         float x0, y0, x1, y1, x2, y2, x3, y3;
+        float t, dt = 1.0 / float(subdivisions);
         
         *dst++ = src[0], *dst++ = src[1];
         
@@ -75,10 +76,9 @@ struct SubPath {
             float flatness = ax0 * ax0 + ay0 * ay0 + ax1 * ax1 + ay1 * ay1;
             
             if (flatness > 1e-3) {
-                *dst++ = deCasteljauCubic(0.33333, x0, x1, x2, x3);
-                *dst++ = deCasteljauCubic(0.33333, y0, y1, y2, y3);
-                *dst++ = deCasteljauCubic(0.66666, x0, x1, x2, x3);
-                *dst++ = deCasteljauCubic(0.66666, y0, y1, y2, y3);
+                t = dt;
+                for (int j = 0; j < subdivisions - 1; j++, t += dt)
+                    *dst++ = deCasteljauCubic(t, x0, x1, x2, x3), *dst++ = deCasteljauCubic(t, y0, y1, y2, y3);
             }
             *dst++ = x3, *dst++ = y3;
         }
