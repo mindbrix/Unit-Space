@@ -385,43 +385,87 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
 {
     uint i0 = triangles.i0[iid], i1 = triangles.i1[iid], i2 = triangles.i2[iid], c0 = triangles.c0[iid];
     RGBA8 color = triangles.colors[c0];
-    float x0 = triangles.points[i0].x, y0 = triangles.points[i0].y;
-    float x1 = triangles.points[i1].x, y1 = triangles.points[i1].y;
-    float x2 = triangles.points[i2].x, y2 = triangles.points[i2].y;
-    
     constant AffineTransform& ctm = state.CTM;
-    float2 t[3] =  {
-        { x0 * ctm.a + y0 * ctm.c + ctm.tx, x0 * ctm.b + y0 * ctm.d + ctm.ty },
-        { x1 * ctm.a + y1 * ctm.c + ctm.tx, x1 * ctm.b + y1 * ctm.d + ctm.ty },
-        { x2 * ctm.a + y2 * ctm.c + ctm.tx, x2 * ctm.b + y2 * ctm.d + ctm.ty }
+    
+    float2 _p0 = {
+        triangles.points[i0].x * ctm.a + triangles.points[i0].y * ctm.c + ctm.tx,
+        triangles.points[i0].x * ctm.b + triangles.points[i0].y * ctm.d + ctm.ty
     };
     
-    AffineTransform unit = { t[1].x - t[0].x, t[1].y - t[0].y, t[2].x - t[1].x, t[2].y - t[1].y, t[0].x, t[0].y };
+    float2 _p1 = {
+        triangles.points[i1].x * ctm.a + triangles.points[i1].y * ctm.c + ctm.tx,
+        triangles.points[i1].x * ctm.b + triangles.points[i1].y * ctm.d + ctm.ty
+    };
     
-    float2 p1 = t[vid];
-    float2 p2 = t[(vid + 1) % 3];
-    float2 p0 = t[(vid + 2) % 3];
+    float2 _p2 = {
+        triangles.points[i2].x * ctm.a + triangles.points[i2].y * ctm.c + ctm.tx,
+        triangles.points[i2].x * ctm.b + triangles.points[i2].y * ctm.d + ctm.ty
+    };
     
-    float2 _v0n = normalize(p1 - p0), _v1n = normalize(p2 - p1);
-    float2 _tangent = normalize(_v0n + _v1n);
-    float2 _miter = { _tangent.y, -_tangent.x };
-    float2 _normal = { _v0n.y, -_v0n.x };
-    float cosine = dot(_miter, _normal);
-    float miterLength = 0.7071067812 / max(1e-3, cosine);
-    miterLength = select(miterLength, 0.0, cosine < 1e-3);
-    float2 devicePoint = p1 + _miter * miterLength;
+    float2 v01 = _p1 - _p0;
+    float2 n01 = normalize(float2(v01.y, -v01.x));
+    
+    float2 v12 = _p2 - _p1;
+    float2 n12 = normalize(float2(v12.y, -v12.x));
+    
+    float2 v20 = _p0 - _p2;
+    float2 n20 = normalize(float2(v20.y, -v20.x));
+    
+    float h0 = dot(n12, v01);
+    float h1 = dot(n20, v12);
+    float h2 = dot(n01, v20);
+    
+    float hmax = max(h0, max(h1, h2));
+    const float r = 10.0;
+    const float dilation = 0.7071067812;
+    
+    float2 v0 = _p0 - v01 * dilation / h1 + v20 * dilation / h2;
+    float2 v1 = _p1 - v12 * dilation / h2 + v01 * dilation / h0;
+    float2 v2 = _p2 - v20 * dilation / h0 + v12 * dilation / h1;
+    
+    float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
+    float d0 = dot(_p0 - devicePoint, n01);
+    float d1 = dot(_p1 - devicePoint, n12);
+    float d2 = dot(_p2 - devicePoint, n20);
+    
+//    float x0 = triangles.points[i0].x, y0 = triangles.points[i0].y;
+//    float x1 = triangles.points[i1].x, y1 = triangles.points[i1].y;
+//    float x2 = triangles.points[i2].x, y2 = triangles.points[i2].y;
+        
+//    float2 t[3] =  {
+//        { x0 * ctm.a + y0 * ctm.c + ctm.tx, x0 * ctm.b + y0 * ctm.d + ctm.ty },
+//        { x1 * ctm.a + y1 * ctm.c + ctm.tx, x1 * ctm.b + y1 * ctm.d + ctm.ty },
+//        { x2 * ctm.a + y2 * ctm.c + ctm.tx, x2 * ctm.b + y2 * ctm.d + ctm.ty }
+//    };
+    
+//    AffineTransform unit = { t[1].x - t[0].x, t[1].y - t[0].y, t[2].x - t[1].x, t[2].y - t[1].y, t[0].x, t[0].y };
+    
+//    float2 p1 = t[vid];
+//    float2 p2 = t[(vid + 1) % 3];
+//    float2 p0 = t[(vid + 2) % 3];
+//    
+//    float2 _v0n = normalize(p1 - p0), _v1n = normalize(p2 - p1);
+//    float2 _tangent = normalize(_v0n + _v1n);
+//    float2 _miter = { _tangent.y, -_tangent.x };
+//    float2 _normal = { _v0n.y, -_v0n.x };
+//    float cosine = dot(_miter, _normal);
+//    float miterLength = 0.7071067812 / max(1e-3, cosine);
+//    miterLength = select(miterLength, 0.0, cosine < 1e-3);
+//    float2 devicePoint = p1 + _miter * miterLength;
     
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
-    float area = abs(unit.a * unit.d - unit.b * unit.c);
-    float h_v0 = area * rsqrt(unit.c * unit.c + unit.d * unit.d);
-    float h_v1 = area / length(float2(unit.a + unit.c, unit.b + unit.d));
-    float h_v2 = area * rsqrt(unit.a * unit.a + unit.b * unit.b);
+//    float area = abs(unit.a * unit.d - unit.b * unit.c);
+//    float h_v0 = area * rsqrt(unit.c * unit.c + unit.d * unit.d);
+//    float h_v1 = area / length(float2(unit.a + unit.c, unit.b + unit.d));
+//    float h_v2 = area * rsqrt(unit.a * unit.a + unit.b * unit.b);
     
     devicePoint -= 0.5;
-    vert.p0 = t[0] - devicePoint, vert.p1 = t[1] - devicePoint, vert.p2 = t[2] - devicePoint;
+    vert.p0 = _p0 - devicePoint, vert.p1 = _p1 - devicePoint, vert.p2 = _p2 - devicePoint;
+//    vert.p0 = t[0] - devicePoint, vert.p1 = t[1] - devicePoint, vert.p2 = t[2] - devicePoint;
     
-    vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
+    vert.distance = { d0, d1, d2 };
+//    vert.distance = select(select(float3(h_v2, 0, 0), float3(0, h_v1, 0), vid == 1), float3(0, 0, h_v0), vid == 0);
     vert.showInterior = triangles.showInterior;
     vert.color = select(float4(0, 0, 0, 0.666), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), triangles.showColors);
     return vert;
@@ -429,7 +473,10 @@ vertex TriangleVertex triangle_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 1.41)
+    const float d = 0.7071;
+//    return mix(float4(1, 0, 0, 1), float4(0, 1, 0, 1), step(d, vert.distance.x) * step(d, vert.distance.y) * step(d, vert.distance.z));
+    
+    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > d)
         return select(0, vert.color, vert.showInterior);
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
