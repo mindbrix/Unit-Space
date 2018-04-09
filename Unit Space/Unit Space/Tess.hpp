@@ -42,8 +42,6 @@ struct SubPath {
             float *p = _points.get(), *dst = p + _npoints * 2;
             *dst++ = *p++, *dst++ = *p++;
             _npoints++;
-            
-            assert(_area == area());
         }
     }
     
