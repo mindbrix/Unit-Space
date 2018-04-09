@@ -28,7 +28,7 @@ struct SubPath {
             int subdivisions[cubicCount];
             _npoints = countCubicSubdivisions(points, npoints, subdivisions) + 1;
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
-            _npoints = flattenCubics(_points.get(), points, npoints, subdivisions);
+            flattenCubics(_points.get(), points, npoints, subdivisions);
         } else {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
@@ -86,13 +86,10 @@ struct SubPath {
         return total;
     }
     
-    int flattenCubics(float *dst, const float *src, int npoints, int *subdivisions) {
-        float *begin = dst;
-        float x0, y0, x1, y1, x2, y2, x3, y3;
-        float t, dt;
+    void flattenCubics(float *dst, const float *src, int npoints, int *subdivisions) {
+        float x0, y0, x1, y1, x2, y2, x3, y3, t, dt;
         
         *dst++ = src[0], *dst++ = src[1];
-        
         for (int i = 0; i < npoints - 1; i += 3, subdivisions++) {
             const float *p = src + i * 2;
             x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
@@ -102,7 +99,6 @@ struct SubPath {
                 *dst++ = deCasteljauCubic(t, x0, x1, x2, x3), *dst++ = deCasteljauCubic(t, y0, y1, y2, y3);
             *dst++ = x3, *dst++ = y3;
         }
-        return int(dst - begin) / 2;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
