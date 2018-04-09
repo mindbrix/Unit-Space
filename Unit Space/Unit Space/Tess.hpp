@@ -215,19 +215,26 @@ struct Mesh {
             return;
         
         path._outerIndex = path.findOuterIndex();
-        SubPath& outer = path._subPaths[path._outerIndex];
-        
-        auto matches = _quadtree->find(outer._llx, outer._lly, outer._urx, outer._ury);
-        
-        for (auto i : matches)
-//            if (path.intersects(_paths[i]))
-                _paths[i].maskOut(path);
-        
-        _quadtree->add(size_t(_paths.size()), outer._llx, outer._lly, outer._urx, outer._ury);
         _paths.emplace_back(path);
     }
     
+    void maskPaths() {
+        for (size_t i = 0; i < _paths.size(); i++) {
+            Path& path = _paths[i];
+            SubPath& outer = path._subPaths[path._outerIndex];
+            
+            auto matches = _quadtree->find(outer._llx, outer._lly, outer._urx, outer._ury);
+            
+            for (auto i : matches)
+                _paths[i].maskOut(path);
+            
+            _quadtree->add(i, outer._llx, outer._lly, outer._urx, outer._ury);
+        }
+    }
+    
     void triangulate(vector<Triangles>& vtriangles) {
+        maskPaths();
+        
         TESStesselator *tess = tessNewTess(NULL);
         
         int t = 0, k = 0, pi = 0, c = 0;
