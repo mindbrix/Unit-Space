@@ -225,8 +225,8 @@ struct Mesh {
             
             auto matches = _quadtree->find(outer._llx, outer._lly, outer._urx, outer._ury);
             
-            for (auto i : matches)
-                _paths[i].maskOut(path);
+            for (auto j : matches)
+                _paths[j].maskOut(path);
             
             _quadtree->add(i, outer._llx, outer._lly, outer._urx, outer._ury);
         }
