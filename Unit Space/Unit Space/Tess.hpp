@@ -12,7 +12,7 @@
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 6;
 constexpr int kPointStride = 2 * sizeof(float);
-
+constexpr int kCubicSubdivisions = 6;
 
 struct SubPath {
     enum Type {
@@ -23,11 +23,11 @@ struct SubPath {
     SubPath(const float *points, const int npoints, Type type) {
         bool closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
         
-        _npoints = npoints;
-        _points = shared_ptr<float>((float *)malloc((npoints + (closed ? 0 : 1)) * kPointStride), free);
+        _npoints = type == kCubic ? ((npoints - 1) / 3) * kCubicSubdivisions + 1 : npoints;
+        _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
         
         if (type == kCubic)
-            _npoints = flattenCubics(_points.get(), points, _npoints);
+            _npoints = flattenCubics(_points.get(), points, npoints, kCubicSubdivisions);
         else
             memcpy(_points.get(), points, npoints * kPointStride);
         
@@ -59,7 +59,7 @@ struct SubPath {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
-    int flattenCubics(float *dst, const float *src, int npoints, int subdivisions = 3) {
+    int flattenCubics(float *dst, const float *src, int npoints, int subdivisions) {
         float *begin = dst;
         float x0, y0, x1, y1, x2, y2, x3, y3;
         float t, dt = 1.0 / float(subdivisions);
