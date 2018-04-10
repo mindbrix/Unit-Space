@@ -142,11 +142,11 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
-        bool bboxIntersects = _subPaths.size() && path._subPaths.size() && _subPaths[_outerIndex].intersects(path._subPaths[path._outerIndex]);
-        
-        if (bboxIntersects && _subPaths.size() == 1 && _subPaths[0]._npoints < 7 && path._subPaths.size() == 1 && path._subPaths[0]._npoints < 7)
-            return _subPaths[0].polygonIntersects(path._subPaths[0]);
-        
+        bool bboxIntersects = _subPaths.size() && path._subPaths.size() && (_urx > path._llx) && (path._urx > _llx) && (_ury > path._lly) && (path._ury > _lly);
+
+//        if (bboxIntersects && _subPaths.size() == 1 && _subPaths[0]._npoints < 6 && path._subPaths.size() == 1 && path._subPaths[0]._npoints < 6)
+//            return _subPaths[0].polygonIntersects(path._subPaths[0]);
+
         return bboxIntersects;
     }
     
@@ -238,8 +238,8 @@ struct Mesh {
             auto matches = _quadtree->find(path._llx, path._lly, path._urx, path._ury);
             
             for (auto j : matches)
-                _paths[j].maskOut(path);
-            
+//                if (_paths[j].intersects(path))
+                    _paths[j].maskOut(path);
             _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
         }
     }
