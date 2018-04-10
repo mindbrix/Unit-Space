@@ -72,11 +72,11 @@ struct SubPath {
             ax1 = x1 + x3 - x2 - x2, ay1 = y1 + y3 - y2 - y2;
             flatness = ax0 * ax0 + ay0 * ay0 + ax1 * ax1 + ay1 * ay1;
             
-            area0 = std::abs(x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1)) / 3;
-            area1 = std::abs(x1 * (y2 - y1) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 3;
+            area0 = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)) / 3;
+            area1 = std::abs((x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)) / 3;
+            
             c0 = std::min(limit, std::max(2.f, log2f(area0)));
             c1 = std::min(limit, std::max(2.f, log2f(area1)));
-            
             count = flatness > 1e-3 ? c0 + c1 : 1;
             
             *subdivisions++ = count;
