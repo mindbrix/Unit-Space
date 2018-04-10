@@ -45,27 +45,6 @@ inline bool doLinesIntersect(double ax, double ay, double bx, double by, double 
     return cabc * cabd < 0 && ccda * ccdb < 0;
 }
 
-int filterCollinearPoints(float *dst, float *src, int count, double tolerance) {
-    double x0 = *src++, y0 = *src++, x1 = *src++, y1 = *src++, x2 = 0, y2 = 0, area;
-    float *begin = dst;
-    
-    *dst++ = x0, *dst++ = y0;
-    
-    while (count-- > 2) {
-        x2 = *src++, y2 = *src++;
-        
-        area = x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1);
-        
-        if (std::abs(area) > tolerance) {
-            *dst++ = x1, *dst++ = y1;
-            x0 = x1, y0 = y1;
-        }
-        x1 = x2, y1 = y2;
-    }
-    *dst++ = x2, *dst++ = y2;
-    return (dst - begin) / 2;
-}
-
 float pointsSignedArea(const float *begin, const float *end, size_t stride) {
     double sum = 0.0;
     auto prev = (const float *)((char *)end - stride);
