@@ -313,28 +313,7 @@ using namespace std;
         // Delete
         nsvgDelete(image);
     } else {
-        RGBA8 red(255, 0, 0, 255);
-        RGBA8 green(0, 255, 0, 255);
-        RGBA8 blue(0, 0, 255, 255);
-        RGBA8 black(0, 0, 0, 255);
-        
-        Mesh mesh(self.bounds.size.width, self.bounds.size.height);
-        Vector triangle[] = {
-            { 0, 0 }, { 100, 100 }, { 0, 100 }
-        };
-        
-        Vector lozenge[] = {
-            { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
-        };
-        
-        Path p0(false, red);
-        p0.addContour((float *)triangle, sizeof(triangle) / sizeof(triangle[0]), SubPath::kLine);
-        mesh.addPath(p0);
-        Path p1(false, black);
-        p1.addContour((float *)lozenge, sizeof(lozenge) / sizeof(triangle[0]), SubPath::kCubic);
-        mesh.addPath(p1);
-        mesh.triangulate(_triangles);
-        
+        [self triangulate];
         
 //        Triangles& triangles = _triangles[0];
 //
@@ -355,6 +334,30 @@ using namespace std;
 //        triangles.add(2, 2, 1, 4, 2);
 //        triangles.add(3, 4, 5, 2, 3);
     }
+}
+
+- (void)triangulate {
+    RGBA8 red(255, 0, 0, 255);
+    RGBA8 green(0, 255, 0, 255);
+    RGBA8 blue(0, 0, 255, 255);
+    RGBA8 black(0, 0, 0, 255);
+    
+    Mesh mesh(self.bounds.size.width, self.bounds.size.height);
+    Vector triangle[] = {
+        { 0, 0 }, { 100, 100 }, { 0, 100 }
+    };
+    
+    Vector lozenge[] = {
+        { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
+    };
+    
+    Path p0(false, red);
+    p0.addContour((float *)triangle, sizeof(triangle) / sizeof(triangle[0]), SubPath::kLine);
+    mesh.addPath(p0);
+    Path p1(false, black);
+    p1.addContour((float *)lozenge, sizeof(lozenge) / sizeof(triangle[0]), SubPath::kCubic);
+    mesh.addPath(p1);
+    mesh.triangulate(_triangles);
 }
 
 - (void)update {
