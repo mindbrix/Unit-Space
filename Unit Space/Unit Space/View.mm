@@ -330,7 +330,7 @@ using namespace std;
         Path p0(false, red);
         p0.addContour((float *)triangle, sizeof(triangle) / sizeof(triangle[0]), SubPath::kLine);
         mesh.addPath(p0);
-        Path p1(false, green);
+        Path p1(false, black);
         p1.addContour((float *)lozenge, sizeof(lozenge) / sizeof(triangle[0]), SubPath::kCubic);
         mesh.addPath(p1);
         mesh.triangulate(_triangles);
