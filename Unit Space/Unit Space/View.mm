@@ -313,24 +313,47 @@ using namespace std;
         // Delete
         nsvgDelete(image);
     } else {
-        Triangles& triangles = _triangles[0];
+        RGBA8 red(255, 0, 0, 255);
+        RGBA8 green(0, 255, 0, 255);
+        RGBA8 blue(0, 0, 255, 255);
+        RGBA8 black(0, 0, 0, 255);
         
-        triangles.colors[0] = RGBA8(255, 0, 0, 255);
-        triangles.colors[1] = RGBA8(0, 255, 0, 255);
-        triangles.colors[2] = RGBA8(0, 0, 255, 255);
-        triangles.colors[3] = RGBA8(0, 0, 0, 255);
+        Mesh mesh(self.bounds.size.width, self.bounds.size.height);
+        Vector triangle[] = {
+            { 0, 0 }, { 100, 100 }, { 0, 100 }
+        };
         
-        triangles.points[0] = { 0, 0 };
-        triangles.points[1] = { 100, 0 };
-        triangles.points[2] = { 100, 100 };
-        triangles.points[3] = { 0, 100 };
-        triangles.points[4] = { 200, 0 };
-        triangles.points[5] = { 200, 100 };
+        Vector lozenge[] = {
+            { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
+        };
         
-        triangles.add(0, 0, 1, 2, 0);
-        triangles.add(1, 2, 3, 0, 1);
-        triangles.add(2, 2, 1, 4, 2);
-        triangles.add(3, 4, 5, 2, 3);
+        Path p0(false, red);
+        p0.addContour((float *)triangle, sizeof(triangle) / sizeof(triangle[0]), SubPath::kLine);
+        mesh.addPath(p0);
+        Path p1(false, green);
+        p1.addContour((float *)lozenge, sizeof(lozenge) / sizeof(triangle[0]), SubPath::kCubic);
+        mesh.addPath(p1);
+        mesh.triangulate(_triangles);
+        
+        
+//        Triangles& triangles = _triangles[0];
+//
+//        triangles.colors[0] = red;
+//        triangles.colors[1] = green;
+//        triangles.colors[2] = blue;
+//        triangles.colors[3] = black;
+//
+//        triangles.points[0] = { 0, 0 };
+//        triangles.points[1] = { 100, 0 };
+//        triangles.points[2] = { 100, 100 };
+//        triangles.points[3] = { 0, 100 };
+//        triangles.points[4] = { 200, 0 };
+//        triangles.points[5] = { 200, 100 };
+//
+//        triangles.add(0, 0, 1, 2, 0);
+//        triangles.add(1, 2, 3, 0, 1);
+//        triangles.add(2, 2, 1, 4, 2);
+//        triangles.add(3, 4, 5, 2, 3);
     }
 }
 
