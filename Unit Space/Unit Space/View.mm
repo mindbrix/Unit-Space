@@ -309,25 +309,6 @@ using namespace std;
         nsvgDelete(image);
     } else {
         [self triangulate];
-        
-//        Triangles& triangles = _triangles[0];
-//
-//        triangles.colors[0] = red;
-//        triangles.colors[1] = green;
-//        triangles.colors[2] = blue;
-//        triangles.colors[3] = black;
-//
-//        triangles.points[0] = { 0, 0 };
-//        triangles.points[1] = { 100, 0 };
-//        triangles.points[2] = { 100, 100 };
-//        triangles.points[3] = { 0, 100 };
-//        triangles.points[4] = { 200, 0 };
-//        triangles.points[5] = { 200, 100 };
-//
-//        triangles.add(0, 0, 1, 2, 0);
-//        triangles.add(1, 2, 3, 0, 1);
-//        triangles.add(2, 2, 1, 4, 2);
-//        triangles.add(3, 4, 5, 2, 3);
     }
 }
 
@@ -337,7 +318,6 @@ using namespace std;
     RGBA8 blue(0, 0, 255, 255);
     RGBA8 black(0, 0, 0, 255);
     
-    Mesh mesh(self.bounds.size.width, self.bounds.size.height);
     Vector triangle[] = {
         { 0, 0 }, { 100, 100 }, { 0, 100 }
     };
@@ -348,9 +328,11 @@ using namespace std;
     
     Path p0(false, red);
     p0.addContour((float *)triangle, sizeof(triangle) / sizeof(triangle[0]), SubPath::kLine);
-    mesh.addPath(p0);
     Path p1(false, black);
     p1.addContour((float *)lozenge, sizeof(lozenge) / sizeof(triangle[0]), SubPath::kCubic);
+    
+    Mesh mesh(self.bounds.size.width, self.bounds.size.height);
+    mesh.addPath(p0);
     mesh.addPath(p1);
     mesh.triangulate(_triangles);
 }
