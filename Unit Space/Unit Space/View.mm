@@ -100,17 +100,31 @@ using namespace std;
                 if ((dragged = [self mouseDragCTM:event CTM:_quadratics.ctms[j]]))
                     break;
         } else if (_flags & 8)  {
-            Triangles& triangles = _triangles[0];
-            for (int j = 0; j < triangles.count; j++) {
-                int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
-                Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
-                AffineTransform ctm = { p1.x - p0.x, p1.y - p0.y, p2.x - p1.x, p2.y - p1.y, p0.x, p0.y };
-                if ((dragged = [self mouseDragCTM:event CTM:ctm])) {
-                    triangles.points[i0] = { ctm.tx, ctm.ty };
-                    triangles.points[i1] = { ctm.tx + ctm.a, ctm.ty + ctm.b };
-                    triangles.points[i2] = { ctm.tx + ctm.a + ctm.c, ctm.ty + ctm.b + ctm.d };
-                    break;
+            if (_svgData) {
+                Triangles& triangles = _triangles[0];
+                for (int j = 0; j < triangles.count; j++) {
+                    int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
+                    Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
+                    AffineTransform ctm = { p1.x - p0.x, p1.y - p0.y, p2.x - p1.x, p2.y - p1.y, p0.x, p0.y };
+                    if ((dragged = [self mouseDragCTM:event CTM:ctm])) {
+                        triangles.points[i0] = { ctm.tx, ctm.ty };
+                        triangles.points[i1] = { ctm.tx + ctm.a, ctm.ty + ctm.b };
+                        triangles.points[i2] = { ctm.tx + ctm.a + ctm.c, ctm.ty + ctm.b + ctm.d };
+                        break;
+                    }
                 }
+            } else {
+                for (int j = 0; j < _triangle.size(); j++)
+                    if ((dragged = [self mouseDragVector:event CTM:_triangle[j]]))
+                        break;
+                
+                for (int j = 0; j < _lozenge.size() && !dragged; j++)
+                    if ((dragged = [self mouseDragVector:event CTM:_lozenge[j]]))
+                        break;
+                
+                if (dragged)
+                    [self triangulate];
+                        
             }
         }
     }
@@ -144,6 +158,21 @@ using namespace std;
         return NO;
     
     return YES;
+}
+
+- (BOOL)mouseDragVector:(NSEvent *)event CTM:(Vector &)v {
+    float d0 = [self deviceDistance:event userX:v.x userY:v.y];
+    
+    AffineTransform inv = AffineTransformInvert(self.viewCTM);
+    float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
+    float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
+    
+    if (d0 < kLargePointDeviceRadius) {
+        v.x += ux;
+        v.y += uy;
+        return YES;
+    }
+    return NO;
 }
 
 - (void)mouseMoved:(NSEvent *)event {
@@ -310,6 +339,14 @@ using namespace std;
         // Delete
         nsvgDelete(image);
     } else {
+        _triangle = {
+            { 0, 0 }, { 100, 100 }, { 0, 100 }
+        };
+        
+        _lozenge = {
+            { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
+        };
+
         [self triangulate];
     }
 }
@@ -319,14 +356,6 @@ using namespace std;
     RGBA8 green(0, 255, 0, 255);
     RGBA8 blue(0, 0, 255, 255);
     RGBA8 black(0, 0, 0, 255);
-    
-    _triangle = {
-        { 0, 0 }, { 100, 100 }, { 0, 100 }
-    };
-    
-    _lozenge = {
-        { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
-    };
     
     Path p0(false, red);
     p0.addContour((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
@@ -466,14 +495,22 @@ using namespace std;
             Circles& circles = call.circles;
             
             int i = 0;
-            Triangles& triangles = _triangles[0];
-            for (int j = 0; j < triangles.count && j < kCirclesSize / 3; j++) {
-                int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
-                Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
+            if (_svgData) {
+                Triangles& triangles = _triangles[0];
+                for (int j = 0; j < triangles.count && j < kCirclesSize / 3; j++) {
+                    int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
+                    Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
+                    
+                    circles.circles[i++] = { p0.x, p0.y, largeRadius };
+                    circles.circles[i++] = { p1.x, p1.y, radius };
+                    circles.circles[i++] = { p2.x, p2.y, radius };
+                }
+            } else {
+                for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
+                    circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };
                 
-                circles.circles[i++] = { p0.x, p0.y, largeRadius };
-                circles.circles[i++] = { p1.x, p1.y, radius };
-                circles.circles[i++] = { p2.x, p2.y, radius };
+                for (int j = 0; j < _lozenge.size() && j < kCirclesSize / 3; j++)
+                    circles.circles[i++] = { _lozenge[j].x, _lozenge[j].y, radius };
             }
             circles.count = i;
         }
