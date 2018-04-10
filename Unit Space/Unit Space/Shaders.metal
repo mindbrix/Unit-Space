@@ -346,13 +346,14 @@ fragment float4 quadratic_fragment_main(UnitVertex vert [[stage_in]], constant S
 {
 //    return quadraticColor(vert.devicePoint, quadratics.ctms[0]);
     
+    int op = 0;
     float d = vert.sign0 * unitQuadraticDistanceChainRule(vert.unitPoint0, vert.flags & 1);
     if (vert.count > 1)
-        d = distanceBoolean(d, vert.sign1 * unitQuadraticDistanceChainRule(vert.unitPoint1, vert.flags & 2), 2);
+        d = distanceBoolean(d, vert.sign1 * unitQuadraticDistanceChainRule(vert.unitPoint1, vert.flags & 2), op);
     if (vert.count > 2)
-        d = distanceBoolean(d, vert.sign2 * unitQuadraticDistanceChainRule(vert.unitPoint2, vert.flags & 4), 2);
+        d = distanceBoolean(d, vert.sign2 * unitQuadraticDistanceChainRule(vert.unitPoint2, vert.flags & 4), op);
     if (vert.count > 3)
-        d = distanceBoolean(d, vert.sign3 * unitQuadraticDistanceChainRule(vert.unitPoint3, vert.flags & 8), 2);
+        d = distanceBoolean(d, vert.sign3 * unitQuadraticDistanceChainRule(vert.unitPoint3, vert.flags & 8), op);
     
     float alpha = saturate(d + 0.5);
     
