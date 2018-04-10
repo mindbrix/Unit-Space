@@ -232,12 +232,13 @@ struct Mesh {
         }
     }
     
-    void triangulate(vector<Triangles>& vtriangles) {
+    int triangulate(vector<Triangles>& vtriangles) {
         maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         
         int t = 0, k = 0, pi = 0, c = 0;
+        vtriangles.resize(1);
         Triangles* triangles = & vtriangles[t];
         
         for (Path& p : _paths) {
@@ -269,6 +270,11 @@ struct Mesh {
             }
         }
         tessDeleteTess(tess);
+        
+        int count = 0;
+        for (Triangles& triangles : vtriangles)
+            count += triangles.count;
+        return count;
     }
     
     bool writePolygon(Triangles *triangles, float *points, int& pi, int& k, int& c, RGBA8 color, const TESSindex *polygon, TESSindex *indices) {

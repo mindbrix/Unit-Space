@@ -269,7 +269,6 @@ using namespace std;
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
-    _triangles.resize(1);
     // Load
     NSMutableData *data = nil;
     
@@ -305,10 +304,6 @@ using namespace std;
             }
         }
         mesh.triangulate(_triangles);
-        
-        int count = 0;
-        for (Triangles& triangles : _triangles)
-            count += triangles.count;
         
         // Delete
         nsvgDelete(image);
