@@ -122,7 +122,7 @@ struct Path {
     Path(bool evenOdd, RGBA8 color) {
         _color = color;
         _evenOdd = evenOdd;
-        _outerIndex = INT_MAX;
+        _outerIndex = 0;
     }
     
     void addContour(float *points, int npoints, SubPath::Type type) {
@@ -162,14 +162,26 @@ struct Path {
             tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, maskIsPositive);
         
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeSubpaths(tess);
+            writeTessSubpaths(tess);
         
         tessDeleteTess(tess);
     }
     
+    void setBounds() {
+        _llx = FLT_MAX, _lly = FLT_MAX, _urx = -FLT_MAX, _ury = -FLT_MAX;
+        for (SubPath& subPath : _subPaths) {
+            _llx = std::min(_llx, subPath._llx);
+            _lly = std::min(_lly, subPath._lly);
+            _urx = std::max(_urx, subPath._urx);
+            _ury = std::max(_ury, subPath._ury);
+        }
+    }
+    
     void writeBoundaryContours() {
-        if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0]))))
+        if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0])))) {
+            setBounds();
             return;
+        }
         
         TESStesselator *tess = tessNewTess(NULL);
         for (SubPath& subPath : _subPaths)
@@ -177,11 +189,11 @@ struct Path {
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, false);
         
         if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeSubpaths(tess);
+            writeTessSubpaths(tess);
         tessDeleteTess(tess);
     }
     
-    void writeSubpaths(TESStesselator *tess) {
+    void writeTessSubpaths(TESStesselator *tess) {
         _subPaths.resize(0);
         
         const float *verts = tessGetVertices(tess);
@@ -196,12 +208,14 @@ struct Path {
                 _subPaths.emplace_back(points, npoints, SubPath::kLine);
         }
         _outerIndex = findOuterIndex();
+        setBounds();
     }
     
     RGBA8                       _color;
     bool                        _evenOdd;
     size_t                      _outerIndex;
     vector<SubPath>             _subPaths;
+    float                       _llx, _lly, _urx, _ury;
 };
 
 struct Mesh {
@@ -214,21 +228,19 @@ struct Mesh {
         if (path._subPaths.size() == 0)
             return;
         
-        path._outerIndex = path.findOuterIndex();
         _paths.emplace_back(path);
     }
     
     void maskPaths() {
         for (size_t i = 0; i < _paths.size(); i++) {
             Path& path = _paths[i];
-            SubPath& outer = path._subPaths[path._outerIndex];
             
-            auto matches = _quadtree->find(outer._llx, outer._lly, outer._urx, outer._ury);
+            auto matches = _quadtree->find(path._llx, path._lly, path._urx, path._ury);
             
             for (auto j : matches)
                 _paths[j].maskOut(path);
             
-            _quadtree->add(i, outer._llx, outer._lly, outer._urx, outer._ury);
+            _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
         }
     }
     
