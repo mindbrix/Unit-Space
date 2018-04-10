@@ -16,7 +16,13 @@ struct Arc { float x, y, r, t0, t1; };
 struct Circle { float x, y, r; };
 
 struct RGBA { float r, g, b, a; };
-struct RGBA8 { unsigned char r, g, b, a; };
+
+struct RGBA8 {
+    RGBA8() {}
+    RGBA8(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
+    
+    unsigned char r, g, b, a;
+};
 
 struct AffineTransform { float a, b, c, d, tx, ty; };
 
@@ -82,6 +88,7 @@ struct Triangles {
     Vector              points[kTrianglesPointsSize];
     RGBA8               colors[kTrianglesColorsSize];
     
+    Triangles() {}
     bool add(int i, int _i0, int _i1, int _i2, int _c0) {
         if (i >= kTrianglesIndexSize)
             return false;
@@ -116,6 +123,7 @@ enum CallType : unsigned int {
 };
 
 struct Call {
+    Call() {}
     CallType    type;
     State       state;
     union {

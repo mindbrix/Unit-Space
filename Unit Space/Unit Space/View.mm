@@ -292,7 +292,7 @@ using namespace std;
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
                 limit--;
                 
-                RGBA8 color = { (unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24) };
+                RGBA8 color = RGBA8((unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24));
                 Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                 
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
@@ -315,10 +315,10 @@ using namespace std;
     } else {
         Triangles& triangles = _triangles[0];
         
-        triangles.colors[0] = { 255, 0, 0, 255 };
-        triangles.colors[1] = { 0, 255, 0, 255 };
-        triangles.colors[2] = { 0, 0, 255, 255 };
-        triangles.colors[3] = { 0, 0, 0, 255 };
+        triangles.colors[0] = RGBA8(255, 0, 0, 255);
+        triangles.colors[1] = RGBA8(0, 255, 0, 255);
+        triangles.colors[2] = RGBA8(0, 0, 255, 255);
+        triangles.colors[3] = RGBA8(0, 0, 0, 255);
         
         triangles.points[0] = { 0, 0 };
         triangles.points[1] = { 100, 0 };
