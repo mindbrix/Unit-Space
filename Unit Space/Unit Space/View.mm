@@ -40,6 +40,8 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) Quadratics quadratics;
 @property(nonatomic) vector<Triangles> triangles;
+@property(nonatomic) vector<Vector> triangle;
+@property(nonatomic) vector<Vector> lozenge;
 
 @end
 
@@ -318,18 +320,18 @@ using namespace std;
     RGBA8 blue(0, 0, 255, 255);
     RGBA8 black(0, 0, 0, 255);
     
-    Vector triangle[] = {
+    _triangle = {
         { 0, 0 }, { 100, 100 }, { 0, 100 }
     };
     
-    Vector lozenge[] = {
+    _lozenge = {
         { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
     };
     
     Path p0(false, red);
-    p0.addContour((float *)triangle, sizeof(triangle) / sizeof(triangle[0]), SubPath::kLine);
+    p0.addContour((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
     Path p1(false, black);
-    p1.addContour((float *)lozenge, sizeof(lozenge) / sizeof(triangle[0]), SubPath::kCubic);
+    p1.addContour((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
     
     Mesh mesh(self.bounds.size.width, self.bounds.size.height);
     mesh.addPath(p0);
