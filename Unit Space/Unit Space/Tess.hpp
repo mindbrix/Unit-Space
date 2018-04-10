@@ -63,7 +63,7 @@ struct SubPath {
     int countCubicSubdivisions(const float *src, int npoints, int *subdivisions) {
         int total = 0, c0, c1, count;
         float x0, y0, x1, y1, x2, y2, x3, y3;
-        float ax0, ay0, ax1, ay1, area0, area1, flatness, limit = FLT_MAX;
+        float ax0, ay0, ax1, ay1, area0, area1, flatness;
         
         for (int i = 0; i < npoints - 1; i += 3) {
             const float *p = src + i * 2;
@@ -75,8 +75,8 @@ struct SubPath {
             area0 = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)) / 3;
             area1 = std::abs((x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)) / 3;
             
-            c0 = std::min(limit, std::max(2.f, log2f(area0)));
-            c1 = std::min(limit, std::max(2.f, log2f(area1)));
+            c0 = std::max(2.f, log2f(area0));
+            c1 = std::max(2.f, log2f(area1));
             count = flatness > 1e-3 ? c0 + c1 : 1;
             
             *subdivisions++ = count;
