@@ -8,6 +8,7 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
+#import "delaunay.h"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 6;
@@ -239,18 +240,81 @@ struct Mesh {
             
             for (auto j : matches)
 //                if (_paths[j].intersects(path))
-                    _paths[j].maskOut(path);
+                _paths[j].maskOut(path);
             _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
         }
     }
     
+    float RandomFloat(float a, float b) {
+        float random = ((float) rand()) / (float) RAND_MAX;
+        float diff = b - a;
+        float r = random * diff;
+        return a + r;
+    }
+
+    int triangulateDelaunay(vector<Triangles>& vtriangles) {
+        
+        std::vector<Vector2<float>> points;
+        
+        for (Path& p : _paths) {
+            for (SubPath& s : p._subPaths) {
+                const float *src = s._points.get();
+
+                for (int i = 0; i < s._npoints; i++) {
+                    const float *p = src + i * 2;
+                    points.push_back(Vector2<float>(p[0], p[1]));
+                }
+            }
+        }
+
+        /*
+        srand (time(NULL));
+        float numberPoints = 10000;//roundf(RandomFloat(40, 100000));
+        std::cout << "Generating " << numberPoints << " random points" << std::endl;
+        
+        for(int i = 0; i < numberPoints; i++) {
+            points.push_back(Vector2<float>(RandomFloat(0, 100), RandomFloat(0, 100)));
+        }
+        */
+        
+        Delaunay<float> triangulation;
+        std::vector<Triangle<float>> triangles = triangulation.triangulate(points);
+        std::cout << triangles.size() << " triangles generated\n";
+        std::vector<Edge<float>> edges = triangulation.getEdges();
+        std::cout << " ========= ";
+        
+        Triangles* triangles0 = & vtriangles[0];
+        triangles0->colors[0] = RGBA8(255, 0, 0, 255);
+        
+        int ti = 0, pi = 0;
+        for(auto &t : triangles) {
+            if (pi > kTrianglesPointsSize - 3) {
+                ti = 0, pi = 0;
+                vtriangles.resize(vtriangles.size() + 1);
+                triangles0 = & vtriangles.back();
+                triangles0->colors[0] = RGBA8(255, 0, 0, 255);
+            }
+            
+            triangles0->points[pi] = { t.p1.x, t.p1.y };
+            triangles0->points[pi + 1] = { t.p2.x, t.p2.y };
+            triangles0->points[pi + 2] = { t.p3.x, t.p3.y };
+            
+            triangles0->add(ti, pi + 0, pi + 1, pi + 2, 0);
+            ti++, pi += 3;
+        }
+        return 0;
+    }
+    
     int triangulate(vector<Triangles>& vtriangles) {
+        vtriangles.resize(1);
+        
+//        return triangulateDelaunay(vtriangles);
+        
         maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         
         int t = 0, k = 0, pi = 0, c = 0;
-        vtriangles.resize(1);
         Triangles* triangles = & vtriangles[t];
         
         for (Path& p : _paths) {
