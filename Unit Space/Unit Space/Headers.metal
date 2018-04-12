@@ -15,6 +15,7 @@ float fragmentWinding(float2 p0, float2 p1);
 float cirleStrokeDistance(float2 unitPoint, float w);
 float ellipseDistance(float2 unitPoint);
 float ellipseStrokeDistance(float2 unitPoint, float w);
+float det(float2 a, float2 b);
 float implicitDistance(float px, float py, float x0, float y0, float x1, float y1, float x2, float y2);
 float4 quadraticColor(float2 devicePoint, AffineTransform op);
 float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2);
