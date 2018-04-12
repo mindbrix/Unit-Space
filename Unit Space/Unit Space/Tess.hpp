@@ -10,6 +10,8 @@
 #import "VGQuadTree.hpp"
 #import "delaunay.h"
 
+#import "delaunay.hpp"
+
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 6;
 constexpr int kPointStride = 2 * sizeof(float);
@@ -252,7 +254,51 @@ struct Mesh {
         return a + r;
     }
 
+    int triangulateDelaunayC(vector<Triangles>& vtriangles) {
+        
+        std::vector<Vector2<double>> points;
+        
+        for (Path& p : _paths) {
+            for (SubPath& s : p._subPaths) {
+                const float *src = s._points.get();
+                
+                for (int i = 0; i < s._npoints - 1; i++) {
+                    const float *p = src + i * 2;
+                    points.push_back(Vector2<double>(p[0], p[1]));
+                }
+            }
+        }
+        points.push_back(Vector2<double>(FLT_MAX, FLT_MAX));
+        points.push_back(Vector2<double>(FLT_MAX, FLT_MAX));
+        points.push_back(Vector2<double>(FLT_MAX, FLT_MAX));
+        
+        
+        std::vector<ITRIANGLE> triangles(points.size() * 3);
+        
+        int ntri = 0;
+        int status = Triangulate((int)points.size() - 3, (XYZ *)& points[0], &triangles[0], & ntri);
+        
+        triangles.resize(ntri);
+        
+        Triangles* triangles0 = & vtriangles[0];
+        triangles0->colors[0] = RGBA8(255, 0, 0, 255);
+        
+        int ti = 0;
+        for(auto &t : triangles) {
+            if (t.p1 < kTrianglesPointsSize && t.p2 < kTrianglesPointsSize && t.p3 < kTrianglesPointsSize) {
+                triangles0->points[t.p1] = { (float)points[t.p1].x, (float)points[t.p1].y };
+                triangles0->points[t.p2] = { (float)points[t.p2].x, (float)points[t.p2].y };
+                triangles0->points[t.p3] = { (float)points[t.p3].x, (float)points[t.p3].y };
+                
+                triangles0->add(ti++, t.p3, t.p2, t.p1, 0);
+            }
+        }
+        return status;
+    }
+    
     int triangulateDelaunay(vector<Triangles>& vtriangles) {
+        
+        return triangulateDelaunayC(vtriangles);
         
         std::vector<Vector2<float>> points;
         
@@ -260,7 +306,7 @@ struct Mesh {
             for (SubPath& s : p._subPaths) {
                 const float *src = s._points.get();
 
-                for (int i = 0; i < s._npoints; i++) {
+                for (int i = 0; i < s._npoints - 1; i++) {
                     const float *p = src + i * 2;
                     points.push_back(Vector2<float>(p[0], p[1]));
                 }
@@ -308,7 +354,7 @@ struct Mesh {
     int triangulate(vector<Triangles>& vtriangles) {
         vtriangles.resize(1);
         
-//        return triangulateDelaunay(vtriangles);
+        return triangulateDelaunay(vtriangles);
         
         maskPaths();
         
