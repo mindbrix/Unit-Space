@@ -271,47 +271,50 @@ struct Mesh {
         points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
         points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
         
-        std::vector<ITRIANGLE> triangles(points.size() * 3);
+        std::vector<ITRIANGLE> triangles(points.size() * 4);
         
         int ntri = 0;
         int status = Triangulate((int)points.size() - 3, (XYZ *)& points[0], &triangles[0], & ntri);
         
-        triangles.resize(ntri);
-        
-        Triangles* triangles0 = & vtriangles[0];
-        RGBA8 red(255, 0, 0, 255);
-        triangles0->colors[0] = red;
-        RGBA8 color = red;
-        
-        int npoints = (int)points.size() - 3;
-        TESSindex polygon[kPolySize] = { TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF };
-        TESSindex indices[npoints];
-        memset(indices, -1, npoints * sizeof(TESSindex));
-        
-        int ti = 0, k = 0, pi = 0, c = 0;
-        float *pts = & points[0].x;
-        
-        for(auto &t : triangles) {
-            polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
+        if (status == 0) {
+            triangles.resize(ntri);
             
-            if (!writePolygon(triangles0, pts, pi, k, c, color, polygon, indices)) {
-                vtriangles.resize(++ti + 1);
-                triangles0 = & vtriangles[ti];
-                k = 0, pi = 0, c = 0;
-                memset(indices, INT_MAX, npoints * sizeof(TESSindex));
+            Triangles* triangles0 = & vtriangles[0];
+            RGBA8 red(255, 0, 0, 255);
+            triangles0->colors[0] = red;
+            RGBA8 color = red;
+            
+            int npoints = (int)points.size() - 3;
+            TESSindex polygon[kPolySize] = { TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF };
+            TESSindex indices[ (int)points.size()];
+            memset(indices, -1, npoints * sizeof(TESSindex));
+            
+            int ti = 0, k = 0, pi = 0, c = 0;
+            float *pts = & points[0].x;
+            
+            for(auto &t : triangles) {
+                polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
                 
-                writePolygon(triangles0, pts, pi, k, c, color, polygon, indices);
+                if (!writePolygon(triangles0, pts, pi, k, c, color, polygon, indices)) {
+                    vtriangles.resize(++ti + 1);
+                    triangles0 = & vtriangles[ti];
+                    k = 0, pi = 0, c = 0;
+                    memset(indices, INT_MAX, npoints * sizeof(TESSindex));
+                    
+                    writePolygon(triangles0, pts, pi, k, c, color, polygon, indices);
+                }
             }
         }
+        
         return status;
     }
     
     int triangulate(vector<Triangles>& vtriangles) {
+//        maskPaths();
+        
         vtriangles.resize(1);
         
         return triangulateDelaunayC(vtriangles);
-        
-        maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         
