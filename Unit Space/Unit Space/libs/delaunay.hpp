@@ -216,10 +216,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
             x3 = pxyz[v[j].p3].x;
             y3 = pxyz[v[j].p3].y;
             
-//            float area = TriangleArea(x1,y1,x2,y2,x3,y3);
-//            if (area > 0) {
-//                inside = CircumCircle(xp,yp,x3,y3,x2,y2,x1,y1,&xc,&yc,&r);
-//            }
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             if (xc < xp && ((xp-xc)*(xp-xc)) > r)
                 complete[j] = TRUE;
@@ -232,12 +228,17 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
                         goto skip;
                     }
                 }
-                edges[nedge+0].p1 = v[j].p1;
-                edges[nedge+0].p2 = v[j].p2;
-                edges[nedge+1].p1 = v[j].p2;
-                edges[nedge+1].p2 = v[j].p3;
-                edges[nedge+2].p1 = v[j].p3;
-                edges[nedge+2].p2 = v[j].p1;
+                int i1 = v[j].p1, i2 = v[j].p2, i3 = v[j].p3;
+                float area = TriangleArea(x1,y1,x2,y2,x3,y3);
+                if (area > 0)
+                    std::swap(i1, i3);
+
+                edges[nedge+0].p1 = i1;
+                edges[nedge+0].p2 = i2;
+                edges[nedge+1].p1 = i2;
+                edges[nedge+1].p2 = i3;
+                edges[nedge+2].p1 = i3;
+                edges[nedge+2].p2 = i1;
                 nedge += 3;
                 v[j] = v[(*ntri)-1];
                 complete[j] = complete[(*ntri)-1];
