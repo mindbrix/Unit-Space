@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #define EPSILON (1e-12)
+#define kMinDistance 1e-1f
 
 typedef struct {
     int p1,p2,p3;
@@ -22,9 +23,15 @@ typedef struct {
     int p1,p2;
 } IEDGE;
 typedef struct {
-    float x,y;//,z;
+    float x,y;
 } XYZ;
 
+
+float TriangleArea(float x1, float y1, float x2, float y2, float x3, float y3) {
+    float v0x = x2 - x1, v0y = y2 - y1;
+    float v1x = x3 - x2, v1y = y3 - y2;
+    return v0x * v1y - v0y * v1x;
+}
 
 /*
  Return TRUE if a point (xp,yp) is inside the circumcircle made up
@@ -168,13 +175,10 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
      */
     pxyz[nv+0].x = xmid - 20 * dmax;
     pxyz[nv+0].y = ymid - dmax;
-//    pxyz[nv+0].z = 0.0;
     pxyz[nv+1].x = xmid;
     pxyz[nv+1].y = ymid + 20 * dmax;
-//    pxyz[nv+1].z = 0.0;
     pxyz[nv+2].x = xmid + 20 * dmax;
     pxyz[nv+2].y = ymid - dmax;
-//    pxyz[nv+2].z = 0.0;
     v[0].p1 = nv;
     v[0].p2 = nv+1;
     v[0].p3 = nv+2;
@@ -187,6 +191,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
      */
     for (i=0;i<nv;i++) {
         
+//        if (std::abs(xp - pxyz[i].x) < kMinDistance && std::abs(yp - pxyz[i].y) < kMinDistance)
+//            continue;
         if (xp == pxyz[i].x && yp == pxyz[i].y)
             continue;
         
@@ -209,6 +215,11 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
             y2 = pxyz[v[j].p2].y;
             x3 = pxyz[v[j].p3].x;
             y3 = pxyz[v[j].p3].y;
+            
+//            float area = TriangleArea(x1,y1,x2,y2,x3,y3);
+//            if (area > 0) {
+//                inside = CircumCircle(xp,yp,x3,y3,x2,y2,x1,y1,&xc,&yc,&r);
+//            }
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             if (xc < xp && ((xp-xc)*(xp-xc)) > r)
                 complete[j] = TRUE;
@@ -270,11 +281,28 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
                 status = 4;
                 goto skip;
             }
-            v[*ntri].p1 = edges[j].p1;
-            v[*ntri].p2 = edges[j].p2;
-            v[*ntri].p3 = i;
-            complete[*ntri] = FALSE;
-            (*ntri)++;
+            
+            float area = -1;
+            int i1 = edges[j].p1, i2 = edges[j].p2, i3 = i;
+//            x1 = pxyz[i1].x, y1 = pxyz[i1].y;
+//            x2 = pxyz[i2].x, y2 = pxyz[i2].y;
+//            x3 = pxyz[i3].x, y3 = pxyz[i3].y;
+//            
+//            area = TriangleArea(x1,y1,x2,y2,x3,y3);
+//            if (area > 0)
+//                std::swap(i1, i3);
+            
+            v[*ntri].p1 = i1;
+            v[*ntri].p2 = i2;
+            v[*ntri].p3 = i3;
+            
+            if (area != 0) {
+                complete[*ntri] = FALSE;
+                (*ntri)++;
+            } else {
+                area = area;
+            }
+            
         }
     }
     
