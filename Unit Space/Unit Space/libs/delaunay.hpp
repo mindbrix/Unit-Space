@@ -22,7 +22,7 @@ typedef struct {
     int p1,p2;
 } IEDGE;
 typedef struct {
-    double x,y;//,z;
+    float x,y;//,z;
 } XYZ;
 
 

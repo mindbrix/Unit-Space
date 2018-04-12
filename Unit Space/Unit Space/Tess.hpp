@@ -255,8 +255,7 @@ struct Mesh {
     }
 
     int triangulateDelaunayC(vector<Triangles>& vtriangles) {
-        
-        std::vector<Vector2<double>> points;
+        std::vector<Vector2<float>> points;
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths) {
@@ -264,14 +263,13 @@ struct Mesh {
                 
                 for (int i = 0; i < s._npoints - 1; i++) {
                     const float *p = src + i * 2;
-                    points.push_back(Vector2<double>(p[0], p[1]));
+                    points.push_back(Vector2<float>(p[0], p[1]));
                 }
             }
         }
-        points.push_back(Vector2<double>(FLT_MAX, FLT_MAX));
-        points.push_back(Vector2<double>(FLT_MAX, FLT_MAX));
-        points.push_back(Vector2<double>(FLT_MAX, FLT_MAX));
-        
+        points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
+        points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
+        points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
         
         std::vector<ITRIANGLE> triangles(points.size() * 3);
         
