@@ -279,16 +279,28 @@ struct Mesh {
         triangles.resize(ntri);
         
         Triangles* triangles0 = & vtriangles[0];
-        triangles0->colors[0] = RGBA8(255, 0, 0, 255);
+        RGBA8 red(255, 0, 0, 255);
+        triangles0->colors[0] = red;
+        RGBA8 color = red;
         
-        int ti = 0;
+        int npoints = (int)points.size() - 3;
+        TESSindex polygon[kPolySize] = { TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF };
+        TESSindex indices[npoints];
+        memset(indices, -1, npoints * sizeof(TESSindex));
+        
+        int ti = 0, k = 0, pi = 0, c = 0;
+        float *pts = & points[0].x;
+        
         for(auto &t : triangles) {
-            if (t.p1 < kTrianglesPointsSize && t.p2 < kTrianglesPointsSize && t.p3 < kTrianglesPointsSize) {
-                triangles0->points[t.p1] = { (float)points[t.p1].x, (float)points[t.p1].y };
-                triangles0->points[t.p2] = { (float)points[t.p2].x, (float)points[t.p2].y };
-                triangles0->points[t.p3] = { (float)points[t.p3].x, (float)points[t.p3].y };
+            polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
+            
+            if (!writePolygon(triangles0, pts, pi, k, c, color, polygon, indices)) {
+                vtriangles.resize(++ti + 1);
+                triangles0 = & vtriangles[ti];
+                k = 0, pi = 0, c = 0;
+                memset(indices, INT_MAX, npoints * sizeof(TESSindex));
                 
-                triangles0->add(ti++, t.p3, t.p2, t.p1, 0);
+                writePolygon(triangles0, pts, pi, k, c, color, polygon, indices);
             }
         }
         return status;
