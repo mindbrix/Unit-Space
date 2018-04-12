@@ -181,10 +181,14 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
     complete[0] = FALSE;
     *ntri = 1;
     
+    xp = yp = FLT_MAX;
     /*
      Include each point one at a time into the existing mesh
      */
     for (i=0;i<nv;i++) {
+        
+        if (xp == pxyz[i].x && yp == pxyz[i].y)
+            continue;
         
         xp = pxyz[i].x;
         yp = pxyz[i].y;
