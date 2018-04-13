@@ -215,11 +215,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
             y2 = pxyz[v[j].p2].y;
             x3 = pxyz[v[j].p3].x;
             y3 = pxyz[v[j].p3].y;
+            float area = TriangleArea(x1,y1,x2,y2,x3,y3);
             
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             if (xc < xp && ((xp-xc)*(xp-xc)) > r)
                 complete[j] = TRUE;
-            if (inside) {
+            if (inside && area <= 0) {
                 /* Check that we haven't exceeded the edge list size */
                 if (nedge+3 >= emax) {
                     emax += 100;
