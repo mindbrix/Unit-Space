@@ -258,7 +258,7 @@ struct Mesh {
             for (SubPath& s : p._subPaths) {
                 float *src = s._points.get(), *end = src + (s._npoints - 1) * 2;
                 while (src != end)
-                    dst->x = *src++, dst++->y = *src++;
+                    dst->x = *src++, dst->y = *src++, dst++->i = (int)(&p - &_paths[0]);
             }
         
         std::vector<ITRIANGLE> triangles(pts_size * 4);
@@ -270,7 +270,7 @@ struct Mesh {
             triangles.resize(ntri);
             
             Triangles* triangles0 = & vtriangles[0];
-            RGBA8 red(255, 0, 0, 255);
+            RGBA8 red(255, 0, 0, 255), white(255, 255, 255, 255);
             triangles0->colors[0] = red;
             RGBA8 color = red;
             
@@ -280,18 +280,28 @@ struct Mesh {
             memset(indices, -1, npoints * sizeof(TESSindex));
             
             int ti = 0, k = 0, pi = 0, c = 0;
-            float *pts = (float *)points.get();
+            XYZ *pts = points.get();
+            int ic, i0, i1, i2;
             
             for(auto &t : triangles) {
                 polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
                 
-                if (!writePolygon(triangles0, pts, sizeof(XYZ), pi, k, c, color, polygon, indices)) {
+                i0 = pts[t.p1].i, i1 = pts[t.p2].i, i2 = pts[t.p3].i;
+                ic = -1;
+                if (i0 == i1 || i1 == i2)
+                    ic = i1;
+                if (i0 == i2)
+                    ic = i0;
+                    
+                color = ic < 0 ? white : _paths[ic]._color;
+                
+                if (!writePolygon(triangles0, (float *)pts, sizeof(XYZ), pi, k, c, color, polygon, indices)) {
                     vtriangles.resize(++ti + 1);
                     triangles0 = & vtriangles[ti];
                     k = 0, pi = 0, c = 0;
                     memset(indices, INT_MAX, npoints * sizeof(TESSindex));
                     
-                    writePolygon(triangles0, pts, sizeof(XYZ), pi, k, c, color, polygon, indices);
+                    writePolygon(triangles0, (float *)pts, sizeof(XYZ), pi, k, c, color, polygon, indices);
                 }
             }
         }
