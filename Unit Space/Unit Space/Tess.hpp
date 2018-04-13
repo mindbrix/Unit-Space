@@ -279,7 +279,7 @@ struct Mesh {
             
             int npoints = (int)points.size() - 3;
             TESSindex polygon[kPolySize] = { TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF };
-            TESSindex indices[ (int)points.size()];
+            TESSindex indices[(int)points.size()];
             memset(indices, -1, npoints * sizeof(TESSindex));
             
             int ti = 0, k = 0, pi = 0, c = 0;

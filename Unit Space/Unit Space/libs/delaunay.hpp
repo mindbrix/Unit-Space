@@ -13,7 +13,7 @@
 
 #include <stdlib.h>
 
-#define EPSILON (1e-12)
+#define EPSILON (1e-6)
 #define kMinDistance 1e-1f
 
 typedef struct {
@@ -231,7 +231,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
                 int i1 = v[j].p1, i2 = v[j].p2, i3 = v[j].p3;
                 float area = TriangleArea(x1,y1,x2,y2,x3,y3);
                 if (area > 0)
-                    std::swap(i1, i3);
+                    goto bail;
+//                    std::swap(i1, i3);
 
                 edges[nedge+0].p1 = i1;
                 edges[nedge+0].p2 = i2;
@@ -311,6 +312,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
      Remove triangles with supertriangle vertices
      These are triangles which have a vertex number greater than nv
      */
+bail:
     for (i=0;i<(*ntri);i++) {
         if (v[i].p1 >= nv || v[i].p2 >= nv || v[i].p3 >= nv) {
             v[i] = v[(*ntri)-1];
