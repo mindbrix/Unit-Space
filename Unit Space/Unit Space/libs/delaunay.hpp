@@ -25,7 +25,9 @@ typedef struct {
     float x,y;
     int i;
 } XYZ;
-
+typedef struct {
+    double x,y;
+} POINT;
 
 double TriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
     double v0x = x2 - x1, v0y = y2 - y1;
@@ -120,7 +122,8 @@ int XYZCompare(const void *v1,const void *v2)
 int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
-    
+    POINT *centres = NULL, centre;
+    size_t ci;
     int *complete = NULL;
     IEDGE *edges = NULL;
     int nedge = 0;
@@ -139,6 +142,11 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     trimax = 4 * nv;
     if ((complete = (int *)malloc(trimax*sizeof(int))) == NULL) {
         status = 1;
+        goto skip;
+    }
+    
+    if ((centres = (POINT *)malloc(vsize*sizeof(POINT))) == NULL) {
+        status = 5;
         goto skip;
     }
     
@@ -175,15 +183,17 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
      vertex list. The supertriangle is the first triangle in
      the triangle list.
      */
-    pxyz[nv+0].x = xmid - 20 * dmax;
-    pxyz[nv+0].y = ymid - dmax;
-    pxyz[nv+1].x = xmid;
-    pxyz[nv+1].y = ymid + 20 * dmax;
-    pxyz[nv+2].x = xmid + 20 * dmax;
-    pxyz[nv+2].y = ymid - dmax;
+    pxyz[nv+0].x = x1 = xmid - 20 * dmax;
+    pxyz[nv+0].y = y1 = ymid - dmax;
+    pxyz[nv+1].x = x2 = xmid;
+    pxyz[nv+1].y = y2 = ymid + 20 * dmax;
+    pxyz[nv+2].x = x3 = xmid + 20 * dmax;
+    pxyz[nv+2].y = y3 = ymid - dmax;
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
+    CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+    centres[vsize - 1].x = xc, centres[vsize - 1].y = yc;
     
     xp = yp = FLT_MAX;
     /*
@@ -205,6 +215,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
          and that triangle is removed.
          */
         for (tri = vstart; tri < vend; tri++) {
+            centre = centres[tri - v];
+            xc = centre.x, yc = centre.y;
             x1 = pxyz[tri->p1].x;
             y1 = pxyz[tri->p1].y;
             x2 = pxyz[tri->p2].x;
@@ -213,10 +225,18 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             y3 = pxyz[tri->p3].y;
             
             area = TriangleArea(x1,y1,x2,y2,x3,y3);
-            inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+//            inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+            
+            dx = x2 - centre.x, dy = y2 - centre.y;
+            r = dx * dx + dy * dy;
+            dx = centre.x - xp, dy = centre.y - yp;
+            inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
+            
             if (xc < xp && ((xp-xc)*(xp-xc)) > r) {
                  if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
+                
+                centres[tri - v] = centres[vstart - v];
                 *tri = *vstart++;
             }
             if (inside && area <= 0) {
@@ -235,6 +255,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                 edges[nedge+2].p1 = tri->p3;
                 edges[nedge+2].p2 = tri->p1;
                 nedge += 3;
+                
+                centres[tri - v] = centres[vstart - v];
                 *tri = *vstart++;
             }
         }
@@ -280,6 +302,18 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             vstart->p1 = edges[j].p1;
             vstart->p2 = edges[j].p2;
             vstart->p3 = i;
+            
+            x1 = pxyz[vstart->p1].x;
+            y1 = pxyz[vstart->p1].y;
+            x2 = pxyz[vstart->p2].x;
+            y2 = pxyz[vstart->p2].y;
+            x3 = pxyz[vstart->p3].x;
+            y3 = pxyz[vstart->p3].y;
+            
+            area = TriangleArea(x1,y1,x2,y2,x3,y3);
+            inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+            ci = vstart - v;
+            centres[ci].x = xc, centres[ci].y = yc;
         }
     }
     
@@ -295,6 +329,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     
 skip:
+    free(centres);
     free(edges);
     free(complete);
     return(status);
