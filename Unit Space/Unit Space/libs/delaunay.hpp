@@ -192,8 +192,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
      */
     for (i=0;i<nv;i++) {
         
-//        if (std::abs(xp - pxyz[i].x) < kMinDistance && std::abs(yp - pxyz[i].y) < kMinDistance)
-//            continue;
         if (xp == pxyz[i].x && yp == pxyz[i].y)
             continue;
         
@@ -231,10 +229,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
                     }
                 }
                 int i1 = v[j].p1, i2 = v[j].p2, i3 = v[j].p3;
-                float area = TriangleArea(x1,y1,x2,y2,x3,y3);
-                if (area > 0)
-                    goto bail;
-//                    std::swap(i1, i3);
 
                 edges[nedge+0].p1 = i1;
                 edges[nedge+0].p2 = i2;
@@ -286,27 +280,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
                 goto skip;
             }
             
-            float area = -1;
-            int i1 = edges[j].p1, i2 = edges[j].p2, i3 = i;
-//            x1 = pxyz[i1].x, y1 = pxyz[i1].y;
-//            x2 = pxyz[i2].x, y2 = pxyz[i2].y;
-//            x3 = pxyz[i3].x, y3 = pxyz[i3].y;
-//            
-//            area = TriangleArea(x1,y1,x2,y2,x3,y3);
-//            if (area > 0)
-//                std::swap(i1, i3);
+            v[*ntri].p1 = edges[j].p1;
+            v[*ntri].p2 = edges[j].p2;
+            v[*ntri].p3 = i;
             
-            v[*ntri].p1 = i1;
-            v[*ntri].p2 = i2;
-            v[*ntri].p3 = i3;
-            
-            if (area != 0) {
-                complete[*ntri] = FALSE;
-                (*ntri)++;
-            } else {
-                area = area;
-            }
-            
+            complete[*ntri] = FALSE;
+            (*ntri)++;
         }
     }
     
@@ -314,7 +293,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
      Remove triangles with supertriangle vertices
      These are triangles which have a vertex number greater than nv
      */
-bail:
     for (i=0;i<(*ntri);i++) {
         if (v[i].p1 >= nv || v[i].p2 >= nv || v[i].p3 >= nv) {
             v[i] = v[(*ntri)-1];

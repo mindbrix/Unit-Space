@@ -286,14 +286,14 @@ struct Mesh {
             for(auto &t : triangles) {
                 polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
                 
-                i0 = pts[t.p1].i, i1 = pts[t.p2].i, i2 = pts[t.p3].i;
-                ic = -1;
-                if (i0 == i1 || i1 == i2)
-                    ic = i1;
-                if (i0 == i2)
-                    ic = i0;
-                    
-                color = ic < 0 ? white : _paths[ic]._color;
+//                i0 = pts[t.p1].i, i1 = pts[t.p2].i, i2 = pts[t.p3].i;
+//                ic = -1;
+//                if (i0 == i1 || i1 == i2)
+//                    ic = i1;
+//                if (i0 == i2)
+//                    ic = i0;
+                
+//                color = ic < 0 ? white : _paths[ic]._color;
                 
                 if (!writePolygon(triangles0, (float *)pts, sizeof(XYZ), pi, k, c, color, polygon, indices)) {
                     vtriangles.resize(++ti + 1);
