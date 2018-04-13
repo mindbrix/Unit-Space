@@ -60,10 +60,6 @@
 		E96B3463207BDECB006D74B1 /* tess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tess.c; sourceTree = "<group>"; };
 		E96B3464207BDECB006D74B1 /* tess.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tess.h; sourceTree = "<group>"; };
 		E96B3465207BDECB006D74B1 /* nanosvg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
-		E96B347F207E4B9C006D74B1 /* triangle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = triangle.h; sourceTree = "<group>"; };
-		E96B3480207E4B9C006D74B1 /* vector2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vector2.h; sourceTree = "<group>"; };
-		E96B3481207E4B9C006D74B1 /* edge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = edge.h; sourceTree = "<group>"; };
-		E96B3482207E4B9C006D74B1 /* delaunay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = delaunay.h; sourceTree = "<group>"; };
 		E96B3483207F7B10006D74B1 /* delaunay.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = delaunay.hpp; sourceTree = "<group>"; };
 		E9DF4DC22075877400DF2668 /* hawaii.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = hawaii.svg; sourceTree = "<group>"; };
 		E9DF4DC32075877400DF2668 /* paris-30k.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "paris-30k.svg"; sourceTree = "<group>"; };
@@ -107,7 +103,6 @@
 		E96B3452207BDECB006D74B1 /* libs */ = {
 			isa = PBXGroup;
 			children = (
-				E96B3476207E4AB6006D74B1 /* delaunay */,
 				E96B3453207BDECB006D74B1 /* libTess */,
 				E96B3465207BDECB006D74B1 /* nanosvg.h */,
 				E96B3483207F7B10006D74B1 /* delaunay.hpp */,
@@ -153,18 +148,6 @@
 			);
 			path = Source;
 			sourceTree = "<group>";
-		};
-		E96B3476207E4AB6006D74B1 /* delaunay */ = {
-			isa = PBXGroup;
-			children = (
-				E96B3482207E4B9C006D74B1 /* delaunay.h */,
-				E96B3481207E4B9C006D74B1 /* edge.h */,
-				E96B347F207E4B9C006D74B1 /* triangle.h */,
-				E96B3480207E4B9C006D74B1 /* vector2.h */,
-			);
-			name = delaunay;
-			path = "../../delaunay-triangulation";
-			sourceTree = SOURCE_ROOT;
 		};
 		E9EEAD69200BC63400F2BFB2 = {
 			isa = PBXGroup;

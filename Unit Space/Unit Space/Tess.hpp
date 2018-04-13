@@ -8,8 +8,6 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
-#import "delaunay.h"
-
 #import "delaunay.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
@@ -248,26 +246,25 @@ struct Mesh {
     }
     
     int triangulateDelaunayC(vector<Triangles>& vtriangles) {
-        std::vector<Vector2<float>> points;
+        int count = 0;
+        for (Path& p : _paths)
+            for (SubPath& s : p._subPaths)
+                count += s._npoints - 1;
         
-        for (Path& p : _paths) {
+        size_t pts_size = count + 3;
+        auto points = shared_ptr<XYZ>((XYZ *)malloc(pts_size * kPointStride), free);
+        XYZ *dst = points.get();
+        for (Path& p : _paths)
             for (SubPath& s : p._subPaths) {
-                const float *src = s._points.get();
-                
-                for (int i = 0; i < s._npoints - 1; i++) {
-                    const float *p = src + i * 2;
-                    points.push_back(Vector2<float>(p[0], p[1]));
-                }
+                float *src = s._points.get(), *end = src + (s._npoints - 1) * 2;
+                while (src != end)
+                    dst->x = *src++, dst++->y = *src++;
             }
-        }
-        points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
-        points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
-        points.push_back(Vector2<float>(FLT_MAX, FLT_MAX));
         
-        std::vector<ITRIANGLE> triangles(points.size() * 4);
+        std::vector<ITRIANGLE> triangles(pts_size * 4);
         
         int ntri = 0;
-        int status = Triangulate((int)points.size() - 3, (XYZ *)& points[0], &triangles[0], & ntri);
+        int status = Triangulate(count, points.get(), &triangles[0], & ntri);
         
         if (status == 0) {
             triangles.resize(ntri);
@@ -277,13 +274,13 @@ struct Mesh {
             triangles0->colors[0] = red;
             RGBA8 color = red;
             
-            int npoints = (int)points.size() - 3;
+            int npoints = count;
             TESSindex polygon[kPolySize] = { TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF };
-            TESSindex indices[(int)points.size()];
+            TESSindex indices[pts_size];
             memset(indices, -1, npoints * sizeof(TESSindex));
             
             int ti = 0, k = 0, pi = 0, c = 0;
-            float *pts = & points[0].x;
+            float *pts = (float *)points.get();
             
             for(auto &t : triangles) {
                 polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
