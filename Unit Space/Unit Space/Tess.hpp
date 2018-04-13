@@ -264,7 +264,7 @@ struct Mesh {
         std::vector<ITRIANGLE> triangles(pts_size * 4);
         
         int ntri = 0;
-        int status = Triangulate(count, points.get(), &triangles[0], & ntri);
+        int status = Triangulate(count, points.get(), &triangles[0], (int)triangles.size(), & ntri);
         
         if (status == 0) {
             triangles.resize(ntri);

@@ -14,7 +14,6 @@
 #include <stdlib.h>
 
 #define EPSILON (1e-6)
-#define kMinDistance 1e-1f
 
 typedef struct {
     int p1,p2,p3;
@@ -118,8 +117,10 @@ int XYZCompare(const void *v1,const void *v2)
  The vertex array must be sorted in increasing x values say
  */
 
-int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
+int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
+    ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
+    
     int *complete = NULL;
     IEDGE *edges = NULL;
     int nedge = 0;
@@ -180,11 +181,9 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
     pxyz[nv+1].y = ymid + 20 * dmax;
     pxyz[nv+2].x = xmid + 20 * dmax;
     pxyz[nv+2].y = ymid - dmax;
-    v[0].p1 = nv;
-    v[0].p2 = nv+1;
-    v[0].p3 = nv+2;
-    complete[0] = FALSE;
-    *ntri = 1;
+    
+    vstart--;
+    vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
     
     xp = yp = FLT_MAX;
     /*
@@ -205,20 +204,21 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
          three edges of that triangle are added to the edge buffer
          and that triangle is removed.
          */
-        for (j=0;j<(*ntri);j++) {
-            if (complete[j])
-                continue;
-            x1 = pxyz[v[j].p1].x;
-            y1 = pxyz[v[j].p1].y;
-            x2 = pxyz[v[j].p2].x;
-            y2 = pxyz[v[j].p2].y;
-            x3 = pxyz[v[j].p3].x;
-            y3 = pxyz[v[j].p3].y;
-            area = TriangleArea(x1,y1,x2,y2,x3,y3);
+        for (tri = vstart; tri < vend; tri++) {
+            x1 = pxyz[tri->p1].x;
+            y1 = pxyz[tri->p1].y;
+            x2 = pxyz[tri->p2].x;
+            y2 = pxyz[tri->p2].y;
+            x3 = pxyz[tri->p3].x;
+            y3 = pxyz[tri->p3].y;
             
+            area = TriangleArea(x1,y1,x2,y2,x3,y3);
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
-            if (xc < xp && ((xp-xc)*(xp-xc)) > r)
-                complete[j] = TRUE;
+            if (xc < xp && ((xp-xc)*(xp-xc)) > r) {
+                 if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
+                     *completed++ = *tri;
+                *tri = *vstart++;
+            }
             if (inside && area <= 0) {
                 /* Check that we haven't exceeded the edge list size */
                 if (nedge+3 >= emax) {
@@ -228,19 +228,14 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
                         goto skip;
                     }
                 }
-                int i1 = v[j].p1, i2 = v[j].p2, i3 = v[j].p3;
-
-                edges[nedge+0].p1 = i1;
-                edges[nedge+0].p2 = i2;
-                edges[nedge+1].p1 = i2;
-                edges[nedge+1].p2 = i3;
-                edges[nedge+2].p1 = i3;
-                edges[nedge+2].p2 = i1;
+                edges[nedge+0].p1 = tri->p1;
+                edges[nedge+0].p2 = tri->p2;
+                edges[nedge+1].p1 = tri->p2;
+                edges[nedge+1].p2 = tri->p3;
+                edges[nedge+2].p1 = tri->p3;
+                edges[nedge+2].p2 = tri->p1;
                 nedge += 3;
-                v[j] = v[(*ntri)-1];
-                complete[j] = complete[(*ntri)-1];
-                (*ntri)--;
-                j--;
+                *tri = *vstart++;
             }
         }
         
@@ -275,17 +270,16 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
         for (j=0;j<nedge;j++) {
             if (edges[j].p1 < 0 || edges[j].p2 < 0)
                 continue;
-            if ((*ntri) >= trimax) {
+            
+            if (vstart == completed) {
                 status = 4;
                 goto skip;
             }
             
-            v[*ntri].p1 = edges[j].p1;
-            v[*ntri].p2 = edges[j].p2;
-            v[*ntri].p3 = i;
-            
-            complete[*ntri] = FALSE;
-            (*ntri)++;
+            --vstart;
+            vstart->p1 = edges[j].p1;
+            vstart->p2 = edges[j].p2;
+            vstart->p3 = i;
         }
     }
     
@@ -293,13 +287,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
      Remove triangles with supertriangle vertices
      These are triangles which have a vertex number greater than nv
      */
-    for (i=0;i<(*ntri);i++) {
-        if (v[i].p1 >= nv || v[i].p2 >= nv || v[i].p3 >= nv) {
-            v[i] = v[(*ntri)-1];
-            (*ntri)--;
-            i--;
-        }
-    }
+    for (tri = vstart; tri < vend; tri++)
+        if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
+            *completed++ = *tri;
+    
+    (*ntri) = (int)(completed - v);
+    
     
 skip:
     free(edges);
