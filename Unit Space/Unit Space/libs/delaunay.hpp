@@ -26,8 +26,8 @@ typedef struct {
     int i;
 } XYZ;
 typedef struct {
-    double x,y;
-} POINT;
+    double x,y,r,area;
+} CIRCLE;
 
 double TriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
     double v0x = x2 - x1, v0y = y2 - y1;
@@ -122,7 +122,7 @@ int XYZCompare(const void *v1,const void *v2)
 int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
-    POINT *centres = NULL, centre;
+    CIRCLE *centres = NULL, centre;
     size_t ci;
     int *complete = NULL;
     IEDGE *edges = NULL;
@@ -145,7 +145,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         goto skip;
     }
     
-    if ((centres = (POINT *)malloc(vsize*sizeof(POINT))) == NULL) {
+    if ((centres = (CIRCLE *)malloc(vsize*sizeof(CIRCLE))) == NULL) {
         status = 5;
         goto skip;
     }
@@ -193,7 +193,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
     CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
-    centres[vsize - 1].x = xc, centres[vsize - 1].y = yc;
+    centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r, centres[vsize - 1].area = -1;
     
     xp = yp = FLT_MAX;
     /*
@@ -217,18 +217,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         for (tri = vstart; tri < vend; tri++) {
             centre = centres[tri - v];
             xc = centre.x, yc = centre.y;
-            x1 = pxyz[tri->p1].x;
-            y1 = pxyz[tri->p1].y;
-            x2 = pxyz[tri->p2].x;
-            y2 = pxyz[tri->p2].y;
-            x3 = pxyz[tri->p3].x;
-            y3 = pxyz[tri->p3].y;
-            
-            area = TriangleArea(x1,y1,x2,y2,x3,y3);
-//            inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
-            
-            dx = x2 - centre.x, dy = y2 - centre.y;
-            r = dx * dx + dy * dy;
+            r = centre.r, area = centre.area;
             dx = centre.x - xp, dy = centre.y - yp;
             inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
             
@@ -313,7 +302,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             area = TriangleArea(x1,y1,x2,y2,x3,y3);
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             ci = vstart - v;
-            centres[ci].x = xc, centres[ci].y = yc;
+            centres[ci].x = xc, centres[ci].y = yc, centres[ci].r = r, centres[ci].area = area;
         }
     }
     
