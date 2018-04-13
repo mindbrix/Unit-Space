@@ -192,7 +192,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
-    CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+    CircumCircle(0,0,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
     centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r, centres[vsize - 1].area = -1;
     
     xp = yp = FLT_MAX;
