@@ -28,9 +28,9 @@ typedef struct {
 } XYZ;
 
 
-float TriangleArea(float x1, float y1, float x2, float y2, float x3, float y3) {
-    float v0x = x2 - x1, v0y = y2 - y1;
-    float v1x = x3 - x2, v1y = y3 - y2;
+double TriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
+    double v0x = x2 - x1, v0y = y2 - y1;
+    double v1x = x3 - x2, v1y = y3 - y2;
     return v0x * v1y - v0y * v1x;
 }
 
@@ -128,7 +128,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
     
     int inside;
     int i,j,k;
-    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,r;
+    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,r, area;
     double xmin,xmax,ymin,ymax,xmid,ymid;
     double dx,dy,dmax;
     
@@ -214,7 +214,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int *ntri)
             y2 = pxyz[v[j].p2].y;
             x3 = pxyz[v[j].p3].x;
             y3 = pxyz[v[j].p3].y;
-            float area = TriangleArea(x1,y1,x2,y2,x3,y3);
+            area = TriangleArea(x1,y1,x2,y2,x3,y3);
             
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             if (xc < xp && ((xp-xc)*(xp-xc)) > r)
