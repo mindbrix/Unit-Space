@@ -252,7 +252,7 @@ struct Mesh {
                 count += s._npoints - 1;
         
         size_t pts_size = count + 3;
-        auto points = shared_ptr<XYZ>((XYZ *)malloc(pts_size * kPointStride), free);
+        auto points = shared_ptr<XYZ>((XYZ *)malloc(pts_size * sizeof(XYZ)), free);
         XYZ *dst = points.get();
         for (Path& p : _paths)
             for (SubPath& s : p._subPaths) {
@@ -285,13 +285,13 @@ struct Mesh {
             for(auto &t : triangles) {
                 polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
                 
-                if (!writePolygon(triangles0, pts, pi, k, c, color, polygon, indices)) {
+                if (!writePolygon(triangles0, pts, sizeof(XYZ), pi, k, c, color, polygon, indices)) {
                     vtriangles.resize(++ti + 1);
                     triangles0 = & vtriangles[ti];
                     k = 0, pi = 0, c = 0;
                     memset(indices, INT_MAX, npoints * sizeof(TESSindex));
                     
-                    writePolygon(triangles0, pts, pi, k, c, color, polygon, indices);
+                    writePolygon(triangles0, pts, sizeof(XYZ), pi, k, c, color, polygon, indices);
                 }
             }
         }
@@ -328,13 +328,13 @@ struct Mesh {
                 memset(indices, -1, npoints * sizeof(TESSindex));
                 
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                    if (!writePolygon(triangles, points, pi, k, c, p._color, polygon, indices)) {
+                    if (!writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices)) {
                         vtriangles.resize(++t + 1);
                         triangles = & vtriangles[t];
                         k = 0, pi = 0, c = 0;
                         memset(indices, INT_MAX, npoints * sizeof(TESSindex));
 
-                        writePolygon(triangles, points, pi, k, c, p._color, polygon, indices);
+                        writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices);
                     }
                 }
             }
@@ -347,7 +347,7 @@ struct Mesh {
         return count;
     }
     
-    bool writePolygon(Triangles *triangles, float *points, int& pi, int& k, int& c, RGBA8 color, const TESSindex *polygon, TESSindex *indices) {
+    bool writePolygon(Triangles *triangles, float *points, int stride, int& pi, int& k, int& c, RGBA8 color, const TESSindex *polygon, TESSindex *indices) {
         if (c == kTrianglesColorsSize)
             return false;
         
@@ -359,7 +359,8 @@ struct Mesh {
                     return false;
                 indices[index] = pi;
                 
-                triangles->points[pi++] = { points[index * 2], points[index * 2 + 1] };
+                auto pt = (const float *)((char *)points + stride * index);
+                triangles->points[pi++] = { pt[0], pt[1] };
             }
         }
         

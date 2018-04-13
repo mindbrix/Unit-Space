@@ -24,6 +24,7 @@ typedef struct {
 } IEDGE;
 typedef struct {
     float x,y;
+    int i;
 } XYZ;
 
 
