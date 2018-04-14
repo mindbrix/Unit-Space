@@ -59,7 +59,7 @@ double incirclefast(double xp, double yp, double x1, double y1, double x2, doubl
     return alift * bcdet + blift * cadet + clift * abdet;
 }
 
-void circumcenter(double ax, double ay, double bx, double by, double cx, double cy, double *xc, double *yc) {
+void circumcenter(double ax, double ay, double bx, double by, double cx, double cy, double *xc, double *yc, double *ux) {
     double dx = bx - ax;
     double dy = by - ay;
     double ex = cx - ax;
@@ -69,8 +69,15 @@ void circumcenter(double ax, double ay, double bx, double by, double cx, double 
     double cl = ex * ex + ey * ey;
     double d = dx * ey - dy * ex;
     
-    *xc = ax + (ey * bl - dy * cl) * 0.5 / d;
-    *yc = ay + (dx * cl - ex * bl) * 0.5 / d;
+    *xc = (ey * bl - dy * cl) * 0.5 / d;
+    *yc = (dx * cl - ex * bl) * 0.5 / d;
+    
+    double r = std::sqrt(*xc * *xc + *yc * *yc);
+    
+    *xc += ax;
+    *yc += ay;
+    
+    *ux = *xc + r;
 }
 
 int XYZCompare(const void *v1,const void *v2)
@@ -168,7 +175,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
-    circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc);
+    circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &r);
     centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r;
     
     xp = yp = FLT_MAX;
@@ -194,41 +201,45 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             centre = & centres[tri - v];
             xc = centre->x, yc = centre->y, r = centre->r;
             
-            x1 = pxyz[tri->p1].x;
-            y1 = pxyz[tri->p1].y;
-            x2 = pxyz[tri->p2].x;
-            y2 = pxyz[tri->p2].y;
-            x3 = pxyz[tri->p3].x;
-            y3 = pxyz[tri->p3].y;
-            double incircle = incirclefast(xp,yp,x1,y1,x2,y2,x3,y3);
-            inside = incircle <= 0;
-            
-            if (xc < xp && incirclefast(xp,yc,x1,y1,x2,y2,x3,y3) >= 0) {
+            if (xp > r) {
                 if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
                 
                 centres[tri - v] = centres[vstart - v];
                 *tri = *vstart++;
             }
-            if (inside) {
-                /* Check that we haven't exceeded the edge list size */
-                if (nedge+3 >= emax) {
-                    emax += 100;
-                    if ((edges = (IEDGE *)realloc(edges,emax*(long)sizeof(IEDGE))) == NULL) {
-                        status = 3;
-                        goto skip;
-                    }
-                }
-                edges[nedge+0].p1 = tri->p1;
-                edges[nedge+0].p2 = tri->p2;
-                edges[nedge+1].p1 = tri->p2;
-                edges[nedge+1].p2 = tri->p3;
-                edges[nedge+2].p1 = tri->p3;
-                edges[nedge+2].p2 = tri->p1;
-                nedge += 3;
+            else  {
+                x1 = pxyz[tri->p1].x;
+                y1 = pxyz[tri->p1].y;
+                x2 = pxyz[tri->p2].x;
+                y2 = pxyz[tri->p2].y;
+                x3 = pxyz[tri->p3].x;
+                y3 = pxyz[tri->p3].y;
+                double incircle = incirclefast(xp,yp,x1,y1,x2,y2,x3,y3);
+                inside = incircle <= 0;
                 
-                centres[tri - v] = centres[vstart - v];
-                *tri = *vstart++;
+                if (inside) {
+                    /* Check that we haven't exceeded the edge list size */
+                    if (nedge+3 >= emax) {
+                        emax += 100;
+                        if ((edges = (IEDGE *)realloc(edges,emax*(long)sizeof(IEDGE))) == NULL) {
+                            status = 3;
+                            goto skip;
+                        }
+                    }
+                    edges[nedge+0].p1 = tri->p1;
+                    edges[nedge+0].p2 = tri->p2;
+                    edges[nedge+1].p1 = tri->p2;
+                    edges[nedge+1].p2 = tri->p3;
+                    edges[nedge+2].p1 = tri->p3;
+                    edges[nedge+2].p2 = tri->p1;
+                    nedge += 3;
+                    
+                    centres[tri - v] = centres[vstart - v];
+                    *tri = *vstart++;
+                }
+                    
+                
             }
         }
         
@@ -285,8 +296,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             if (area > 0)
                 std::swap(vstart->p1, vstart->p3);
             
-            circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc);
-            
+            circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &r);
             centres[vstart - v].x = xc, centres[vstart - v].y = yc, centres[vstart - v].r = r;
         }
     }
