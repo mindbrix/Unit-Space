@@ -65,10 +65,18 @@ struct SubPath {
         int total = 0, c0, c1, count;
         float x0, y0, x1, y1, x2, y2, x3, y3;
         float ax0, ay0, ax1, ay1, area0, area1, flatness;
+        float qcpx0, qcpy0, qcpx1, qcpy1;
         
         for (int i = 0; i < npoints - 1; i += 3) {
             const float *p = src + i * 2;
             x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+            
+            qcpx0 = x0 + 1.5f * (x1 - x0), qcpy0 = y0 + 1.5f * (y1 - y0);
+            qcpx1 = x3 + 1.5f * (x2 - x3), qcpy1 = y3 + 1.5f * (y2 - y3);
+        
+            if (std::abs(qcpx0 - qcpx1) < 1e-3 && std::abs(qcpy0 - qcpy1) < 1e-3) {
+                x0 = x0;
+            }
             ax0 = x0 + x2 - x1 - x1, ay0 = y0 + y2 - y1 - y1;
             ax1 = x1 + x3 - x2 - x2, ay1 = y1 + y3 - y2 - y2;
             flatness = ax0 * ax0 + ay0 * ay0 + ax1 * ax1 + ay1 * ay1;

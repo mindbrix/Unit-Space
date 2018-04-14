@@ -26,7 +26,7 @@ typedef struct {
     int i;
 } XYZ;
 typedef struct {
-    double x,y,r,area;
+    double x,y,r;
 } CIRCLE;
 
 double TriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
@@ -193,7 +193,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
     CircumCircle(0,0,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
-    centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r, centres[vsize - 1].area = -1;
+    centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r;
     
     xp = yp = FLT_MAX;
     /*
@@ -217,7 +217,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         for (tri = vstart; tri < vend; tri++) {
             centre = centres[tri - v];
             xc = centre.x, yc = centre.y;
-            r = centre.r, area = centre.area;
+            r = centre.r;
             dx = centre.x - xp, dy = centre.y - yp;
             inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
             
@@ -228,7 +228,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                 centres[tri - v] = centres[vstart - v];
                 *tri = *vstart++;
             }
-            if (inside && area <= 0) {
+            if (inside) {
                 /* Check that we haven't exceeded the edge list size */
                 if (nedge+3 >= emax) {
                     emax += 100;
@@ -300,9 +300,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             y3 = pxyz[vstart->p3].y;
             
             area = TriangleArea(x1,y1,x2,y2,x3,y3);
+            if (area > 0)
+                std::swap(vstart->p1, vstart->p3);
+            
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             ci = vstart - v;
-            centres[ci].x = xc, centres[ci].y = yc, centres[ci].r = r, centres[ci].area = area;
+            centres[ci].x = xc, centres[ci].y = yc, centres[ci].r = r;
         }
     }
     
