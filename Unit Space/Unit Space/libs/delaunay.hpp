@@ -201,7 +201,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             x3 = pxyz[tri->p3].x;
             y3 = pxyz[tri->p3].y;
             double incircle = incirclefast(xp,yp,x1,y1,x2,y2,x3,y3);
-            inside = incircle < 0;
+            inside = incircle <= 0;
             
             if (xc < xp && incirclefast(xp,yc,x1,y1,x2,y2,x3,y3) >= 0) {
                 if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
