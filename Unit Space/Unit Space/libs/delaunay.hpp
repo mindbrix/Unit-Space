@@ -59,66 +59,19 @@ double incirclefast(double xp, double yp, double x1, double y1, double x2, doubl
     return alift * bcdet + blift * cadet + clift * abdet;
 }
 
-/*
- Return TRUE if a point (xp,yp) is inside the circumcircle made up
- of the points (x1,y1), (x2,y2), (x3,y3)
- The circumcircle centre is returned in (xc,yc) and the radius r
- NOTE: A point on the edge is inside the circumcircle
- */
-int CircumCircle(double xp,double yp,
-                 double x1,double y1,double x2,double y2,double x3,double y3,
-                 double *xc,double *yc,double *rsqr)
-{
-    double m1,m2,mx1,mx2,my1,my2;
-    double dx,dy,drsqr;
-    double fabsy1y2 = fabs(y1-y2);
-    double fabsy2y3 = fabs(y2-y3);
+void circumcenter(double ax, double ay, double bx, double by, double cx, double cy, double *xc, double *yc) {
+    double dx = bx - ax;
+    double dy = by - ay;
+    double ex = cx - ax;
+    double ey = cy - ay;
     
-    /* Check for coincident points */
-    if (fabsy1y2 < EPSILON && fabsy2y3 < EPSILON)
-        return(FALSE);
+    double bl = dx * dx + dy * dy;
+    double cl = ex * ex + ey * ey;
+    double d = dx * ey - dy * ex;
     
-    if (fabsy1y2 < EPSILON) {
-        m2 = - (x3-x2) / (y3-y2);
-        mx2 = (x2 + x3) / 2.0;
-        my2 = (y2 + y3) / 2.0;
-        *xc = (x2 + x1) / 2.0;
-        *yc = m2 * (*xc - mx2) + my2;
-    } else if (fabsy2y3 < EPSILON) {
-        m1 = - (x2-x1) / (y2-y1);
-        mx1 = (x1 + x2) / 2.0;
-        my1 = (y1 + y2) / 2.0;
-        *xc = (x3 + x2) / 2.0;
-        *yc = m1 * (*xc - mx1) + my1;
-    } else {
-        m1 = - (x2-x1) / (y2-y1);
-        m2 = - (x3-x2) / (y3-y2);
-        mx1 = (x1 + x2) / 2.0;
-        mx2 = (x2 + x3) / 2.0;
-        my1 = (y1 + y2) / 2.0;
-        my2 = (y2 + y3) / 2.0;
-        *xc = (m1 * mx1 - m2 * mx2 + my2 - my1) / (m1 - m2);
-        if (fabsy1y2 > fabsy2y3) {
-            *yc = m1 * (*xc - mx1) + my1;
-        } else {
-            *yc = m2 * (*xc - mx2) + my2;
-        }
-    }
-    
-    dx = x2 - *xc;
-    dy = y2 - *yc;
-    *rsqr = dx*dx + dy*dy;
-    
-    dx = xp - *xc;
-    dy = yp - *yc;
-    drsqr = dx*dx + dy*dy;
-    
-    // Original
-    //return((drsqr <= *rsqr) ? TRUE : FALSE);
-    // Proposed by Chuck Morris
-    return((drsqr - *rsqr) <= EPSILON ? TRUE : FALSE);
+    *xc = ax + (ey * bl - dy * cl) * 0.5 / d;
+    *yc = ay + (dx * cl - ex * bl) * 0.5 / d;
 }
-
 
 int XYZCompare(const void *v1,const void *v2)
 {
@@ -215,7 +168,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
-    CircumCircle(0,0,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+    circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc);
     centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r;
     
     xp = yp = FLT_MAX;
@@ -251,8 +204,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             inside = incircle < 0;
             
             if (xc < xp && incirclefast(xp,yc,x1,y1,x2,y2,x3,y3) >= 0) {
-//            if (xc < xp && (dx * dx) > r) {
-                 if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
+                if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
                 
                 centres[tri - v] = centres[vstart - v];
@@ -333,7 +285,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             if (area > 0)
                 std::swap(vstart->p1, vstart->p3);
             
-            inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+            circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc);
             
             centres[vstart - v].x = xc, centres[vstart - v].y = yc, centres[vstart - v].r = r;
         }
