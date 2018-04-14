@@ -240,9 +240,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         for (tri = vstart; tri < vend; tri++) {
             centre = & centres[tri - v];
             xc = centre->x, yc = centre->y, r = centre->r;
-            dx = xc - xp, dy = yc - yp;
-            inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
-//            inside = (dx * dx + dy * dy) <= r;
             
             x1 = pxyz[tri->p1].x;
             y1 = pxyz[tri->p1].y;
@@ -338,9 +335,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
             
-            if (!inside) {
-                inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
-            }
             centres[vstart - v].x = xc, centres[vstart - v].y = yc, centres[vstart - v].r = r;
         }
     }
