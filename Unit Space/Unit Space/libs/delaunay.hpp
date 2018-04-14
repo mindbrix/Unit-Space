@@ -122,7 +122,7 @@ int XYZCompare(const void *v1,const void *v2)
 int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
-    CIRCLE *centres = NULL, centre;
+    CIRCLE *centres = NULL, *centre;
     int *complete = NULL;
     IEDGE *edges = NULL;
     int nedge = 0;
@@ -214,12 +214,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
          and that triangle is removed.
          */
         for (tri = vstart; tri < vend; tri++) {
-            centre = centres[tri - v];
-            xc = centre.x, yc = centre.y, r = centre.r;
-            dx = centre.x - xp, dy = centre.y - yp;
+            centre = & centres[tri - v];
+            xc = centre->x, yc = centre->y, r = centre->r;
+            dx = xc - xp, dy = yc - yp;
             inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
             
-            if (xc < xp && ((xp-xc)*(xp-xc)) > r) {
+            if (xc < xp && (dx * dx) > r) {
                  if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
                 
