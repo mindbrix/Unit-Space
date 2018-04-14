@@ -123,7 +123,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
     CIRCLE *centres = NULL, centre;
-    size_t ci;
     int *complete = NULL;
     IEDGE *edges = NULL;
     int nedge = 0;
@@ -216,8 +215,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
          */
         for (tri = vstart; tri < vend; tri++) {
             centre = centres[tri - v];
-            xc = centre.x, yc = centre.y;
-            r = centre.r;
+            xc = centre.x, yc = centre.y, r = centre.r;
             dx = centre.x - xp, dy = centre.y - yp;
             inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
             
@@ -304,8 +302,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                 std::swap(vstart->p1, vstart->p3);
             
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
-            ci = vstart - v;
-            centres[ci].x = xc, centres[ci].y = yc, centres[ci].r = r;
+            centres[vstart - v].x = xc, centres[vstart - v].y = yc, centres[vstart - v].r = r;
         }
     }
     
