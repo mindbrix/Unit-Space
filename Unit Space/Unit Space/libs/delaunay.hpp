@@ -29,10 +29,34 @@ typedef struct {
     double x,y,r;
 } CIRCLE;
 
+
 double TriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
     double v0x = x2 - x1, v0y = y2 - y1;
     double v1x = x3 - x2, v1y = y3 - y2;
     return v0x * v1y - v0y * v1x;
+}
+
+double incirclefast(double xp, double yp, double x1, double y1, double x2, double y2, double x3, double y3)
+{
+    double adx, ady, bdx, bdy, cdx, cdy;
+    double abdet, bcdet, cadet;
+    double alift, blift, clift;
+    
+    adx = x1 - xp;
+    ady = y1 - yp;
+    bdx = x2 - xp;
+    bdy = y2 - yp;
+    cdx = x3 - xp;
+    cdy = y3 - yp;
+    
+    abdet = adx * bdy - bdx * ady;
+    bcdet = bdx * cdy - cdx * bdy;
+    cadet = cdx * ady - adx * cdy;
+    alift = adx * adx + ady * ady;
+    blift = bdx * bdx + bdy * bdy;
+    clift = cdx * cdx + cdy * cdy;
+    
+    return alift * bcdet + blift * cadet + clift * abdet;
 }
 
 /*
@@ -218,8 +242,19 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             xc = centre->x, yc = centre->y, r = centre->r;
             dx = xc - xp, dy = yc - yp;
             inside = ((dx * dx + dy * dy) - r) <= EPSILON ? TRUE : FALSE;
+//            inside = (dx * dx + dy * dy) <= r;
             
-            if (xc < xp && (dx * dx) > r) {
+            x1 = pxyz[tri->p1].x;
+            y1 = pxyz[tri->p1].y;
+            x2 = pxyz[tri->p2].x;
+            y2 = pxyz[tri->p2].y;
+            x3 = pxyz[tri->p3].x;
+            y3 = pxyz[tri->p3].y;
+            double incircle = incirclefast(xp,yp,x1,y1,x2,y2,x3,y3);
+            inside = incircle < 0;
+            
+            if (xc < xp && incirclefast(xp,yc,x1,y1,x2,y2,x3,y3) >= 0) {
+//            if (xc < xp && (dx * dx) > r) {
                  if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
                 
@@ -302,6 +337,10 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                 std::swap(vstart->p1, vstart->p3);
             
             inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+            
+            if (!inside) {
+                inside = CircumCircle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+            }
             centres[vstart - v].x = xc, centres[vstart - v].y = yc, centres[vstart - v].r = r;
         }
     }
