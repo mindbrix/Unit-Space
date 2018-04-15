@@ -33,6 +33,7 @@ using namespace std;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
+@property(nonatomic) BOOL useMesh;
 @property(nonatomic) AffineTransform unitCTM;
 @property(nonatomic) AffineTransform ctm0;
 @property(nonatomic) AffineTransform ctm1;
@@ -261,6 +262,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleUseMesh:(id)sender {
+    _useMesh = !_useMesh;
+    [self redraw];
+}
+
 - (void)updateFromState {
     self.metalLayer.backgroundColor = CGColorGetConstantColor(!_showInterior && !_showColors ? kCGColorWhite : kCGColorClear);
 }
@@ -481,7 +487,7 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        if (_mesh._ntriangles) {
+        if (_useMesh && _mesh._ntriangles) {
             _calls.emplace_back();
             Call& call = _calls.back();
             
