@@ -269,7 +269,7 @@ struct Mesh {
         }
     }
     
-    int triangulateDelaunayC(vector<Triangles>& vtriangles) {
+    int triangulateDelaunayC() {
         int count = 0;
         for (Path& p : _paths)
             for (SubPath& s : p._subPaths)
@@ -320,59 +320,19 @@ struct Mesh {
                 for (Path& p : _paths)
                     *dst++ = p._color;
             }
-            
-            
-            Triangles* triangles0 = & vtriangles[0];
-            RGBA8 red(255, 0, 0, 255), white(255, 255, 255, 255);
-            triangles0->colors[0] = red;
-            RGBA8 color = red;
-            
-            int npoints = count;
-            TESSindex polygon[kPolySize] = { TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF, TESS_UNDEF };
-            TESSindex indices[pts_size];
-            memset(indices, -1, npoints * sizeof(TESSindex));
-            
-            int ti = 0, k = 0, pi = 0, c = 0;
-            XYZ *pts = points.get();
-            int ic, i0, i1, i2;
-            
-            for(auto &t : triangles) {
-                polygon[2] = t.p1, polygon[1] = t.p2, polygon[0] = t.p3;
-                
-//                i0 = pts[t.p1].i, i1 = pts[t.p2].i, i2 = pts[t.p3].i;
-//                ic = -1;
-//                if (i0 == i1 || i1 == i2)
-//                    ic = i1;
-//                if (i0 == i2)
-//                    ic = i0;
-                
-//                color = ic < 0 ? white : _paths[ic]._color;
-                
-                if (!writePolygon(triangles0, (float *)pts, sizeof(XYZ), pi, k, c, color, polygon, indices)) {
-                    vtriangles.resize(++ti + 1);
-                    triangles0 = & vtriangles[ti];
-                    k = 0, pi = 0, c = 0;
-                    memset(indices, INT_MAX, npoints * sizeof(TESSindex));
-                    
-                    writePolygon(triangles0, (float *)pts, sizeof(XYZ), pi, k, c, color, polygon, indices);
-                }
-            }
         }
         
         return status;
     }
     
-    int triangulate(vector<Triangles>& vtriangles) {
-//        maskPaths();
-        
-        vtriangles.resize(1);
-        
-        return triangulateDelaunayC(vtriangles);
+    int triangulate(bool useMasking) {
+        if (!useMasking)
+            return triangulateDelaunayC();
+        maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         
-        int t = 0, k = 0, pi = 0, ti = 0, c = 0;
-        Triangles* triangles = & vtriangles[t];
+        int pi = 0, ti = 0, c = 0;
         
         {
             _ncolors = (int)_paths.size();
@@ -444,60 +404,12 @@ struct Mesh {
                     
                     pi += npoints;
                 }
-                
-//                const int nelems = tessGetElementCount(tess);
-//                const TESSindex *polygon = tessGetElements(tess);
-//
-//                TESSindex indices[npoints];
-//                memset(indices, -1, npoints * sizeof(TESSindex));
-//
-//                for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-//                    if (!writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices)) {
-//                        vtriangles.resize(++t + 1);
-//                        triangles = & vtriangles[t];
-//                        k = 0, pi = 0, c = 0;
-//                        memset(indices, INT_MAX, npoints * sizeof(TESSindex));
-//
-//                        writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices);
-//                    }
-//                }
             }
             c++;
         }
         tessDeleteTess(tess);
         
-        int count = 0;
-        for (Triangles& triangles : vtriangles)
-            count += triangles.count;
-        return count;
-    }
-    
-    bool writePolygon(Triangles *triangles, float *points, int stride, int& pi, int& k, int& c, RGBA8 color, const TESSindex *polygon, TESSindex *indices) {
-        if (c == kTrianglesColorsSize)
-            return false;
-        
-        for (int j = 0; j < kPolySize && polygon[j] != TESS_UNDEF; j++) {
-            TESSindex index = polygon[j];
-            
-            if (indices[index] == -1) {
-                if (pi == kTrianglesPointsSize)
-                    return false;
-                indices[index] = pi;
-                
-                auto pt = (const float *)((char *)points + stride * index);
-                triangles->points[pi++] = { pt[0], pt[1] };
-            }
-        }
-        
-        for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-            if (triangles->add(k, indices[polygon[0]], indices[polygon[j + 1]], indices[polygon[j + 2]], c % kTrianglesColorsSize))
-                k++;
-            else
-                return false;
-        }
-        
-        triangles->colors[c++ % kTrianglesColorsSize] = color;
-        return true;
+        return _ntriangles;
     }
     
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;

@@ -342,7 +342,7 @@ using namespace std;
                 _mesh.addPath(p);
             }
         }
-        _mesh.triangulate(_triangles);
+        _mesh.triangulate(false);
         [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
         [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
         [self.metalLayer createTrianglesBuffer:_mesh._triangles.get() ntriangles:_mesh._ntriangles];
@@ -376,7 +376,7 @@ using namespace std;
     _mesh.reset(self.bounds.size.width, self.bounds.size.height);
     _mesh.addPath(p0);
     _mesh.addPath(p1);
-    _mesh.triangulate(_triangles);
+    _mesh.triangulate(false);
     
     [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
     [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
