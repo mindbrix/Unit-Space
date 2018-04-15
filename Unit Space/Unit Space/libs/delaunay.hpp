@@ -72,11 +72,9 @@ void circumcenter(double ax, double ay, double bx, double by, double cx, double 
     *xmax = *xc + r;
 }
 
-int XYZCompare(const void *v1,const void *v2)
-{
-    XYZ *p1,*p2;
-    p1 = (XYZ *)v1;
-    p2 = (XYZ *)v2;
+int XYZCompare(const void *v1,const void *v2) {
+    XYZ *p1 = (XYZ *)v1;
+    XYZ *p2 = (XYZ *)v2;
     if (p1->x < p2->x)
         return(-1);
     else if (p1->x > p2->x)
