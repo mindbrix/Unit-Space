@@ -128,6 +128,7 @@ struct SubPath {
 };
 
 struct Path {
+    Path() {}
     Path(bool evenOdd, RGBA8 color) {
         _color = color;
         _evenOdd = evenOdd;
@@ -228,10 +229,25 @@ struct Path {
 };
 
 struct Mesh {
+    Mesh() {}
     Mesh(float w, float h) {
-        _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
-        
+        reset(w, h);
     }
+    
+    void reset(float w, float h) {
+        _paths.resize(0);
+        
+        _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
+        _ncolors = 0;
+        _colors = nullptr;
+        
+        _npoints = 0;
+        _points = nullptr;
+        
+        _ntriangles = 0;
+        _triangles = nullptr;
+    }
+    
     void addPath(Path& path) {
         path.writeBoundaryContours();
         if (path._subPaths.size() == 0)

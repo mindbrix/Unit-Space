@@ -42,6 +42,7 @@ using namespace std;
 @property(nonatomic) vector<Triangles> triangles;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
+@property(nonatomic) Mesh mesh;
 
 @end
 
@@ -316,7 +317,7 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        Mesh mesh(image->width, image->height);
+        _mesh.reset(image->width, image->height);
         int limit = 60000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
@@ -331,10 +332,13 @@ using namespace std;
                     
                     p.addContour(path->pts, path->npts, SubPath::kCubic);
                 }
-                mesh.addPath(p);
+                _mesh.addPath(p);
             }
         }
-        mesh.triangulate(_triangles);
+        _mesh.triangulate(_triangles);
+        [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
+        [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
+        [self.metalLayer createTrianglesBuffer:_mesh._triangles.get() ntriangles:_mesh._ntriangles];
         
         // Delete
         nsvgDelete(image);
@@ -362,10 +366,14 @@ using namespace std;
     Path p1(false, black);
     p1.addContour((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
     
-    Mesh mesh(self.bounds.size.width, self.bounds.size.height);
-    mesh.addPath(p0);
-    mesh.addPath(p1);
-    mesh.triangulate(_triangles);
+    _mesh.reset(self.bounds.size.width, self.bounds.size.height);
+    _mesh.addPath(p0);
+    _mesh.addPath(p1);
+    _mesh.triangulate(_triangles);
+    
+    [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
+    [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
+    [self.metalLayer createTrianglesBuffer:_mesh._triangles.get() ntriangles:_mesh._ntriangles];
 }
 
 - (void)update {
@@ -473,18 +481,30 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        for (Triangles& triangles : _triangles) {
-            if (triangles.count) {
-                triangles.showColors = _showColors;
-                triangles.showInterior = _showInterior;
-                _calls.emplace_back();
-                Call& call = _calls.back();
-                
-                call.type = kCallTypeTriangles;
-                call.state = uniforms;
-                call.triangles = triangles;
+        if (_mesh._ntriangles) {
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            
+            call.meshState.showColors = _showColors;
+            call.meshState.showInterior = _showInterior;
+            
+            call.type = kCallTypeMesh;
+            call.state = uniforms;
+        } else {
+            for (Triangles& triangles : _triangles) {
+                if (triangles.count) {
+                    triangles.showColors = _showColors;
+                    triangles.showInterior = _showInterior;
+                    _calls.emplace_back();
+                    Call& call = _calls.back();
+                    
+                    call.type = kCallTypeTriangles;
+                    call.state = uniforms;
+                    call.triangles = triangles;
+                }
             }
         }
+        
         
         if (_showPoints) {
             uniforms.fillColor = { 1, 0, 0, 1 };

@@ -20,6 +20,6 @@
 
 - (void)createColorsBuffer:(RGBA8 *)colors ncolors:(int)ncolors;
 - (void)createPointsBuffer:(Vector *)points npoints:(int)npoints;
-- (void)createTrianglesBuffer:(Triangle *)triangles ntriangle:(int)ntriangle;
+- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(int)ntriangles;
 
 @end
