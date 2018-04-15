@@ -90,9 +90,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
     CIRCLE *circles = NULL, *circle;
     IEDGE *edges = NULL;
-    int nedge = 0;
-    int emax = 200;
-    int status = 0;
+    int nedge = 0, emax = 200, status = 0;
     int i, j, k;
     double xp, yp, x1, y1, x2, y2, x3, y3, xc, yc, xmaxc;
     double xmin, xmax, ymin, ymax, xmid, ymid;
@@ -124,8 +122,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     dx = xmax - xmin;
     dy = ymax - ymin;
     dmax = (dx > dy) ? dx : dy;
-    xmid = (xmax + xmin) / 2.0;
-    ymid = (ymax + ymin) / 2.0;
+    xmid = (xmax + xmin) * 0.5;
+    ymid = (ymax + ymin) * 0.5;
     
     // CCW Super triangle
     //
@@ -158,7 +156,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             circle = & circles[tri - v];
 
             if (xp > circle->xmax) {
-                if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
+                if (tri->p1 < nv && tri->p2 < nv && tri->p3 < nv)
                      *completed++ = *tri;
                 
                 circles[tri - v] = circles[vstart - v];
@@ -231,7 +229,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     // Copy over remaining completed triangles not touching the super triangle
     //
     for (tri = vstart; tri < vend; tri++)
-        if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
+        if (tri->p1 < nv && tri->p2 < nv && tri->p3 < nv)
             *completed++ = *tri;
     
     (*ntri) = (int)(completed - v);
