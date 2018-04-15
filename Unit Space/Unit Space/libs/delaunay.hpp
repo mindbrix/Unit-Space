@@ -25,8 +25,7 @@ typedef struct {
 } CIRCLE;
 
 
-double incirclefast(double xp, double yp, double x1, double y1, double x2, double y2, double x3, double y3)
-{
+double incirclefast(double xp, double yp, double x1, double y1, double x2, double y2, double x3, double y3) {
     double adx, ady, bdx, bdy, cdx, cdy;
     double abdet, bcdet, cadet;
     double alift, blift, clift;
