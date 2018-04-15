@@ -63,6 +63,7 @@ using namespace std;
     self.transform = [VGAffineTransform new];
     self.showColors = YES;
     self.showInterior = YES;
+    self.useMesh = YES;
     [self redraw];
 
     return self;

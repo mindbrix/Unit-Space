@@ -371,8 +371,17 @@ struct Mesh {
         
         TESStesselator *tess = tessNewTess(NULL);
         
-        int t = 0, k = 0, pi = 0, c = 0;
+        int t = 0, k = 0, pi = 0, ti = 0, c = 0;
         Triangles* triangles = & vtriangles[t];
+        
+        {
+            _ncolors = (int)_paths.size();
+            _colors = shared_ptr<RGBA8>((RGBA8 *)malloc(_ncolors * sizeof(RGBA8)), free);
+            
+            RGBA8 *dst = _colors.get();
+            for (Path& p : _paths)
+                *dst++ = p._color;
+        }
         
         for (Path& p : _paths) {
 //            if (p._subPaths.size() > 4)
@@ -382,25 +391,78 @@ struct Mesh {
                     tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                
                 float *points = (float *)tessGetVertices(tess);
                 int npoints = tessGetVertexCount(tess);
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
-                
-                TESSindex indices[npoints];
-                memset(indices, -1, npoints * sizeof(TESSindex));
-                
-                for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                    if (!writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices)) {
-                        vtriangles.resize(++t + 1);
-                        triangles = & vtriangles[t];
-                        k = 0, pi = 0, c = 0;
-                        memset(indices, INT_MAX, npoints * sizeof(TESSindex));
 
-                        writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices);
+                {
+                    int maxTris = nelems * 5, tc = 0;
+                    
+                    if (_triangles == 0) {
+                        _ntriangles = maxTris;
+                        _triangles = shared_ptr<Triangle>((Triangle *)malloc(_ntriangles * sizeof(Triangle)), free);
+                    } else {
+                        _ntriangles += maxTris;
+                        
+                        auto tmpTriangles = shared_ptr<Triangle>((Triangle *)malloc(_ntriangles * sizeof(Triangle)), free);
+                        memcpy(tmpTriangles.get(), _triangles.get(), (_ntriangles - maxTris) * sizeof(Triangle));
+                        
+                        _triangles = tmpTriangles;
+                        tmpTriangles = nullptr;
                     }
+                    
+                    Triangle *dst = _triangles.get() + ti;
+                    
+                    for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                        for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
+                            tc++;
+                            *dst++ = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
+                        }
+                    }
+                    
+                    ti += tc;
+                    _ntriangles = ti;
                 }
+                
+                
+                {
+                    if (_npoints == 0) {
+                        _npoints = npoints;
+                        _points = shared_ptr<Vector>((Vector *)malloc(_npoints * sizeof(Vector)), free);
+                    } else {
+                        _npoints += npoints;
+                        
+                        auto tmpPoints = shared_ptr<Vector>((Vector *)malloc(_npoints * sizeof(Vector)), free);
+                        memcpy(tmpPoints.get(), _points.get(), (_npoints - npoints) * sizeof(Vector));
+                        _points = tmpPoints;
+                        tmpPoints = nullptr;
+                    }
+                    Vector *dst = _points.get() + pi;
+                    memcpy(dst, points, npoints * sizeof(Vector));
+                    
+                    pi += npoints;
+                }
+                
+//                const int nelems = tessGetElementCount(tess);
+//                const TESSindex *polygon = tessGetElements(tess);
+//
+//                TESSindex indices[npoints];
+//                memset(indices, -1, npoints * sizeof(TESSindex));
+//
+//                for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+//                    if (!writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices)) {
+//                        vtriangles.resize(++t + 1);
+//                        triangles = & vtriangles[t];
+//                        k = 0, pi = 0, c = 0;
+//                        memset(indices, INT_MAX, npoints * sizeof(TESSindex));
+//
+//                        writePolygon(triangles, points, kPointStride, pi, k, c, p._color, polygon, indices);
+//                    }
+//                }
             }
+            c++;
         }
         tessDeleteTess(tess);
         
