@@ -84,11 +84,9 @@ int XYZCompare(const void *v1,const void *v2) {
  Takes as input NV vertices in array pxyz
  Returned is a list of ntri triangular faces in the array v
  These triangles are arranged in a consistent clockwise order.
- The triangle array 'v' should be malloced to 3 * nv
+ The triangle array 'v' should be malloced to 4 * nv
  The vertex array pxyz must be big enough to hold 3 more points
- The vertex array must be sorted in increasing x values say
  */
-
 int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
@@ -109,16 +107,13 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         goto skip;
     }
     
-    /* Allocate memory for the edge list */
     if ((edges = (IEDGE *)malloc(emax*(long)sizeof(IEDGE))) == NULL) {
         status = 2;
         goto skip;
     }
     
-    /*
-     Find the maximum and minimum vertex bounds.
-     This is to allow calculation of the bounding triangle
-     */
+    // AABB
+    //
     xmin = pxyz[0].x;
     ymin = pxyz[0].y;
     xmax = xmin;
@@ -135,13 +130,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     xmid = (xmax + xmin) / 2.0;
     ymid = (ymax + ymin) / 2.0;
     
-    /*
-     Set up the supertriangle
-     This is a triangle which encompasses all the sample points.
-     The supertriangle coordinates are added to the end of the
-     vertex list. The supertriangle is the first triangle in
-     the triangle list.
-     */
+    // Supertriangle
+    //
     pxyz[nv+0].x = x1 = xmid - 20 * dmax;
     pxyz[nv+0].y = y1 = ymid - dmax;
     pxyz[nv+1].x = x2 = xmid;
@@ -155,9 +145,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     circles[vsize - 1].xmax = xmaxc;
     
     xp = yp = FLT_MAX;
-    /*
-     Include each point one at a time into the existing mesh
-     */
+    
     for (i=0;i<nv;i++) {
         
         if (xp == pxyz[i].x && yp == pxyz[i].y)
@@ -167,12 +155,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         yp = pxyz[i].y;
         nedge = 0;
         
-        /*
-         Set up the edge buffer.
-         If the point (xp,yp) lies inside the circumcircle then the
-         three edges of that triangle are added to the edge buffer
-         and that triangle is removed.
-         */
+        // Filter out completed triangles
+        //
         for (tri = vstart; tri < vend; tri++) {
             circle = & circles[tri - v];
 
@@ -183,42 +167,41 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                 circles[tri - v] = circles[vstart - v];
                 *tri = *vstart++;
             }
-            else  {
-                x1 = pxyz[tri->p1].x;
-                y1 = pxyz[tri->p1].y;
-                x2 = pxyz[tri->p2].x;
-                y2 = pxyz[tri->p2].y;
-                x3 = pxyz[tri->p3].x;
-                y3 = pxyz[tri->p3].y;
-                
-                if (incirclefast(xp,yp,x1,y1,x2,y2,x3,y3) <= 0) {
-                    /* Check that we haven't exceeded the edge list size */
-                    if (nedge+3 >= emax) {
-                        emax += 100;
-                        if ((edges = (IEDGE *)realloc(edges,emax*(long)sizeof(IEDGE))) == NULL) {
-                            status = 3;
-                            goto skip;
-                        }
+        }
+        
+        // Create new polygon edge list
+        //
+        for (tri = vstart; tri < vend; tri++) {
+            x1 = pxyz[tri->p1].x;
+            y1 = pxyz[tri->p1].y;
+            x2 = pxyz[tri->p2].x;
+            y2 = pxyz[tri->p2].y;
+            x3 = pxyz[tri->p3].x;
+            y3 = pxyz[tri->p3].y;
+            
+            if (incirclefast(xp,yp,x1,y1,x2,y2,x3,y3) <= 0) {
+                if (nedge+3 >= emax) {
+                    emax += 100;
+                    if ((edges = (IEDGE *)realloc(edges,emax*(long)sizeof(IEDGE))) == NULL) {
+                        status = 3;
+                        goto skip;
                     }
-                    edges[nedge+0].p1 = tri->p1;
-                    edges[nedge+0].p2 = tri->p2;
-                    edges[nedge+1].p1 = tri->p2;
-                    edges[nedge+1].p2 = tri->p3;
-                    edges[nedge+2].p1 = tri->p3;
-                    edges[nedge+2].p2 = tri->p1;
-                    nedge += 3;
-                    
-                    circles[tri - v] = circles[vstart - v];
-                    *tri = *vstart++;
                 }
+                edges[nedge+0].p1 = tri->p1;
+                edges[nedge+0].p2 = tri->p2;
+                edges[nedge+1].p1 = tri->p2;
+                edges[nedge+1].p2 = tri->p3;
+                edges[nedge+2].p1 = tri->p3;
+                edges[nedge+2].p2 = tri->p1;
+                nedge += 3;
+                
+                circles[tri - v] = circles[vstart - v];
+                *tri = *vstart++;
             }
         }
         
-        /*
-         Tag multiple edges
-         Note: if all triangles are specified anticlockwise then all
-         interior edges are opposite pointing in direction.
-         */
+        // Filter out matching half edges to created a polygon
+        //
         for (j=0;j<nedge-1;j++) {
             for (k=j+1;k<nedge;k++) {
                 if ((edges[j].p1 == edges[k].p2) && (edges[j].p2 == edges[k].p1)) {
@@ -237,11 +220,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             }
         }
         
-        /*
-         Form new triangles for the current point
-         Skipping over any tagged edges.
-         All edges are arranged in clockwise order.
-         */
+        // Create a triangle fan from the polygon
+        //
         for (j=0;j<nedge;j++) {
             if (edges[j].p1 < 0 || edges[j].p2 < 0)
                 continue;
