@@ -130,7 +130,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     xmid = (xmax + xmin) / 2.0;
     ymid = (ymax + ymin) / 2.0;
     
-    // Supertriangle
+    // Super triangle
     //
     pxyz[nv+0].x = x1 = xmid - 20 * dmax;
     pxyz[nv+0].y = y1 = ymid - dmax;
@@ -169,7 +169,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             }
         }
         
-        // Create new polygon edge list
+        // Create new polygon edge list from incircle triangles
         //
         for (tri = vstart; tri < vend; tri++) {
             x1 = pxyz[tri->p1].x;
@@ -220,7 +220,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             }
         }
         
-        // Create a triangle fan from the polygon
+        // Create a Delaunay triangle fan from the polygon
         //
         for (j=0;j<nedge;j++) {
             if (edges[j].p1 < 0 || edges[j].p2 < 0)
@@ -248,7 +248,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         }
     }
     
-    // Copy over remaining completed triangles
+    // Copy over remaining completed triangles not touching the super triangle
     //
     for (tri = vstart; tri < vend; tri++)
         if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
