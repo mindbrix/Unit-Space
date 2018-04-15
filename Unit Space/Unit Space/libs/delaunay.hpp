@@ -200,7 +200,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             }
         }
         
-        // Filter out matching half edges to created a polygon
+        // Filter out matching half edges to create a polygon
         //
         for (j=0;j<nedge-1;j++) {
             for (k=j+1;k<nedge;k++) {
