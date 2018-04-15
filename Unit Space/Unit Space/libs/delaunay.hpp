@@ -24,7 +24,7 @@ typedef struct {
     int i;
 } XYZ;
 typedef struct {
-    double x,y,xmax;
+    double xmax;
 } CIRCLE;
 
 
@@ -158,7 +158,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
     circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
-    circles[vsize - 1].x = xc, circles[vsize - 1].y = yc, circles[vsize - 1].xmax = xmaxc;
+    circles[vsize - 1].xmax = xmaxc;
     
     xp = yp = FLT_MAX;
     /*
@@ -270,7 +270,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             y3 = pxyz[vstart->p3].y;
             
             circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
-            circles[vstart - v].x = xc, circles[vstart - v].y = yc, circles[vstart - v].xmax = xmaxc;
+            circles[vstart - v].xmax = xmaxc;
         }
     }
     
