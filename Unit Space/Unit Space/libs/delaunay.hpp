@@ -8,9 +8,6 @@
 
 // Source: http://paulbourke.net/papers/triangulate/triangulate.c
 //
-#ifndef delaunay_h
-#define delaunay_h
-
 #include <stdlib.h>
 
 typedef struct {
@@ -287,5 +284,3 @@ skip:
     free(edges);
     return(status);
 }
-
-#endif /* delaunay_h */
