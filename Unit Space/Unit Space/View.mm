@@ -62,7 +62,6 @@ using namespace std;
     self.transform = [VGAffineTransform new];
     self.showColors = YES;
     self.showInterior = YES;
-    self.useMask = YES;
     [self redraw];
 
     return self;
