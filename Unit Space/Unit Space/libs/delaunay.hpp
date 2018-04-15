@@ -107,26 +107,18 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
     CIRCLE *circles = NULL, *circle;
-    int *complete = NULL;
     IEDGE *edges = NULL;
     int nedge = 0;
-    int trimax,emax = 200;
+    int emax = 200;
     int status = 0;
     
     int inside;
     int i,j,k;
-    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc, area;
+    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc,area;
     double xmin,xmax,ymin,ymax,xmid,ymid;
     double dx,dy,dmax;
     
     qsort((void *)pxyz, (size_t)nv, sizeof(XYZ), XYZCompare);
-    
-    /* Allocate memory for the completeness list, flag for each triangle */
-    trimax = 4 * nv;
-    if ((complete = (int *)malloc(trimax*sizeof(int))) == NULL) {
-        status = 1;
-        goto skip;
-    }
     
     if ((circles = (CIRCLE *)malloc(vsize*sizeof(CIRCLE))) == NULL) {
         status = 5;
@@ -314,7 +306,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 skip:
     free(circles);
     free(edges);
-    free(complete);
     return(status);
 }
 
