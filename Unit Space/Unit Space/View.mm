@@ -40,7 +40,6 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm2;
 @property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) Quadratics quadratics;
-@property(nonatomic) vector<Triangles> triangles;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) Mesh mesh;
@@ -104,18 +103,7 @@ using namespace std;
                     break;
         } else if (_flags & 8)  {
             if (_svgData) {
-                Triangles& triangles = _triangles[0];
-                for (int j = 0; j < triangles.count; j++) {
-                    int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
-                    Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
-                    AffineTransform ctm = { p1.x - p0.x, p1.y - p0.y, p2.x - p1.x, p2.y - p1.y, p0.x, p0.y };
-                    if ((dragged = [self mouseDragCTM:event CTM:ctm])) {
-                        triangles.points[i0] = { ctm.tx, ctm.ty };
-                        triangles.points[i1] = { ctm.tx + ctm.a, ctm.ty + ctm.b };
-                        triangles.points[i2] = { ctm.tx + ctm.a + ctm.c, ctm.ty + ctm.b + ctm.d };
-                        break;
-                    }
-                }
+                
             } else {
                 for (int j = 0; j < _triangle.size(); j++)
                     if ((dragged = [self mouseDragVector:event CTM:_triangle[j]]))
@@ -510,15 +498,7 @@ using namespace std;
             
             int i = 0;
             if (_svgData) {
-                Triangles& triangles = _triangles[0];
-                for (int j = 0; j < triangles.count && j < kCirclesSize / 3; j++) {
-                    int i0 = triangles.i0[j], i1 = triangles.i1[j], i2 = triangles.i2[j];
-                    Vector p0 = triangles.points[i0], p1 = triangles.points[i1], p2 = triangles.points[i2];
-                    
-                    circles.circles[i++] = { p0.x, p0.y, largeRadius };
-                    circles.circles[i++] = { p1.x, p1.y, radius };
-                    circles.circles[i++] = { p2.x, p2.y, radius };
-                }
+                
             } else {
                 for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
                     circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };

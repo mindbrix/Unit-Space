@@ -24,7 +24,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> trianglePipelineState;
 
 @end
 
@@ -97,11 +96,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Mesh";
     self.meshPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangle_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
-    descriptor.label = @"Triangle";
-    self.trianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
@@ -179,11 +173,6 @@
                 [commandEncoder setRenderPipelineState:_unitPipelineState];
                 [commandEncoder setVertexBytes:&calls->units length:sizeof(Units) atIndex:1];
                 break;
-            case kCallTypeTriangles:
-                [commandEncoder setRenderPipelineState:_trianglePipelineState];
-                [commandEncoder setVertexBytes:&calls->triangles length:sizeof(Triangles) atIndex:1];
-                instanceCount = calls->triangles.count;
-                break;
         }
         
         State state = calls->state;
@@ -199,7 +188,7 @@
                               baseInstance:0];
         } else {
             [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                       indexCount:calls->type == kCallTypeTriangles ? 3 : 6
+                                       indexCount:6
                                         indexType:MTLIndexTypeUInt16
                                       indexBuffer:_indexBuffer
                                 indexBufferOffset:0

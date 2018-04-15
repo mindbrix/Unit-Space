@@ -87,29 +87,6 @@ struct Triangle {
 #define kTrianglesPointsSize 256
 #define kTrianglesColorsSize 125
 
-struct Triangles {
-    int                 count;
-    bool                showColors;
-    bool                showInterior;
-    unsigned char       i0[kTrianglesIndexSize];
-    unsigned char       i1[kTrianglesIndexSize];
-    unsigned char       i2[kTrianglesIndexSize];
-    unsigned char       c0[kTrianglesIndexSize];
-    Vector              points[kTrianglesPointsSize];
-    RGBA8               colors[kTrianglesColorsSize];
-    
-    Triangles() {}
-    bool add(int i, int _i0, int _i1, int _i2, int _c0) {
-        if (i >= kTrianglesIndexSize)
-            return false;
-        count = i + 1;
-        i0[i] = (unsigned char)_i0;
-        i1[i] = (unsigned char)_i1;
-        i2[i] = (unsigned char)_i2;
-        c0[i] = (unsigned char)_c0;
-        return true;
-    }
-};
 
 struct State {
     RGBA                fillColor;
@@ -130,7 +107,6 @@ enum CallType : unsigned int {
     kCallTypeMesh,
     kCallTypeQuadratics,
     kCallTypeUnits,
-    kCallTypeTriangles,
 };
 
 struct Call {
@@ -145,7 +121,6 @@ struct Call {
         MeshState   meshState;
         Quadratics  quadratics;
         Units       units;
-        Triangles   triangles;
     };
 };
 
