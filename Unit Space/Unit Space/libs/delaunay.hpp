@@ -103,8 +103,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     int nedge = 0;
     int emax = 200;
     int status = 0;
-    
-    int inside;
     int i,j,k;
     double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc;
     double xmin,xmax,ymin,ymax,xmid,ymid;
@@ -183,9 +181,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
          */
         for (tri = vstart; tri < vend; tri++) {
             circle = & circles[tri - v];
-            xc = circle->x, yc = circle->y, xmaxc = circle->xmax;
-            
-            if (xp > xmaxc) {
+
+            if (xp > circle->xmax) {
                 if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
                 
@@ -199,10 +196,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                 y2 = pxyz[tri->p2].y;
                 x3 = pxyz[tri->p3].x;
                 y3 = pxyz[tri->p3].y;
-                double incircle = incirclefast(xp,yp,x1,y1,x2,y2,x3,y3);
-                inside = incircle <= 0;
                 
-                if (inside) {
+                if (incirclefast(xp,yp,x1,y1,x2,y2,x3,y3) <= 0) {
                     /* Check that we haven't exceeded the edge list size */
                     if (nedge+3 >= emax) {
                         emax += 100;
@@ -222,8 +217,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                     circles[tri - v] = circles[vstart - v];
                     *tri = *vstart++;
                 }
-                    
-                
             }
         }
         
