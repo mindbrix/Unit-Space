@@ -248,10 +248,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         }
     }
     
-    /*
-     Remove triangles with supertriangle vertices
-     These are triangles which have a vertex number greater than nv
-     */
+    // Copy over remaining completed triangles
+    //
     for (tri = vstart; tri < vend; tri++)
         if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
             *completed++ = *tri;
