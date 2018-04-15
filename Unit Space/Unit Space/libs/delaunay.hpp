@@ -194,13 +194,9 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         // Filter out matching half edges to create a polygon
         //
         for (j = 0; j < nedge - 1; j++) {
-            for (k = j + 1;k < nedge; k++) {
-                if ((edges[j].p1 == edges[k].p2) && (edges[j].p2 == edges[k].p1)) {
-                    edges[j].p1 = -1, edges[j].p2 = -1;
-                    edges[k].p1 = -1, edges[k].p2 = -1;
-                }
-                /* Shouldn't need the following, see note above */
-                if ((edges[j].p1 == edges[k].p1) && (edges[j].p2 == edges[k].p2)) {
+            for (k = j + 1; k < nedge; k++) {
+                if ((edges[j].p1 == edges[k].p2 && edges[j].p2 == edges[k].p1) ||
+                    (edges[j].p1 == edges[k].p1 && edges[j].p2 == edges[k].p2)) {
                     edges[j].p1 = -1, edges[j].p2 = -1;
                     edges[k].p1 = -1, edges[k].p2 = -1;
                 }
