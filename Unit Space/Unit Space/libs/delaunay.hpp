@@ -13,8 +13,6 @@
 
 #include <stdlib.h>
 
-#define EPSILON (1e-6)
-
 typedef struct {
     int p1,p2,p3;
 } ITRIANGLE;
@@ -29,12 +27,6 @@ typedef struct {
     double x,y,xmax;
 } CIRCLE;
 
-
-double TriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
-    double v0x = x2 - x1, v0y = y2 - y1;
-    double v1x = x3 - x2, v1y = y3 - y2;
-    return v0x * v1y - v0y * v1x;
-}
 
 double incirclefast(double xp, double yp, double x1, double y1, double x2, double y2, double x3, double y3)
 {
@@ -114,7 +106,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     int inside;
     int i,j,k;
-    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc,area;
+    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc;
     double xmin,xmax,ymin,ymax,xmid,ymid;
     double dx,dy,dmax;
     
@@ -283,10 +275,6 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             y2 = pxyz[vstart->p2].y;
             x3 = pxyz[vstart->p3].x;
             y3 = pxyz[vstart->p3].y;
-            
-            area = TriangleArea(x1,y1,x2,y2,x3,y3);
-            if (area > 0)
-                std::swap(vstart->p1, vstart->p3);
             
             circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
             circles[vstart - v].x = xc, circles[vstart - v].y = yc, circles[vstart - v].xmax = xmaxc;
