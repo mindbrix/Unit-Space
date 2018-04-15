@@ -277,6 +277,35 @@ struct Mesh {
         if (status == 0) {
             triangles.resize(ntri);
             
+            {
+                _npoints = count;
+                _points = shared_ptr<Vector>((Vector *)malloc(_npoints * sizeof(Vector)), free);
+                
+                XYZ *src = points.get(), *end = src + _npoints;
+                Vector *dst = _points.get();
+                while(src != end)
+                    *dst++ = { src->x, src++->y };
+            }
+            
+            {
+                _ntriangles = ntri;
+                _triangles = shared_ptr<Triangle>((Triangle *)malloc(_ntriangles * sizeof(Triangle)), free);
+                
+                Triangle *dst = _triangles.get();
+                for(auto &t : triangles)
+                    *dst++ = { t.p3, t.p2, t.p1, 0 };
+            }
+            
+            {
+                _ncolors = (int)_paths.size();
+                _colors = shared_ptr<RGBA8>((RGBA8 *)malloc(_ncolors * sizeof(RGBA8)), free);
+                
+                RGBA8 *dst = _colors.get();
+                for (Path& p : _paths)
+                    *dst++ = p._color;
+            }
+            
+            
             Triangles* triangles0 = & vtriangles[0];
             RGBA8 red(255, 0, 0, 255), white(255, 255, 255, 255);
             triangles0->colors[0] = red;
@@ -395,4 +424,11 @@ struct Mesh {
     
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
     vector<Path>                        _paths;
+    
+    shared_ptr<RGBA8>                   _colors;
+    int                                 _ncolors;
+    shared_ptr<Vector>                  _points;
+    int                                 _npoints;
+    shared_ptr<Triangle>                _triangles;
+    int                                 _ntriangles;
 };

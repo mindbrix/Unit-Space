@@ -73,6 +73,10 @@ struct Units {
     AffineTransform     ctms[170];
 };
 
+struct Triangle {
+    int i0, i1, i2, c;
+};
+
 #define kTrianglesIndexSize 384
 #define kTrianglesPointsSize 256
 #define kTrianglesColorsSize 125
