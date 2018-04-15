@@ -27,6 +27,6 @@
 - (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowInterior:(id)sender;
 - (IBAction)toggleTriangle:(id)sender;
-- (IBAction)toggleUseMesh:(id)sender;
+- (IBAction)toggleUseMask:(id)sender;
 
 @end

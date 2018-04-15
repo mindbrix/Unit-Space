@@ -33,7 +33,7 @@ using namespace std;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
-@property(nonatomic) BOOL useMesh;
+@property(nonatomic) BOOL useMask;
 @property(nonatomic) AffineTransform unitCTM;
 @property(nonatomic) AffineTransform ctm0;
 @property(nonatomic) AffineTransform ctm1;
@@ -63,7 +63,7 @@ using namespace std;
     self.transform = [VGAffineTransform new];
     self.showColors = YES;
     self.showInterior = YES;
-    self.useMesh = YES;
+    self.useMask = YES;
     [self redraw];
 
     return self;
@@ -263,8 +263,9 @@ using namespace std;
     [self redraw];
 }
 
-- (IBAction)toggleUseMesh:(id)sender {
-    _useMesh = !_useMesh;
+- (IBAction)toggleUseMask:(id)sender {
+    _useMask = !_useMask;
+    [self reset];
     [self redraw];
 }
 
@@ -342,7 +343,7 @@ using namespace std;
                 _mesh.addPath(p);
             }
         }
-        _mesh.triangulate(false);
+        _mesh.triangulate(self.useMask);
         [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
         [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
         [self.metalLayer createTrianglesBuffer:_mesh._triangles.get() ntriangles:_mesh._ntriangles];
@@ -376,7 +377,7 @@ using namespace std;
     _mesh.reset(self.bounds.size.width, self.bounds.size.height);
     _mesh.addPath(p0);
     _mesh.addPath(p1);
-    _mesh.triangulate(false);
+    _mesh.triangulate(self.useMask);
     
     [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
     [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
@@ -488,7 +489,7 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        if (_useMesh && _mesh._ntriangles) {
+        if (_mesh._ntriangles) {
             _calls.emplace_back();
             Call& call = _calls.back();
             
@@ -497,21 +498,7 @@ using namespace std;
             
             call.type = kCallTypeMesh;
             call.state = uniforms;
-        } else {
-            for (Triangles& triangles : _triangles) {
-                if (triangles.count) {
-                    triangles.showColors = _showColors;
-                    triangles.showInterior = _showInterior;
-                    _calls.emplace_back();
-                    Call& call = _calls.back();
-                    
-                    call.type = kCallTypeTriangles;
-                    call.state = uniforms;
-                    call.triangles = triangles;
-                }
-            }
         }
-        
         
         if (_showPoints) {
             uniforms.fillColor = { 1, 0, 0, 1 };

@@ -689,10 +689,10 @@
                                     <action selector="toggleShowInterior:" target="-1" id="Fvw-t5-c8n"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Use Mesh" keyEquivalent="m" id="9z2-Fi-Oav">
+                            <menuItem title="Toggle Use Mask" keyEquivalent="m" id="9z2-Fi-Oav">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleUseMesh:" target="-1" id="paz-IB-WJB"/>
+                                    <action selector="toggleUseMask:" target="-1" id="Nb7-ej-zoP"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">
