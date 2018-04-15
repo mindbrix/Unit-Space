@@ -309,7 +309,7 @@ struct Mesh {
                 
                 Triangle *dst = _triangles.get();
                 for(auto &t : triangles)
-                    *dst++ = { t.p3, t.p2, t.p1, 0 };
+                    *dst++ = { t.p1, t.p2, t.p3, 0 };
             }
             
             {

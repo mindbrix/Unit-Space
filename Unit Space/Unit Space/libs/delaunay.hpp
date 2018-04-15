@@ -132,12 +132,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     // Super triangle
     //
-    pxyz[nv+0].x = x1 = xmid - 20 * dmax;
-    pxyz[nv+0].y = y1 = ymid - dmax;
-    pxyz[nv+1].x = x2 = xmid;
-    pxyz[nv+1].y = y2 = ymid + 20 * dmax;
-    pxyz[nv+2].x = x3 = xmid + 20 * dmax;
-    pxyz[nv+2].y = y3 = ymid - dmax;
+    pxyz[nv + 2].x = x1 = xmid - 20 * dmax;
+    pxyz[nv + 2].y = y1 = ymid - dmax;
+    pxyz[nv + 1].x = x2 = xmid;
+    pxyz[nv + 1].y = y2 = ymid + 20 * dmax;
+    pxyz[nv + 0].x = x3 = xmid + 20 * dmax;
+    pxyz[nv + 0].y = y3 = ymid - dmax;
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
@@ -179,7 +179,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             x3 = pxyz[tri->p3].x;
             y3 = pxyz[tri->p3].y;
             
-            if (incirclefast(xp,yp,x1,y1,x2,y2,x3,y3) <= 0) {
+            if (incirclefast(xp,yp,x1,y1,x2,y2,x3,y3) >= 0) {
                 if (nedge+3 >= emax) {
                     emax += 100;
                     if ((edges = (IEDGE *)realloc(edges,emax*(long)sizeof(IEDGE))) == NULL) {
