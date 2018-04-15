@@ -112,11 +112,10 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     // AABB
     //
-    xmin = pxyz[0].x;
-    ymin = pxyz[0].y;
-    xmax = xmin;
-    ymax = ymin;
-    for (i=1;i<nv;i++) {
+    xmin = pxyz[0].x, ymin = pxyz[0].y;
+    xmax = xmin, ymax = ymin;
+    
+    for (i = 1; i < nv; i++) {
         if (pxyz[i].x < xmin) xmin = pxyz[i].x;
         if (pxyz[i].x > xmax) xmax = pxyz[i].x;
         if (pxyz[i].y < ymin) ymin = pxyz[i].y;
@@ -128,7 +127,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     xmid = (xmax + xmin) / 2.0;
     ymid = (ymax + ymin) / 2.0;
     
-    // Super triangle
+    // CCW Super triangle
     //
     pxyz[nv + 2].x = x1 = xmid - 20 * dmax;
     pxyz[nv + 2].y = y1 = ymid - dmax;
@@ -177,14 +176,14 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             if (incirclefast(xp, yp, x1, y1, x2, y2, x3, y3) >= 0) {
                 if (nedge + 3 >= emax) {
                     emax += 100;
-                    if ((edges = (IEDGE *)realloc(edges, emax*(long)sizeof(IEDGE))) == NULL) {
+                    if ((edges = (IEDGE *)realloc(edges, emax * (long)sizeof(IEDGE))) == NULL) {
                         status = 3;
                         goto skip;
                     }
                 }
-                edges[nedge+0].p1 = tri->p1, edges[nedge+0].p2 = tri->p2;
-                edges[nedge+1].p1 = tri->p2, edges[nedge+1].p2 = tri->p3;
-                edges[nedge+2].p1 = tri->p3, edges[nedge+2].p2 = tri->p1;
+                edges[nedge + 0].p1 = tri->p1, edges[nedge + 0].p2 = tri->p2;
+                edges[nedge + 1].p1 = tri->p2, edges[nedge + 1].p2 = tri->p3;
+                edges[nedge + 2].p1 = tri->p3, edges[nedge + 2].p2 = tri->p1;
                 nedge += 3;
                 
                 circles[tri - v] = circles[vstart - v];
