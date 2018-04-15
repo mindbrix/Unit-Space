@@ -26,7 +26,7 @@ typedef struct {
     int i;
 } XYZ;
 typedef struct {
-    double x,y,r;
+    double x,y,xmax;
 } CIRCLE;
 
 
@@ -59,7 +59,7 @@ double incirclefast(double xp, double yp, double x1, double y1, double x2, doubl
     return alift * bcdet + blift * cadet + clift * abdet;
 }
 
-void circumcenter(double ax, double ay, double bx, double by, double cx, double cy, double *xc, double *yc, double *ux) {
+void circumcenter(double ax, double ay, double bx, double by, double cx, double cy, double *xc, double *yc, double *xmax) {
     double dx = bx - ax;
     double dy = by - ay;
     double ex = cx - ax;
@@ -77,7 +77,7 @@ void circumcenter(double ax, double ay, double bx, double by, double cx, double 
     *xc += ax;
     *yc += ay;
     
-    *ux = *xc + r;
+    *xmax = *xc + r;
 }
 
 int XYZCompare(const void *v1,const void *v2)
@@ -106,7 +106,7 @@ int XYZCompare(const void *v1,const void *v2)
 int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
 {
     ITRIANGLE *completed = v, *vend = v + vsize, *vstart = vend, *tri;
-    CIRCLE *centres = NULL, *centre;
+    CIRCLE *circles = NULL, *circle;
     int *complete = NULL;
     IEDGE *edges = NULL;
     int nedge = 0;
@@ -115,7 +115,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     int inside;
     int i,j,k;
-    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,r, area;
+    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc, area;
     double xmin,xmax,ymin,ymax,xmid,ymid;
     double dx,dy,dmax;
     
@@ -128,7 +128,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         goto skip;
     }
     
-    if ((centres = (CIRCLE *)malloc(vsize*sizeof(CIRCLE))) == NULL) {
+    if ((circles = (CIRCLE *)malloc(vsize*sizeof(CIRCLE))) == NULL) {
         status = 5;
         goto skip;
     }
@@ -175,8 +175,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
-    circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &r);
-    centres[vsize - 1].x = xc, centres[vsize - 1].y = yc, centres[vsize - 1].r = r;
+    circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
+    circles[vsize - 1].x = xc, circles[vsize - 1].y = yc, circles[vsize - 1].xmax = xmaxc;
     
     xp = yp = FLT_MAX;
     /*
@@ -198,14 +198,14 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
          and that triangle is removed.
          */
         for (tri = vstart; tri < vend; tri++) {
-            centre = & centres[tri - v];
-            xc = centre->x, yc = centre->y, r = centre->r;
+            circle = & circles[tri - v];
+            xc = circle->x, yc = circle->y, xmaxc = circle->xmax;
             
-            if (xp > r) {
+            if (xp > xmaxc) {
                 if (!(tri->p1 >= nv || tri->p2 >= nv || tri->p3 >= nv))
                      *completed++ = *tri;
                 
-                centres[tri - v] = centres[vstart - v];
+                circles[tri - v] = circles[vstart - v];
                 *tri = *vstart++;
             }
             else  {
@@ -235,7 +235,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
                     edges[nedge+2].p2 = tri->p1;
                     nedge += 3;
                     
-                    centres[tri - v] = centres[vstart - v];
+                    circles[tri - v] = circles[vstart - v];
                     *tri = *vstart++;
                 }
                     
@@ -296,8 +296,8 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             if (area > 0)
                 std::swap(vstart->p1, vstart->p3);
             
-            circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &r);
-            centres[vstart - v].x = xc, centres[vstart - v].y = yc, centres[vstart - v].r = r;
+            circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
+            circles[vstart - v].x = xc, circles[vstart - v].y = yc, circles[vstart - v].xmax = xmaxc;
         }
     }
     
@@ -311,14 +311,11 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     (*ntri) = (int)(completed - v);
     
-    
 skip:
-    free(centres);
+    free(circles);
     free(edges);
     free(complete);
     return(status);
 }
-
-
 
 #endif /* delaunay_h */
