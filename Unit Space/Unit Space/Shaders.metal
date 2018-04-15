@@ -432,8 +432,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 v1 = p1 - v12 * dh2 + v01 * dh0;
     float2 v2 = p2 - v20 * dh0 + v12 * dh1;
     
-    vid = vid % 3;
-    
     float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
     float d0 = dot(p0 - devicePoint, n01);
     float d1 = dot(p1 - devicePoint, n12);
