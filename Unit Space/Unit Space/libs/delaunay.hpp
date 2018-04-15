@@ -11,13 +11,13 @@
 #include <stdlib.h>
 
 typedef struct {
-    int p1,p2,p3;
+    int p1, p2, p3;
 } ITRIANGLE;
 typedef struct {
-    int p1,p2;
+    int p1, p2;
 } IEDGE;
 typedef struct {
-    float x,y;
+    float x, y;
     int i;
 } XYZ;
 typedef struct {
@@ -30,16 +30,14 @@ double incirclefast(double xp, double yp, double x1, double y1, double x2, doubl
     double abdet, bcdet, cadet;
     double alift, blift, clift;
     
-    adx = x1 - xp;
-    ady = y1 - yp;
-    bdx = x2 - xp;
-    bdy = y2 - yp;
-    cdx = x3 - xp;
-    cdy = y3 - yp;
+    adx = x1 - xp, ady = y1 - yp;
+    bdx = x2 - xp, bdy = y2 - yp;
+    cdx = x3 - xp, cdy = y3 - yp;
     
     abdet = adx * bdy - bdx * ady;
     bcdet = bdx * cdy - cdx * bdy;
     cadet = cdx * ady - adx * cdy;
+    
     alift = adx * adx + ady * ady;
     blift = bdx * bdx + bdy * bdy;
     clift = cdx * cdx + cdy * cdy;
@@ -48,27 +46,27 @@ double incirclefast(double xp, double yp, double x1, double y1, double x2, doubl
 }
 
 void circumcenter(double ax, double ay, double bx, double by, double cx, double cy, double *xc, double *yc, double *xmax) {
-    double dx = bx - ax;
-    double dy = by - ay;
-    double ex = cx - ax;
-    double ey = cy - ay;
+    double dx, dy, ex, ey;
+    double bl, cl, d, r;
     
-    double bl = dx * dx + dy * dy;
-    double cl = ex * ex + ey * ey;
-    double d = dx * ey - dy * ex;
+    dx = bx - ax, dy = by - ay;
+    bl = dx * dx + dy * dy;
+    
+    ex = cx - ax, ey = cy - ay;
+    cl = ex * ex + ey * ey;
+    
+    d = dx * ey - dy * ex;
     
     *xc = (ey * bl - dy * cl) * 0.5 / d;
     *yc = (dx * cl - ex * bl) * 0.5 / d;
     
-    double r = std::sqrt(*xc * *xc + *yc * *yc);
+    r = std::sqrt(*xc * *xc + *yc * *yc);
     
-    *xc += ax;
-    *yc += ay;
-    
+    *xc += ax, *yc += ay;
     *xmax = *xc + r;
 }
 
-int XYZCompare(const void *v1,const void *v2) {
+int XYZCompare(const void *v1, const void *v2) {
     XYZ *p1 = (XYZ *)v1;
     XYZ *p2 = (XYZ *)v2;
     if (p1->x < p2->x)
@@ -95,10 +93,10 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     int nedge = 0;
     int emax = 200;
     int status = 0;
-    int i,j,k;
-    double xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,xmaxc;
-    double xmin,xmax,ymin,ymax,xmid,ymid;
-    double dx,dy,dmax;
+    int i, j, k;
+    double xp, yp, x1, y1, x2, y2, x3, y3, xc, yc, xmaxc;
+    double xmin, xmax, ymin, ymax, xmid, ymid;
+    double dx, dy, dmax;
     
     qsort((void *)pxyz, (size_t)nv, sizeof(XYZ), XYZCompare);
     
@@ -141,12 +139,12 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
     
     vstart--;
     vstart->p1 = nv, vstart->p2 = nv + 1, vstart->p3 = nv + 2;
-    circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
+    circumcenter(x1, y1, x2, y2, x3, y3, &xc, &yc, &xmaxc);
     circles[vsize - 1].xmax = xmaxc;
     
     xp = yp = FLT_MAX;
     
-    for (i=0;i<nv;i++) {
+    for (i = 0; i < nv; i++) {
         
         if (xp == pxyz[i].x && yp == pxyz[i].y)
             continue;
@@ -172,27 +170,21 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         // Create new polygon edge list from incircle triangles
         //
         for (tri = vstart; tri < vend; tri++) {
-            x1 = pxyz[tri->p1].x;
-            y1 = pxyz[tri->p1].y;
-            x2 = pxyz[tri->p2].x;
-            y2 = pxyz[tri->p2].y;
-            x3 = pxyz[tri->p3].x;
-            y3 = pxyz[tri->p3].y;
+            x1 = pxyz[tri->p1].x, y1 = pxyz[tri->p1].y;
+            x2 = pxyz[tri->p2].x, y2 = pxyz[tri->p2].y;
+            x3 = pxyz[tri->p3].x, y3 = pxyz[tri->p3].y;
             
-            if (incirclefast(xp,yp,x1,y1,x2,y2,x3,y3) >= 0) {
-                if (nedge+3 >= emax) {
+            if (incirclefast(xp, yp, x1, y1, x2, y2, x3, y3) >= 0) {
+                if (nedge + 3 >= emax) {
                     emax += 100;
-                    if ((edges = (IEDGE *)realloc(edges,emax*(long)sizeof(IEDGE))) == NULL) {
+                    if ((edges = (IEDGE *)realloc(edges, emax*(long)sizeof(IEDGE))) == NULL) {
                         status = 3;
                         goto skip;
                     }
                 }
-                edges[nedge+0].p1 = tri->p1;
-                edges[nedge+0].p2 = tri->p2;
-                edges[nedge+1].p1 = tri->p2;
-                edges[nedge+1].p2 = tri->p3;
-                edges[nedge+2].p1 = tri->p3;
-                edges[nedge+2].p2 = tri->p1;
+                edges[nedge+0].p1 = tri->p1, edges[nedge+0].p2 = tri->p2;
+                edges[nedge+1].p1 = tri->p2, edges[nedge+1].p2 = tri->p3;
+                edges[nedge+2].p1 = tri->p3, edges[nedge+2].p2 = tri->p1;
                 nedge += 3;
                 
                 circles[tri - v] = circles[vstart - v];
@@ -202,27 +194,23 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
         
         // Filter out matching half edges to create a polygon
         //
-        for (j=0;j<nedge-1;j++) {
-            for (k=j+1;k<nedge;k++) {
+        for (j = 0; j < nedge - 1; j++) {
+            for (k = j + 1;k < nedge; k++) {
                 if ((edges[j].p1 == edges[k].p2) && (edges[j].p2 == edges[k].p1)) {
-                    edges[j].p1 = -1;
-                    edges[j].p2 = -1;
-                    edges[k].p1 = -1;
-                    edges[k].p2 = -1;
+                    edges[j].p1 = -1, edges[j].p2 = -1;
+                    edges[k].p1 = -1, edges[k].p2 = -1;
                 }
                 /* Shouldn't need the following, see note above */
                 if ((edges[j].p1 == edges[k].p1) && (edges[j].p2 == edges[k].p2)) {
-                    edges[j].p1 = -1;
-                    edges[j].p2 = -1;
-                    edges[k].p1 = -1;
-                    edges[k].p2 = -1;
+                    edges[j].p1 = -1, edges[j].p2 = -1;
+                    edges[k].p1 = -1, edges[k].p2 = -1;
                 }
             }
         }
         
         // Create a Delaunay triangle fan from the polygon
         //
-        for (j=0;j<nedge;j++) {
+        for (j = 0; j <nedge; j++) {
             if (edges[j].p1 < 0 || edges[j].p2 < 0)
                 continue;
             
@@ -236,14 +224,11 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             vstart->p2 = edges[j].p2;
             vstart->p3 = i;
             
-            x1 = pxyz[vstart->p1].x;
-            y1 = pxyz[vstart->p1].y;
-            x2 = pxyz[vstart->p2].x;
-            y2 = pxyz[vstart->p2].y;
-            x3 = pxyz[vstart->p3].x;
-            y3 = pxyz[vstart->p3].y;
+            x1 = pxyz[vstart->p1].x, y1 = pxyz[vstart->p1].y;
+            x2 = pxyz[vstart->p2].x, y2 = pxyz[vstart->p2].y;
+            x3 = pxyz[vstart->p3].x, y3 = pxyz[vstart->p3].y;
             
-            circumcenter(x1,y1,x2,y2,x3,y3,&xc,&yc, &xmaxc);
+            circumcenter(x1, y1, x2, y2, x3, y3, &xc, &yc, &xmaxc);
             circles[vstart - v].xmax = xmaxc;
         }
     }
