@@ -73,9 +73,15 @@ struct Units {
     AffineTransform     ctms[170];
 };
 
+struct MeshState {
+    bool                showColors;
+    bool                showInterior;
+};
+
 struct Triangle {
     int i0, i1, i2, c;
 };
+
 
 #define kTrianglesIndexSize 384
 #define kTrianglesPointsSize 256
@@ -121,6 +127,7 @@ enum CallType : unsigned int {
     kCallTypeCircles,
     kCallTypeFractal,
     kCallTypeLines,
+    kCallTypeMesh,
     kCallTypeQuadratics,
     kCallTypeUnits,
     kCallTypeTriangles,
@@ -135,6 +142,7 @@ struct Call {
         Circles     circles;
         Fractals    fractals;
         Lines       lines;
+        MeshState   meshState;
         Quadratics  quadratics;
         Units       units;
         Triangles   triangles;

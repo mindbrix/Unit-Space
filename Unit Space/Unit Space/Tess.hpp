@@ -425,10 +425,12 @@ struct Mesh {
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
     vector<Path>                        _paths;
     
-    shared_ptr<RGBA8>                   _colors;
     int                                 _ncolors;
-    shared_ptr<Vector>                  _points;
+    shared_ptr<RGBA8>                   _colors;
+    
     int                                 _npoints;
-    shared_ptr<Triangle>                _triangles;
+    shared_ptr<Vector>                  _points;
+    
     int                                 _ntriangles;
+    shared_ptr<Triangle>                _triangles;
 };

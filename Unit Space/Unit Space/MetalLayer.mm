@@ -14,11 +14,15 @@
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
+@property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> trianglePipelineState;
 
@@ -88,6 +92,12 @@
     
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
+    descriptor.label = @"Mesh";
+    self.meshPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangle_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
@@ -153,6 +163,14 @@
                 [commandEncoder setVertexBytes:&calls->lines length:sizeof(Lines) atIndex:1];
                 instanceCount = calls->lines.count;
                 break;
+            case kCallTypeMesh:
+                [commandEncoder setRenderPipelineState:_meshPipelineState];
+                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
+                [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
+                instanceCount = _trianglesBuffer.length / sizeof(Triangle);
+                break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
                 [commandEncoder setVertexBytes:&calls->quadratics length:sizeof(Quadratics) atIndex:1];
@@ -172,12 +190,22 @@
         state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
-        [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:calls->type == kCallTypeTriangles ? 3 : 6
-                                    indexType:MTLIndexTypeUInt16
-                                  indexBuffer:_indexBuffer
-                            indexBufferOffset:0
-                                instanceCount:instanceCount];
+        
+        if (calls->type == kCallTypeMesh) {
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
+                               vertexStart:0
+                               vertexCount:3
+                             instanceCount:instanceCount
+                              baseInstance:0];
+        } else {
+            [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                       indexCount:calls->type == kCallTypeTriangles ? 3 : 6
+                                        indexType:MTLIndexTypeUInt16
+                                      indexBuffer:_indexBuffer
+                                indexBufferOffset:0
+                                    instanceCount:instanceCount];
+        }
+        
         calls++;
     }
     
@@ -185,6 +213,29 @@
     
     [commandBuffer presentDrawable:drawable];
     [commandBuffer commit];
+}
+
+#pragma mark - Public
+
+- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(int)ncolors {
+    _colorsBuffer = [self.device newBufferWithBytesNoCopy:(void *)colors
+                                                   length:ncolors * sizeof(RGBA8)
+                                                  options:MTLResourceStorageModeShared
+                                              deallocator:nil];
+}
+
+- (void)createPointsBuffer:(Vector *)points npoints:(int)npoints {
+    _pointsBuffer = [self.device newBufferWithBytesNoCopy:(void *)points
+                                                   length:npoints * sizeof(Vector)
+                                                  options:MTLResourceStorageModeShared
+                                              deallocator:nil];
+}
+
+- (void)createTrianglesBuffer:(Triangle *)triangles ntriangle:(int)ntriangle {
+    _trianglesBuffer = [self.device newBufferWithBytesNoCopy:(void *)triangles
+                                                   length:ntriangle * sizeof(Triangle)
+                                                  options:MTLResourceStorageModeShared
+                                              deallocator:nil];
 }
 
 @end
