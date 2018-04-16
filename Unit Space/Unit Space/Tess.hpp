@@ -238,14 +238,20 @@ struct Mesh {
         _paths.resize(0);
         
         _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
+        
+        _vcolors.resize(0);
+        _vpoints.resize(0);
+        _vtriangles.resize(0);
+
+        
         _ncolors = 0;
-        _colors = nullptr;
+//        _colors = nullptr;
         
         _npoints = 0;
-        _points = nullptr;
+//        _points = nullptr;
         
         _ntriangles = 0;
-        _triangles = nullptr;
+//        _triangles = nullptr;
     }
     
     void addPath(Path& path) {
@@ -295,30 +301,36 @@ struct Mesh {
             
             {
                 _npoints = count;
-                _points = shared_ptr<Vector>((Vector *)malloc(_npoints * sizeof(Vector)), free);
                 
-                XYZ *src = points.get(), *end = src + _npoints;
-                Vector *dst = _points.get();
-                while(src != end)
-                    *dst++ = { src->x, src++->y };
+                {
+                    _vpoints.resize(_npoints);
+                    XYZ *src = points.get(), *end = src + _npoints;
+                    Vector *dst = & _vpoints[0];
+                    while(src != end)
+                        *dst++ = { src->x, src++->y };
+                }
             }
             
             {
                 _ntriangles = ntri;
-                _triangles = shared_ptr<Triangle>((Triangle *)malloc(_ntriangles * sizeof(Triangle)), free);
-                
-                Triangle *dst = _triangles.get();
-                for(auto &t : triangles)
-                    *dst++ = { t.p1, t.p2, t.p3, 0 };
+                {
+                    _vtriangles.resize(_ntriangles);
+                    Triangle *dst = & _vtriangles[0];
+                    for(auto &t : triangles)
+                        *dst++ = { t.p1, t.p2, t.p3, 0 };
+                }
             }
             
             {
                 _ncolors = (int)_paths.size();
-                _colors = shared_ptr<RGBA8>((RGBA8 *)malloc(_ncolors * sizeof(RGBA8)), free);
                 
-                RGBA8 *dst = _colors.get();
-                for (Path& p : _paths)
-                    *dst++ = p._color;
+                {
+                    _vcolors.resize(_ncolors);
+                    RGBA8 *dst = & _vcolors[0];
+                    for (Path& p : _paths)
+                        *dst++ = p._color;
+                }
+                
             }
         }
         
@@ -337,11 +349,9 @@ struct Mesh {
         
         {
             _ncolors = (int)_paths.size();
-            _colors = shared_ptr<RGBA8>((RGBA8 *)malloc(_ncolors * sizeof(RGBA8)), free);
             
-            RGBA8 *dst = _colors.get();
             for (Path& p : _paths)
-                *dst++ = p._color;
+                _vcolors.emplace_back(p._color);
         }
         
         for (Path& p : _paths) {
@@ -359,27 +369,13 @@ struct Mesh {
                 const TESSindex *polygon = tessGetElements(tess);
 
                 {
-                    int maxTris = nelems * 5, tc = 0;
-                    
-                    if (_triangles == 0) {
-                        _ntriangles = maxTris;
-                        _triangles = shared_ptr<Triangle>((Triangle *)malloc(_ntriangles * sizeof(Triangle)), free);
-                    } else {
-                        _ntriangles += maxTris;
-                        
-                        auto tmpTriangles = shared_ptr<Triangle>((Triangle *)malloc(_ntriangles * sizeof(Triangle)), free);
-                        memcpy(tmpTriangles.get(), _triangles.get(), (_ntriangles - maxTris) * sizeof(Triangle));
-                        
-                        _triangles = tmpTriangles;
-                        tmpTriangles = nullptr;
-                    }
-                    
-                    Triangle *dst = _triangles.get() + ti;
+                    int tc = 0;
                     
                     for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                         for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
                             tc++;
-                            *dst++ = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
+                            Triangle tri = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
+                            _vtriangles.emplace_back(tri);
                         }
                     }
                     
@@ -389,20 +385,11 @@ struct Mesh {
                 
                 
                 {
-                    if (_npoints == 0) {
-                        _npoints = npoints;
-                        _points = shared_ptr<Vector>((Vector *)malloc(_npoints * sizeof(Vector)), free);
-                    } else {
-                        _npoints += npoints;
-                        
-                        auto tmpPoints = shared_ptr<Vector>((Vector *)malloc(_npoints * sizeof(Vector)), free);
-                        memcpy(tmpPoints.get(), _points.get(), (_npoints - npoints) * sizeof(Vector));
-                        _points = tmpPoints;
-                        tmpPoints = nullptr;
+                    for (int i = 0; i < npoints; i++) {
+                        Vector p = { points[i * 2], points[i * 2 + 1] };
+                        _vpoints.emplace_back(p);
                     }
-                    Vector *dst = _points.get() + pi;
-                    memcpy(dst, points, npoints * sizeof(Vector));
-                    
+                    _npoints += npoints;
                     pi += npoints;
                 }
             }
@@ -416,12 +403,13 @@ struct Mesh {
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
     vector<Path>                        _paths;
     
+    vector<RGBA8>                       _vcolors;
+    vector<Vector>                      _vpoints;
+    vector<Triangle>                    _vtriangles;
+    
     int                                 _ncolors;
-    shared_ptr<RGBA8>                   _colors;
-    
+
     int                                 _npoints;
-    shared_ptr<Vector>                  _points;
-    
+
     int                                 _ntriangles;
-    shared_ptr<Triangle>                _triangles;
 };

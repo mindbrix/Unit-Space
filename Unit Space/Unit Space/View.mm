@@ -331,9 +331,9 @@ using namespace std;
             }
         }
         _mesh.triangulate(self.useMask);
-        [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
-        [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
-        [self.metalLayer createTrianglesBuffer:_mesh._triangles.get() ntriangles:_mesh._ntriangles];
+        [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._ncolors];
+        [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._npoints];
+        [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._ntriangles];
         
         // Delete
         nsvgDelete(image);
@@ -366,9 +366,9 @@ using namespace std;
     _mesh.addPath(p1);
     _mesh.triangulate(self.useMask);
     
-    [self.metalLayer createColorsBuffer:_mesh._colors.get() ncolors:_mesh._ncolors];
-    [self.metalLayer createPointsBuffer:_mesh._points.get() npoints:_mesh._npoints];
-    [self.metalLayer createTrianglesBuffer:_mesh._triangles.get() ntriangles:_mesh._ntriangles];
+    [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._ncolors];
+    [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._npoints];
+    [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._ntriangles];
 }
 
 - (void)update {
