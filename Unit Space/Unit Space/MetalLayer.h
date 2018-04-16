@@ -18,8 +18,8 @@
 
 @property(weak) id <LayerDelegate> layerDelegate;
 
-- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(int)ncolors;
-- (void)createPointsBuffer:(Vector *)points npoints:(int)npoints;
-- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(int)ntriangles;
+- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(size_t)ncolors;
+- (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints;
+- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(size_t)ntriangles;
 
 @end

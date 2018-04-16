@@ -206,19 +206,19 @@
 
 #pragma mark - Public
 
-- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(int)ncolors {
+- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(size_t)ncolors {
     _colorsBuffer = [self.device newBufferWithBytes:(void *)colors
                                                    length:ncolors * sizeof(RGBA8)
                                                   options:MTLResourceStorageModeShared];
 }
 
-- (void)createPointsBuffer:(Vector *)points npoints:(int)npoints {
+- (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints {
     _pointsBuffer = [self.device newBufferWithBytes:(void *)points
                                                    length:npoints * sizeof(Vector)
                                                   options:MTLResourceStorageModeShared];
 }
 
-- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(int)ntriangles {
+- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(size_t)ntriangles {
     _trianglesBuffer = [self.device newBufferWithBytes:(void *)triangles
                                                    length:ntriangles * sizeof(Triangle)
                                                   options:MTLResourceStorageModeShared];

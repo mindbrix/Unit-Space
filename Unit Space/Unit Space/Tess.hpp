@@ -243,21 +243,15 @@ struct Mesh {
         _vpoints.resize(0);
         _vtriangles.resize(0);
 
-        
         _ncolors = 0;
-//        _colors = nullptr;
-        
         _npoints = 0;
-//        _points = nullptr;
-        
         _ntriangles = 0;
-//        _triangles = nullptr;
     }
     
     void addPath(Path& path) {
-        path.writeBoundaryContours();
-        if (path._subPaths.size() == 0)
-            return;
+//        path.writeBoundaryContours();
+//        if (path._subPaths.size() == 0)
+//            return;
         
         _paths.emplace_back(path);
     }
@@ -302,35 +296,27 @@ struct Mesh {
             {
                 _npoints = count;
                 
-                {
-                    _vpoints.resize(_npoints);
-                    XYZ *src = points.get(), *end = src + _npoints;
-                    Vector *dst = & _vpoints[0];
-                    while(src != end)
-                        *dst++ = { src->x, src++->y };
-                }
+                _vpoints.resize(_npoints);
+                XYZ *src = points.get(), *end = src + _npoints;
+                Vector *dst = & _vpoints[0];
+                while(src != end)
+                    *dst++ = { src->x, src++->y };
             }
             
             {
                 _ntriangles = ntri;
-                {
-                    _vtriangles.resize(_ntriangles);
-                    Triangle *dst = & _vtriangles[0];
-                    for(auto &t : triangles)
-                        *dst++ = { t.p1, t.p2, t.p3, 0 };
-                }
+                _vtriangles.resize(_ntriangles);
+                Triangle *dst = & _vtriangles[0];
+                for(auto &t : triangles)
+                    *dst++ = { t.p1, t.p2, t.p3, 0 };
             }
             
             {
                 _ncolors = (int)_paths.size();
-                
-                {
-                    _vcolors.resize(_ncolors);
-                    RGBA8 *dst = & _vcolors[0];
-                    for (Path& p : _paths)
-                        *dst++ = p._color;
-                }
-                
+                _vcolors.resize(_ncolors);
+                RGBA8 *dst = & _vcolors[0];
+                for (Path& p : _paths)
+                    *dst++ = p._color;
             }
         }
         
@@ -340,7 +326,7 @@ struct Mesh {
     int triangulate(bool useMasking) {
         if (!useMasking)
             return triangulateDelaunayC();
-        maskPaths();
+//        maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
@@ -408,8 +394,6 @@ struct Mesh {
     vector<Triangle>                    _vtriangles;
     
     int                                 _ncolors;
-
     int                                 _npoints;
-
     int                                 _ntriangles;
 };

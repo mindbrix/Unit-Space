@@ -62,6 +62,7 @@ using namespace std;
     self.transform = [VGAffineTransform new];
     self.showColors = YES;
     self.showInterior = YES;
+    self.useMask = YES;
     [self redraw];
 
     return self;
@@ -331,9 +332,9 @@ using namespace std;
             }
         }
         _mesh.triangulate(self.useMask);
-        [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._ncolors];
-        [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._npoints];
-        [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._ntriangles];
+        [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
+        [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._vpoints.size()];
+        [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._vtriangles.size()];
         
         // Delete
         nsvgDelete(image);
@@ -366,9 +367,9 @@ using namespace std;
     _mesh.addPath(p1);
     _mesh.triangulate(self.useMask);
     
-    [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._ncolors];
-    [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._npoints];
-    [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._ntriangles];
+    [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
+    [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._vpoints.size()];
+    [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._vtriangles.size()];
 }
 
 - (void)update {
