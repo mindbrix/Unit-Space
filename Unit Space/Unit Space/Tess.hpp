@@ -331,6 +331,7 @@ struct Mesh {
         maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
+        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         int pi = 0, ti = 0, c = 0;
         
