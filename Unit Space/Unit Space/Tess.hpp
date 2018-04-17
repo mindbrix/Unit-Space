@@ -341,8 +341,6 @@ struct Mesh {
         }
         
         for (Path& p : _paths) {
-//            if (p._subPaths.size() > 4)
-//                continue;
             for (SubPath& s : p._subPaths)
                 if (s._npoints > 3)
                     tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
