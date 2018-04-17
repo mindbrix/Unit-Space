@@ -165,11 +165,15 @@ struct Path {
         bool isPositive = _subPaths[_outerIndex]._area > 0;
         bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
         
-        for (SubPath& subPath : _subPaths)
-            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, !isPositive);
+        for (SubPath& subPath : _subPaths) {
+            tessSetOption(tess, TESS_REVERSE_CONTOURS, !isPositive);
+            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
+        }
         
-        for (SubPath& subPath : mask._subPaths)
-            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, maskIsPositive);
+        for (SubPath& subPath : mask._subPaths) {
+            tessSetOption(tess, TESS_REVERSE_CONTOURS, maskIsPositive);
+            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
+        }
         
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
@@ -196,7 +200,7 @@ struct Path {
         TESStesselator *tess = tessNewTess(NULL);
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 3)
-                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints, false);
+                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         
         if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
@@ -249,9 +253,9 @@ struct Mesh {
     }
     
     void addPath(Path& path) {
-//        path.writeBoundaryContours();
-//        if (path._subPaths.size() == 0)
-//            return;
+        path.writeBoundaryContours();
+        if (path._subPaths.size() == 0)
+            return;
         
         _paths.emplace_back(path);
     }
@@ -326,7 +330,7 @@ struct Mesh {
     int triangulate(bool useMasking) {
         if (!useMasking)
             return triangulateDelaunayC();
-//        maskPaths();
+        maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
@@ -343,7 +347,7 @@ struct Mesh {
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
                 if (s._npoints > 3)
-                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints, false);
+                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 
