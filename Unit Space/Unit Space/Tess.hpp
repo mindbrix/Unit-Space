@@ -191,20 +191,18 @@ struct Path {
         }
     }
     
-    void writeBoundaryContours() {
+    void writeBoundaryContours(TESStesselator *tess) {
         if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0])))) {
             setBounds();
             return;
         }
-        
-        TESStesselator *tess = tessNewTess(NULL);
+		
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 3)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         
         if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
-        tessDeleteTess(tess);
     }
     
     void writeTessSubpaths(TESStesselator *tess) {
@@ -239,6 +237,7 @@ struct Mesh {
     }
     
     void reset(float w, float h) {
+        _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
         _paths.resize(0);
         
         _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
@@ -253,7 +252,7 @@ struct Mesh {
     }
     
     void addPath(Path& path) {
-        path.writeBoundaryContours();
+        path.writeBoundaryContours(_tess.get());
         if (path._subPaths.size() == 0)
             return;
         
@@ -387,7 +386,9 @@ struct Mesh {
         
         return _ntriangles;
     }
-    
+
+    shared_ptr<TESStesselator>			_tess;
+	
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
     vector<Path>                        _paths;
     
