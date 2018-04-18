@@ -42,6 +42,7 @@ using namespace std;
 @property(nonatomic) Quadratics quadratics;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
+@property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
 
 @end
@@ -105,14 +106,10 @@ using namespace std;
             if (_svgData) {
                 
             } else {
-                for (int j = 0; j < _triangle.size(); j++)
-                    if ((dragged = [self mouseDragVector:event CTM:_triangle[j]]))
-                        break;
-                
-                for (int j = 0; j < _lozenge.size() && !dragged; j++)
-                    if ((dragged = [self mouseDragVector:event CTM:_lozenge[j]]))
-                        break;
-                
+                dragged = [self mouseDragPoints:event points:_triangle];
+				dragged = dragged ?:[self mouseDragPoints:event points:_lozenge];
+//				dragged = dragged ?:[self mouseDragPoints:event points:_quad];
+        
                 if (dragged)
                     [self triangulate];
                         
@@ -123,6 +120,16 @@ using namespace std;
         [self.transform translateByX:event.deltaX andY:-event.deltaY];
     
     [self redraw];
+}
+
+- (BOOL)mouseDragPoints:(NSEvent *)event points:(vector<Vector>&)points {
+	BOOL dragged = NO;
+	
+	for (int j = 0; j < points.size(); j++)
+		if ((dragged = [self mouseDragVector:event CTM:points[j]]))
+			break;
+	
+	return dragged;
 }
 
 - (BOOL)mouseDragCTM:(NSEvent *)event CTM:(AffineTransform &)CTM {
@@ -347,6 +354,10 @@ using namespace std;
             { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
         };
 
+		_quad = {
+			{ 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { -50, 50 }
+		};
+		
         [self triangulate];
     }
 }
@@ -361,10 +372,13 @@ using namespace std;
     p0.addContour((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
     Path p1(false, black);
     p1.addContour((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
-    
+	Path p2(false, black);
+	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
+	
     _mesh.reset(self.bounds.size.width, self.bounds.size.height);
     _mesh.addPath(p0);
     _mesh.addPath(p1);
+//	_mesh.addPath(p2);
     _mesh.triangulate(self.useMask);
     
     [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
@@ -502,9 +516,12 @@ using namespace std;
             } else {
                 for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
                     circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };
-                
+//
                 for (int j = 0; j < _lozenge.size() && j < kCirclesSize / 3; j++)
                     circles.circles[i++] = { _lozenge[j].x, _lozenge[j].y, radius };
+				
+//				for (int j = 0; j < _quad.size() && j < kCirclesSize / 3; j++)
+//					circles.circles[i++] = { _quad[j].x, _quad[j].y, radius };
             }
             circles.count = i;
         }
