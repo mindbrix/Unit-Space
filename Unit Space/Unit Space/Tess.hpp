@@ -160,8 +160,7 @@ struct Path {
         return bboxIntersects;
     }
     
-    void maskOut(Path& mask) {
-        TESStesselator *tess = tessNewTess(NULL);
+    void maskOut(TESStesselator *tess, Path& mask) {
         bool isPositive = _subPaths[_outerIndex]._area > 0;
         bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
         
@@ -177,8 +176,6 @@ struct Path {
         
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
-        
-        tessDeleteTess(tess);
     }
     
     void setBounds() {
@@ -260,6 +257,8 @@ struct Mesh {
     }
     
     void maskPaths() {
+        TESStesselator *tess = tessNewTess(NULL);
+
         for (size_t i = 0; i < _paths.size(); i++) {
             Path& path = _paths[i];
             
@@ -267,9 +266,10 @@ struct Mesh {
             
             for (auto j : matches)
 //                if (_paths[j].intersects(path))
-                _paths[j].maskOut(path);
+                _paths[j].maskOut(tess, path);
             _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
         }
+        tessDeleteTess(tess);
     }
     
     int triangulateDelaunayC() {
