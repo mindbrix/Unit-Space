@@ -28,6 +28,9 @@ struct SubPath {
             int subdivisions[cubicCount];
             _npoints = countCubicSubdivisions(points, npoints, subdivisions) + 1;
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
+            
+//            _npoints = splitCubics(_points.get(), points, npoints, 0.01);
+            
             flattenCubics(_points.get(), points, npoints, subdivisions);
         } else {
             _npoints = npoints;
@@ -86,7 +89,7 @@ struct SubPath {
             
             c0 = std::max(2.f, log2f(area0));
             c1 = std::max(2.f, log2f(area1));
-            count = flatness > 1e-3 ? c0 + c1 : 1;
+            count = flatness > 1e-3 ? c0 + c1 : 2;
             
             *subdivisions++ = count;
             total += count;
@@ -107,6 +110,47 @@ struct SubPath {
                 *dst++ = deCasteljauCubic(t, x0, x1, x2, x3), *dst++ = deCasteljauCubic(t, y0, y1, y2, y3);
             *dst++ = x3, *dst++ = y3;
         }
+    }
+    
+    int splitCubics(float *dst, const float *src, const int npoints, const float prec) {
+        const float *begin = dst;
+        float x0, y0, x1, y1, x2, y2, x3, y3;
+        float xD01, yD01, D01, tcubed, tsplit, t;
+        float n01, n12, n23;
+        float n012, n123;
+        float n0123;
+        
+        constexpr float root3 = 1.7320508076; // sqrt(3);
+        
+       for (int i = 0; i < npoints - 1; i += 3) {
+            const float *p = src + i * 2;
+            x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+           
+           do {
+               *dst++ = x0, *dst++ = y0;
+               
+               xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
+               D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
+               tcubed = prec / D01 * 18.f / root3;
+               
+               if (tcubed < 1) {
+                   t = tsplit = cbrt(tcubed);
+                   
+                   n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
+                   n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+                   n0123 = lerp(t, n012, n123);
+                   x0 = n0123, x1 = n123, x2 = n23;
+                   
+                   n01 = lerp(t, y0, y1), n12 = lerp(t, y1, y2), n23 = lerp(t, y2, y3);
+                   n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+                   n0123 = lerp(t, n012, n123);
+                   y0 = n0123, y1 = n123, y2 = n23;
+               }
+           } while (tcubed < 1);
+           
+           *dst++ = x3, *dst++ = y3;
+        }
+        return int(dst - begin) / 2;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
