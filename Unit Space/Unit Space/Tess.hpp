@@ -24,19 +24,12 @@ struct SubPath {
         bool closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
         
         if (type == kCubic) {
-            int cubicCount = (npoints - 1) / 3;
-            int subdivisions[cubicCount];
-//            _npoints = countCubicSubdivisions(points, npoints, subdivisions) * 10 + 1;
             _npoints = countSplitCubics(points, npoints, 0.01);
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
-            
             _npoints = splitCubics(_points.get(), points, npoints, 0.01);
-            
-//            flattenCubics(_points.get(), points, npoints, subdivisions);
         } else {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
-            
             memcpy(_points.get(), points, npoints * kPointStride);
         }
         _area = area();
@@ -65,54 +58,6 @@ struct SubPath {
         return (_urx > subPath._llx) && (subPath._urx > _llx) && (_ury > subPath._lly) && (subPath._ury > _lly);
     }
     
-    int countCubicSubdivisions(const float *src, int npoints, int *subdivisions) {
-        int total = 0, c0, c1, count;
-        float x0, y0, x1, y1, x2, y2, x3, y3;
-        float ax0, ay0, ax1, ay1, area0, area1, flatness;
-        float qcpx0, qcpy0, qcpx1, qcpy1;
-        
-        for (int i = 0; i < npoints - 1; i += 3) {
-            const float *p = src + i * 2;
-            x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
-            
-            qcpx0 = x0 + 1.5f * (x1 - x0), qcpy0 = y0 + 1.5f * (y1 - y0);
-            qcpx1 = x3 + 1.5f * (x2 - x3), qcpy1 = y3 + 1.5f * (y2 - y3);
-        
-            if (std::abs(qcpx0 - qcpx1) < 1e-3 && std::abs(qcpy0 - qcpy1) < 1e-3) {
-                x0 = x0;
-            }
-            ax0 = x0 + x2 - x1 - x1, ay0 = y0 + y2 - y1 - y1;
-            ax1 = x1 + x3 - x2 - x2, ay1 = y1 + y3 - y2 - y2;
-            flatness = ax0 * ax0 + ay0 * ay0 + ax1 * ax1 + ay1 * ay1;
-            
-            area0 = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)) / 3;
-            area1 = std::abs((x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)) / 3;
-            
-            c0 = std::max(2.f, log2f(area0));
-            c1 = std::max(2.f, log2f(area1));
-            count = flatness > 1e-3 ? c0 + c1 : 2;
-            
-            *subdivisions++ = count;
-            total += count;
-        }
-        return total;
-    }
-    
-    void flattenCubics(float *dst, const float *src, int npoints, int *subdivisions) {
-        float x0, y0, x1, y1, x2, y2, x3, y3, t, dt;
-        
-        *dst++ = src[0], *dst++ = src[1];
-        for (int i = 0; i < npoints - 1; i += 3, subdivisions++) {
-            const float *p = src + i * 2;
-            x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
-            
-            dt = 1.0 / float(*subdivisions), t = dt;
-            for (int j = 0; j < *subdivisions - 1; j++, t += dt)
-                *dst++ = deCasteljauCubic(t, x0, x1, x2, x3), *dst++ = deCasteljauCubic(t, y0, y1, y2, y3);
-            *dst++ = x3, *dst++ = y3;
-        }
-    }
-    
     // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
     //
     int countSplitCubics(const float *src, const int npoints, const float prec) {
@@ -137,28 +82,19 @@ struct SubPath {
     
     int splitCubics(float *dst, const float *src, const int npoints, const float prec) {
         const float *begin = dst;
-        float x0, y0, x1, y1, x2, y2, x3, y3;
+        float x0, y0, x1, y1, x2, y2, x3 = 0, y3 = 0;
         float xD01, yD01, D01, tcubed, tsplit, t;
         float n01, n12, n23;
         float n012, n123;
         float n0123;
-        int divisions, calculated;
         
         constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
         
         for (int i = 0; i < npoints - 1; i += 3) {
             const float *p = src + i * 2;
             x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
-            divisions = 0;
-           
-           xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
-           D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-           tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
-           calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed));
-           
+            
            do {
-               divisions++;
-               
                *dst++ = x0, *dst++ = y0;
                
                xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
@@ -179,9 +115,6 @@ struct SubPath {
                    y0 = n0123, y1 = n123, y2 = n23;
                }
            } while (tcubed < 0.999);
-           
-           assert(divisions <= calculated);
-           
         }
         *dst++ = x3, *dst++ = y3;
         return int(dst - begin) / 2;
@@ -407,7 +340,7 @@ struct Mesh {
     int triangulate(bool useMasking) {
         if (!useMasking)
             return triangulateDelaunayC();
-//        maskPaths();
+        maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
