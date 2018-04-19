@@ -112,6 +112,8 @@ struct SubPath {
         }
     }
     
+    // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
+    //
     int splitCubics(float *dst, const float *src, const int npoints, const float prec) {
         const float *begin = dst;
         float x0, y0, x1, y1, x2, y2, x3, y3;
@@ -131,7 +133,7 @@ struct SubPath {
                
                xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
                D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-               tcubed = prec / D01 * 18.f / root3;
+               tcubed = D01 == 0 ? 1 : prec / D01 * 18.f / root3;
                
                if (tcubed < 1) {
                    t = tsplit = cbrt(tcubed);
