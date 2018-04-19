@@ -26,12 +26,13 @@ struct SubPath {
         if (type == kCubic) {
             int cubicCount = (npoints - 1) / 3;
             int subdivisions[cubicCount];
-            _npoints = countCubicSubdivisions(points, npoints, subdivisions) + 1;
+//            _npoints = countCubicSubdivisions(points, npoints, subdivisions) * 10 + 1;
+            _npoints = countSplitCubics(points, npoints, 0.01);
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
             
-//            _npoints = splitCubics(_points.get(), points, npoints, 0.01);
+            _npoints = splitCubics(_points.get(), points, npoints, 0.01);
             
-            flattenCubics(_points.get(), points, npoints, subdivisions);
+//            flattenCubics(_points.get(), points, npoints, subdivisions);
         } else {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc((_npoints + (closed ? 0 : 1)) * kPointStride), free);
@@ -114,6 +115,26 @@ struct SubPath {
     
     // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
     //
+    int countSplitCubics(const float *src, const int npoints, const float prec) {
+        float x0, y0, x1, y1, x2, y2, x3, y3;
+        float xD01, yD01, D01, tcubed;
+        int count = 0, calculated;
+        
+        constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
+        
+        for (int i = 0; i < npoints - 1; i += 3) {
+            const float *p = src + i * 2;
+            x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+            
+            xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
+            D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
+            tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
+            calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed) + 0.01);
+            count += calculated;
+        }
+        return count + 1;
+    }
+    
     int splitCubics(float *dst, const float *src, const int npoints, const float prec) {
         const float *begin = dst;
         float x0, y0, x1, y1, x2, y2, x3, y3;
@@ -121,21 +142,30 @@ struct SubPath {
         float n01, n12, n23;
         float n012, n123;
         float n0123;
+        int divisions, calculated;
         
-        constexpr float root3 = 1.7320508076; // sqrt(3);
+        constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
         
-       for (int i = 0; i < npoints - 1; i += 3) {
+        for (int i = 0; i < npoints - 1; i += 3) {
             const float *p = src + i * 2;
             x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+            divisions = 0;
+           
+           xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
+           D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
+           tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
+           calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed));
            
            do {
+               divisions++;
+               
                *dst++ = x0, *dst++ = y0;
                
                xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
                D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-               tcubed = D01 == 0 ? 1 : prec / D01 * 18.f / root3;
+               tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
                
-               if (tcubed < 1) {
+               if (tcubed < 0.999) {
                    t = tsplit = cbrt(tcubed);
                    
                    n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
@@ -148,10 +178,12 @@ struct SubPath {
                    n0123 = lerp(t, n012, n123);
                    y0 = n0123, y1 = n123, y2 = n23;
                }
-           } while (tcubed < 1);
+           } while (tcubed < 0.999);
            
-           *dst++ = x3, *dst++ = y3;
+           assert(divisions <= calculated);
+           
         }
+        *dst++ = x3, *dst++ = y3;
         return int(dst - begin) / 2;
     }
     
@@ -375,7 +407,7 @@ struct Mesh {
     int triangulate(bool useMasking) {
         if (!useMasking)
             return triangulateDelaunayC();
-        maskPaths();
+//        maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
