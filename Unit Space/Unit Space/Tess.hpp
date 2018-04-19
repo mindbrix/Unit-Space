@@ -74,7 +74,7 @@ struct SubPath {
             xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
             D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
             tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
-            calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed) + 0.01);
+            calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed));
             count += calculated;
         }
         return count + 1;
