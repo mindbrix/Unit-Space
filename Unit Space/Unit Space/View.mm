@@ -498,7 +498,7 @@ using namespace std;
             call.meshState.showColors = _showColors;
             call.meshState.showInterior = _showInterior;
             
-            call.type = kCallTypeMesh;
+            call.type = kCallTypeMeshTriangles;
             call.state = uniforms;
         }
         

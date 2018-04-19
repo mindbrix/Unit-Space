@@ -157,7 +157,7 @@
                 [commandEncoder setVertexBytes:&calls->lines length:sizeof(Lines) atIndex:1];
                 instanceCount = calls->lines.count;
                 break;
-            case kCallTypeMesh:
+            case kCallTypeMeshTriangles:
                 [commandEncoder setRenderPipelineState:_meshPipelineState];
                 [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
@@ -180,7 +180,7 @@
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         
-        if (calls->type == kCallTypeMesh) {
+        if (calls->type == kCallTypeMeshTriangles) {
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
                                vertexCount:3
