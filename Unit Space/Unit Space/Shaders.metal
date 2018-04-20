@@ -450,6 +450,15 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     return vert;
 }
 
+fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    float t = quadraticClosestT(vert.p0.x + 0.5, vert.p0.y + 0.5, vert.p1.x + 0.5, vert.p1.y + 0.5, vert.p2.x + 0.5, vert.p2.y + 0.5);
+    
+    float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
+    float winding = fragmentWinding(vert.p0, p01) + fragmentWinding(p01, p12) + fragmentWinding(p12, vert.p2) + fragmentWinding(vert.p2, vert.p0);
+    return vert.color * abs(winding);
+}
+
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     const float d = 0.7071;

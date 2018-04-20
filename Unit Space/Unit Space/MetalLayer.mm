@@ -93,7 +93,7 @@
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
     descriptor.label = @"Mesh";
     self.meshPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     

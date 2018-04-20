@@ -174,6 +174,30 @@ float det(float2 a, float2 b) {
 }
 
 float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float y2) {
+    float t0 = 0.0, t1 = 1.0, t;
+    float x01, x12, x123, y01, y12, y123;
+    float xt, yt, xn, yn;
+    float side;
+    
+    t = (t0 + t1) * 0.5;
+    
+    for (int i = 0; i < 1; i++) {
+        x01 = mix(x0, x1, t), x12 = mix(x1, x2, t), x123 = mix(x01, x12, t);
+        y01 = mix(y0, y1, t), y12 = mix(y1, y2, t), y123 = mix(y01, y12, t);
+        xt = x12 - x01, yt = y12 - y01;
+        xn = -yt, yn = xt;
+        side = xn * y123 - yn * x123;
+        t0 = select(t0, t, side > 0.0);
+        t1 = select(t, t1, side > 0.0);
+        
+        t = (t0 + t1) * 0.5;
+    }
+    
+    return t;
+}
+
+/*
+float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float y2) {
     float2 b0 = { x0, y0 }, b1 = { x1, y1 }, b2 = { x2, y2 };
     
     float a = det(b0, b2), b = det(b1, b0), d = det(b2, b1);
@@ -188,7 +212,7 @@ float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float 
     // (note that ap + bp + dp = a + b + d = 2 * area(b0, b1, b2))
     return (0.5 * ap + bp) / (a + b + d);
 }
-
+*/
 
 float unitQuadraticDistanceChainRule(float2 unitPoint, bool line) {
 //    return implicitDistance(max(0.0, unitPoint.x), min(1.0, unitPoint.y), 0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
