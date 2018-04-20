@@ -35,11 +35,8 @@ struct SubPath {
         _area = area();
         bounds(& _llx);
         
-        if (!closed) {
-            float *p = _points.get(), *dst = p + _npoints * 2;
-            *dst++ = *p++, *dst++ = *p++;
-            _npoints++;
-        }
+        if (closed)
+            _npoints--;
     }
     
     float area() const {
@@ -206,7 +203,7 @@ struct Path {
         }
 		
         for (SubPath& subPath : _subPaths)
-            if (subPath._npoints > 3)
+            if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         
         if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
@@ -287,14 +284,14 @@ struct Mesh {
         int count = 0;
         for (Path& p : _paths)
             for (SubPath& s : p._subPaths)
-                count += s._npoints - 1;
+                count += s._npoints;
         
         size_t pts_size = count + 3;
         auto points = shared_ptr<XYZ>((XYZ *)malloc(pts_size * sizeof(XYZ)), free);
         XYZ *dst = points.get();
         for (Path& p : _paths)
             for (SubPath& s : p._subPaths) {
-                float *src = s._points.get(), *end = src + (s._npoints - 1) * 2;
+                float *src = s._points.get(), *end = src + (s._npoints) * 2;
                 while (src != end)
                     dst->x = *src++, dst->y = *src++, dst++->i = (int)(&p - &_paths[0]);
             }
@@ -356,7 +353,7 @@ struct Mesh {
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
-                if (s._npoints > 3)
+                if (s._npoints > 2)
                     tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
