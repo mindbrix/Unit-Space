@@ -26,6 +26,7 @@ struct SubPath {
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, 0.01);
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
+            _controlPoints = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             _npoints = splitCubics(_points.get(), points, npoints, 0.01);
         } else {
             _npoints = npoints;
@@ -130,6 +131,7 @@ struct SubPath {
     }
     
     shared_ptr<float>           _points;
+    shared_ptr<float>           _controlPoints;
     int                         _npoints;
     float                       _area;
     float                       _llx, _lly, _urx, _ury;
