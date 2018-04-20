@@ -20,6 +20,10 @@
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
 
+constexpr uint64_t kPathBitmaskTriangle = 1 << 0;
+constexpr uint64_t kPathBitmaskLozenge = 1 << 1;
+constexpr uint64_t kPathBitmaskQuad = 1 << 2;
+
 using namespace std;
 
 @interface View () <LayerDelegate>
@@ -28,6 +32,7 @@ using namespace std;
 @property(nonatomic) VGAffineTransform *transform;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
+@property(nonatomic) uint64_t pathBitmask;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEllipse;
 @property(nonatomic) BOOL showInterior;
@@ -64,6 +69,8 @@ using namespace std;
     self.showColors = YES;
     self.showInterior = YES;
     self.useMask = YES;
+    self.pathBitmask = kPathBitmaskTriangle;
+    
     [self redraw];
 
     return self;
@@ -106,13 +113,17 @@ using namespace std;
             if (_svgData) {
                 
             } else {
-                dragged = [self mouseDragPoints:event points:_triangle];
-				dragged = dragged ?:[self mouseDragPoints:event points:_lozenge];
-//				dragged = dragged ?:[self mouseDragPoints:event points:_quad];
+                if (self.pathBitmask & kPathBitmaskTriangle)
+                    dragged = dragged ?:[self mouseDragPoints:event points:_triangle];
+                
+                if (self.pathBitmask & kPathBitmaskLozenge)
+                    dragged = dragged ?:[self mouseDragPoints:event points:_lozenge];
+                
+                if (self.pathBitmask & kPathBitmaskQuad)
+                    dragged = dragged ?:[self mouseDragPoints:event points:_quad];
         
                 if (dragged)
                     [self triangulate];
-                        
             }
         }
     }
@@ -376,9 +387,15 @@ using namespace std;
 	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
 	
     _mesh.reset(self.bounds.size.width, self.bounds.size.height);
-    _mesh.addPath(p0);
-    _mesh.addPath(p1);
-//	_mesh.addPath(p2);
+    if (self.pathBitmask & kPathBitmaskTriangle)
+        _mesh.addPath(p0);
+    
+    if (self.pathBitmask & kPathBitmaskLozenge)
+        _mesh.addPath(p1);
+    
+    if (self.pathBitmask & kPathBitmaskQuad)
+        _mesh.addPath(p2);
+    
     _mesh.triangulate(self.useMask);
     
     [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
@@ -514,14 +531,17 @@ using namespace std;
             if (_svgData) {
                 
             } else {
-                for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
-                    circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };
-//
-                for (int j = 0; j < _lozenge.size() && j < kCirclesSize / 3; j++)
-                    circles.circles[i++] = { _lozenge[j].x, _lozenge[j].y, radius };
+                if (self.pathBitmask & kPathBitmaskTriangle)
+                    for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
+                        circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };
+
+                if (self.pathBitmask & kPathBitmaskLozenge)
+                    for (int j = 0; j < _lozenge.size() && j < kCirclesSize / 3; j++)
+                        circles.circles[i++] = { _lozenge[j].x, _lozenge[j].y, radius };
 				
-//				for (int j = 0; j < _quad.size() && j < kCirclesSize / 3; j++)
-//					circles.circles[i++] = { _quad[j].x, _quad[j].y, radius };
+                if (self.pathBitmask & kPathBitmaskQuad)
+                    for (int j = 0; j < _quad.size() && j < kCirclesSize / 3; j++)
+                        circles.circles[i++] = { _quad[j].x, _quad[j].y, radius };
             }
             circles.count = i;
         }
