@@ -164,7 +164,7 @@
                 instanceCount = calls->lines.count;
                 break;
             case kCallTypeMeshTriangles:
-                [commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
+                [commandEncoder setRenderPipelineState:_meshCurvePipelineState];
                 [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
