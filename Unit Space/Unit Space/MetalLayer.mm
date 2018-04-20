@@ -22,7 +22,8 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 
 @end
@@ -94,8 +95,13 @@
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
+    descriptor.label = @"Curve";
+    self.meshCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Mesh";
-    self.meshPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
@@ -158,7 +164,7 @@
                 instanceCount = calls->lines.count;
                 break;
             case kCallTypeMeshTriangles:
-                [commandEncoder setRenderPipelineState:_meshPipelineState];
+                [commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
                 [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
