@@ -458,19 +458,27 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
 {
     const float dmax = 1;
     
+//    float f = vert.v - vert.u * vert.u;
+//    float dfx = dfdx(f), dfy = dfdy(f);
+//    float dist = f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
+    
     float fx = 2.0 * vert.u * dfdx(vert.u) - dfdx(vert.v);
     float fy = 2.0 * vert.u * dfdy(vert.u) - dfdy(vert.v);
-    float dist = (vert.v - vert.u * vert.u) * rsqrt(fx * fx + fy * fy);
+    float dist = (vert.v - vert.u * vert.u) * rsqrt(fx * fx + fy * fy) - 0.7071;
     
-    if (dist < -2)
+    if (dist < -1.7071)
         return 0;// float4(0, 1, 0, 1);
     
-    if (dist > dmax && vert.distance.z > 0.7071)
+    if (dist > 1 && vert.distance.z > 0.7071)
         return select(0, vert.color, vert.showInterior);
     
-    float2 b0 = { vert.p0.x + 0.5, vert.p0.y + 0.5 }, b1 = { vert.p1.x + 0.5, vert.p1.y + 0.5 }, b2 = { vert.p2.x + 0.5, vert.p2.y + 0.5 };
-    float c10 = det(-b1, -b0), c20 = det(b2, b0);
-    float t = saturate(c10 == 0 ? 0 : c10 / (c10 - 0.5 * c20));
+//    return float4(0, 0, 1, 1);
+    
+    float t = quadraticClosestT(vert.p0.x + 0.5, vert.p0.y + 0.5, vert.p1.x + 0.5, vert.p1.y + 0.5, vert.p2.x + 0.5, vert.p2.y + 0.5 );
+    
+//    float2 b0 = { vert.p0.x + 0.5, vert.p0.y + 0.5 }, b1 = { vert.p1.x + 0.5, vert.p1.y + 0.5 }, b2 = { vert.p2.x + 0.5, vert.p2.y + 0.5 };
+//    float c10 = det(-b1, -b0), c20 = det(-b2, -b0);
+//    float t = saturate(c10 == 0 ? 0 : c10 / (c10 - 0.5 * c20));
     
     float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
     float winding = fragmentWinding(vert.p0, p01) + fragmentWinding(p01, p12) + fragmentWinding(p12, vert.p2) + fragmentWinding(vert.p2, vert.p0);
