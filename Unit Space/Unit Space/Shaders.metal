@@ -469,8 +469,7 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
         return select(0, vert.color, vert.showInterior);
     
     float2 b0 = { vert.p0.x + 0.5, vert.p0.y + 0.5 }, b1 = { vert.p1.x + 0.5, vert.p1.y + 0.5 }, b2 = { vert.p2.x + 0.5, vert.p2.y + 0.5 };
-    float c10 = (0.0 - b1.x) * (0.0 - b0.y) - (0.0 - b0.x) * (0.0 - b1.y);
-    float c20 = (0.0 - b2.x) * (0.0 - b0.y) - (0.0 - b0.x) * (0.0 - b2.y);
+    float c10 = det(-b1, -b0), c20 = det(b2, b0);
     float t = saturate(c10 == 0 ? 0 : c10 / (c10 - 0.5 * c20));
     
     float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
