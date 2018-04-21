@@ -346,21 +346,12 @@ struct Mesh {
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-        vector<int> subpathIndices;
         
         for (Path& path : _paths) {
             _vcolors.emplace_back(path._color);
 
             for (SubPath& s : path._subPaths)
-                assert(s._npoints > 2);
-            
-            for (SubPath& s : path._subPaths)
                 tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-            
-            subpathIndices.resize(0);
-            for (int i = 0; i < path._subPaths.size(); i++)
-                for (int n = 0; n < path._subPaths[i]._npoints; n++)
-                    subpathIndices.emplace_back(i);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
@@ -380,13 +371,23 @@ struct Mesh {
                 }
                 int cpi = (int)_vpoints.size();
                 
-//                float cpoints = 
-//                for (int i = 0; i < npoints; i++) {
-//                    int idx = vertexIndices[i];
-//                    
-//                    Vector p = { points[i * 2], points[i * 2 + 1] };
-//                    _vpoints.emplace_back(p);
+//                for (SubPath& s : path._subPaths) {
+//                    const float *cpoints = s._controlPoints.get();
+//
+//                    for (int i = 0; i < s._npoints; i++) {
+//                        Vector p = { cpoints[i * 2], cpoints[i * 2 + 1] };
+//                        _vpoints.emplace_back(p);
+//                    }
 //                }
+                
+                vector<int> indexMap;
+                indexMap.resize(npoints);
+                for (int& idx : indexMap)
+                    idx = TESS_UNDEF;
+                
+                for (int i = 0; i < npoints; i++)
+                    if (vertexIndices[i] < indexMap.size())
+                        indexMap[vertexIndices[i]] = i;
                 
             }
         }
