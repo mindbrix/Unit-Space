@@ -28,7 +28,7 @@ struct SubPath {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             _controlPoints = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
-            splitCubics(_points.get(), points, npoints, kSplitCubicPrecision);
+            splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
         } else {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
@@ -79,8 +79,8 @@ struct SubPath {
         return count + 1;
     }
     
-    void splitCubics(float *dst, const float *src, const int npoints, const float prec) {
-        float x0, y0, x1, y1, x2, y2, x3 = 0, y3 = 0;
+    void splitCubics(float *dst, float *cpdst, const float *src, const int npoints, const float prec) {
+        float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
         float xD01, yD01, D01, tcubed, tsplit, t;
         float n01, n12, n23;
         float n012, n123;
@@ -105,16 +105,21 @@ struct SubPath {
                    n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
                    n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
                    n0123 = lerp(t, n012, n123);
+                   cpx = (3.0 * (n012 + n01) - x0 - n0123) * 0.25;
                    x0 = n0123, x1 = n123, x2 = n23;
                    
                    n01 = lerp(t, y0, y1), n12 = lerp(t, y1, y2), n23 = lerp(t, y2, y3);
                    n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
                    n0123 = lerp(t, n012, n123);
+                   cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
                    y0 = n0123, y1 = n123, y2 = n23;
+                   
+                   *cpdst++ = cpx, *cpdst++ = cpy;
                }
            } while (tcubed < 0.999);
         }
         *dst++ = x3, *dst++ = y3;
+        *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
