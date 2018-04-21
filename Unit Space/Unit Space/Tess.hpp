@@ -250,6 +250,7 @@ struct Mesh {
         _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
         
         _vcolors.resize(0);
+        _vcurves.resize(0);
         _vpoints.resize(0);
         _vtriangles.resize(0);
 
@@ -405,6 +406,7 @@ struct Mesh {
     vector<RGBA8>                       _vcolors;
     vector<Vector>                      _vpoints;
     vector<Triangle>                    _vtriangles;
+    vector<Triangle>                    _vcurves;
     
     int                                 _ncolors;
     int                                 _npoints;

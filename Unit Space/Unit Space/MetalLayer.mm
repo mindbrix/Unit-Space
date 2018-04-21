@@ -15,6 +15,7 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
@@ -164,7 +165,7 @@
                 instanceCount = calls->lines.count;
                 break;
             case kCallTypeMeshTriangles:
-                [commandEncoder setRenderPipelineState:_meshCurvePipelineState];
+                [commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
                 [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
@@ -216,6 +217,12 @@
     _colorsBuffer = [self.device newBufferWithBytes:(void *)colors
                                                    length:ncolors * sizeof(RGBA8)
                                                   options:MTLResourceStorageModeShared];
+}
+
+- (void)createCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves {
+    _curvesBuffer = [self.device newBufferWithBytes:(void *)curves
+                                                length:ncurves * sizeof(Triangle)
+                                               options:MTLResourceStorageModeShared];
 }
 
 - (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints {
