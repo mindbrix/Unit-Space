@@ -150,8 +150,12 @@ struct Path {
     }
     
     void addContour(float *points, int npoints, SubPath::Type type) {
-        if (npoints > 2)
+        if (npoints > 2) {
             _subPaths.emplace_back(points, npoints, type);
+            
+            if (_subPaths.back()._npoints < 3)
+                _subPaths.pop_back();
+        }
     }
     
     size_t findOuterIndex() const {
@@ -260,9 +264,11 @@ struct Mesh {
     }
     
     void addPath(Path& path) {
-        path.writeBoundaryContours(_tess.get());
         if (path._subPaths.size() == 0)
             return;
+        
+        path.writeBoundaryContours(_tess.get());
+        assert (path._subPaths.size() > 0);
         
         _paths.emplace_back(path);
     }
@@ -340,16 +346,25 @@ struct Mesh {
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+        vector<int> subpathIndices;
         
         for (Path& path : _paths) {
             _vcolors.emplace_back(path._color);
 
             for (SubPath& s : path._subPaths)
-                if (s._npoints > 2)
-                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+                assert(s._npoints > 2);
+            
+            for (SubPath& s : path._subPaths)
+                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+            
+            subpathIndices.resize(0);
+            for (int i = 0; i < path._subPaths.size(); i++)
+                for (int n = 0; n < path._subPaths[i]._npoints; n++)
+                    subpathIndices.emplace_back(i);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
+                const TESSindex *vertexIndices = tessGetVertexIndices(tess);
                 int npoints = tessGetVertexCount(tess);
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
@@ -363,6 +378,16 @@ struct Mesh {
                     Vector p = { points[i * 2], points[i * 2 + 1] };
                     _vpoints.emplace_back(p);
                 }
+                int cpi = (int)_vpoints.size();
+                
+//                float cpoints = 
+//                for (int i = 0; i < npoints; i++) {
+//                    int idx = vertexIndices[i];
+//                    
+//                    Vector p = { points[i * 2], points[i * 2 + 1] };
+//                    _vpoints.emplace_back(p);
+//                }
+                
             }
         }
         tessDeleteTess(tess);
