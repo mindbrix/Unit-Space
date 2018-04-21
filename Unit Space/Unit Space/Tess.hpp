@@ -330,9 +330,8 @@ struct Mesh {
     }
     
     int triangulate(bool useMasking) {
-        if (!useMasking)
-            return triangulateDelaunayC();
-        maskPaths();
+        if (useMasking)
+            maskPaths();
         
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
