@@ -88,39 +88,6 @@ float unitRoundedRectDistance(float2 unitPoint, float radius) {
     return (r * r - (x * x + y * y)) * rsqrt(2.0 * max(1e-13, fx * fx + fy * fy));
 }
 
-
-float quadraticWinding(float2 devicePoint, AffineTransform op) {
-    float x0 = op.tx, y0 = op.ty;
-    float x1 = op.tx + op.a, y1 = op.ty + op.b;
-    float x2 = x1 + op.c, y2 = y1 + op.d;
-    
-    x0 -= devicePoint.x, x1 -= devicePoint.x, x2 -= devicePoint.x;
-    y0 -= devicePoint.y, y1 -= devicePoint.y, y2 -= devicePoint.y;
-    
-    float2 from = { x0, y0 }, ctrl = { x1, y1 }, to = { x2, y2 };
-    
-    // Determine winding, and sort into a consistent order so we only need to find one root below.
-    bool positive = from.x < to.x;
-    float2 left = positive ? from : to, right = positive ? to : from;
-    float2 v0 = ctrl - left, v1 = right - ctrl;
-    
-    // Shoot a vertical ray toward the curve.
-    float2 window = clamp(float2(from.x, to.x), -0.5, 0.5);
-    float offset = mix(window.x, window.y, 0.5) - left.x;
-    float t = offset / (v0.x + sqrt(v1.x * offset - v0.x * (offset - v0.x)));
-    
-    // Compute position and derivative to form a line approximation.
-    float y = mix(mix(left.y, ctrl.y, t), mix(ctrl.y, right.y, t), t);
-    float d = abs(mix(v0.y, v1.y, t) / mix(v0.x, v1.x, t));
-    
-    float u0 = -y + 0.5, u1 = -y - 0.5;
-    float xl = clamp(u0 / d, -0.5, 0.5), xu = clamp(u1 / d, -0.5, 0.5);
-    float xmin = min(xl, xu), xmax = max(xl, xu);
-    float yl = clamp(y + 0.5 * d, -0.5, 0.5), yu = clamp(y - 0.5 * d, -0.5, 0.5);
-    float ymin = min(yl, yu), ymax = max(yl, yu);
-    return (window.x - window.y) * saturate(0.5 - xmax + (xmax - xmin) * (ymax - ymin) * 0.5 + 0.5 + ymin);
-}
-
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, y0 = op.ty;
     float x1 = op.tx + op.a, y1 = op.ty + op.b;
@@ -173,23 +140,6 @@ float det(float2 a, float2 b) {
     return a.x * b.y - a.y * b.x;
 }
 
-float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float2 b0 = { x0, y0 }, b1 = { x1, y1 }, b2 = { x2, y2 };
-    
-    float a = det(b0, b2), b = det(b1, b0), d = det(b2, b1);
-    float f = 4.0 * b * d - a * a;
-    
-    float2 gf = { dfdx(f), dfdy(f) };
-    float2 pp = -f * gf / dot(gf, gf);
-    
-    float2 d0p = b0 - pp;
-    float2 d10 = b1 - b0, d20 = b2 - b0;
-    float ap = det(d0p, d20), bp = det(d10, d0p);
-    // (note that ap + bp + dp = a + b + d = 2 * area(b0, b1, b2))
-    return (0.5 * ap + bp) / (a + b + d);
-}
-
-
 float unitQuadraticDistanceChainRule(float2 unitPoint, bool line) {
 //    return implicitDistance(max(0.0, unitPoint.x), min(1.0, unitPoint.y), 0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
     
@@ -226,7 +176,7 @@ float unitQuadraticWinding(float2 unitPoint) {
     float dx2 = x2 * it.a + y2 * it.c, dy2 = x2 * it.b + y2 * it.d;
     
     AffineTransform op { dx1 - dx0, dy1 - dy0, dx2 - dx1, dy2 - dy1, dx0, dy0 };
-    return quadraticWinding(float2(0, 0), op);
+    //return quadraticWinding(float2(0, 0), op);
 }
 
 float2 unitComplexMultiply(float2 unit) {
