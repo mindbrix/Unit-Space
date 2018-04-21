@@ -13,6 +13,7 @@
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
 constexpr int kPointStride = 2 * sizeof(float);
+constexpr float kSplitCubicPrecision = 0.01;
 
 struct SubPath {
     enum Type {
@@ -24,10 +25,10 @@ struct SubPath {
         bool closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
         
         if (type == kCubic) {
-            _npoints = countSplitCubics(points, npoints, 0.01);
+            _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             _controlPoints = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
-            _npoints = splitCubics(_points.get(), points, npoints, 0.01);
+            _npoints = splitCubics(_points.get(), points, npoints, kSplitCubicPrecision);
         } else {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
