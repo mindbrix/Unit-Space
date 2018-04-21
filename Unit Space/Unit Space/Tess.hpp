@@ -336,22 +336,20 @@ struct Mesh {
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
-        for (Path& p : _paths)
-            _vcolors.emplace_back(p._color);
-        
-        for (int c = 0; c < _paths.size(); c++) {
-            for (SubPath& s : _paths[c]._subPaths)
+        for (Path& path : _paths) {
+            _vcolors.emplace_back(path._color);
+
+            for (SubPath& s : path._subPaths)
                 if (s._npoints > 2)
                     tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
-                
                 float *points = (float *)tessGetVertices(tess);
                 int npoints = tessGetVertexCount(tess);
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
 
-                int pi = (int)_vpoints.size();
+                int pi = (int)_vpoints.size(), c = (int)_vcolors.size() - 1;
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                     for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
                         Triangle tri = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
