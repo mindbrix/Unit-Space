@@ -337,12 +337,10 @@ struct Mesh {
         TESStesselator *tess = tessNewTess(NULL);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
-        int pi = 0, ti = 0, c = 0;
+        int c = 0, pi;
         
-        {
-            for (Path& p : _paths)
-                _vcolors.emplace_back(p._color);
-        }
+        for (Path& p : _paths)
+            _vcolors.emplace_back(p._color);
         
         for (Path& p : _paths) {
             for (SubPath& s : p._subPaths)
@@ -356,27 +354,17 @@ struct Mesh {
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
 
-                {
-                    int tc = 0;
-                    
-                    for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                        for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-                            tc++;
-                            Triangle tri = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
-                            _vtriangles.emplace_back(tri);
-                        }
+                pi = (int)_vpoints.size();
+                for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                    for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
+                        Triangle tri = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
+                        _vtriangles.emplace_back(tri);
                     }
-                    
-                    ti += tc;
                 }
                 
-                
-                {
-                    for (int i = 0; i < npoints; i++) {
-                        Vector p = { points[i * 2], points[i * 2 + 1] };
-                        _vpoints.emplace_back(p);
-                    }
-                    pi += npoints;
+                for (int i = 0; i < npoints; i++) {
+                    Vector p = { points[i * 2], points[i * 2 + 1] };
+                    _vpoints.emplace_back(p);
                 }
             }
             c++;
