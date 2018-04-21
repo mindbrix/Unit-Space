@@ -444,9 +444,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     devicePoint -= 0.5;
     vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
     
-    vert.u = select(select(1.0, 0.5, vid == 1), 0.0, vid == 0);
-    vert.v = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
-    
+    vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
+    vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
+
     vert.distance = { d0, d1, d2 };
     vert.showInterior = meshState.showInterior;
     vert.color = select(float4(0, 0, 0, 0.666), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), meshState.showColors);
@@ -456,17 +456,17 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float fx = 2.0 * vert.u * dfdx(vert.u) - dfdx(vert.v);
-    float fy = 2.0 * vert.u * dfdy(vert.u) - dfdy(vert.v);
-    float dist = (vert.v - vert.u * vert.u) * rsqrt(fx * fx + fy * fy) - 0.7071;
+    float a = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - a * a;
+    float dfx = dfdx(f), dfy = dfdy(f);
+    float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
-    if (dist < -1.7071)
+    if (dist < -0.7071)
         return 0;
     
-    if (dist > 1 && vert.distance.z > 0.7071)
+    if (dist > 1.41 && vert.distance.z > 0.7071)
         return select(0, vert.color, vert.showInterior);
     
-    float t = quadraticClosestT(vert.p0.x + 0.5, vert.p0.y + 0.5, vert.p1.x + 0.5, vert.p1.y + 0.5, vert.p2.x + 0.5, vert.p2.y + 0.5 );
+    float t = saturate(quadraticClosestT(vert.p0.x + 0.5, vert.p0.y + 0.5, vert.p1.x + 0.5, vert.p1.y + 0.5, vert.p2.x + 0.5, vert.p2.y + 0.5 ));
     
 //    float2 b0 = { vert.p0.x + 0.5, vert.p0.y + 0.5 }, b1 = { vert.p1.x + 0.5, vert.p1.y + 0.5 }, b2 = { vert.p2.x + 0.5, vert.p2.y + 0.5 };
 //    float2 out = normalize(-(b0 + b2) * 0.5) * dist;
