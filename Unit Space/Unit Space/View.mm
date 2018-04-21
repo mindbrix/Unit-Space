@@ -508,7 +508,7 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        if (_mesh._ntriangles) {
+        if (_mesh._vtriangles.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
             

@@ -253,10 +253,6 @@ struct Mesh {
         _vcurves.resize(0);
         _vpoints.resize(0);
         _vtriangles.resize(0);
-
-        _ncolors = 0;
-        _npoints = 0;
-        _ntriangles = 0;
     }
     
     void addPath(Path& path) {
@@ -308,26 +304,22 @@ struct Mesh {
             triangles.resize(ntri);
             
             {
-                _npoints = count;
-                
-                _vpoints.resize(_npoints);
-                XYZ *src = points.get(), *end = src + _npoints;
+                _vpoints.resize(count);
+                XYZ *src = points.get(), *end = src + count;
                 Vector *dst = & _vpoints[0];
                 while(src != end)
                     *dst++ = { src->x, src++->y };
             }
             
             {
-                _ntriangles = ntri;
-                _vtriangles.resize(_ntriangles);
+                _vtriangles.resize(ntri);
                 Triangle *dst = & _vtriangles[0];
                 for(auto &t : triangles)
                     *dst++ = { t.p1, t.p2, t.p3, 0 };
             }
             
             {
-                _ncolors = (int)_paths.size();
-                _vcolors.resize(_ncolors);
+                _vcolors.resize(_paths.size());
                 RGBA8 *dst = & _vcolors[0];
                 for (Path& p : _paths)
                     *dst++ = p._color;
@@ -348,8 +340,6 @@ struct Mesh {
         int pi = 0, ti = 0, c = 0;
         
         {
-            _ncolors = (int)_paths.size();
-            
             for (Path& p : _paths)
                 _vcolors.emplace_back(p._color);
         }
@@ -378,7 +368,6 @@ struct Mesh {
                     }
                     
                     ti += tc;
-                    _ntriangles = ti;
                 }
                 
                 
@@ -387,7 +376,6 @@ struct Mesh {
                         Vector p = { points[i * 2], points[i * 2 + 1] };
                         _vpoints.emplace_back(p);
                     }
-                    _npoints += npoints;
                     pi += npoints;
                 }
             }
@@ -395,7 +383,7 @@ struct Mesh {
         }
         tessDeleteTess(tess);
         
-        return _ntriangles;
+        return (int)_vtriangles.size();
     }
 
     shared_ptr<TESStesselator>			_tess;
@@ -407,8 +395,4 @@ struct Mesh {
     vector<Vector>                      _vpoints;
     vector<Triangle>                    _vtriangles;
     vector<Triangle>                    _vcurves;
-    
-    int                                 _ncolors;
-    int                                 _npoints;
-    int                                 _ntriangles;
 };
