@@ -330,6 +330,7 @@ struct Mesh {
     }
     
     int triangulate(bool useMasking) {
+        assert(kPolySize == 3);
         if (useMasking)
             maskPaths();
         
@@ -351,10 +352,8 @@ struct Mesh {
 
                 int pi = (int)_vpoints.size(), c = (int)_vcolors.size() - 1;
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                    for (int j = 0; j < kPolySize - 2 && polygon[j + 2] != TESS_UNDEF; j++) {
-                        Triangle tri = { pi + polygon[0], pi + polygon[j + 1], pi + polygon[j + 2], c };
-                        _vtriangles.emplace_back(tri);
-                    }
+                    Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
+                    _vtriangles.emplace_back(tri);
                 }
                 for (int i = 0; i < npoints; i++) {
                     Vector p = { points[i * 2], points[i * 2 + 1] };
