@@ -456,7 +456,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float a = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - a * a;
+    float w = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - w * w;
     float dfx = dfdx(f), dfy = dfdy(f);
     float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
@@ -466,14 +466,7 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     if (dist > 1.41 && vert.distance.z > 0.7071)
         return select(0, vert.color, vert.showInterior);
     
-    float t = saturate(quadraticClosestT(vert.p0.x + 0.5, vert.p0.y + 0.5, vert.p1.x + 0.5, vert.p1.y + 0.5, vert.p2.x + 0.5, vert.p2.y + 0.5 ));
-    
-//    float2 b0 = { vert.p0.x + 0.5, vert.p0.y + 0.5 }, b1 = { vert.p1.x + 0.5, vert.p1.y + 0.5 }, b2 = { vert.p2.x + 0.5, vert.p2.y + 0.5 };
-//    float2 out = normalize(-(b0 + b2) * 0.5) * dist;
-//
-//    float c10 = det(out - b1, out - b0), c20 = det(out - b2, out - b0);
-//    float t = saturate(c10 == 0 ? 0 : c10 / (c10 - 0.5 * c20));
-    
+    float t = saturate(-vert.u / (-vert.u - w * 0.5));
     float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
     
     float winding = fragmentWinding(vert.p0, p01) + fragmentWinding(p01, p12) + fragmentWinding(p12, vert.p2) + fragmentWinding(vert.p2, vert.p0);
