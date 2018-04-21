@@ -164,8 +164,16 @@
                 [commandEncoder setVertexBytes:&calls->lines length:sizeof(Lines) atIndex:1];
                 instanceCount = calls->lines.count;
                 break;
-            case kCallTypeMeshTriangles:
+            case kCallTypeMeshCurves:
                 [commandEncoder setRenderPipelineState:_meshCurvePipelineState];
+                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
+                [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
+                instanceCount = _curvesBuffer.length / sizeof(Triangle);
+                break;
+            case kCallTypeMeshTriangles:
+                [commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
                 [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
@@ -187,7 +195,7 @@
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         
-        if (calls->type == kCallTypeMeshTriangles) {
+        if (calls->type == kCallTypeMeshTriangles || calls->type == kCallTypeMeshCurves) {
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
                                vertexCount:3

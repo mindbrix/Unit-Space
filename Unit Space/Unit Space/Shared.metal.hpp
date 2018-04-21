@@ -104,6 +104,7 @@ enum CallType : unsigned int {
     kCallTypeCircles,
     kCallTypeFractal,
     kCallTypeLines,
+    kCallTypeMeshCurves,
     kCallTypeMeshTriangles,
     kCallTypeQuadratics,
     kCallTypeUnits,
