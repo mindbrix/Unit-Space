@@ -23,6 +23,7 @@ constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
 constexpr uint64_t kPathBitmaskTriangle = 1 << 0;
 constexpr uint64_t kPathBitmaskLozenge = 1 << 1;
 constexpr uint64_t kPathBitmaskQuad = 1 << 2;
+constexpr uint64_t kPathBitmaskAll = kPathBitmaskTriangle | kPathBitmaskLozenge | kPathBitmaskQuad;
 
 using namespace std;
 
@@ -217,6 +218,14 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)shiftPathBitmask:(id)sender {
+    _pathBitmask = _pathBitmask << 1;
+    if ((_pathBitmask & kPathBitmaskAll) == 0)
+        _pathBitmask = 1;
+    
+    [self reset];
+    [self redraw];
+}
 - (IBAction)toggleOne:(id)sender {
     _flags &= 1;
     _flags ^= 1;
