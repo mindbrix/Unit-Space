@@ -173,58 +173,6 @@ float det(float2 a, float2 b) {
     return a.x * b.y - a.y * b.x;
 }
 
-float quadraticClosestT0(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float t0 = 0.0, t1 = 1.0, t;
-    float dx01 = x1 - x0, dx12 = x2 - x1, ax = dx12 - dx01, bx = 2.0 * dx01;
-    float dy01 = y1 - y0, dy12 = y2 - y1, ay = dy12 - dy01, by = 2.0 * dy01;
-    
-    float xt0, yt0, xt1, yt1, dx, dy, scale;
-    
-    float x01, x12, x123, y01, y12, y123;
-    float xt, yt, xn, yn;
-    float side;
-    
-    t = (t0 + t1) * 0.5;
-    
-    for (int i = 0; i < 1; i++) {
-//        x01 = mix(x0, x1, t), x12 = mix(x1, x2, t), x123 = mix(x01, x12, t);
-//        y01 = mix(y0, y1, t), y12 = mix(y1, y2, t), y123 = mix(y01, y12, t);
-//        xt = x12 - x01, yt = y12 - y01;
-//        xn = -yt, yn = xt;
-//        side = xn * y123 - yn * x123;
-
-        xt = fma(2.0 * ax, t, bx), yt = fma(2.0 * ay, t, by);
-        x123 = fma(fma(ax, t, bx), t, x0);
-        y123 = fma(fma(ay, t, by), t, y0);
-
-        side = -yt * y123 - xt * x123;
-        
-        t0 = select(t0, t, side > 0.0);
-        t1 = select(t, t1, side > 0.0);
-        
-        t = (t0 + t1) * 0.5;
-    }
-    
-    xt0 = fma(fma(ax, t0, bx), t0, x0);
-    yt0 = fma(fma(ay, t0, by), t0, y0);
-    xt1 = fma(fma(ax, t1, bx), t1, x0);
-    yt1 = fma(fma(ay, t1, by), t1, y0);
-    
-    dx = xt1 - xt0, dy = yt1 - yt0;
-    scale = rsqrt(max(1e-3, dx * dx + dy * dy));
-    
-    dx *= scale, dy *= scale;
-    
-    t = (-xt0 * scale) * dx + (-yt0 * scale) * dy;
-    
-//    t = saturate(t);
-    
-    
-//    t = 0.5 + pow(2.0 * abs(t - 0.5), 2.0) * select(0.5, -0.5, t < 0.5);
-    
-    return mix(t0, t1, t);
-}
-
 float quadraticClosestT(float x0, float y0, float x1, float y1, float x2, float y2) {
     float2 b0 = { x0, y0 }, b1 = { x1, y1 }, b2 = { x2, y2 };
     
