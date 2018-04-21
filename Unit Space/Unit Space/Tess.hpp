@@ -28,7 +28,7 @@ struct SubPath {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             _controlPoints = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
-            _npoints = splitCubics(_points.get(), points, npoints, kSplitCubicPrecision);
+            splitCubics(_points.get(), points, npoints, kSplitCubicPrecision);
         } else {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
@@ -79,8 +79,7 @@ struct SubPath {
         return count + 1;
     }
     
-    int splitCubics(float *dst, const float *src, const int npoints, const float prec) {
-        const float *begin = dst;
+    void splitCubics(float *dst, const float *src, const int npoints, const float prec) {
         float x0, y0, x1, y1, x2, y2, x3 = 0, y3 = 0;
         float xD01, yD01, D01, tcubed, tsplit, t;
         float n01, n12, n23;
@@ -116,7 +115,6 @@ struct SubPath {
            } while (tcubed < 0.999);
         }
         *dst++ = x3, *dst++ = y3;
-        return int(dst - begin) / 2;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
