@@ -253,10 +253,8 @@ struct Mesh {
     
     void reset(float w, float h) {
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
-        _paths.resize(0);
-        
         _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
-        
+        _paths.resize(0);
         _vcolors.resize(0);
         _vcurves.resize(0);
         _vpoints.resize(0);
@@ -319,26 +317,6 @@ struct Mesh {
                     Vector p = { points[i * 2], points[i * 2 + 1] };
                     _vpoints.emplace_back(p);
                 }
-                int cpi = (int)_vpoints.size();
-                
-//                for (SubPath& s : path._subPaths) {
-//                    const float *cpoints = s._controlPoints.get();
-//
-//                    for (int i = 0; i < s._npoints; i++) {
-//                        Vector p = { cpoints[i * 2], cpoints[i * 2 + 1] };
-//                        _vpoints.emplace_back(p);
-//                    }
-//                }
-                
-                vector<int> indexMap;
-                indexMap.resize(npoints);
-                for (int& idx : indexMap)
-                    idx = TESS_UNDEF;
-                
-                for (int i = 0; i < npoints; i++)
-                    if (vertexIndices[i] < indexMap.size())
-                        indexMap[vertexIndices[i]] = i;
-                
             }
         }
         tessDeleteTess(tess);
@@ -347,10 +325,8 @@ struct Mesh {
     }
 
     shared_ptr<TESStesselator>			_tess;
-	
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
     vector<Path>                        _paths;
-    
     vector<RGBA8>                       _vcolors;
     vector<Vector>                      _vpoints;
     vector<Triangle>                    _vtriangles;
