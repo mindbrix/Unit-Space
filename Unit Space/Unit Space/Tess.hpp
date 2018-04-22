@@ -196,6 +196,7 @@ struct Path {
             writeTessSubpaths(tess);
             _outerIndex = findOuterIndex();
             setBounds();
+        }
     }
     
     void setBounds() {
