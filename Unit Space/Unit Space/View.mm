@@ -365,6 +365,8 @@ using namespace std;
         [self.metalLayer createColorsBuffer:& _mesh._colors[0] ncolors:_mesh._colors.size()];
         if (_mesh._curves.size())
             [self.metalLayer createCurvesBuffer:& _mesh._curves[0] ncurves:_mesh._curves.size()];
+        if (_mesh._concaveCurves.size())
+            [self.metalLayer createConcaveCurvesBuffer:& _mesh._concaveCurves[0] ncurves:_mesh._concaveCurves.size()];
         [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
         [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
         
@@ -415,6 +417,8 @@ using namespace std;
     [self.metalLayer createColorsBuffer:& _mesh._colors[0] ncolors:_mesh._colors.size()];
     if (_mesh._curves.size())
         [self.metalLayer createCurvesBuffer:& _mesh._curves[0] ncurves:_mesh._curves.size()];
+    if (_mesh._concaveCurves.size())
+        [self.metalLayer createConcaveCurvesBuffer:& _mesh._concaveCurves[0] ncurves:_mesh._concaveCurves.size()];
     [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
     [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
 }
@@ -532,6 +536,18 @@ using namespace std;
             call.meshState.showInterior = _showInterior;
             
             call.type = kCallTypeMeshTriangles;
+            call.state = uniforms;
+        }
+        
+        
+        if (_mesh._concaveCurves.size()) {
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            
+            call.meshState.showColors = _showColors;
+            call.meshState.showInterior = _showInterior;
+            
+            call.type = kCallTypeMeshConcaveCurves;
             call.state = uniforms;
         }
         

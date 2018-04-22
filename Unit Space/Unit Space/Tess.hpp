@@ -254,9 +254,10 @@ struct Mesh {
     vector<Vector>                      _points;
     vector<Triangle>                    _triangles;
     vector<Triangle>                    _curves;
+    vector<Triangle>                    _concaveCurves;
     
     void empty() {
-        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0);
+        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0);
     }
 };
 
@@ -304,9 +305,11 @@ struct Tess {
                         Triangle tri = { pi + i * 3, pi + i * 3 + 1, pi + i * 3 + 2, c };
                         if (area < 0)
                             std::swap(tri.i0, tri.i2);
-        
-                        mesh._curves.emplace_back(tri);
-                        
+                            
+                        if (area * s._area < 0)
+                            mesh._concaveCurves.emplace_back(tri);
+                        else
+                            mesh._curves.emplace_back(tri);
                         p0 = p2;
                     }
                 }

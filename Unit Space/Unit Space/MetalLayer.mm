@@ -16,6 +16,7 @@
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
@@ -25,6 +26,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshConcaveCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 
 @end
@@ -95,14 +97,23 @@
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
+    descriptor.label = @"Mesh";
+    self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
     descriptor.label = @"Curve";
     self.meshCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationReverseSubtract;
+    descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationReverseSubtract;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
-    descriptor.label = @"Mesh";
-    self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
+    descriptor.label = @"Concave Curve";
+    self.meshConcaveCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    
     
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
@@ -172,6 +183,14 @@
                 [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
                 instanceCount = _curvesBuffer.length / sizeof(Triangle);
                 break;
+            case kCallTypeMeshConcaveCurves:
+                [commandEncoder setRenderPipelineState:_meshConcaveCurvePipelineState];
+                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
+                [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
+                instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
+                break;
             case kCallTypeMeshTriangles:
                 [commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
                 [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
@@ -231,6 +250,12 @@
     _curvesBuffer = [self.device newBufferWithBytes:(void *)curves
                                                 length:ncurves * sizeof(Triangle)
                                                options:MTLResourceStorageModeShared];
+}
+
+- (void)createConcaveCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves {
+    _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)curves
+                                             length:ncurves * sizeof(Triangle)
+                                            options:MTLResourceStorageModeShared];
 }
 
 - (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints {
