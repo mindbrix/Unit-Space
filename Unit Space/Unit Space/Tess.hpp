@@ -262,13 +262,8 @@ struct Mesh {
     }
     
     void addPath(Path& path) {
-        if (path._subPaths.size() == 0)
-            return;
-        
-        path.writeBoundaryContours(_tess.get());
-        assert (path._subPaths.size() > 0);
-        
-        _paths.emplace_back(path);
+        if (path._subPaths.size() != 0)
+            _paths.emplace_back(path);
     }
     
     void maskPaths() {
@@ -288,11 +283,15 @@ struct Mesh {
     }
     
     int triangulate(bool useMasking) {
-        assert(kPolySize == 3);
+        TESStesselator *tess = _tess.get();
+        
+        for (Path& path : _paths)
+            path.writeBoundaryContours(tess);
+        
         if (useMasking)
             maskPaths();
         
-        TESStesselator *tess = _tess.get();
+        assert(kPolySize == 3);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         for (Path& path : _paths) {
