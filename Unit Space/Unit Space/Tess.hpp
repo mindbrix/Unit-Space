@@ -33,12 +33,11 @@ struct SubPath {
             _npoints = npoints;
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             memcpy(_points.get(), points, npoints * kPointStride);
+            if (closed)
+                _npoints--;
         }
         _area = area();
         bounds(& _llx);
-        
-        if (closed)
-            _npoints--;
     }
     
     float area() const {
@@ -117,9 +116,10 @@ struct SubPath {
                    *cpdst++ = cpx, *cpdst++ = cpy;
                }
            } while (tcubed < 0.999);
+            
+            *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
         }
         *dst++ = x3, *dst++ = y3;
-        *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
     }
     
     bool polygonIntersects(SubPath& subPath) const {
@@ -280,6 +280,31 @@ struct Tess {
     void triangulate(Mesh& mesh, bool useMasking) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
+        
+        int pi, c;
+        for (Path& path : _paths)
+            for (SubPath& s : path._subPaths)
+                if (s._controlPoints != NULL) {
+                    const float *points = s._points.get();
+                    const float *controlPoints = s._controlPoints.get();
+                    pi = (int)mesh._points.size();
+                    c = (int)(& path - & _paths[0]);
+                    
+                    Vector p0 = { points[0], points[1] }, p1, p2;
+                    for (int i = 0; i < s._npoints - 1; i++) {
+                        p1 = { controlPoints[i * 2], controlPoints[i * 2 + 1] };
+                        p2 = { points[i * 2 + 2], points[i * 2 + 3] };
+                        mesh._points.emplace_back(p0);
+                        mesh._points.emplace_back(p1);
+                        mesh._points.emplace_back(p2);
+                        
+                        Triangle tri = { pi + i * 3, pi + i * 3 + 1, pi + i * 3 + 2, c };
+                        mesh._curves.emplace_back(tri);
+                        
+                        p0 = p2;
+                    }
+                }
+        
         
         for (Path& path : _paths)
             path.resolveSelfIntersections(tess);
