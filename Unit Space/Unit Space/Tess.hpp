@@ -289,56 +289,6 @@ struct Mesh {
         tessDeleteTess(tess);
     }
     
-    int triangulateDelaunayC() {
-        int count = 0;
-        for (Path& p : _paths)
-            for (SubPath& s : p._subPaths)
-                count += s._npoints;
-        
-        size_t pts_size = count + 3;
-        auto points = shared_ptr<XYZ>((XYZ *)malloc(pts_size * sizeof(XYZ)), free);
-        XYZ *dst = points.get();
-        for (Path& p : _paths)
-            for (SubPath& s : p._subPaths) {
-                float *src = s._points.get(), *end = src + (s._npoints) * 2;
-                while (src != end)
-                    dst->x = *src++, dst->y = *src++, dst++->i = (int)(&p - &_paths[0]);
-            }
-        
-        std::vector<ITRIANGLE> triangles(pts_size * 4);
-        
-        int ntri = 0;
-        int status = Triangulate(count, points.get(), &triangles[0], (int)triangles.size(), & ntri);
-        
-        if (status == 0) {
-            triangles.resize(ntri);
-            
-            {
-                _vpoints.resize(count);
-                XYZ *src = points.get(), *end = src + count;
-                Vector *dst = & _vpoints[0];
-                while(src != end)
-                    *dst++ = { src->x, src++->y };
-            }
-            
-            {
-                _vtriangles.resize(ntri);
-                Triangle *dst = & _vtriangles[0];
-                for(auto &t : triangles)
-                    *dst++ = { t.p1, t.p2, t.p3, 0 };
-            }
-            
-            {
-                _vcolors.resize(_paths.size());
-                RGBA8 *dst = & _vcolors[0];
-                for (Path& p : _paths)
-                    *dst++ = p._color;
-            }
-        }
-        
-        return status;
-    }
-    
     int triangulate(bool useMasking) {
         assert(kPolySize == 3);
         if (useMasking)
