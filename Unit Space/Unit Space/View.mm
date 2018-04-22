@@ -320,8 +320,8 @@ using namespace std;
         { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
     };
     
-    Vector *q = _showTriangle ? triangle : lozenge;
-    int count = _showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
+    Vector *q = !_showTriangle ? triangle : lozenge;
+    int count = !_showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
     
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
@@ -378,7 +378,7 @@ using namespace std;
         };
         
         _lozenge = {
-            { 0, 0 }, { 66, 0 }, { 100, 33 }, { 100, 100 }, { 33, 100 }, { 0, 66 }, { 0, 0 }
+            { 0, 0 }, { 66.666, 0 }, { 100, 33.333 }, { 100, 100 }, { 33.333, 100 }, { 0, 66.666 }, { 0, 0 }
         };
 
 		_quad = {
