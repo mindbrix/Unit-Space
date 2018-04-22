@@ -292,7 +292,7 @@ struct Mesh {
         if (useMasking)
             maskPaths();
         
-        TESStesselator *tess = tessNewTess(NULL);
+        TESStesselator *tess = _tess.get();
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         for (Path& path : _paths) {
@@ -303,7 +303,6 @@ struct Mesh {
             
             if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                 float *points = (float *)tessGetVertices(tess);
-                const TESSindex *vertexIndices = tessGetVertexIndices(tess);
                 int npoints = tessGetVertexCount(tess);
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
@@ -319,8 +318,6 @@ struct Mesh {
                 }
             }
         }
-        tessDeleteTess(tess);
-        
         return (int)_vtriangles.size();
     }
 
