@@ -70,6 +70,7 @@ using namespace std;
     self.transform = [VGAffineTransform new];
     self.showColors = YES;
     self.showInterior = YES;
+    self.showTriangle = YES;
     self.useMask = NO;
     self.pathBitmask = kPathBitmaskTriangle;
     
