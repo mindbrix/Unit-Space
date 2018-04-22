@@ -283,8 +283,11 @@ struct Tess {
         TESStesselator *tess = _tess.get();
         
         int pi, c;
-        float area;
-        for (Path& path : _paths)
+        float area, flip;
+        for (Path& path : _paths) {
+            size_t outerIndex = path.findOuterIndex();
+            SubPath* outer = & path._subPaths[outerIndex];
+            
             for (SubPath& s : path._subPaths)
                 if (s._controlPoints != NULL) {
                     const float *points = s._points.get();
@@ -305,15 +308,17 @@ struct Tess {
                         Triangle tri = { pi + i * 3, pi + i * 3 + 1, pi + i * 3 + 2, c };
                         if (area < 0)
                             std::swap(tri.i0, tri.i2);
-                            
-                        if (area * s._area < 0)
+                        
+                        flip = outer == & s ? 1 : -1;
+                        
+                        if (flip * area * s._area < 0)
                             mesh._concaveCurves.emplace_back(tri);
                         else
                             mesh._curves.emplace_back(tri);
                         p0 = p2;
                     }
                 }
-        
+        }
         
         for (Path& path : _paths)
             path.resolveSelfIntersections(tess);
