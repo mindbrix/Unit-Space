@@ -49,7 +49,7 @@ using namespace std;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
-@property(nonatomic) Mesh mesh;
+@property(nonatomic) Tess mesh;
 
 @end
 

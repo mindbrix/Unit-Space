@@ -245,9 +245,9 @@ struct Path {
     float                       _llx, _lly, _urx, _ury;
 };
 
-struct Mesh {
-    Mesh() {}
-    Mesh(float w, float h) {
+struct Tess {
+    Tess() {}
+    Tess(float w, float h) {
         reset(w, h);
     }
     
