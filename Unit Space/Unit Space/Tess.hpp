@@ -245,6 +245,17 @@ struct Path {
     float                       _llx, _lly, _urx, _ury;
 };
 
+struct Mesh {
+    vector<RGBA8>                       _vcolors;
+    vector<Vector>                      _vpoints;
+    vector<Triangle>                    _vtriangles;
+    vector<Triangle>                    _vcurves;
+    
+    void reset() {
+        _vcolors.resize(0), _vpoints.resize(0), _vtriangles.resize(0), _vcurves.resize(0);
+    }
+};
+
 struct Tess {
     Tess() {}
     Tess(float w, float h) {
@@ -255,10 +266,6 @@ struct Tess {
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
         _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
         _paths.resize(0);
-        _vcolors.resize(0);
-        _vcurves.resize(0);
-        _vpoints.resize(0);
-        _vtriangles.resize(0);
     }
     
     void addPath(Path& path) {
@@ -266,7 +273,8 @@ struct Tess {
             _paths.emplace_back(path);
     }
     
-    int triangulate(bool useMasking) {
+    int triangulate(Mesh& mesh, bool useMasking) {
+        mesh.reset();
         TESStesselator *tess = _tess.get();
         
         for (Path& path : _paths)
@@ -287,7 +295,7 @@ struct Tess {
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         for (Path& path : _paths) {
-            _vcolors.emplace_back(path._color);
+            mesh._vcolors.emplace_back(path._color);
 
             for (SubPath& s : path._subPaths)
                 tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
@@ -298,25 +306,21 @@ struct Tess {
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
 
-                int pi = (int)_vpoints.size(), c = (int)_vcolors.size() - 1;
+                int pi = (int)mesh._vpoints.size(), c = (int)mesh._vcolors.size() - 1;
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                     Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
-                    _vtriangles.emplace_back(tri);
+                    mesh._vtriangles.emplace_back(tri);
                 }
                 for (int i = 0; i < npoints; i++) {
                     Vector p = { points[i * 2], points[i * 2 + 1] };
-                    _vpoints.emplace_back(p);
+                    mesh._vpoints.emplace_back(p);
                 }
             }
         }
-        return (int)_vtriangles.size();
+        return (int)mesh._vtriangles.size();
     }
 
     shared_ptr<TESStesselator>			_tess;
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
     vector<Path>                        _paths;
-    vector<RGBA8>                       _vcolors;
-    vector<Vector>                      _vpoints;
-    vector<Triangle>                    _vtriangles;
-    vector<Triangle>                    _vcurves;
 };

@@ -49,7 +49,8 @@ using namespace std;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
-@property(nonatomic) Tess mesh;
+@property(nonatomic) Mesh mesh;
+@property(nonatomic) Tess tess;
 
 @end
 
@@ -340,7 +341,7 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        _mesh.reset(image->width, image->height);
+        _tess.reset(image->width, image->height);
         int limit = 60000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
@@ -355,10 +356,11 @@ using namespace std;
                     
                     p.addContour(path->pts, path->npts, SubPath::kCubic);
                 }
-                _mesh.addPath(p);
+                _tess.addPath(p);
             }
         }
-        _mesh.triangulate(self.useMask);
+        _tess.triangulate(_mesh, self.useMask);
+        
         [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
         [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._vpoints.size()];
         [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._vtriangles.size()];
@@ -395,17 +397,17 @@ using namespace std;
 	Path p2(false, black);
 	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
 	
-    _mesh.reset(self.bounds.size.width, self.bounds.size.height);
+    _tess.reset(self.bounds.size.width, self.bounds.size.height);
     if (self.pathBitmask & kPathBitmaskTriangle)
-        _mesh.addPath(p0);
+        _tess.addPath(p0);
     
     if (self.pathBitmask & kPathBitmaskLozenge)
-        _mesh.addPath(p1);
+        _tess.addPath(p1);
     
     if (self.pathBitmask & kPathBitmaskQuad)
-        _mesh.addPath(p2);
+        _tess.addPath(p2);
     
-    _mesh.triangulate(self.useMask);
+    _tess.triangulate(_mesh, self.useMask);
     
     [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
     [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._vpoints.size()];
