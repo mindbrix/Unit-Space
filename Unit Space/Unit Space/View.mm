@@ -361,9 +361,9 @@ using namespace std;
         }
         _tess.triangulate(_mesh, self.useMask);
         
-        [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
-        [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._vpoints.size()];
-        [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._vtriangles.size()];
+        [self.metalLayer createColorsBuffer:& _mesh._colors[0] ncolors:_mesh._colors.size()];
+        [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
+        [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
         
         // Delete
         nsvgDelete(image);
@@ -409,9 +409,9 @@ using namespace std;
     
     _tess.triangulate(_mesh, self.useMask);
     
-    [self.metalLayer createColorsBuffer:& _mesh._vcolors[0] ncolors:_mesh._vcolors.size()];
-    [self.metalLayer createPointsBuffer:& _mesh._vpoints[0] npoints:_mesh._vpoints.size()];
-    [self.metalLayer createTrianglesBuffer:& _mesh._vtriangles[0] ntriangles:_mesh._vtriangles.size()];
+    [self.metalLayer createColorsBuffer:& _mesh._colors[0] ncolors:_mesh._colors.size()];
+    [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
+    [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
 }
 
 - (void)update {
@@ -519,7 +519,7 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        if (_mesh._vtriangles.size()) {
+        if (_mesh._triangles.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
             

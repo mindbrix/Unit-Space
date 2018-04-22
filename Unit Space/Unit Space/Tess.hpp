@@ -246,13 +246,13 @@ struct Path {
 };
 
 struct Mesh {
-    vector<RGBA8>                       _vcolors;
-    vector<Vector>                      _vpoints;
-    vector<Triangle>                    _vtriangles;
-    vector<Triangle>                    _vcurves;
+    vector<RGBA8>                       _colors;
+    vector<Vector>                      _points;
+    vector<Triangle>                    _triangles;
+    vector<Triangle>                    _curves;
     
     void empty() {
-        _vcolors.resize(0), _vpoints.resize(0), _vtriangles.resize(0), _vcurves.resize(0);
+        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0);
     }
 };
 
@@ -295,7 +295,7 @@ struct Tess {
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         for (Path& path : _paths) {
-            mesh._vcolors.emplace_back(path._color);
+            mesh._colors.emplace_back(path._color);
 
             for (SubPath& s : path._subPaths)
                 tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
@@ -306,18 +306,18 @@ struct Tess {
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
 
-                int pi = (int)mesh._vpoints.size(), c = (int)mesh._vcolors.size() - 1;
+                int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                     Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
-                    mesh._vtriangles.emplace_back(tri);
+                    mesh._triangles.emplace_back(tri);
                 }
                 for (int i = 0; i < npoints; i++) {
                     Vector p = { points[i * 2], points[i * 2 + 1] };
-                    mesh._vpoints.emplace_back(p);
+                    mesh._points.emplace_back(p);
                 }
             }
         }
-        return (int)mesh._vtriangles.size();
+        return (int)mesh._triangles.size();
     }
 
     shared_ptr<TESStesselator>			_tess;
