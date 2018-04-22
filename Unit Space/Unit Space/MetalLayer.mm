@@ -214,7 +214,7 @@
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         
-        if (calls->type == kCallTypeMeshTriangles || calls->type == kCallTypeMeshCurves) {
+        if (calls->type == kCallTypeMeshTriangles || calls->type == kCallTypeMeshCurves || calls->type == kCallTypeMeshConcaveCurves) {
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
                                vertexCount:3
