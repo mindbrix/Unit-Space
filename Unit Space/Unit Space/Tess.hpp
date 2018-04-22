@@ -273,7 +273,7 @@ struct Tess {
             _paths.emplace_back(path);
     }
     
-    int triangulate(Mesh& mesh, bool useMasking) {
+    void triangulate(Mesh& mesh, bool useMasking) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
         
@@ -317,7 +317,6 @@ struct Tess {
                 }
             }
         }
-        return (int)mesh._triangles.size();
     }
 
     shared_ptr<TESStesselator>			_tess;
