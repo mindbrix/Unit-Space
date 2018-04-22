@@ -266,31 +266,23 @@ struct Mesh {
             _paths.emplace_back(path);
     }
     
-    void maskPaths() {
-        TESStesselator *tess = tessNewTess(NULL);
-
-        for (size_t i = 0; i < _paths.size(); i++) {
-            Path& path = _paths[i];
-            
-            auto matches = _quadtree->find(path._llx, path._lly, path._urx, path._ury);
-            
-            for (auto j : matches)
-//                if (_paths[j].intersects(path))
-                _paths[j].maskOut(tess, path);
-            _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
-        }
-        tessDeleteTess(tess);
-    }
-    
     int triangulate(bool useMasking) {
         TESStesselator *tess = _tess.get();
         
         for (Path& path : _paths)
             path.writeBoundaryContours(tess);
         
-        if (useMasking)
-            maskPaths();
-        
+        if (useMasking) {
+            for (size_t i = 0; i < _paths.size(); i++) {
+                Path& path = _paths[i];
+                
+                auto matches = _quadtree->find(path._llx, path._lly, path._urx, path._ury);
+                for (auto j : matches) //                if (_paths[j].intersects(path))
+                    _paths[j].maskOut(tess, path);
+                _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
+            }
+        }
+
         assert(kPolySize == 3);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
