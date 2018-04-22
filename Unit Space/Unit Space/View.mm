@@ -275,7 +275,7 @@ using namespace std;
 
 - (IBAction)toggleTriangle:(id)sender {
     _showTriangle = !_showTriangle;
-    [self reset];
+//    [self reset];
     [self redraw];
 }
 
@@ -523,7 +523,7 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        if (_mesh._triangles.size()) {
+        if (_showTriangle && _mesh._triangles.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
             
