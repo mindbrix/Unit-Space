@@ -82,12 +82,6 @@ struct Triangle {
     int i0, i1, i2, c;
 };
 
-
-#define kTrianglesIndexSize 384
-#define kTrianglesPointsSize 256
-#define kTrianglesColorsSize 125
-
-
 struct State {
     RGBA                fillColor;
     RGBA                strokeColor;
