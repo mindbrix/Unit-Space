@@ -209,7 +209,7 @@ struct Path {
         }
     }
     
-    void writeBoundaryContours(TESStesselator *tess) {
+    void resolveSelfIntersections(TESStesselator *tess) {
         if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0])))) {
             setBounds();
             return;
@@ -282,7 +282,7 @@ struct Tess {
         TESStesselator *tess = _tess.get();
         
         for (Path& path : _paths)
-            path.writeBoundaryContours(tess);
+            path.resolveSelfIntersections(tess);
         
         if (useMasking) {
             for (size_t i = 0; i < _paths.size(); i++) {
