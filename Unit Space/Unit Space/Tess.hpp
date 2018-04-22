@@ -81,7 +81,7 @@ struct SubPath {
     
     void splitCubics(float *dst, float *cpdst, const float *src, const int npoints, const float prec) {
         float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
-        float xD01, yD01, D01, tcubed, tsplit, t;
+        float xD01, yD01, D01, tcubed, t;
         float n01, n12, n23;
         float n012, n123;
         float n0123;
@@ -100,7 +100,7 @@ struct SubPath {
                tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
                
                if (tcubed < 0.999) {
-                   t = tsplit = cbrt(tcubed);
+                   t = cbrt(tcubed);
                    
                    n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
                    n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
