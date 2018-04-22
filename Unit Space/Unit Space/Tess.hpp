@@ -251,7 +251,7 @@ struct Mesh {
     vector<Triangle>                    _vtriangles;
     vector<Triangle>                    _vcurves;
     
-    void reset() {
+    void empty() {
         _vcolors.resize(0), _vpoints.resize(0), _vtriangles.resize(0), _vcurves.resize(0);
     }
 };
@@ -274,7 +274,7 @@ struct Tess {
     }
     
     int triangulate(Mesh& mesh, bool useMasking) {
-        mesh.reset();
+        mesh.empty();
         TESStesselator *tess = _tess.get();
         
         for (Path& path : _paths)
