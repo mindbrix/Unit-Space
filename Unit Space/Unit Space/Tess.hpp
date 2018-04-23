@@ -296,16 +296,17 @@ struct Tess {
                     c = (int)(& path - & _paths[0]);
                     
                     Vector p0 = { points[0], points[1] }, p1, p2;
+                    mesh._points.emplace_back(p0);
+                    
                     for (int i = 0; i < s._npoints - 1; i++) {
                         p1 = { controlPoints[i * 2], controlPoints[i * 2 + 1] };
                         p2 = { points[i * 2 + 2], points[i * 2 + 3] };
                         
-                        mesh._points.emplace_back(p0);
                         mesh._points.emplace_back(p1);
                         mesh._points.emplace_back(p2);
                         
                         area = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
-                        Triangle tri = { pi + i * 3, pi + i * 3 + 1, pi + i * 3 + 2, c };
+                        Triangle tri = { pi + i * 2, pi + i * 2 + 1, pi + i * 2 + 2, c };
                         if (area < 0)
                             std::swap(tri.i0, tri.i2);
                         
