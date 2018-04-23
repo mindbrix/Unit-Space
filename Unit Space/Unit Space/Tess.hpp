@@ -13,7 +13,7 @@
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
 constexpr int kPointStride = 2 * sizeof(float);
-constexpr float kSplitCubicPrecision = 0.01;
+constexpr float kSplitCubicPrecision = 0.1;
 
 struct SubPath {
     enum Type {
