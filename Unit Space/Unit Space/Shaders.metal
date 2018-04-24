@@ -466,7 +466,8 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     if (dist > 1.41 && vert.distance.z > 0.7071)
         return select(0, vert.color, vert.showInterior);
     
-    float t = saturate(-vert.u / (-vert.u - w * 0.5));
+    float t = saturate(vert.u / (vert.u + w * 0.5));
+    t = select(t, 1.0 - saturate(vert.v / (vert.v + w * 0.5)), t < 0.5);
     float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
     
     float winding = fragmentWinding(vert.p0, p01) + fragmentWinding(p01, p12) + fragmentWinding(p12, vert.p2) + fragmentWinding(vert.p2, vert.p0);
