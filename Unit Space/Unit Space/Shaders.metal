@@ -383,9 +383,9 @@ struct TriangleVertex
     float4 color;
 };
 
-vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    device Triangle &triangle = triangles[iid];
+    device Triangle &triangle = triangles[iid - biid];
     
     RGBA8 color = colors[triangle.c];
     
