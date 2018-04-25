@@ -376,12 +376,101 @@ struct TriangleVertex
 {
     float4 position [[position]];
     
-    float2 p0, p1, p2;
+    float2 p0, p1, p2, p3;
     float u, v;
-    float3 distance;
+    float4 distance;
     bool showInterior;
     float4 color;
 };
+
+vertex TriangleVertex quad_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Quad *quads [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+{
+    device Quad &quad = quads[iid - biid];
+    
+    RGBA8 color = colors[quad.c];
+    
+    Vector _v0 = points[quad.i0], _v1 = points[quad.i1], _v2 = points[quad.i2], _v3 = points[quad.i3];
+    
+    constant AffineTransform& ctm = state.CTM;
+    
+    float2 p0 = {
+        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
+        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
+    };
+    
+    float2 p1 = {
+        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
+        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
+    };
+    
+    float2 p2 = {
+        _v2.x * ctm.a + _v2.y * ctm.c + ctm.tx,
+        _v2.x * ctm.b + _v2.y * ctm.d + ctm.ty
+    };
+    
+    float2 p3 = {
+        _v3.x * ctm.a + _v3.y * ctm.c + ctm.tx,
+        _v3.x * ctm.b + _v3.y * ctm.d + ctm.ty
+    };
+    
+    float2 v01 = p1 - p0;
+    float2 n01 = normalize(float2(v01.y, -v01.x));
+    
+    float2 v12 = p2 - p1;
+    float2 n12 = normalize(float2(v12.y, -v12.x));
+    
+    float2 v23 = p3 - p2;
+    float2 n23 = normalize(float2(v23.y, -v23.x));
+    
+    float2 v30 = p0 - p3;
+    float2 n30 = normalize(float2(v30.y, -v30.x));
+    
+    float2 e01 = { -n01.y, n01.x };
+    float2 e12 = { -n12.y, n12.x };
+    float2 e23 = { -n23.y, n23.x };
+    float2 e30 = { -n30.y, n30.x };
+    
+    const float dilation = 0.7071067812;
+    
+    float2 tan0 = normalize(e30 + e01);
+    float2 miter0 = { tan0.y, -tan0.x };
+    float2 v0 = p0 + miter0 * dilation / max(1e-3, dot(miter0, n30));
+    
+    float2 tan1 = normalize(e01 + e12);
+    float2 miter1 = { tan1.y, -tan1.x };
+    float2 v1 = p1 + miter1 * dilation / max(1e-3, dot(miter1, n01));
+    
+    float2 tan2 = normalize(e12 + e23);
+    float2 miter2 = { tan2.y, -tan2.x };
+    float2 v2 = p2 + miter2 * dilation / max(1e-3, dot(miter2, n12));
+    
+    float2 tan3 = normalize(e23 + e30);
+    float2 miter3 = { tan3.y, -tan3.x };
+    float2 v3 = p3 + miter3 * dilation / max(1e-3, dot(miter3, n23));
+    
+    float2 devicePoint = select(select(select(v3, v2, vid == 2), v1, vid == 1), v0, vid == 0);
+    
+    TriangleVertex vert;
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
+    
+    vert.distance = {
+        dot(p0 - devicePoint, n01),
+        dot(p1 - devicePoint, n12),
+        dot(p2 - devicePoint, n23),
+        dot(p3 - devicePoint, n30)
+    };
+    
+    devicePoint -= 0.5;
+    vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint, vert.p3 = p3 - devicePoint;
+    
+    vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
+    vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
+    
+    vert.showInterior = meshState.showInterior;
+    vert.color = select(float4(0, 0, 0, 0.666), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), meshState.showColors);
+    
+    return vert;
+}
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
@@ -447,7 +536,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
     vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
 
-    vert.distance = { d0, d1, d2 };
+    vert.distance = { d0, d1, d2, 0 };
     vert.showInterior = meshState.showInterior;
     vert.color = select(float4(0, 0, 0, 0.666), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), meshState.showColors);
     
@@ -471,6 +560,15 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
     
     float winding = fragmentWinding(vert.p0, p01) + fragmentWinding(p01, p12) + fragmentWinding(p12, vert.p2) + fragmentWinding(vert.p2, vert.p0);
+    return vert.color * abs(winding);
+}
+
+fragment float4 quad_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    if (min(min(vert.distance.x, vert.distance.y), min(vert.distance.z, vert.distance.w)) > 0.7071)
+        return select(0, vert.color, vert.showInterior);
+    
+    float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p3) + fragmentWinding(vert.p3, vert.p0);
     return vert.color * abs(winding);
 }
 

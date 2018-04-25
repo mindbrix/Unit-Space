@@ -103,10 +103,10 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-//    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_quad_vertex_main"];
-//    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"quad_fragment_main"];
-//    descriptor.label = @"Quad";
-//    self.meshQuadPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quad_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"quad_fragment_main"];
+    descriptor.label = @"Quad";
+    self.meshQuadPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
@@ -280,7 +280,7 @@
                                                   options:MTLResourceStorageModeShared];
 }
 
-- (void)createQuadsBuffer:(Triangle *)quads nquads:(size_t)nquads {
+- (void)createQuadsBuffer:(Quad *)quads nquads:(size_t)nquads {
     _quadsBuffer = [self.device newBufferWithBytes:(void *)quads
                                                 length:nquads * sizeof(Quad)
                                                options:MTLResourceStorageModeShared];
