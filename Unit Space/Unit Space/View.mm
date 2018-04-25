@@ -362,13 +362,7 @@ using namespace std;
         }
         _tess.triangulate(_mesh, self.useMask);
         
-        [self.metalLayer createColorsBuffer:& _mesh._colors[0] ncolors:_mesh._colors.size()];
-        if (_mesh._curves.size())
-            [self.metalLayer createCurvesBuffer:& _mesh._curves[0] ncurves:_mesh._curves.size()];
-        if (_mesh._concaveCurves.size())
-            [self.metalLayer createConcaveCurvesBuffer:& _mesh._concaveCurves[0] ncurves:_mesh._concaveCurves.size()];
-        [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
-        [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
+        [self uploadMesh];
         
         // Delete
         nsvgDelete(image);
@@ -413,12 +407,17 @@ using namespace std;
         _tess.addPath(p2);
     
     _tess.triangulate(_mesh, self.useMask);
-    
+    [self uploadMesh];
+}
+
+- (void)uploadMesh {
     [self.metalLayer createColorsBuffer:& _mesh._colors[0] ncolors:_mesh._colors.size()];
     if (_mesh._curves.size())
         [self.metalLayer createCurvesBuffer:& _mesh._curves[0] ncurves:_mesh._curves.size()];
     if (_mesh._concaveCurves.size())
         [self.metalLayer createConcaveCurvesBuffer:& _mesh._concaveCurves[0] ncurves:_mesh._concaveCurves.size()];
+    if (_mesh._quads.size())
+        [self.metalLayer createQuadsBuffer:& _mesh._quads[0] nquads:_mesh._quads.size()];
     [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
     [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
 }

@@ -22,6 +22,7 @@
 - (void)createCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves;
 - (void)createConcaveCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves;
 - (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints;
+- (void)createQuadsBuffer:(Quad *)quads nquads:(size_t)nquads;
 - (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(size_t)ntriangles;
 
 @end

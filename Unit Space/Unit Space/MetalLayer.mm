@@ -18,12 +18,14 @@
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> quadsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshQuadPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshConcaveCurvePipelineState;
@@ -98,8 +100,13 @@
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
-    descriptor.label = @"Mesh";
+    descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+//    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_quad_vertex_main"];
+//    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"quad_fragment_main"];
+//    descriptor.label = @"Quad";
+//    self.meshQuadPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
@@ -199,6 +206,15 @@
                 [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
                 instanceCount = _trianglesBuffer.length / sizeof(Triangle);
                 break;
+            case kCallTypeMeshQuads:
+                [commandEncoder setRenderPipelineState:_meshQuadPipelineState];
+                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
+                [commandEncoder setVertexBuffer:_quadsBuffer offset:0 atIndex:4];
+                instanceCount = _quadsBuffer.length / sizeof(Quad);
+                break;
+                
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
                 [commandEncoder setVertexBytes:&calls->quadratics length:sizeof(Quadratics) atIndex:1];
@@ -262,6 +278,12 @@
     _pointsBuffer = [self.device newBufferWithBytes:(void *)points
                                                    length:npoints * sizeof(Vector)
                                                   options:MTLResourceStorageModeShared];
+}
+
+- (void)createQuadsBuffer:(Triangle *)quads nquads:(size_t)nquads {
+    _quadsBuffer = [self.device newBufferWithBytes:(void *)quads
+                                                length:nquads * sizeof(Quad)
+                                               options:MTLResourceStorageModeShared];
 }
 
 - (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(size_t)ntriangles {
