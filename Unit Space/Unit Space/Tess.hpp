@@ -307,15 +307,19 @@ struct Tess {
                         
                         area = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
                         Triangle tri = { pi + i * 2, pi + i * 2 + 1, pi + i * 2 + 2, c };
-                        if (area < 0)
-                            std::swap(tri.i0, tri.i2);
+                    
+                        if (area != 0) {
+                            if (area < 0)
+                                std::swap(tri.i0, tri.i2);
+                            
+                            flip = outer == & s ? 1 : -1;
+                            
+                            if (flip * area * s._area < 0)
+                                mesh._concaveCurves.emplace_back(tri);
+                            else
+                                mesh._curves.emplace_back(tri);
+                        }
                         
-                        flip = outer == & s ? 1 : -1;
-                        
-                        if (flip * area * s._area < 0)
-                            mesh._concaveCurves.emplace_back(tri);
-                        else
-                            mesh._curves.emplace_back(tri);
                         p0 = p2;
                     }
                 }
