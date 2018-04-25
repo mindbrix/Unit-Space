@@ -325,10 +325,10 @@ struct Tess {
                 }
         }
         
-        for (Path& path : _paths)
-            path.resolveSelfIntersections(tess);
-        
         if (useMasking) {
+            for (Path& path : _paths)
+                path.resolveSelfIntersections(tess);
+            
             for (size_t i = 0; i < _paths.size(); i++) {
                 Path& path = _paths[i];
                 
