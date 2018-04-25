@@ -11,7 +11,7 @@
 #import "delaunay.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
-constexpr int kPolySize = 3;
+constexpr int kPolySize = 4;
 constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
 
@@ -340,7 +340,7 @@ struct Tess {
             }
         }
 
-        assert(kPolySize == 3);
+//        assert(kPolySize == 3);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         for (Path& path : _paths) {
@@ -357,8 +357,13 @@ struct Tess {
 
                 int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                    Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
-                    mesh._triangles.emplace_back(tri);
+                    if (polygon[3] == TESS_UNDEF) {
+                        Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
+                        mesh._triangles.emplace_back(tri);
+                    } else {
+                        Quad quad = { pi + polygon[0], pi + polygon[1], pi + polygon[2], pi + polygon[3], c };
+                        mesh._quads.emplace_back(quad);
+                    }
                 }
                 for (int i = 0; i < npoints; i++) {
                     Vector p = { points[i * 2], points[i * 2 + 1] };

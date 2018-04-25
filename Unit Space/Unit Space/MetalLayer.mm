@@ -122,10 +122,11 @@
     
     
     
-    static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
+    static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3, /* Quad */ 0, 1, 2, 0, 2, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
                                                 length:sizeof(indices)
                                                options:MTLResourceOptionCPUCacheModeDefault];
+    
     return self;
 }
 
@@ -241,7 +242,7 @@
                                        indexCount:6
                                         indexType:MTLIndexTypeUInt16
                                       indexBuffer:_indexBuffer
-                                indexBufferOffset:0
+                                indexBufferOffset:calls->type == kCallTypeMeshQuads ? 6 * sizeof(uint16_t) : 0
                                     instanceCount:instanceCount];
         }
         

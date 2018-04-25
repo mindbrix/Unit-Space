@@ -538,6 +538,17 @@ using namespace std;
             call.state = uniforms;
         }
         
+        if (_mesh._quads.size()) {
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            
+            call.meshState.showColors = _showColors;
+            call.meshState.showInterior = _showInterior;
+            
+            call.type = kCallTypeMeshQuads;
+            call.state = uniforms;
+        }
+        
         
         if (_mesh._concaveCurves.size()) {
             _calls.emplace_back();
