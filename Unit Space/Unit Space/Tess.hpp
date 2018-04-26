@@ -241,6 +241,20 @@ struct Path {
         }
         sort(edges.begin(), edges.end());
         
+        Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size();
+        lx = edge->lx;
+        
+        for (;;) {
+            do
+                edge++;
+            while (edge < end && edge->lx == lx);
+            
+            if (edge == end)
+                break;
+            
+            lx = edge->lx;
+        }
+        
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
