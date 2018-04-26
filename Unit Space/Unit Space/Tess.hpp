@@ -15,6 +15,14 @@ constexpr int kPolySize = 3;
 constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
 
+struct Edge {
+    Edge(float lx, float ux, int ci, int pi) : lx(lx), ux(ux), ci(ci), pi(pi) {}
+    
+    float lx, ux;
+    int ci, pi;
+    inline bool operator< (const Edge& other) const     { return lx < other.lx; }
+};
+
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose
@@ -215,6 +223,24 @@ struct Path {
             return;
         }
 		
+        int count = 0;
+        for (SubPath& s : _subPaths)
+            count += s._npoints;
+        
+        vector<Edge> edges;
+        float lx, ux, *points;
+        for (int ci = 0; ci < _subPaths.size(); ci++) {
+            points = _subPaths[ci]._points.get();
+            for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
+                lx = points[pi];
+                ux = points[(pi + 1) % _subPaths[ci]._npoints];
+                if (lx > ux)
+                    swap(lx, ux);
+                edges.emplace_back(lx, ux, ci, pi);
+            }
+        }
+        sort(edges.begin(), edges.end());
+        
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
