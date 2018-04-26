@@ -1,14 +1,7 @@
-//
-//  delaunay.hpp
-//  Unit Space
-//
-//  Created by Nigel Barber on 12/04/2018.
-//  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
-//
-
 // Source: http://paulbourke.net/papers/triangulate/triangulate.c
 //
 #include <stdlib.h>
+#include <math.h>
 
 typedef struct {
     int p1, p2, p3;
@@ -25,7 +18,7 @@ typedef struct {
 } CIRCLE;
 
 
-double incirclefast(double xp, double yp, double x1, double y1, double x2, double y2, double x3, double y3) {
+double incircle(double xp, double yp, double x1, double y1, double x2, double y2, double x3, double y3) {
     double adx, ady, bdx, bdy, cdx, cdy;
     double abdet, bcdet, cadet;
     double alift, blift, clift;
@@ -60,7 +53,7 @@ void circumcenter(double ax, double ay, double bx, double by, double cx, double 
     *xc = (ey * bl - dy * cl) * 0.5 / d;
     *yc = (dx * cl - ex * bl) * 0.5 / d;
     
-    r = std::sqrt(*xc * *xc + *yc * *yc);
+    r = sqrt(*xc * *xc + *yc * *yc);
     
     *xc += ax, *yc += ay;
     *xmax = *xc + r;
@@ -81,7 +74,7 @@ int XYZCompare(const void *v1, const void *v2) {
  Triangulation subroutine
  Takes as input NV vertices in array pxyz
  Returned is a list of ntri triangular faces in the array v
- These triangles are arranged in a consistent clockwise order.
+ These triangles are arranged in a consistent CCW order.
  The triangle array 'v' should be malloced to 4 * nv
  The vertex array pxyz must be big enough to hold 3 more points
  */
@@ -171,7 +164,7 @@ int Triangulate(int nv, XYZ *pxyz, ITRIANGLE *v, int vsize, int *ntri)
             x2 = pxyz[tri->p2].x, y2 = pxyz[tri->p2].y;
             x3 = pxyz[tri->p3].x, y3 = pxyz[tri->p3].y;
             
-            if (incirclefast(xp, yp, x1, y1, x2, y2, x3, y3) >= 0) {
+            if (incircle(xp, yp, x1, y1, x2, y2, x3, y3) >= 0) {
                 if (nedge + 3 >= emax) {
                     emax += 100;
                     if ((edges = (IEDGE *)realloc(edges, emax * (long)sizeof(IEDGE))) == NULL) {

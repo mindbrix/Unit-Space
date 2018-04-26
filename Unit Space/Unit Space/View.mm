@@ -15,6 +15,7 @@
 #import "nanosvg.h"
 
 #import "Tess.hpp"
+#import "delaunay.h"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
