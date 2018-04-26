@@ -16,11 +16,21 @@ constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
 
 struct Edge {
-    Edge(float lx, float ly, float ux, float uy, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), ci(ci), pi(pi) {}
+    enum Flags {
+        kFlippedX = 1 << 0,
+        kFlippedY = 1 << 1
+    };
+    
+    Edge(float lx, float ly, float ux, float uy, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), flags(0), p(0), ci((unsigned short int)ci), pi((unsigned short int)pi) {
+        if (lx > ux)
+            swap(lx, ux), flags |= kFlippedX;
+        if (ly > uy)
+            swap(ly, uy), flags |= kFlippedY;
+    }
     
     float lx, ly, ux, uy;
-    int ci, pi;
-    inline bool operator< (const Edge& other) const     { return lx < other.lx; }
+    unsigned short int flags, p, ci, pi;
+    inline bool operator< (const Edge& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
 };
 
 struct SubPath {
@@ -234,10 +244,6 @@ struct Path {
             for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
                 lx = points[pi * 2], ly = points[pi * 2 + 1];
                 ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2], uy = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
-                if (lx > ux)
-                    swap(lx, ux);
-                if (ly > uy)
-                    swap(ly, uy);
                 new (end++) Edge(lx, ly, ux, uy, ci, pi);
             }
         }
@@ -262,9 +268,14 @@ struct Path {
             
             for (e0 = last; e0 < edge; e0++)
                 for (e1 = begin; e1 < edge; e1++)
-                    if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx) {
-                        e0 = e0;
-                    }
+                    if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
+                        if (doLinesIntersect(
+                                             e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,     e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
+                                            ~e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,    ~e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
+                                             e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,     e1->flags & Edge::kFlippedY ? e1->uy : e1->ly,
+                                            ~e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,    ~e1->flags & Edge::kFlippedY ? e1->uy : e1->ly)) {
+                            e0 = e0;
+                        }
         }
         
         for (SubPath& subPath : _subPaths)
