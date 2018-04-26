@@ -262,8 +262,7 @@ struct Path {
             
             for (e0 = last; e0 < edge; e0++)
                 for (e1 = begin; e1 < edge; e1++)
-                    if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly) {
-//                        assert(e0->ux > e1->lx && e1->ux > e0->lx);
+                    if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx) {
                         e0 = e0;
                     }
         }
