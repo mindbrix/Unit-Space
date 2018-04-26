@@ -241,10 +241,12 @@ struct Path {
         }
         sort(edges.begin(), edges.end());
         
-        Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size();
+        Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size(), *last, *dst;
         lx = edge->lx;
         
         for (;;) {
+            last = edge;
+            
             do
                 edge++;
             while (edge < end && edge->lx == lx);
@@ -253,6 +255,12 @@ struct Path {
                 break;
             
             lx = edge->lx;
+            
+            dst = last;
+            while (--last >= begin)
+                if (last->ux > lx)
+                    *(--dst) = *last;
+            begin = dst;
         }
         
         for (SubPath& subPath : _subPaths)
