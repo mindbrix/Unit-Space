@@ -232,8 +232,8 @@ struct Path {
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
             for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
-                lx = points[pi];
-                ux = points[(pi + 1) % _subPaths[ci]._npoints];
+                lx = points[pi * 2];
+                ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2];
                 if (lx > ux)
                     swap(lx, ux);
                 edges.emplace_back(lx, ux, ci, pi);
