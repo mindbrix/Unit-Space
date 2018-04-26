@@ -241,7 +241,7 @@ struct Path {
         }
         sort(edges.begin(), edges.end());
         
-        Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size(), *last, *dst;
+        Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size(), *last, *dst, *e0, *e1;
         lx = edge->lx;
         
         for (;;) {
@@ -250,6 +250,11 @@ struct Path {
             do
                 edge++;
             while (edge < end && edge->lx == lx);
+            
+            for (e0 = last; e0 < edge; e0++)
+                for (e1 = begin; e1 < edge; e1++)
+                    if (e0 != e1)
+                        ;
             
             if (edge == end)
                 break;
