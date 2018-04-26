@@ -151,50 +151,54 @@
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     
-    while (count--) {
+    Call *end = calls + count;
+    for (Call *call = calls; call < end; call++) {
         size_t instanceCount = 1;
         
-        switch (calls->type) {
+        switch (call->type) {
             case kCallTypeArcs:
                 [commandEncoder setRenderPipelineState:_arcPipelineState];
-                [commandEncoder setVertexBytes:&calls->arcs length:sizeof(Arcs) atIndex:1];
-                instanceCount = std::ceil(1.0 / calls->state.flatness) * calls->arcs.count;
+                [commandEncoder setVertexBytes:&call->arcs length:sizeof(Arcs) atIndex:1];
+                instanceCount = std::ceil(1.0 / call->state.flatness) * call->arcs.count;
                 break;
             case kCallTypeCircles:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
-                [commandEncoder setVertexBytes:&calls->circles length:sizeof(Circles) atIndex:1];
-                instanceCount = calls->circles.count;
+                [commandEncoder setVertexBytes:&call->circles length:sizeof(Circles) atIndex:1];
+                instanceCount = call->circles.count;
                 break;
             case kCallTypeFractal:
                 [commandEncoder setRenderPipelineState:_fractalPipelineState];
-                [commandEncoder setVertexBytes:&calls->fractals length:sizeof(Fractals) atIndex:1];
-                [commandEncoder setFragmentBytes:&calls->fractals length:sizeof(Fractals) atIndex:1];
-                instanceCount = calls->fractals.count;
+                [commandEncoder setVertexBytes:&call->fractals length:sizeof(Fractals) atIndex:1];
+                [commandEncoder setFragmentBytes:&call->fractals length:sizeof(Fractals) atIndex:1];
+                instanceCount = call->fractals.count;
                 break;
             case kCallTypeLines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];
-                [commandEncoder setVertexBytes:&calls->lines length:sizeof(Lines) atIndex:1];
-                instanceCount = calls->lines.count;
+                [commandEncoder setVertexBytes:&call->lines length:sizeof(Lines) atIndex:1];
+                instanceCount = call->lines.count;
                 break;
             case kCallTypeMeshCurves:
                 [commandEncoder setRenderPipelineState:_meshCurvePipelineState];
-                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
                 instanceCount = _curvesBuffer.length / sizeof(Triangle);
                 break;
             case kCallTypeMeshConcaveCurves:
-                [commandEncoder setRenderPipelineState:calls->meshState.showInterior ? _meshConcaveCurvePipelineState : _meshCurvePipelineState];
-                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setRenderPipelineState:call->meshState.showInterior && !call->meshState.hideTriangles ? _meshConcaveCurvePipelineState : _meshCurvePipelineState];
+                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
                 instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
                 break;
             case kCallTypeMeshTriangles:
+                if (call->meshState.hideTriangles)
+                    continue;
+                
                 [commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
-                [commandEncoder setVertexBytes:&calls->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
@@ -202,20 +206,20 @@
                 break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
-                [commandEncoder setVertexBytes:&calls->quadratics length:sizeof(Quadratics) atIndex:1];
+                [commandEncoder setVertexBytes:&call->quadratics length:sizeof(Quadratics) atIndex:1];
                 break;
             case kCallTypeUnits:
                 [commandEncoder setRenderPipelineState:_unitPipelineState];
-                [commandEncoder setVertexBytes:&calls->units length:sizeof(Units) atIndex:1];
+                [commandEncoder setVertexBytes:&call->units length:sizeof(Units) atIndex:1];
                 break;
         }
         
-        State state = calls->state;
+        State state = call->state;
         state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         
-        if (calls->type == kCallTypeMeshTriangles || calls->type == kCallTypeMeshCurves || calls->type == kCallTypeMeshConcaveCurves) {
+        if (call->type == kCallTypeMeshTriangles || call->type == kCallTypeMeshCurves || call->type == kCallTypeMeshConcaveCurves) {
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
                                vertexCount:3
@@ -229,8 +233,6 @@
                                 indexBufferOffset:0
                                     instanceCount:instanceCount];
         }
-        
-        calls++;
     }
     
     [commandEncoder endEncoding];

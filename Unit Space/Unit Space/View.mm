@@ -513,10 +513,11 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
-        if (_showTriangle && _mesh._triangles.size()) {
+        if (_mesh._triangles.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
             
+            call.meshState.hideTriangles = !_showTriangle;
             call.meshState.showColors = _showColors;
             call.meshState.showInterior = _showInterior;
             
@@ -528,6 +529,7 @@ using namespace std;
             _calls.emplace_back();
             Call& call = _calls.back();
             
+            call.meshState.hideTriangles = !_showTriangle;
             call.meshState.showColors = _showColors;
             call.meshState.showInterior = _showInterior;
             
@@ -539,6 +541,7 @@ using namespace std;
             _calls.emplace_back();
             Call& call = _calls.back();
             
+            call.meshState.hideTriangles = !_showTriangle;
             call.meshState.showColors = _showColors;
             call.meshState.showInterior = _showInterior;
             
