@@ -277,6 +277,12 @@ struct Path {
                         }
         }
         
+        for (auto& intersection : intersections) {
+            if (intersection.first.ci != intersection.second.ci) {
+                e0 = e0;
+            }
+        }
+        
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
