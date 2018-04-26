@@ -5,10 +5,10 @@
 //  Created by Nigel Barber on 02/04/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
+#import <vector>
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
-#import "delaunay.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;

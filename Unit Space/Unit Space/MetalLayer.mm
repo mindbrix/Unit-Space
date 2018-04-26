@@ -241,6 +241,16 @@
 
 #pragma mark - Public
 
+- (void)uploadMesh:(Mesh &)mesh {
+    [self createColorsBuffer:& mesh._colors[0] ncolors:mesh._colors.size()];
+    if (mesh._curves.size())
+        [self createCurvesBuffer:& mesh._curves[0] ncurves:mesh._curves.size()];
+    if (mesh._concaveCurves.size())
+        [self createConcaveCurvesBuffer:& mesh._concaveCurves[0] ncurves:mesh._concaveCurves.size()];
+    [self createPointsBuffer:& mesh._points[0] npoints:mesh._points.size()];
+    [self createTrianglesBuffer:& mesh._triangles[0] ntriangles:mesh._triangles.size()];
+}
+
 - (void)createColorsBuffer:(RGBA8 *)colors ncolors:(size_t)ncolors {
     _colorsBuffer = [self.device newBufferWithBytes:(void *)colors
                                                    length:ncolors * sizeof(RGBA8)

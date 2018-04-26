@@ -8,6 +8,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import "Shared.metal.hpp"
+#import "Tess.hpp"
 
 @protocol LayerDelegate <NSObject>
 - (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer;
@@ -18,10 +19,6 @@
 
 @property(weak) id <LayerDelegate> layerDelegate;
 
-- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(size_t)ncolors;
-- (void)createCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves;
-- (void)createConcaveCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves;
-- (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints;
-- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(size_t)ntriangles;
+- (void)uploadMesh:(Mesh &)mesh;
 
 @end
