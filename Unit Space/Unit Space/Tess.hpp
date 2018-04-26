@@ -16,9 +16,9 @@ constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
 
 struct Edge {
-    Edge(float lx, float ux, int ci, int pi) : lx(lx), ux(ux), ci(ci), pi(pi) {}
+    Edge(float lx, float ly, float ux, float uy, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), ci(ci), pi(pi) {}
     
-    float lx, ux;
+    float lx, ly, ux, uy;
     int ci, pi;
     inline bool operator< (const Edge& other) const     { return lx < other.lx; }
 };
@@ -228,15 +228,17 @@ struct Path {
             count += s._npoints;
         
         vector<Edge> edges;
-        float lx, ux, *points;
+        float lx, ly, ux, uy, *points;
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
             for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
-                lx = points[pi * 2];
-                ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2];
+                lx = points[pi * 2], ly = points[pi * 2 + 1];
+                ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2], uy = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
                 if (lx > ux)
                     swap(lx, ux);
-                edges.emplace_back(lx, ux, ci, pi);
+                if (ly < uy)
+                    swap(ly, uy);
+                edges.emplace_back(lx, ly, ux, uy, ci, pi);
             }
         }
         sort(edges.begin(), edges.end());
