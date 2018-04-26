@@ -227,7 +227,7 @@ struct Path {
         for (SubPath& s : _subPaths)
             count += s._npoints;
         
-        vector<Edge> edges;
+        Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
         float lx, ly, ux, uy, *points;
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
@@ -238,13 +238,12 @@ struct Path {
                     swap(lx, ux);
                 if (ly > uy)
                     swap(ly, uy);
-                edges.emplace_back(lx, ly, ux, uy, ci, pi);
+                new (end++) Edge(lx, ly, ux, uy, ci, pi);
             }
         }
-        sort(edges.begin(), edges.end());
+        sort(begin, end);
         
-        Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size(), *last, *dst, *e0, *e1;
-        
+        Edge *edge = begin, *last, *dst, *e0, *e1;
         
         while (edge < end) {
             last = edge;
