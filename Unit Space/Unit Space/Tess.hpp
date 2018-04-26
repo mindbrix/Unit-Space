@@ -236,7 +236,7 @@ struct Path {
                 ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2], uy = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
                 if (lx > ux)
                     swap(lx, ux);
-                if (ly < uy)
+                if (ly > uy)
                     swap(ly, uy);
                 edges.emplace_back(lx, ly, ux, uy, ci, pi);
             }
@@ -244,30 +244,29 @@ struct Path {
         sort(edges.begin(), edges.end());
         
         Edge *begin = & edges[0], *edge = begin, *end = begin + edges.size(), *last, *dst, *e0, *e1;
-        lx = edge->lx;
         
-        for (;;) {
+        
+        while (edge < end) {
             last = edge;
+            lx = edge->lx;
             
             do
                 edge++;
             while (edge < end && edge->lx == lx);
             
+            e0 = dst = last;
+            while (--e0 >= begin)
+                if (e0->ux > lx)
+                    *(--dst) = *e0;
+            begin = dst;
+            
+            
             for (e0 = last; e0 < edge; e0++)
                 for (e1 = begin; e1 < edge; e1++)
-                    if (e0 != e1)
-                        ;
-            
-            if (edge == end)
-                break;
-            
-            lx = edge->lx;
-            
-            dst = last;
-            while (--last >= begin)
-                if (last->ux > lx)
-                    *(--dst) = *last;
-            begin = dst;
+                    if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly) {
+//                        assert(e0->ux > e1->lx && e1->ux > e0->lx);
+                        e0 = e0;
+                    }
         }
         
         for (SubPath& subPath : _subPaths)
