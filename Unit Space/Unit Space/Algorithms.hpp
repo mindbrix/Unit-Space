@@ -31,12 +31,6 @@ inline float lerp(float t, float n0, float n1) {
     return n0 + t * (n1 - n0);
 }
 
-static float deCasteljauCubic(float t, float n0, float n1, float n2, float n3) {
-    float n01 = lerp(t, n0, n1), n12 = lerp(t, n1, n2), n23 = lerp(t, n2, n3);
-    float n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
-    return lerp(t, n012, n123);
-}
-
 static inline bool doLinesIntersect(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy) {
     double vabx = bx - ax, vaby = by - ay, vacx = cx - ax, vacy = cy - ay, vadx = dx - ax, vady = dy - ay;
     double vcdx = dx - cx, vcdy = dy - cy, vcax = ax - cx, vcay = ay - cy, vcbx = bx - cx, vcby = by - cy;
@@ -60,25 +54,6 @@ static AffineTransform *writeQuadraticCTM(AffineTransform *ctm, float x0, float 
     return ctm;
 }
 
-static AffineTransform *writeQuadraticCTMs(AffineTransform *ctm, float x0, float y0, float x1, float y1, float x2, float y2) {
-    float dx01 = x1 - x0, dx12 = x2 - x1, dy01 = y1 - y0, dy12 = y2 - y1;
-    bool xMonotone = dx01 * dx12 >= 0.f, yMonotone = dy01 * dy12 >= 0.f;
-    
-    if (xMonotone && yMonotone)
-        ctm = writeQuadraticCTM(ctm, x0, y0, x1, y1, x2, y2);
-    else {
-        float tx = xMonotone ? 1.f : -dx01 / (dx12 - dx01);
-        float ty = yMonotone ? 1.f : -dy01 / (dy12 - dy01);
-        float t = std::min(tx, ty);
-        float x01 = x0 + dx01 * t, y01 = y0 + dy01 * t;
-        float x12 = x1 + dx12 * t, y12 = y1 + dy12 * t;
-        float x012 = x01 + (x12 - x01) * t, y012 = y01 + (y12 - y01) * t;
-        
-        ctm = writeQuadraticCTM(ctm, x0, y0, x01, y01, x012, y012);
-        ctm = writeQuadraticCTM(ctm, x012, y012, x12, y12, x2, y2);
-    }
-    return ctm;
-}
 
 static int WriteQuadratics(AffineTransform *base, AffineTransform &m, Vector *begin, int count) {
     AffineTransform *ctm = base;
