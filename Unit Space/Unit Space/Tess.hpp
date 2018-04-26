@@ -249,6 +249,7 @@ struct Path {
         }
         sort(begin, end);
         
+        vector<pair<Edge, Edge>> intersections;
         Edge *edge, *last, *dst, *e0, *e1;
         for (edge = begin; edge < end; ) {
             last = edge;
@@ -272,7 +273,7 @@ struct Path {
                                             ~e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,    ~e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
                                              e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,     e1->flags & Edge::kFlippedY ? e1->uy : e1->ly,
                                             ~e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,    ~e1->flags & Edge::kFlippedY ? e1->uy : e1->ly)) {
-                            e0 = e0;
+                            intersections.emplace_back(*e0, *e1);
                         }
         }
         
