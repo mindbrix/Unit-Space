@@ -82,10 +82,6 @@ struct Triangle {
     int i0, i1, i2, c;
 };
 
-struct Quad {
-    int i0, i1, i2, i3, c;
-};
-
 struct State {
     RGBA                fillColor;
     RGBA                strokeColor;
@@ -104,7 +100,6 @@ enum CallType : unsigned int {
     kCallTypeLines,
     kCallTypeMeshCurves,
     kCallTypeMeshConcaveCurves,
-    kCallTypeMeshQuads,
     kCallTypeMeshTriangles,
     kCallTypeQuadratics,
     kCallTypeUnits,

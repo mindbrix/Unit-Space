@@ -416,8 +416,6 @@ using namespace std;
         [self.metalLayer createCurvesBuffer:& _mesh._curves[0] ncurves:_mesh._curves.size()];
     if (_mesh._concaveCurves.size())
         [self.metalLayer createConcaveCurvesBuffer:& _mesh._concaveCurves[0] ncurves:_mesh._concaveCurves.size()];
-    if (_mesh._quads.size())
-        [self.metalLayer createQuadsBuffer:& _mesh._quads[0] nquads:_mesh._quads.size()];
     [self.metalLayer createPointsBuffer:& _mesh._points[0] npoints:_mesh._points.size()];
     [self.metalLayer createTrianglesBuffer:& _mesh._triangles[0] ntriangles:_mesh._triangles.size()];
 }
@@ -537,18 +535,6 @@ using namespace std;
             call.type = kCallTypeMeshTriangles;
             call.state = uniforms;
         }
-        
-        if (_mesh._quads.size()) {
-            _calls.emplace_back();
-            Call& call = _calls.back();
-            
-            call.meshState.showColors = _showColors;
-            call.meshState.showInterior = _showInterior;
-            
-            call.type = kCallTypeMeshQuads;
-            call.state = uniforms;
-        }
-        
         
         if (_mesh._concaveCurves.size()) {
             _calls.emplace_back();
