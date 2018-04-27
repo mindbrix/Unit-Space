@@ -124,18 +124,17 @@ public:
     Memory(const Memory& other)         { assign(other); }
     Memory& operator= (Memory& other)   { assign(other); return *this; }
     ~Memory() {
-        if (header && (--(header->refCount) == 0)) {
-            free(header->memory);
-            free(header);
-        }
+        if (header && (--(header->refCount) == 0))
+            free(header->memory), free(header);
+        
     }
     void alloc(size_t size) {
         if (header)
             header->memory = ::realloc(header->memory, size);
         else {
             header = (Header *)malloc(sizeof(Header));
-            header->refCount = 1;
             header->memory = malloc(size);
+            header->refCount = 1;
         }
         header->size = size;
     }
@@ -147,7 +146,7 @@ public:
                 header->refCount++;
         }
     }
-    Memory copy() {
+    Memory clone() {
         Memory c;
         if (header) {
             c.alloc(header->size);
