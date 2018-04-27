@@ -31,7 +31,7 @@ inline float lerp(float t, float n0, float n1) {
     return n0 + t * (n1 - n0);
 }
 
-static inline bool doLinesIntersect(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy, float *px, float *py) {
+static inline bool linesIntersection(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy, float *px, float *py) {
     double rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy;
     double r_cross_s = rx * sy - ry * sx;
     

@@ -113,6 +113,48 @@ struct Intersection {
     Edge e0, e1;
 };
 
+struct Memory {
+    Memory() {}
+    Memory(size_t size) {
+        memory = malloc(size + sizeof(int));
+        refCount = (int *)memory;
+        *refCount = 1;
+    }
+    Memory(const Memory& other) {
+        set(other);
+    }
+    Memory& operator= (Memory& other) {
+        set(other);
+        return *this;
+    }
+    ~Memory() {
+        if (memory) {
+            (*refCount)--;
+            if (*refCount == 0)
+                free(memory);
+        }
+    }
+    
+    void realloc(size_t size) {
+        memory = ::realloc(memory, size + sizeof(int));
+        refCount = (int *)memory;
+    }
+    
+    void *get() { return (char *)memory + sizeof(int); }
+    
+private:
+    void set(const Memory& other) {
+        this->~Memory();
+        
+        memory = other.memory;
+        refCount = (int *)memory;
+        (*refCount)++;
+    }
+    
+    int *refCount;
+    void *memory = nullptr;
+};
+
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose
@@ -125,6 +167,10 @@ struct SubPath {
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
+            Memory test(_npoints * kPointStride);
+            Memory t2(test);
+            Memory t3;
+            t3 = t2;
             _controlPoints = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
         } else {
@@ -252,7 +298,7 @@ struct Path {
             for (e0 = last; e0 < edge; e0++)
                 for (e1 = begin; e1 < edge; e1++)
                     if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
-                        if (doLinesIntersect(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
+                        if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
                             bool duplicate = false;
                             for (auto& intersection : intersections)
                                 if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
@@ -279,15 +325,13 @@ struct Path {
             Edge& e0 = intersection.e0, & e1 = intersection.e1;
             if (e0.ci == e1.ci) {
                 controlPoints = _subPaths[e0.ci]._controlPoints.get();
-                doLinesIntersect(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
+                linesIntersection(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
                 if (controlPoints != nullptr) {
                     cpx0 = controlPoints[e0.pi * 2], cpy0 = controlPoints[e0.pi * 2 + 1];
                     cpx1 = controlPoints[e1.pi * 2], cpy1 = controlPoints[e1.pi * 2 + 1];
                 } else {
                     px = px;
                 }
-                
-                break;
             }
         }
       
