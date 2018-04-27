@@ -11,7 +11,6 @@
 
 using namespace metal;
 
-float fragmentWinding(float2 p0, float2 p1);
 float cirleStrokeDistance(float2 unitPoint, float w);
 float ellipseDistance(float2 unitPoint);
 float ellipseStrokeDistance(float2 unitPoint, float w);

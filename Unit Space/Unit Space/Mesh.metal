@@ -12,6 +12,26 @@
 
 using namespace metal;
 
+#pragma mark - Library
+
+float fragmentWinding(float2 p0, float2 p1) {
+    float y0 = saturate(p0.y), y1 = saturate(p1.y);
+    float coverage = y1 - y0;
+    
+    if (coverage == 0.0 || saturate(p0.x) + saturate(p1.x) == 0.0)
+        return coverage;
+    
+    float dx = p1.x - p0.x, dy = p1.y - p0.y, dxdy = dx / dy;
+    float x0 = (y0 - p0.y) * dxdy + p0.x;
+    float x1 = (y1 - p0.y) * dxdy + p0.x;
+    
+    float minx = min(x0, x1), range = abs(x1 - x0);
+    float t0 = saturate(-minx / range), t1 = saturate((1.0 - minx) / range);
+    
+    float area = (saturate(x0) + saturate(x1)) * 0.5;
+    return coverage * (t1 - ((t1 - t0) * area));
+}
+
 
 #pragma mark - Triangle
 
@@ -26,6 +46,7 @@ struct TriangleVertex
     float4 color;
 };
 
+#pragma mark Vertex
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
@@ -97,6 +118,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     
     return vert;
 }
+
+#pragma mark Fragment
 
 fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
