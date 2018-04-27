@@ -122,7 +122,7 @@ public:
     Memory()                            {}
     Memory(size_t size)                 { alloc(size); }
     Memory(const Memory& other)         { assign(other); }
-    Memory& operator= (Memory& other)   { assign(other); return *this; }
+    Memory& operator= (Memory other)   { assign(other); return *this; }
     ~Memory() {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
@@ -183,9 +183,14 @@ struct SubPath {
     float area() const {
         return pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
     }
-    
     void bounds(float *limits) const {
         boundsLimits(limits, _points.get(), _points.get() + _npoints * 2, kPointStride);
+    }
+    SubPath clone() {
+        SubPath c = *this;
+        _points = _points.clone();
+        _controlPoints = _controlPoints.clone();
+        return c;,
     }
     
     Memory<float>               _points;
@@ -326,6 +331,7 @@ struct Path {
                     cpx0 = controlPoints[e0.pi * 2], cpy0 = controlPoints[e0.pi * 2 + 1];
                     cpx1 = controlPoints[e1.pi * 2], cpy1 = controlPoints[e1.pi * 2 + 1];
                 } else {
+                    _subPaths.emplace_back(_subPaths[e0.ci].clone());
                     px = px;
                 }
             }
