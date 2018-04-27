@@ -192,6 +192,20 @@ struct SubPath {
         _controlPoints = _controlPoints.clone();
         return c;
     }
+    void insert(int pi, float px, float py, float cpx, float cpy) {
+        _npoints++;
+        _points.alloc(_npoints * kPointStride), _controlPoints.alloc(_npoints * kPointStride);
+        float *points = _points.get(), *dst, *src, *end;
+        dst = & points[(_npoints - 1) * 2], src = dst - 2, end = & points[pi * 2];
+        while (src > end)
+            *dst-- = *src--, *dst-- = *src--;
+        float *controlPoints =_controlPoints.get();
+        dst = & controlPoints[(_npoints - 1) * 2], src = dst - 2, end = & controlPoints[pi * 2];
+        while (src > end)
+            *dst-- = *src--, *dst-- = *src--;
+        points[pi * 2] = px, points[pi * 2 + 1] = py;
+        controlPoints[pi * 2] = cpx, points[pi * 2 + 1] = cpy;
+    }
     void splice(float px, float py, Edge& e0, Edge& e1) {
         float *points = _points.get(), *dst, *src, *end;
         points[e0.pi * 2] = px,  points[e0.pi * 2 + 1] = py;
@@ -345,7 +359,6 @@ struct Path {
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
                     _subPaths[e0.ci].splice(px, py, e0, e1);
                     _subPaths.back().splice(px, py, e1, e0);
-                    px = px;
                 }
             }
         }
