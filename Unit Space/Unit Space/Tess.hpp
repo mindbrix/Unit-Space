@@ -274,9 +274,18 @@ struct Path {
 //        }
 		
         auto intersections = findIntersections();
+        float *controlPoints, px, py, cpx0, cpy0, cpx1, cpy1;
         for (auto& intersection : intersections) {
-            if (intersection.first.ci == intersection.second.ci) {
-                bool isCurve = _subPaths[intersection.first.ci]._controlPoints.get() != nullptr;
+            Edge& e0 = intersection.first, & e1 = intersection.second;
+            if (e0.ci == e1.ci) {
+                controlPoints = _subPaths[e0.ci]._controlPoints.get();
+                doLinesIntersect(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
+                if (controlPoints != nullptr) {
+                    cpx0 = controlPoints[e0.pi * 2], cpy0 = controlPoints[e0.pi * 2 + 1];
+                    cpx1 = controlPoints[e1.pi * 2], cpy1 = controlPoints[e1.pi * 2 + 1];
+                } else {
+                    px = px;
+                }
                 
                 break;
             }
