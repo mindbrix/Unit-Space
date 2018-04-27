@@ -140,18 +140,6 @@ struct SubPath {
         *dst++ = x3, *dst++ = y3;
     }
     
-    bool polygonIntersects(SubPath& subPath) const {
-        for (int i = 0; i < _npoints - 1; i++) {
-            float *pts = _points.get() + i * 2;
-            for (int j = 0; j < subPath._npoints - 1; j++) {
-                float *spts = subPath._points.get() + j * 2;
-                if (doLinesIntersect(pts[0], pts[1], pts[2], pts[3], spts[0], spts[1], spts[2], spts[3]))
-                    return true;
-            }
-        }
-        return false;
-    }
-    
     shared_ptr<float>           _points;
     shared_ptr<float>           _controlPoints;
     int                         _npoints;
@@ -188,12 +176,7 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
-        bool bboxIntersects = _subPaths.size() && path._subPaths.size() && (_urx > path._llx) && (path._urx > _llx) && (_ury > path._lly) && (path._ury > _lly);
-
-//        if (bboxIntersects && _subPaths.size() == 1 && _subPaths[0]._npoints < 6 && path._subPaths.size() == 1 && path._subPaths[0]._npoints < 6)
-//            return _subPaths[0].polygonIntersects(path._subPaths[0]);
-
-        return bboxIntersects;
+        return _subPaths.size() && path._subPaths.size() && (_urx > path._llx) && (path._urx > _llx) && (_ury > path._lly) && (path._ury > _lly);
     }
     
     void maskOut(TESStesselator *tess, Path& mask) {
@@ -292,8 +275,9 @@ struct Path {
 		
         auto intersections = findIntersections();
         for (auto& intersection : intersections) {
-            if (intersection.first.ci != intersection.second.ci) {
-                int e0 = 0;
+            if (intersection.first.ci == intersection.second.ci) {
+                
+                break;
             }
         }
       
