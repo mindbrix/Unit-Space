@@ -126,7 +126,6 @@ public:
     ~Memory() {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
-        
     }
     void alloc(size_t size) {
         if (header)
@@ -141,18 +140,17 @@ public:
     void assign(const Memory& other) {
         if (this != & other) {
             this->~Memory();
-            header = other.header;
-            if (header)
+            if ((header = other.header))
                 header->refCount++;
         }
     }
     Memory clone() {
-        Memory c;
         if (header) {
-            c.alloc(header->size);
+            Memory c(header->size);
             memcpy(c.header->memory, header->memory, header->size);
+            return c;
         }
-        return c;
+        return Memory();
     }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
 };
