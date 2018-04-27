@@ -124,12 +124,9 @@ public:
     Memory(const Memory& other)         { assign(other); }
     Memory& operator= (Memory& other)   { assign(other); return *this; }
     ~Memory() {
-        if (header) {
-            header->refCount--;
-            if (header->refCount == 0) {
-                free(header->memory);
-                free(header);
-            }
+        if (header && (--(header->refCount) == 0)) {
+            free(header->memory);
+            free(header);
         }
     }
     void alloc(size_t size) {
