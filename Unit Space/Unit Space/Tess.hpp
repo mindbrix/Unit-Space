@@ -193,13 +193,16 @@ struct SubPath {
         return c;
     }
     void splice(float px, float py, Edge& e0, Edge& e1) {
-        float *points = _points.get();
+        float *points = _points.get(), *dst, *src, *end;
         points[e0.pi * 2] = px,  points[e0.pi * 2 + 1] = py;
         int di = (e1.pi + 1) % _npoints, si = e0.pi;
-        float *dst = & points[di * 2], *src = & points[si * 2], *end = & points[_npoints * 2];
+        if (di > si)
+            dst = points, src = & points[si * 2], end = & points[di * 2];
+        else
+            dst = & points[di * 2], src = & points[si * 2], end = & points[_npoints * 2];
         while (src < end)
             *dst++ = *src++, *dst++ = *src++;
-        _npoints = (dst - points) / 2;
+        _npoints = int(dst - points) / 2;
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
