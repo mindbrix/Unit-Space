@@ -482,9 +482,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
                          
-    if (!vert.showInterior) {
+    if (!vert.showInterior)
         return vert.color * (1.0 - abs(min_dist));
-    }
     
     if (min_dist > 0.7071)
         return vert.color;
