@@ -276,6 +276,7 @@ struct Path {
         auto intersections = findIntersections();
         for (auto& intersection : intersections) {
             if (intersection.first.ci == intersection.second.ci) {
+                bool isCurve = _subPaths[intersection.first.ci]._controlPoints.get() != nullptr;
                 
                 break;
             }
