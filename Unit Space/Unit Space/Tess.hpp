@@ -98,6 +98,11 @@ struct Edge {
             swap(this->ly, this->uy), flags |= kFlippedY;
     }
     
+    float x0() { return  flags & kFlippedX ? ux : lx; }
+    float y0() { return  flags & kFlippedY ? uy : ly; }
+    float x1() { return ~flags & kFlippedX ? ux : lx; }
+    float y1() { return ~flags & kFlippedY ? uy : ly; }
+    
     float lx, ly, ux, uy;
     unsigned short int flags, p, ci, pi;
     inline bool operator< (const Edge& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
@@ -244,10 +249,8 @@ struct Path {
                 for (e1 = begin; e1 < edge; e1++)
                     if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
                         if (doLinesIntersect(
-                                             e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,     e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
-                                             ~e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,    ~e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
-                                             e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,     e1->flags & Edge::kFlippedY ? e1->uy : e1->ly,
-                                             ~e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,    ~e1->flags & Edge::kFlippedY ? e1->uy : e1->ly,
+                                             e0->x0(), e0->y0(), e0->x1(), e0->y1(),
+                                             e1->x0(), e1->y0(), e1->x1(), e1->y1(),
                                              nullptr, nullptr)) {
                             
                             bool duplicate = false;
