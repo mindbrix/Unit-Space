@@ -116,9 +116,9 @@ struct Intersection {
 struct Memory {
     Memory() {}
     Memory(size_t size) {
-        memory = malloc(size + sizeof(int));
-        refCount = (int *)memory;
-        *refCount = 1;
+        header = (Header *)malloc(sizeof(Header));
+        header->refCount = 1;
+        header->memory = malloc(size);
     }
     Memory(const Memory& other) {
         set(other);
@@ -128,31 +128,34 @@ struct Memory {
         return *this;
     }
     ~Memory() {
-        if (memory) {
-            (*refCount)--;
-            if (*refCount == 0)
-                free(memory);
+        if (header) {
+            header->refCount--;
+            if (header->refCount == 0) {
+                free(header->memory);
+                free(header);
+            }
         }
     }
     
     void realloc(size_t size) {
-        memory = ::realloc(memory, size + sizeof(int));
-        refCount = (int *)memory;
+        header->memory = ::realloc(header->memory, size);
     }
-    
-    void *get() { return (char *)memory + sizeof(int); }
+    void *get() { return header ? header->memory : nullptr; }
     
 private:
     void set(const Memory& other) {
-        this->~Memory();
-        
-        memory = other.memory;
-        refCount = (int *)memory;
-        (*refCount)++;
+        if (this != & other) {
+            this->~Memory();
+            header = other.header;
+            header->refCount++;
+        }
     }
     
-    int *refCount;
-    void *memory = nullptr;
+    struct Header {
+        int refCount;
+        void *memory;
+    };
+    Header *header = nullptr;
 };
 
 struct SubPath {
