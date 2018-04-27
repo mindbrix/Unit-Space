@@ -461,11 +461,14 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     float dfx = dfdx(f), dfy = dfdy(f);
     float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
+    if (!vert.showInterior)
+        return vert.color * (1.0 - abs(min(dist - 0.7071, vert.distance.z)));
+    
     if (dist < -0.7071)
         return 0;
     
     if (dist > 1.41 && vert.distance.z > 0.7071)
-        return select(0, vert.color, vert.showInterior);
+        return vert.color;
     
     float t = saturate(vert.u / (vert.u + w * 0.5));
     t = select(t, 1.0 - saturate(vert.v / (vert.v + w * 0.5)), t < 0.5);
@@ -477,8 +480,14 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 0.7071)
-        return select(0, vert.color, vert.showInterior);
+    float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
+                         
+    if (!vert.showInterior) {
+        return vert.color * (1.0 - abs(min_dist));
+    }
+    
+    if (min_dist > 0.7071)
+        return vert.color;
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
