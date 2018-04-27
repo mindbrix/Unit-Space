@@ -113,18 +113,16 @@ struct Intersection {
     Edge e0, e1;
 };
 
+template<typename T>
 struct Memory {
-    Memory() {}
-    Memory(size_t size) {
-        alloc(size);
-    }
-    Memory(const Memory& other) {
-        assign(other);
-    }
-    Memory& operator= (Memory& other) {
-        assign(other);
-        return *this;
-    }
+private:
+    struct Header { int refCount; void *memory; };
+    Header *header = nullptr;
+public:
+    Memory()                            {}
+    Memory(size_t size)                 { alloc(size); }
+    Memory(const Memory& other)         { assign(other); }
+    Memory& operator= (Memory& other)   { assign(other); return *this; }
     ~Memory() {
         if (header) {
             header->refCount--;
@@ -143,9 +141,6 @@ struct Memory {
             header->memory = malloc(size);
         }
     }
-    void *get() { return header ? header->memory : nullptr; }
-    
-private:
     void assign(const Memory& other) {
         if (this != & other) {
             this->~Memory();
@@ -154,12 +149,7 @@ private:
                 header->refCount++;
         }
     }
-    
-    struct Header {
-        int refCount;
-        void *memory;
-    };
-    Header *header = nullptr;
+    T *get() const { return (T *) (header ? header->memory : nullptr); }
 };
 
 struct SubPath {
@@ -173,18 +163,12 @@ struct SubPath {
         
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
-            _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
-            Memory test(_npoints * kPointStride);
-            _memory.alloc(_npoints * kPointStride);
-            _memory = test;
-            Memory t2(test);
-            Memory t3;
-            t3 = t2;
-            _controlPoints = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
+            _points.alloc(_npoints * kPointStride);
+            _controlPoints.alloc(_npoints * kPointStride);
             splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
         } else {
             _npoints = npoints;
-            _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
+            _points.alloc(_npoints * kPointStride);
             memcpy(_points.get(), points, npoints * kPointStride);
             if (closed)
                 _npoints--;
@@ -201,9 +185,8 @@ struct SubPath {
         boundsLimits(limits, _points.get(), _points.get() + _npoints * 2, kPointStride);
     }
     
-    Memory                      _memory;
-    shared_ptr<float>           _points;
-    shared_ptr<float>           _controlPoints;
+    Memory<float>               _points;
+    Memory<float>               _controlPoints;
     int                         _npoints;
     float                       _area;
     float                       _llx, _lly, _urx, _ury;
@@ -419,7 +402,7 @@ struct Tess {
             SubPath* outer = & path._subPaths[outerIndex];
             
             for (SubPath& s : path._subPaths)
-                if (s._controlPoints != NULL) {
+                if (s._controlPoints.get() != NULL) {
                     const float *points = s._points.get();
                     const float *controlPoints = s._controlPoints.get();
                     pi = (int)mesh._points.size();
