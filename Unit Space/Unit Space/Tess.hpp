@@ -116,7 +116,7 @@ struct Intersection {
 template<typename T>
 struct Memory {
 private:
-    struct Header { int refCount; void *memory; };
+    struct Header { int refCount; void *memory; size_t size; };
     Header *header = nullptr;
 public:
     Memory()                            {}
@@ -137,6 +137,7 @@ public:
             header->refCount = 1;
             header->memory = malloc(size);
         }
+        header->size = size;
     }
     void assign(const Memory& other) {
         if (this != & other) {
@@ -145,6 +146,14 @@ public:
             if (header)
                 header->refCount++;
         }
+    }
+    Memory copy() {
+        Memory c;
+        if (header) {
+            c.alloc(header->size);
+            memcpy(c.header->memory, header->memory, header->size);
+        }
+        return c;
     }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
 };
