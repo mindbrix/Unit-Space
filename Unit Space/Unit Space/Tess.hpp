@@ -246,7 +246,7 @@ struct Path {
         }
         sort(begin, end);
         
-        Edge *edge, *last, *dst, *e0, *e1;
+        Edge *edge, *last, *src, *dst, *e0, *e1;
         for (edge = begin; edge < end; ) {
             last = edge;
             lx = edge->lx;
@@ -255,10 +255,10 @@ struct Path {
                 edge++;
             while (edge < end && edge->lx == lx);
             
-            e0 = dst = last;
-            while (--e0 >= begin)
-                if (e0->ux > lx)
-                    *(--dst) = *e0;
+            src = dst = last;
+            while (--src >= begin)
+                if (src->ux > lx)
+                    *(--dst) = *src;
             begin = dst;
             
             for (e0 = last; e0 < edge; e0++)
