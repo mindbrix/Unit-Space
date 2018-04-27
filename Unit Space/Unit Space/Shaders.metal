@@ -461,8 +461,10 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     float dfx = dfdx(f), dfy = dfdy(f);
     float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
-    if (!vert.showInterior)
-        return vert.color * (1.0 - abs(min(dist - 0.7071, vert.distance.z)));
+    if (!vert.showInterior) {
+        const float offset = -0.7071;
+        return vert.color * (1.0 - abs(min(dist + offset, vert.distance.z + offset)));
+    }
     
     if (dist < -0.7071)
         return 0;
@@ -482,9 +484,11 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
                          
-    if (!vert.showInterior)
+    if (!vert.showInterior) {
+        const float offset = -0.7071;
+        float min_dist = min(vert.distance.x + offset, min(vert.distance.y + offset, vert.distance.z + offset));
         return vert.color * (1.0 - abs(min_dist));
-    
+    }
     if (min_dist > 0.7071)
         return vert.color;
     
