@@ -116,15 +116,13 @@ struct Intersection {
 struct Memory {
     Memory() {}
     Memory(size_t size) {
-        header = (Header *)malloc(sizeof(Header));
-        header->refCount = 1;
-        header->memory = malloc(size);
+        alloc(size);
     }
     Memory(const Memory& other) {
-        set(other);
+        assign(other);
     }
     Memory& operator= (Memory& other) {
-        set(other);
+        assign(other);
         return *this;
     }
     ~Memory() {
@@ -136,18 +134,24 @@ struct Memory {
             }
         }
     }
-    
-    void realloc(size_t size) {
-        header->memory = ::realloc(header->memory, size);
+    void alloc(size_t size) {
+        if (header)
+            header->memory = ::realloc(header->memory, size);
+        else {
+            header = (Header *)malloc(sizeof(Header));
+            header->refCount = 1;
+            header->memory = malloc(size);
+        }
     }
     void *get() { return header ? header->memory : nullptr; }
     
 private:
-    void set(const Memory& other) {
+    void assign(const Memory& other) {
         if (this != & other) {
             this->~Memory();
             header = other.header;
-            header->refCount++;
+            if (header)
+                header->refCount++;
         }
     }
     
@@ -171,6 +175,8 @@ struct SubPath {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points = shared_ptr<float>((float *)malloc(_npoints * kPointStride), free);
             Memory test(_npoints * kPointStride);
+            _memory.alloc(_npoints * kPointStride);
+            _memory = test;
             Memory t2(test);
             Memory t3;
             t3 = t2;
@@ -195,6 +201,7 @@ struct SubPath {
         boundsLimits(limits, _points.get(), _points.get() + _npoints * 2, kPointStride);
     }
     
+    Memory                      _memory;
     shared_ptr<float>           _points;
     shared_ptr<float>           _controlPoints;
     int                         _npoints;
