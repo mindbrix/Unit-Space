@@ -212,8 +212,6 @@ struct Path {
     }
     
     vector<pair<Edge, Edge>> findIntersections() {
-        vector<pair<Edge, Edge>> intersections;
-        
         int count = 0;
         for (SubPath& s : _subPaths)
             count += s._npoints;
@@ -230,6 +228,7 @@ struct Path {
         }
         sort(begin, end);
         
+        vector<pair<Edge, Edge>> intersections;
         Edge *edge, *last, *src, *dst, *e0, *e1;
         for (edge = begin; edge < end; ) {
             last = edge;
@@ -248,11 +247,7 @@ struct Path {
             for (e0 = last; e0 < edge; e0++)
                 for (e1 = begin; e1 < edge; e1++)
                     if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
-                        if (doLinesIntersect(
-                                             e0->x0(), e0->y0(), e0->x1(), e0->y1(),
-                                             e1->x0(), e1->y0(), e1->x1(), e1->y1(),
-                                             nullptr, nullptr)) {
-                            
+                        if (doLinesIntersect(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
                             bool duplicate = false;
                             for (auto& intersection : intersections)
                                 if (intersection.first.ci == e1->ci && intersection.first.pi == e1->pi &&
