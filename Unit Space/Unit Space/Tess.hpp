@@ -193,7 +193,13 @@ struct SubPath {
         return c;
     }
     void splice(float px, float py, Edge& e0, Edge& e1) {
-        
+        float *points = _points.get();
+        points[e0.pi * 2] = px,  points[e0.pi * 2 + 1] = py;
+        int di = (e1.pi + 1) % _npoints, si = e0.pi;
+        float *dst = & points[di * 2], *src = & points[si * 2], *end = & points[_npoints * 2];
+        while (src < end)
+            *dst++ = *src++, *dst++ = *src++;
+        _npoints = (dst - points) / 2;
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
@@ -341,15 +347,17 @@ struct Path {
             }
         }
       
-        for (SubPath& subPath : _subPaths)
-            if (subPath._npoints > 2)
-                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        
-        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-            writeTessSubpaths(tess);
-            _outerIndex = findOuterIndex();
-            setBounds();
-        }
+        _outerIndex = findOuterIndex();
+        setBounds();
+//        for (SubPath& subPath : _subPaths)
+//            if (subPath._npoints > 2)
+//                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
+//        
+//        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+//            writeTessSubpaths(tess);
+//            _outerIndex = findOuterIndex();
+//            setBounds();
+//        }
     }
     
     void writeTessSubpaths(TESStesselator *tess) {
