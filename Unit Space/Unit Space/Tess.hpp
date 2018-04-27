@@ -269,7 +269,16 @@ struct Path {
                                              ~e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,    ~e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
                                              e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,     e1->flags & Edge::kFlippedY ? e1->uy : e1->ly,
                                              ~e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,    ~e1->flags & Edge::kFlippedY ? e1->uy : e1->ly)) {
-                            intersections.emplace_back(*e0, *e1);
+                            
+                            bool duplicate = false;
+                            for (auto& intersection : intersections)
+                                if (intersection.first.ci == e1->ci && intersection.first.pi == e1->pi &&
+                                    intersection.second.ci == e0->ci && intersection.second.pi == e0->pi) {
+                                    duplicate = true;
+                                    break;
+                                }
+                            if (!duplicate)
+                                intersections.emplace_back(*e0, *e1);
                         }
         }
         return intersections;
