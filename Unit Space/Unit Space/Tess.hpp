@@ -108,6 +108,11 @@ struct Edge {
     inline bool operator< (const Edge& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
 };
 
+struct Intersection {
+    Intersection(Edge e0, Edge e1) : e0(e0), e1(e1) {}
+    Edge e0, e1;
+};
+
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose
@@ -211,7 +216,7 @@ struct Path {
         }
     }
     
-    vector<pair<Edge, Edge>> findIntersections() {
+    vector<Intersection> findIntersections() {
         int count = 0;
         for (SubPath& s : _subPaths)
             count += s._npoints;
@@ -228,7 +233,7 @@ struct Path {
         }
         sort(begin, end);
         
-        vector<pair<Edge, Edge>> intersections;
+        vector<Intersection> intersections;
         Edge *edge, *last, *src, *dst, *e0, *e1;
         for (edge = begin; edge < end; ) {
             last = edge;
@@ -250,8 +255,8 @@ struct Path {
                         if (doLinesIntersect(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
                             bool duplicate = false;
                             for (auto& intersection : intersections)
-                                if (intersection.first.ci == e1->ci && intersection.first.pi == e1->pi &&
-                                    intersection.second.ci == e0->ci && intersection.second.pi == e0->pi) {
+                                if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
+                                    intersection.e1.ci == e0->ci && intersection.e1.pi == e0->pi) {
                                     duplicate = true;
                                     break;
                                 }
@@ -271,7 +276,7 @@ struct Path {
         auto intersections = findIntersections();
         float *controlPoints, px, py, cpx0, cpy0, cpx1, cpy1;
         for (auto& intersection : intersections) {
-            Edge& e0 = intersection.first, & e1 = intersection.second;
+            Edge& e0 = intersection.e0, & e1 = intersection.e1;
             if (e0.ci == e1.ci) {
                 controlPoints = _subPaths[e0.ci]._controlPoints.get();
                 doLinesIntersect(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
