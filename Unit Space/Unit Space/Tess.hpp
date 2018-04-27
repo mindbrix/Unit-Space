@@ -190,9 +190,11 @@ struct SubPath {
         SubPath c = *this;
         _points = _points.clone();
         _controlPoints = _controlPoints.clone();
-        return c;,
+        return c;
     }
-    
+    void splice(float px, float py, Edge& e0, Edge& e1) {
+        
+    }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
     int                         _npoints;
@@ -332,6 +334,8 @@ struct Path {
                     cpx1 = controlPoints[e1.pi * 2], cpy1 = controlPoints[e1.pi * 2 + 1];
                 } else {
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
+                    _subPaths[e0.ci].splice(px, py, e0, e1);
+                    _subPaths.back().splice(px, py, e1, e0);
                     px = px;
                 }
             }
