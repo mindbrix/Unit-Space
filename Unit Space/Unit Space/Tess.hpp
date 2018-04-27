@@ -23,9 +23,9 @@ struct Edge {
     
     Edge(float lx, float ly, float ux, float uy, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), flags(0), p(0), ci((unsigned short int)ci), pi((unsigned short int)pi) {
         if (lx > ux)
-            swap(lx, ux), flags |= kFlippedX;
+            swap(this->lx, this->ux), flags |= kFlippedX;
         if (ly > uy)
-            swap(ly, uy), flags |= kFlippedY;
+            swap(this->ly, this->uy), flags |= kFlippedY;
     }
     
     float lx, ly, ux, uy;
@@ -228,10 +228,10 @@ struct Path {
     }
     
     void resolveSelfIntersections(TESStesselator *tess) {
-        if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0])))) {
-            setBounds();
-            return;
-        }
+//        if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0])))) {
+//            setBounds();
+//            return;
+//        }
 		
         int count = 0;
         for (SubPath& s : _subPaths)
