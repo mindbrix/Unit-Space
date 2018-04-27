@@ -227,12 +227,9 @@ struct Path {
         }
     }
     
-    void resolveSelfIntersections(TESStesselator *tess) {
-//        if (_subPaths.size() == 1 && (_subPaths[0]._npoints == 4 || (_subPaths[0]._npoints < 10 && !_subPaths[0].polygonIntersects(_subPaths[0])))) {
-//            setBounds();
-//            return;
-//        }
-		
+    vector<pair<Edge, Edge>> findIntersections() {
+        vector<pair<Edge, Edge>> intersections;
+        
         int count = 0;
         for (SubPath& s : _subPaths)
             count += s._npoints;
@@ -249,7 +246,6 @@ struct Path {
         }
         sort(begin, end);
         
-        vector<pair<Edge, Edge>> intersections;
         Edge *edge, *last, *dst, *e0, *e1;
         for (edge = begin; edge < end; ) {
             last = edge;
@@ -270,19 +266,28 @@ struct Path {
                     if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
                         if (doLinesIntersect(
                                              e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,     e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
-                                            ~e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,    ~e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
+                                             ~e0->flags & Edge::kFlippedX ? e0->ux : e0->lx,    ~e0->flags & Edge::kFlippedY ? e0->uy : e0->ly,
                                              e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,     e1->flags & Edge::kFlippedY ? e1->uy : e1->ly,
-                                            ~e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,    ~e1->flags & Edge::kFlippedY ? e1->uy : e1->ly)) {
+                                             ~e1->flags & Edge::kFlippedX ? e1->ux : e1->lx,    ~e1->flags & Edge::kFlippedY ? e1->uy : e1->ly)) {
                             intersections.emplace_back(*e0, *e1);
                         }
         }
-        
+        return intersections;
+    }
+    
+    void resolveSelfIntersections(TESStesselator *tess) {
+//        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3) {
+//            setBounds();
+//            return;
+//        }
+		
+        auto intersections = findIntersections();
         for (auto& intersection : intersections) {
             if (intersection.first.ci != intersection.second.ci) {
-                e0 = e0;
+                int e0 = 0;
             }
         }
-        
+      
         for (SubPath& subPath : _subPaths)
             if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
