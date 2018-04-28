@@ -362,11 +362,21 @@ struct Path {
     }
     
     void resolveSelfIntersections(TESStesselator *tess) {
-//        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3) {
-//            setBounds();
-//            return;
-//        }
-		
+        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3) {
+            setBounds();
+            return;
+        }
+        for (SubPath& subPath : _subPaths)
+            if (subPath._npoints > 2)
+                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
+        
+        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+            writeTessSubpaths(tess);
+            _outerIndex = findOuterIndex();
+            setBounds();
+        }
+    }
+    void resolveSelfIntersections() {
         auto intersections = findIntersections();
         float *points, *controlPoints, px, py, x1, y1;
         float x01, x12, x123, y01, y12, y123;
@@ -420,15 +430,6 @@ struct Path {
       
         _outerIndex = findOuterIndex();
         setBounds();
-//        for (SubPath& subPath : _subPaths)
-//            if (subPath._npoints > 2)
-//                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-//        
-//        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-//            writeTessSubpaths(tess);
-//            _outerIndex = findOuterIndex();
-//            setBounds();
-//        }
     }
     
     void writeTessSubpaths(TESStesselator *tess) {
@@ -530,10 +531,14 @@ struct Tess {
                 }
         }
         
-        for (Path& path : _paths)
-            path.resolveSelfIntersections(tess);
+        if (!useMasking)
+            for (Path& path : _paths)
+                path.resolveSelfIntersections();
         
         if (useMasking) {
+            for (Path& path : _paths)
+                path.resolveSelfIntersections(tess);
+            
             for (size_t i = 0; i < _paths.size(); i++) {
                 Path& path = _paths[i];
                 
