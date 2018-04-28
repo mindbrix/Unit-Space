@@ -538,32 +538,11 @@ struct Tess {
             for (Path& path : _paths)
                 path.resolveSelfIntersections(tess);
             
-            /*
-            Path mask = _paths.back();
-            for (int i = (int) _paths.size() - 2; i >= 0; i--) {
-                Path& path = _paths[i];
-                
-                if (path.intersects(mask))
-                    path.maskOut(tess, mask);
-                
-                tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
-                for (SubPath& subPath : mask._subPaths)
-                    tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-                for (SubPath& subPath : path._subPaths)
-                    tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-                if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-                    mask.writeTessSubpaths(tess);
-                    mask._outerIndex = mask.findOuterIndex();
-                    mask.setBounds();
-                }
-            }
-            */
-            
             for (size_t i = 0; i < _paths.size(); i++) {
                 Path& path = _paths[i];
                 
                 auto matches = _quadtree->find(path._llx, path._lly, path._urx, path._ury);
-                for (auto j : matches) //                if (_paths[j].intersects(path))
+                for (auto j : matches) 
                     _paths[j].maskOut(tess, path);
                 _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
             }
