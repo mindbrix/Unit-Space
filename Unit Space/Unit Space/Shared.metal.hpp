@@ -31,7 +31,7 @@ struct AffineTransform { float a, b, c, d, tx, ty; };
 struct Bounds {
     Bounds() {}
     Bounds(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy) {}
-    bool intersects(Bounds other) {
+    bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
     void unite(Bounds other) {

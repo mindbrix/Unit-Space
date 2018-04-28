@@ -276,7 +276,7 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
-        return _subPaths.size() && path._subPaths.size() && (_urx > path._llx) && (path._urx > _llx) && (_ury > path._lly) && (path._ury > _lly);
+        return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);// (_urx > path._llx) && (path._urx > _llx) && (_ury > path._lly) && (path._ury > _lly);
     }
     
     void maskOut(TESStesselator *tess, Path& mask) {
@@ -301,12 +301,9 @@ struct Path {
     }
     
     void setBounds() {
-        Bounds bounds = _subPaths[0]._bounds;
+        _bounds = _subPaths[0]._bounds;
         for (SubPath& subPath : _subPaths)
-            bounds.unite(subPath._bounds);
-        
-        _llx = bounds.lx, _lly = bounds.ly;
-        _urx = bounds.ux, _ury = bounds.uy;
+            _bounds.unite(subPath._bounds);
     }
     
     vector<Intersection> findIntersections() {
@@ -452,7 +449,7 @@ struct Path {
     bool                        _evenOdd;
     size_t                      _outerIndex;
     vector<SubPath>             _subPaths;
-    float                       _llx, _lly, _urx, _ury;
+    Bounds                      _bounds;
 };
 
 struct Mesh {
@@ -542,10 +539,10 @@ struct Tess {
             for (size_t i = 0; i < _paths.size(); i++) {
                 Path& path = _paths[i];
                 
-                auto matches = _quadtree->find(path._llx, path._lly, path._urx, path._ury);
+                auto matches = _quadtree->find(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
                 for (auto j : matches) 
                     _paths[j].maskOut(tess, path);
-                _quadtree->add(i, path._llx, path._lly, path._urx, path._ury);
+                _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
             }
         }
 
