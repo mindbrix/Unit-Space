@@ -178,7 +178,7 @@ struct SubPath {
                 _npoints--;
         }
         _area = area();
-        bounds(& _llx);
+        bounds(& _bounds.lx);
     }
     
     float area() const {
@@ -244,7 +244,7 @@ struct SubPath {
     Memory<float>               _controlPoints;
     int                         _npoints;
     float                       _area;
-    float                       _llx, _lly, _urx, _ury;
+    Bounds                      _bounds;
 };
 
 struct Path {
@@ -301,13 +301,12 @@ struct Path {
     }
     
     void setBounds() {
-        _llx = FLT_MAX, _lly = FLT_MAX, _urx = -FLT_MAX, _ury = -FLT_MAX;
-        for (SubPath& subPath : _subPaths) {
-            _llx = std::min(_llx, subPath._llx);
-            _lly = std::min(_lly, subPath._lly);
-            _urx = std::max(_urx, subPath._urx);
-            _ury = std::max(_ury, subPath._ury);
-        }
+        Bounds bounds = _subPaths[0]._bounds;
+        for (SubPath& subPath : _subPaths)
+            bounds.unite(subPath._bounds);
+        
+        _llx = bounds.lx, _lly = bounds.ly;
+        _urx = bounds.ux, _ury = bounds.uy;
     }
     
     vector<Intersection> findIntersections() {
@@ -538,6 +537,27 @@ struct Tess {
         if (useMasking) {
             for (Path& path : _paths)
                 path.resolveSelfIntersections(tess);
+            
+            /*
+            Path mask = _paths.back();
+            for (int i = (int) _paths.size() - 2; i >= 0; i--) {
+                Path& path = _paths[i];
+                
+                if (path.intersects(mask))
+                    path.maskOut(tess, mask);
+                
+                tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+                for (SubPath& subPath : mask._subPaths)
+                    tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
+                for (SubPath& subPath : path._subPaths)
+                    tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
+                if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+                    mask.writeTessSubpaths(tess);
+                    mask._outerIndex = mask.findOuterIndex();
+                    mask.setBounds();
+                }
+            }
+            */
             
             for (size_t i = 0; i < _paths.size(); i++) {
                 Path& path = _paths[i];

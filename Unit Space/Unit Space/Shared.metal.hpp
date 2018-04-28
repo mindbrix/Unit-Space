@@ -10,6 +10,8 @@
 
 #define PI 3.1415926536
 #define TWO_PI 6.2831853072
+#define MIN(A,B)    ((A) < (B) ? (A) : (B))
+#define MAX(A,B)    ((A) > (B) ? (A) : (B))
 
 struct Arc { float x, y, r, t0, t1; };
 
@@ -25,6 +27,19 @@ struct RGBA8 {
 };
 
 struct AffineTransform { float a, b, c, d, tx, ty; };
+
+struct Bounds {
+    Bounds() {}
+    Bounds(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy) {}
+    bool intersects(Bounds other) {
+        return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
+    }
+    void unite(Bounds other) {
+        lx = MIN(lx, other.lx), ly = MIN(ly, other.ly);
+        ux = MAX(ux, other.ux), uy = MAX(uy, other.uy);
+    }
+    float lx, ly, ux, uy;
+};
 
 struct Vector { float x, y; };
 
