@@ -219,11 +219,12 @@ struct SubPath {
             dst = points, src = & points[si * 2], end = & points[di * 2];
         else
             dst = & points[di * 2], src = & points[si * 2], end = & points[_npoints * 2];
-        while (src < end)
-            *dst++ = *src++, *dst++ = *src++;
         
         if (type == kPoints)
-            _npoints = int(dst - points) / 2;
+            _npoints = int(dst + (end - src) - points) / 2;
+
+        while (src < end)
+            *dst++ = *src++, *dst++ = *src++;
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
@@ -361,22 +362,22 @@ struct Path {
                 points = _subPaths[e0.ci]._points.get();
                 controlPoints = _subPaths[e0.ci]._controlPoints.get();
                 linesIntersection(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
-                if (controlPoints != nullptr) {
-                    x1 = controlPoints[e0.pi * 2], y1 = controlPoints[e0.pi * 2 + 1];
-                    x01 = (e0.x0() + x1) * 0.5, x12 = (x1 + e0.x1()) * 0.5, x123 = (x01 + x12) * 0.5;
-                    y01 = (e0.y0() + y1) * 0.5, y12 = (y1 + e0.y1()) * 0.5, y123 = (y01 + y12) * 0.5;
-                    _subPaths[e0.ci].insert(SubPath::kPoints, e0.pi + 1, x123, y123);
-                    _subPaths[e0.ci].replace(SubPath::kControlPoints, e0.pi, x01, y01);
-                    _subPaths[e0.ci].insert(SubPath::kControlPoints, e0.pi + 1, x12, y12);
-                    
-                    x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
-                } else {
+//                if (controlPoints != nullptr) {
+//                    x1 = controlPoints[e0.pi * 2], y1 = controlPoints[e0.pi * 2 + 1];
+//                    x01 = (e0.x0() + x1) * 0.5, x12 = (x1 + e0.x1()) * 0.5, x123 = (x01 + x12) * 0.5;
+//                    y01 = (e0.y0() + y1) * 0.5, y12 = (y1 + e0.y1()) * 0.5, y123 = (y01 + y12) * 0.5;
+//                    _subPaths[e0.ci].insert(SubPath::kPoints, e0.pi + 1, x123, y123);
+//                    _subPaths[e0.ci].replace(SubPath::kControlPoints, e0.pi, x01, y01);
+//                    _subPaths[e0.ci].insert(SubPath::kControlPoints, e0.pi + 1, x12, y12);
+//
+//                    x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
+//                } else {
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
                     _subPaths[e0.ci].splice(SubPath::kControlPoints, px, py, e0, e1);
                     _subPaths[e0.ci].splice(SubPath::kPoints, px, py, e0, e1);
                     _subPaths.back().splice(SubPath::kControlPoints, px, py, e1, e0);
                     _subPaths.back().splice(SubPath::kPoints, px, py, e1, e0);
-                }
+//                }
             }
             break;
         }
