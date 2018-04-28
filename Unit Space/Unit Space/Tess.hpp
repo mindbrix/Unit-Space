@@ -157,7 +157,8 @@ public:
 
 struct SubPath {
     enum Type {
-        kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose
+        kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose,
+        kPoints, kControlPoints
     };
     
     SubPath() {}
@@ -192,19 +193,21 @@ struct SubPath {
         _controlPoints = _controlPoints.clone();
         return c;
     }
-    void insert(int pi, float px, float py, float cpx, float cpy) {
-        _npoints++;
-        _points.alloc(_npoints * kPointStride), _controlPoints.alloc(_npoints * kPointStride);
-        float *points = _points.get(), *dst, *src, *end;
+    void insert(Type type, int pi, float px, float py) {
+        if (type == kPoints)
+            _npoints++;
+        Memory<float>& pts = type == kPoints ? _points : _controlPoints;
+        pts.alloc(_npoints * kPointStride);
+        float *points = pts.get(), *dst, *src, *end;
         dst = & points[(_npoints - 1) * 2], src = dst - 2, end = & points[pi * 2];
         while (src > end)
             *dst-- = *src--, *dst-- = *src--;
-        float *controlPoints =_controlPoints.get();
-        dst = & controlPoints[(_npoints - 1) * 2], src = dst - 2, end = & controlPoints[pi * 2];
-        while (src > end)
-            *dst-- = *src--, *dst-- = *src--;
         points[pi * 2] = px, points[pi * 2 + 1] = py;
-        controlPoints[pi * 2] = cpx, points[pi * 2 + 1] = cpy;
+    }
+    void replace(Type type, int pi, float px, float py) {
+        Memory<float>& pts = type == kPoints ? _points : _controlPoints;
+        float *points = pts.get();
+        points[pi * 2] = px, points[pi * 2 + 1] = py;
     }
     void splice(float px, float py, Edge& e0, Edge& e1) {
         float *points = _points.get(), *dst, *src, *end;
@@ -346,15 +349,23 @@ struct Path {
 //        }
 		
         auto intersections = findIntersections();
-        float *controlPoints, px, py, cpx0, cpy0, cpx1, cpy1;
+        float *points, *controlPoints, px, py, x1, y1;
+        float x01, x12, x123, y01, y12, y123;
         for (auto& intersection : intersections) {
             Edge& e0 = intersection.e0, & e1 = intersection.e1;
             if (e0.ci == e1.ci) {
+                points = _subPaths[e0.ci]._points.get();
                 controlPoints = _subPaths[e0.ci]._controlPoints.get();
                 linesIntersection(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
                 if (controlPoints != nullptr) {
-                    cpx0 = controlPoints[e0.pi * 2], cpy0 = controlPoints[e0.pi * 2 + 1];
-                    cpx1 = controlPoints[e1.pi * 2], cpy1 = controlPoints[e1.pi * 2 + 1];
+                    x1 = controlPoints[e0.pi * 2], y1 = controlPoints[e0.pi * 2 + 1];
+                    x01 = (e0.x0() + x1) * 0.5, x12 = (x1 + e0.x1()) * 0.5, x123 = (x01 + x12) * 0.5;
+                    y01 = (e0.y0() + y1) * 0.5, y12 = (y1 + e0.y1()) * 0.5, y123 = (y01 + y12) * 0.5;
+                    _subPaths[e0.ci].insert(SubPath::kPoints, e0.pi + 1, x123, y123);
+                    _subPaths[e0.ci].replace(SubPath::kControlPoints, e0.pi, x01, y01);
+                    _subPaths[e0.ci].insert(SubPath::kControlPoints, e0.pi + 1, x12, y12);
+                    
+                    x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
                 } else {
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
                     _subPaths[e0.ci].splice(px, py, e0, e1);
