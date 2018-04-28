@@ -289,11 +289,8 @@ struct Path {
             tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         }
         
-        if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+        if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
-            _outerIndex = findOuterIndex();
-            setBounds();
-        }
     }
     
     void setBounds() {
@@ -362,11 +359,9 @@ struct Path {
             if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         
-        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
-            _outerIndex = findOuterIndex();
-            setBounds();
-        }
+            
     }
     void resolveSelfIntersections() {
         auto intersections = findIntersections();
@@ -439,6 +434,8 @@ struct Path {
             if (npoints > 2)
                 _subPaths.emplace_back(points, npoints, SubPath::kLine);
         }
+        _outerIndex = findOuterIndex();
+        setBounds();
     }
     
     RGBA8                       _color;
