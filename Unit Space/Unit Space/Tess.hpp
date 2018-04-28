@@ -256,7 +256,7 @@ struct Path {
                 _subPaths.pop_back();
         }
     }
-        
+    
     bool intersects(Path& path) const {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
@@ -416,11 +416,11 @@ struct Path {
     }
     
     void update() {
-        float maxArea = 0;
+        float area, maxArea = 0;
         _outerIndex = 0;
         for (size_t i = 0; i < _subPaths.size(); i++)
-            if (std::abs(_subPaths[i]._area) > maxArea)
-                maxArea = std::abs(_subPaths[i]._area), _outerIndex = i;
+            if ((area = std::abs(_subPaths[i]._area)) > maxArea)
+                maxArea = area, _outerIndex = i;
         
         _bounds = _subPaths[0]._bounds;
         for (SubPath& subPath : _subPaths)
