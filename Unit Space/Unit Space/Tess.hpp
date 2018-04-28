@@ -410,7 +410,8 @@ struct Path {
                         ci = e0.ci;
                         if ((pi = _subPaths[ci].index(SubPath::kPoints, ie0.x0(), ie0.y0())) == INT_MAX)
                             ci = nci, pi = _subPaths[ci].index(SubPath::kPoints, ie0.x0(), ie0.y0());
-                                                        
+                        
+                        assert(pi != INT_MAX);
                         if (pi != INT_MAX)
                             ie0.ci = ci, ie0.pi = pi;
                         
@@ -418,13 +419,13 @@ struct Path {
                         if ((pi = _subPaths[ci].index(SubPath::kPoints, ie1.x0(), ie1.y0())) == INT_MAX)
                             ci = nci, pi = _subPaths[ci].index(SubPath::kPoints, ie1.x0(), ie1.y0());
                         
+                        assert(pi != INT_MAX);
                         if (pi != INT_MAX)
                             ie1.ci = ci, ie1.pi = pi;
                     }
                 }
 //                }
             }
-//            break;
         }
       
         _outerIndex = findOuterIndex();
