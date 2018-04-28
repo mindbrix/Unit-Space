@@ -394,11 +394,11 @@ struct Path {
                     _subPaths.back().splice(SubPath::kControlPoints, e0.pi + 1, e1.pi, px, py);
                     _subPaths.back().splice(SubPath::kPoints, e0.pi + 1, e1.pi, px, py);
                 
-                int ci, nci, pi;
+                int ci, nci = (int)_subPaths.size() - 1, pi;
                 for (int k = j + 1; k < intersections.size(); k++) {
                     Edge& ie0 = intersections[k].e0, & ie1 = intersections[k].e1;
-                    if (e0.ci == ie0.ci) {
-                        ci = e0.ci, nci = (int)_subPaths.size() - 1;
+                    if (e0.ci == ie0.ci && ie0.ci == ie1.ci) {
+                        ci = e0.ci;
                         if ((pi = _subPaths[ci].index(SubPath::kPoints, ie0.x0(), ie0.y0())) == INT_MAX)
                             ci = nci, pi = _subPaths[ci].index(SubPath::kPoints, ie0.x0(), ie0.y0());
                                                         
@@ -415,7 +415,7 @@ struct Path {
                 }
 //                }
             }
-            break;
+//            break;
         }
       
         _outerIndex = findOuterIndex();
