@@ -59,7 +59,7 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
             D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
             tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
             
-            if (tcubed < 0.999) {
+            if (tcubed < 0.999999) {
                 t = cbrt(tcubed);
                 
                 n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
