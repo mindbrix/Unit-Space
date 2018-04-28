@@ -256,18 +256,7 @@ struct Path {
                 _subPaths.pop_back();
         }
     }
-    
-    size_t findOuterIndex() const {
-        float maxArea = 0;
-        size_t index = 0;
         
-        for (size_t i = 0; i < _subPaths.size(); i++)
-            if (std::abs(_subPaths[i]._area) > maxArea)
-                maxArea = std::abs(_subPaths[i]._area), index = i;
-        
-        return index;
-    }
-    
     bool intersects(Path& path) const {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
@@ -288,12 +277,6 @@ struct Path {
         
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
-    }
-    
-    void setBounds() {
-        _bounds = _subPaths[0]._bounds;
-        for (SubPath& subPath : _subPaths)
-            _bounds.unite(subPath._bounds);
     }
     
     vector<Intersection> findIntersections() {
@@ -349,7 +332,7 @@ struct Path {
     
     void resolveSelfIntersections(TESStesselator *tess) {
         if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3) {
-            setBounds();
+            update();
             return;
         }
         for (SubPath& subPath : _subPaths)
@@ -412,9 +395,7 @@ struct Path {
 //                }
             }
         }
-      
-        _outerIndex = findOuterIndex();
-        setBounds();
+        update();
     }
     
     void writeTessSubpaths(TESStesselator *tess) {
@@ -431,10 +412,20 @@ struct Path {
             if (npoints > 2)
                 _subPaths.emplace_back(points, npoints, SubPath::kLine);
         }
-        _outerIndex = findOuterIndex();
-        setBounds();
+        update();
     }
     
+    void update() {
+        float maxArea = 0;
+        _outerIndex = 0;
+        for (size_t i = 0; i < _subPaths.size(); i++)
+            if (std::abs(_subPaths[i]._area) > maxArea)
+                maxArea = std::abs(_subPaths[i]._area), _outerIndex = i;
+        
+        _bounds = _subPaths[0]._bounds;
+        for (SubPath& subPath : _subPaths)
+            _bounds.unite(subPath._bounds);
+    }
     RGBA8                       _color;
     bool                        _evenOdd;
     size_t                      _outerIndex;
@@ -478,7 +469,7 @@ struct Tess {
         int pi, c;
         float area, flip;
         for (Path& path : _paths) {
-            size_t outerIndex = path.findOuterIndex();
+            size_t outerIndex = path._outerIndex;
             SubPath* outer = & path._subPaths[outerIndex];
             
             for (SubPath& s : path._subPaths)
