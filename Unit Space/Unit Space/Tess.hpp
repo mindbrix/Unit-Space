@@ -194,6 +194,18 @@ struct SubPath {
         return c;
     }
     
+    int index(Type type, float px, float py) {
+        float *points, *src, *end;
+        if ((points = (type == kPoints ? _points : _controlPoints).get()) == nullptr)
+            return INT_MAX;
+        src = points, end = & points[_npoints * 2];
+        while (src < end)
+            if (src[0] == px && src[1] == py)
+                return (int)(src - points) / 2;
+            else
+                src += 2;
+        return INT_MAX;
+    }
     void insert(Type type, int pi, float px, float py) {
         if (type == kPoints)
             _npoints++;
@@ -358,8 +370,8 @@ struct Path {
         auto intersections = findIntersections();
         float *points, *controlPoints, px, py, x1, y1;
         float x01, x12, x123, y01, y12, y123;
-        for (auto& intersection : intersections) {
-            Edge& e0 = intersection.e0, & e1 = intersection.e1;
+        for (int j = 0; j < intersections.size(); j++) {
+            Edge& e0 = intersections[j].e0, & e1 = intersections[j].e1;
             if (e0.ci == e1.ci) {
                 points = _subPaths[e0.ci]._points.get();
                 controlPoints = _subPaths[e0.ci]._controlPoints.get();
@@ -374,14 +386,20 @@ struct Path {
 //
 //                    x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
 //                } else {
-//                int di = (e1.pi + 1) % _npoints, si = e0.pi;
                 
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
-                    _subPaths[e0.ci].splice(SubPath::kControlPoints, e1.pi + 1, e0.pi,  px, py);
+                    _subPaths[e0.ci].splice(SubPath::kControlPoints, e1.pi + 1, e0.pi, px, py);
                     _subPaths[e0.ci].splice(SubPath::kPoints, e1.pi + 1, e0.pi, px, py);
                 
                     _subPaths.back().splice(SubPath::kControlPoints, e0.pi + 1, e1.pi, px, py);
                     _subPaths.back().splice(SubPath::kPoints, e0.pi + 1, e1.pi, px, py);
+                
+                for (int k = j + 1; k < intersections.size(); k++) {
+                    Edge& ie0 = intersections[k].e0, & ie1 = intersections[k].e1;
+                    if (e0.ci == ie0.ci) {
+                        ;
+                    }
+                }
 //                }
             }
             break;
