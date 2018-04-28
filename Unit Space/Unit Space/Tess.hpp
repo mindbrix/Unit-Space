@@ -210,11 +210,13 @@ struct SubPath {
         points[pi * 2] = px, points[pi * 2 + 1] = py;
     }
     void splice(Type type, float px, float py, Edge& e0, Edge& e1) {
-        float *points = (type == kPoints ? _points : _controlPoints).get(), *dst, *src, *end;
-        if (points == nullptr)
+        float *points, *dst, *src, *end;
+        if ((points = (type == kPoints ? _points : _controlPoints).get()) == nullptr)
             return;
-        points[e0.pi * 2] = px,  points[e0.pi * 2 + 1] = py;
+        
         int di = (e1.pi + 1) % _npoints, si = e0.pi;
+        points[si * 2] = px, points[si * 2 + 1] = py;
+        
         if (di > si)
             dst = points, src = & points[si * 2], end = & points[di * 2];
         else
