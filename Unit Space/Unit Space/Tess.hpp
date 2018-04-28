@@ -177,16 +177,9 @@ struct SubPath {
             if (closed)
                 _npoints--;
         }
-        _area = area();
-        bounds(& _bounds.lx);
+        update();
     }
     
-    float area() const {
-        return pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
-    }
-    void bounds(float *limits) const {
-        boundsLimits(limits, _points.get(), _points.get() + _npoints * 2, kPointStride);
-    }
     SubPath clone() {
         SubPath c = *this;
         _points = _points.clone();
@@ -239,6 +232,10 @@ struct SubPath {
 
         while (src < end)
             *dst++ = *src++, *dst++ = *src++;
+    }
+    void update() {
+        _area = pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
+        boundsLimits(& _bounds.lx, _points.get(), _points.get() + _npoints * 2, kPointStride);
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
