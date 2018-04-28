@@ -249,11 +249,7 @@ struct SubPath {
 
 struct Path {
     Path() {}
-    Path(bool evenOdd, RGBA8 color) {
-        _color = color;
-        _evenOdd = evenOdd;
-        _outerIndex = 0;
-    }
+    Path(bool evenOdd, RGBA8 color) : _color(color), _evenOdd(evenOdd), _outerIndex(0) {}
     
     void addContour(float *points, int npoints, SubPath::Type type) {
         if (npoints > 2) {
@@ -276,7 +272,7 @@ struct Path {
     }
     
     bool intersects(Path& path) const {
-        return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);// (_urx > path._llx) && (path._urx > _llx) && (_ury > path._lly) && (path._ury > _lly);
+        return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
     
     void maskOut(TESStesselator *tess, Path& mask) {
