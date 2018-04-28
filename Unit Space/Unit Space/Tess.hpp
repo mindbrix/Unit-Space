@@ -193,24 +193,24 @@ struct SubPath {
         _controlPoints = _controlPoints.clone();
         return c;
     }
+    
     void insert(Type type, int pi, float px, float py) {
         if (type == kPoints)
             _npoints++;
-        Memory<float>& pts = type == kPoints ? _points : _controlPoints;
-        pts.alloc(_npoints * kPointStride);
-        float *points = pts.get(), *dst, *src, *end;
+        Memory<float>& memory = type == kPoints ? _points : _controlPoints;
+        memory.alloc(_npoints * kPointStride);
+        float *points = memory.get(), *dst, *src, *end;
         dst = & points[(_npoints - 1) * 2], src = dst - 2, end = & points[pi * 2];
         while (src > end)
             *dst-- = *src--, *dst-- = *src--;
         points[pi * 2] = px, points[pi * 2 + 1] = py;
     }
     void replace(Type type, int pi, float px, float py) {
-        Memory<float>& pts = type == kPoints ? _points : _controlPoints;
-        float *points = pts.get();
+        float *points = (type == kPoints ? _points : _controlPoints).get();
         points[pi * 2] = px, points[pi * 2 + 1] = py;
     }
-    void splice(float px, float py, Edge& e0, Edge& e1) {
-        float *points = _points.get(), *dst, *src, *end;
+    void splice(Type type, float px, float py, Edge& e0, Edge& e1) {
+        float *points = (type == kPoints ? _points : _controlPoints).get(), *dst, *src, *end;
         points[e0.pi * 2] = px,  points[e0.pi * 2 + 1] = py;
         int di = (e1.pi + 1) % _npoints, si = e0.pi;
         if (di > si)
@@ -219,7 +219,9 @@ struct SubPath {
             dst = & points[di * 2], src = & points[si * 2], end = & points[_npoints * 2];
         while (src < end)
             *dst++ = *src++, *dst++ = *src++;
-        _npoints = int(dst - points) / 2;
+        
+        if (type == kPoints)
+            _npoints = int(dst - points) / 2;
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
@@ -368,10 +370,11 @@ struct Path {
                     x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
                 } else {
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
-                    _subPaths[e0.ci].splice(px, py, e0, e1);
-                    _subPaths.back().splice(px, py, e1, e0);
+                    _subPaths[e0.ci].splice(SubPath::kPoints, px, py, e0, e1);
+                    _subPaths.back().splice(SubPath::kPoints, px, py, e1, e0);
                 }
             }
+            break;
         }
       
         _outerIndex = findOuterIndex();
@@ -486,10 +489,10 @@ struct Tess {
                 }
         }
         
+        for (Path& path : _paths)
+            path.resolveSelfIntersections(tess);
+        
         if (useMasking) {
-            for (Path& path : _paths)
-                path.resolveSelfIntersections(tess);
-            
             for (size_t i = 0; i < _paths.size(); i++) {
                 Path& path = _paths[i];
                 
