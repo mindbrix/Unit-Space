@@ -122,7 +122,7 @@ public:
     Memory()                            {}
     Memory(size_t size)                 { alloc(size); }
     Memory(const Memory& other)         { assign(other); }
-    Memory& operator= (Memory other)   { assign(other); return *this; }
+    Memory& operator= (Memory other)    { assign(other); return *this; }
     ~Memory() {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
@@ -211,6 +211,8 @@ struct SubPath {
     }
     void splice(Type type, float px, float py, Edge& e0, Edge& e1) {
         float *points = (type == kPoints ? _points : _controlPoints).get(), *dst, *src, *end;
+        if (points == nullptr)
+            return;
         points[e0.pi * 2] = px,  points[e0.pi * 2 + 1] = py;
         int di = (e1.pi + 1) % _npoints, si = e0.pi;
         if (di > si)
@@ -370,7 +372,9 @@ struct Path {
                     x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
                 } else {
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
+                    _subPaths[e0.ci].splice(SubPath::kControlPoints, px, py, e0, e1);
                     _subPaths[e0.ci].splice(SubPath::kPoints, px, py, e0, e1);
+                    _subPaths.back().splice(SubPath::kControlPoints, px, py, e1, e0);
                     _subPaths.back().splice(SubPath::kPoints, px, py, e1, e0);
                 }
             }
