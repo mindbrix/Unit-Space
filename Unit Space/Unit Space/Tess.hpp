@@ -209,12 +209,12 @@ struct SubPath {
         float *points = (type == kPoints ? _points : _controlPoints).get();
         points[pi * 2] = px, points[pi * 2 + 1] = py;
     }
-    void splice(Type type, float px, float py, Edge& e0, Edge& e1) {
+    void splice(Type type, int di, int si, float px, float py) {
         float *points, *dst, *src, *end;
         if ((points = (type == kPoints ? _points : _controlPoints).get()) == nullptr)
             return;
         
-        int di = (e1.pi + 1) % _npoints, si = e0.pi;
+        di = di % _npoints, si = si % _npoints;
         points[si * 2] = px, points[si * 2 + 1] = py;
         
         if (di > si)
@@ -374,11 +374,14 @@ struct Path {
 //
 //                    x1 = controlPoints[e1.pi * 2], y1 = controlPoints[e1.pi * 2 + 1];
 //                } else {
+//                int di = (e1.pi + 1) % _npoints, si = e0.pi;
+                
                     _subPaths.emplace_back(_subPaths[e0.ci].clone());
-                    _subPaths[e0.ci].splice(SubPath::kControlPoints, px, py, e0, e1);
-                    _subPaths[e0.ci].splice(SubPath::kPoints, px, py, e0, e1);
-                    _subPaths.back().splice(SubPath::kControlPoints, px, py, e1, e0);
-                    _subPaths.back().splice(SubPath::kPoints, px, py, e1, e0);
+                    _subPaths[e0.ci].splice(SubPath::kControlPoints, e1.pi + 1, e0.pi,  px, py);
+                    _subPaths[e0.ci].splice(SubPath::kPoints, e1.pi + 1, e0.pi, px, py);
+                
+                    _subPaths.back().splice(SubPath::kControlPoints, e0.pi + 1, e1.pi, px, py);
+                    _subPaths.back().splice(SubPath::kPoints, e0.pi + 1, e1.pi, px, py);
 //                }
             }
             break;
