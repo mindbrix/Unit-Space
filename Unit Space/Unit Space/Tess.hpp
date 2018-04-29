@@ -569,12 +569,10 @@ struct Tess {
             for (SubPath& s : path._subPaths) {
                 float *src = s._points.get();
                 for (int i = 0; i < s._npoints; i++)
-                    dst->x = *src++, dst->y = *src++, dst->i = i, dst++;
+                    dst->x = *src++, dst->y = *src++, dst->i = (int) (& path - & _paths[0]), dst++;
             }
-        assert((dst - xyz.get()) == count);
         
         Memory<ITRIANGLE> itriangle((count + 3) * 4 * sizeof(ITRIANGLE));
-        
         int ntri, status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
         if (status)
             return;
@@ -589,18 +587,13 @@ struct Tess {
         for (Path& path : _paths)
             path.update();
         
-        Vector p0, p1, p2, centre;
+        XYZ *pts = xyz.get();
+        int c0, c1, c2, c;
         ITRIANGLE *triangles = itriangle.get();
         for (int i = 0; i < ntri; i++) {
-            Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, INT_MAX };
-            p0 = mesh._points[t.i0], p1 = mesh._points[t.i1], p2 = mesh._points[t.i2];
-            centre = { (p0.x + p1.x + p2.x) * 0.333f, (p0.y + p1.y + p2.y) * 0.333f };
-            for (int ci = (int)_paths.size() - 1; ci >= 0; ci--)
-                if (_paths[ci]._bounds.contains(centre.x, centre.y)) {
-                    t.c = ci;
-                    break;
-                }
-            if (t.c != INT_MAX)
+            c0 = pts[triangles[i].p1].i, c1 = pts[triangles[i].p2].i, c2 = pts[triangles[i].p3].i;
+            c = c0 == c1 ? c0 : c1 == c2 ? c1 : c2 == c0 ? c2 : c0;
+            Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, c };
                 mesh._triangles.emplace_back(t);
         }
         
