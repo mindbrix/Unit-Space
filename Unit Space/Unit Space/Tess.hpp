@@ -575,9 +575,7 @@ struct Tess {
         
         Memory<ITRIANGLE> itriangle((count + 3) * 4 * sizeof(ITRIANGLE));
         
-        int ntri, status;
-        status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
-        
+        int ntri, status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
         if (status)
             return;
         
@@ -595,23 +593,23 @@ struct Tess {
         
         for (Path& path : _paths)
             mesh._colors.emplace_back(path._color);
-    
     }
     void triangulate(Mesh& mesh, bool useMasking) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
         
-        writeCurves(mesh);
-        
 //        if (!useMasking)
 //            for (Path& path : _paths)
 //                path.resolveSelfIntersections();
         
+//        writeCurves(mesh);
         if (useMasking)
             maskPaths(tess);
 
-        writeDelaunayTriangles(mesh);
 //        writeTessTriangles(mesh, tess);
+        
+        writeDelaunayTriangles(mesh);
+        writeCurves(mesh);
     }
 
     shared_ptr<TESStesselator>			_tess;
