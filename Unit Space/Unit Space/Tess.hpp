@@ -76,7 +76,7 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
                 
                 *cpdst++ = cpx, *cpdst++ = cpy;
             }
-        } while (tcubed < 0.999);
+        } while (tcubed < 0.999999);
         
         *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
     }
