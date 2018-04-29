@@ -9,6 +9,7 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
+#import "delaunay.h"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
@@ -471,10 +472,7 @@ struct Tess {
             _paths.emplace_back(path);
     }
     
-    void triangulate(Mesh& mesh, bool useMasking) {
-        mesh.empty();
-        TESStesselator *tess = _tess.get();
-        
+    void writeCurves(Mesh& mesh) {
         int pi, c;
         float area, flip;
         for (Path& path : _paths) {
@@ -500,7 +498,7 @@ struct Tess {
                         
                         area = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
                         Triangle tri = { pi + i * 2, pi + i * 2 + 1, pi + i * 2 + 2, c };
-                    
+                        
                         if (area != 0) {
                             if (area < 0)
                                 std::swap(tri.i0, tri.i2);
@@ -517,6 +515,12 @@ struct Tess {
                     }
                 }
         }
+    }
+    void triangulate(Mesh& mesh, bool useMasking) {
+        mesh.empty();
+        TESStesselator *tess = _tess.get();
+        
+        writeCurves(mesh);
         
 //        if (!useMasking)
 //            for (Path& path : _paths)
