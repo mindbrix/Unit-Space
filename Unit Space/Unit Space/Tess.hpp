@@ -588,13 +588,16 @@ struct Tess {
             path.update();
         
         XYZ *pts = xyz.get();
-        int c0, c1, c2, c;
+        int i0, i1, i2, d01, d12, d20, c0, c1, c2, c;;
         ITRIANGLE *triangles = itriangle.get();
         for (int i = 0; i < ntri; i++) {
-            c0 = pts[triangles[i].p1].i, c1 = pts[triangles[i].p2].i, c2 = pts[triangles[i].p3].i;
-            c = c0 == c1 ? c0 : c1 == c2 ? c1 : c2 == c0 ? c2 : c0;
+            i0 = triangles[i].p1, i1 = triangles[i].p2, i2 = triangles[i].p3;
+            d01 = i1 - i0, d12 = i2 - i1, d20 = i0 - i2;
+            c0 = pts[i0].i, c1 = pts[i1].i, c2 = pts[i2].i;
+            c = std::abs(d01) > 1 ? c0 : std::abs(d12) > 1 ? c1 : std::abs(d20) > 1 ? c2 : c0;
+//            c = c != -1 ? c : c0 == c1 ? c0 : c1 == c2 ? c1 : c2 == c0 ? c2 : c0;
             Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, c };
-                mesh._triangles.emplace_back(t);
+            mesh._triangles.emplace_back(t);
         }
         
         for (Path& path : _paths)
