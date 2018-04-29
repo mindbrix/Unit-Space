@@ -391,10 +391,11 @@ using namespace std;
     RGBA8 green(0, 255, 0, 255);
     RGBA8 blue(0, 0, 255, 255);
     RGBA8 black(0, 0, 0, 255);
+    RGBA8 alpha(255, 0, 0, 128);
     
     Path p0(false, red);
     p0.addContour((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
-    Path p1(false, black);
+    Path p1(false, alpha);
     p1.addContour((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
 	Path p2(false, black);
 	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);

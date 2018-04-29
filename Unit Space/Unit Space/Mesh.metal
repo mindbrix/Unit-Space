@@ -155,13 +155,13 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
         float min_dist = min(vert.distance.x + offset, min(vert.distance.y + offset, vert.distance.z + offset));
         return vert.color * (1.0 - abs(min_dist));
     }
-    const float offset = 0.5 + 0.5;
-    float a0 = select(0.0, saturate(vert.distance.x + offset), vert.distance.x < 0.7071 && vert.distance.y > 0.7071 && vert.distance.z > 0.7071);
-    float a1 = select(0.0, saturate(vert.distance.y + offset), vert.distance.y < 0.7071 && vert.distance.x > 0.7071 && vert.distance.z > 0.7071);
-    float a2 = select(0.0, saturate(vert.distance.z + offset), vert.distance.z < 0.7071 && vert.distance.x > 0.7071 && vert.distance.y > 0.7071);
-    float sum = a0 + a1 + a2;
-    if (sum > 0.0)
-        return vert.color * sum;
+    
+    bool a0 = vert.distance.x < 0.7071 && vert.distance.y > 0.7071 && vert.distance.z > 0.7071;
+    bool a1 = vert.distance.y < 0.7071 && vert.distance.x > 0.7071 && vert.distance.z > 0.7071;
+    bool a2 = vert.distance.z < 0.7071 && vert.distance.x > 0.7071 && vert.distance.y > 0.7071;
+    
+    if (a0 || a1 || a2)
+        return vert.color * select(select(float(vert.distance.z > 0), float(vert.distance.y > 0), a1), float(vert.distance.x > 0), a0);
     
     if (min_dist > 0.7071)
         return vert.color;
