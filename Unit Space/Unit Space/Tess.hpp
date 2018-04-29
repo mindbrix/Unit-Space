@@ -586,10 +586,22 @@ struct Tess {
             mesh._points.emplace_back(p);
         }
         
+        for (Path& path : _paths)
+            path.update();
+        
+        Vector p0, p1, p2, centre;
         ITRIANGLE *triangles = itriangle.get();
         for (int i = 0; i < ntri; i++) {
-            Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, 0 };
-            mesh._triangles.emplace_back(t);
+            Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, INT_MAX };
+            p0 = mesh._points[t.i0], p1 = mesh._points[t.i1], p2 = mesh._points[t.i2];
+            centre = { (p0.x + p1.x + p2.x) * 0.333f, (p0.y + p1.y + p2.y) * 0.333f };
+            for (int ci = (int)_paths.size() - 1; ci >= 0; ci--)
+                if (_paths[ci]._bounds.contains(centre.x, centre.y)) {
+                    t.c = ci;
+                    break;
+                }
+            if (t.c != INT_MAX)
+                mesh._triangles.emplace_back(t);
         }
         
         for (Path& path : _paths)
