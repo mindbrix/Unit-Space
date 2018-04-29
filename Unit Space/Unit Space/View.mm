@@ -527,9 +527,7 @@ using namespace std;
         if (_mesh._triangles.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
-            
             call.meshState = meshState;
-            
             call.type = kCallTypeMeshTriangles;
             call.state = uniforms;
         }
@@ -537,9 +535,7 @@ using namespace std;
         if (_mesh._concaveCurves.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
-            
             call.meshState = meshState;
-            
             call.type = kCallTypeMeshConcaveCurves;
             call.state = uniforms;
         }
@@ -547,10 +543,7 @@ using namespace std;
         if (_mesh._curves.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
-            
             call.meshState = meshState;
-            
-            
             call.type = kCallTypeMeshCurves;
             call.state = uniforms;
         }
