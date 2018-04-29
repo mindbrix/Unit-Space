@@ -516,36 +516,26 @@ struct Tess {
                 }
         }
     }
-    void triangulate(Mesh& mesh, bool useMasking) {
-        mesh.empty();
-        TESStesselator *tess = _tess.get();
+    void maskPaths(TESStesselator *tess) {
+        for (Path& path : _paths)
+            path.resolveSelfIntersections(tess);
         
-        writeCurves(mesh);
-        
-//        if (!useMasking)
-//            for (Path& path : _paths)
-//                path.resolveSelfIntersections();
-        
-        if (useMasking) {
-            for (Path& path : _paths)
-                path.resolveSelfIntersections(tess);
+        for (size_t i = 0; i < _paths.size(); i++) {
+            Path& path = _paths[i];
             
-            for (size_t i = 0; i < _paths.size(); i++) {
-                Path& path = _paths[i];
-                
-                auto matches = _quadtree->find(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
-                for (auto j : matches) 
-                    _paths[j].maskOut(tess, path);
-                _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
-            }
+            auto matches = _quadtree->find(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
+            for (auto j : matches)
+                _paths[j].maskOut(tess, path);
+            _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
         }
-
+    }
+    void writeTessTriangles(Mesh& mesh, TESStesselator *tess) {
         assert(kPolySize == 3);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
         for (Path& path : _paths) {
             mesh._colors.emplace_back(path._color);
-
+            
             for (SubPath& s : path._subPaths)
                 tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             
@@ -554,7 +544,7 @@ struct Tess {
                 int npoints = tessGetVertexCount(tess);
                 const int nelems = tessGetElementCount(tess);
                 const TESSindex *polygon = tessGetElements(tess);
-
+                
                 int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
                 for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                     Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
@@ -566,6 +556,21 @@ struct Tess {
                 }
             }
         }
+    }
+    void triangulate(Mesh& mesh, bool useMasking) {
+        mesh.empty();
+        TESStesselator *tess = _tess.get();
+        
+        writeCurves(mesh);
+        
+//        if (!useMasking)
+//            for (Path& path : _paths)
+//                path.resolveSelfIntersections();
+        
+        if (useMasking)
+            maskPaths(tess);
+
+        writeTessTriangles(mesh, tess);
     }
 
     shared_ptr<TESStesselator>			_tess;
