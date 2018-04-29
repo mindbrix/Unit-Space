@@ -579,6 +579,7 @@ struct Tess {
         if (status)
             return;
         
+        int pi = (int)mesh._points.size();
         XYZ *src = xyz.get();
         for (int i = 0; i < count; i++) {
             Vector p = { src[i].x, src[i].y };
@@ -587,7 +588,7 @@ struct Tess {
         
         ITRIANGLE *triangles = itriangle.get();
         for (int i = 0; i < ntri; i++) {
-            Triangle t = { triangles[i].p1, triangles[i].p2, triangles[i].p3, 0 };
+            Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, 0 };
             mesh._triangles.emplace_back(t);
         }
         
@@ -602,14 +603,12 @@ struct Tess {
 //            for (Path& path : _paths)
 //                path.resolveSelfIntersections();
         
-//        writeCurves(mesh);
+        writeCurves(mesh);
         if (useMasking)
             maskPaths(tess);
 
 //        writeTessTriangles(mesh, tess);
-        
         writeDelaunayTriangles(mesh);
-        writeCurves(mesh);
     }
 
     shared_ptr<TESStesselator>			_tess;
