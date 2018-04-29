@@ -189,14 +189,10 @@ struct SubPath {
     
     int index(Type type, float px, float py) {
         float *points, *src, *end;
-        if ((points = (type == kPoints ? _points : _controlPoints).get()) == nullptr)
-            return INT_MAX;
-        src = points, end = & points[_npoints * 2];
-        while (src < end)
-            if (src[0] == px && src[1] == py)
-                return (int)(src - points) / 2;
-            else
-                src += 2;
+        if ((points = (type == kPoints ? _points : _controlPoints).get()))
+            for (src = points, end = & points[_npoints * 2]; src < end; src += 2)
+                if (src[0] == px && src[1] == py)
+                    return (int)(src - points) / 2;
         return INT_MAX;
     }
     void insert(Type type, int pi, float px, float py) {
