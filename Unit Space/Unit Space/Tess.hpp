@@ -557,6 +557,46 @@ struct Tess {
             }
         }
     }
+    void writeDelaunayTriangles(Mesh& mesh) {
+        int count = 0;
+        for (Path& path : _paths)
+            for (SubPath& s : path._subPaths)
+                count += s._npoints;
+        
+        Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
+        XYZ *dst = xyz.get();
+        for (Path& path : _paths)
+            for (SubPath& s : path._subPaths) {
+                float *src = s._points.get();
+                for (int i = 0; i < s._npoints; i++)
+                    dst->x = *src++, dst->y = *src++, dst->i = i, dst++;
+            }
+        assert((dst - xyz.get()) == count);
+        
+        Memory<ITRIANGLE> itriangle((count + 3) * 4 * sizeof(ITRIANGLE));
+        
+        int ntri, status;
+        status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
+        
+        if (status)
+            return;
+        
+        XYZ *src = xyz.get();
+        for (int i = 0; i < count; i++) {
+            Vector p = { src[i].x, src[i].y };
+            mesh._points.emplace_back(p);
+        }
+        
+        ITRIANGLE *triangles = itriangle.get();
+        for (int i = 0; i < ntri; i++) {
+            Triangle t = { triangles[i].p1, triangles[i].p2, triangles[i].p3, 0 };
+            mesh._triangles.emplace_back(t);
+        }
+        
+        for (Path& path : _paths)
+            mesh._colors.emplace_back(path._color);
+    
+    }
     void triangulate(Mesh& mesh, bool useMasking) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
@@ -570,7 +610,8 @@ struct Tess {
         if (useMasking)
             maskPaths(tess);
 
-        writeTessTriangles(mesh, tess);
+        writeDelaunayTriangles(mesh);
+//        writeTessTriangles(mesh, tess);
     }
 
     shared_ptr<TESStesselator>			_tess;
