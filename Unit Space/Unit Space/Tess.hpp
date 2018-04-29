@@ -518,9 +518,9 @@ struct Tess {
                 }
         }
         
-        if (!useMasking)
-            for (Path& path : _paths)
-                path.resolveSelfIntersections();
+//        if (!useMasking)
+//            for (Path& path : _paths)
+//                path.resolveSelfIntersections();
         
         if (useMasking) {
             for (Path& path : _paths)
