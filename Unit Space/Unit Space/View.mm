@@ -33,6 +33,7 @@ using namespace std;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) uint64_t pathBitmask;
+@property(nonatomic) BOOL showCurves;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEllipse;
 @property(nonatomic) BOOL showInterior;
@@ -251,6 +252,10 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleCurves:(id)sender {
+    _showCurves = !_showCurves;
+    [self redraw];
+}
 - (IBAction)toggleShowColors:(id)sender {
     _showColors = !_showColors;
     [self updateFromState];
@@ -513,13 +518,17 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         
+        MeshState meshState;
+        meshState.hideCurves = !_showCurves;
+        meshState.hideTriangles = !_showTriangle;
+        meshState.showColors = _showColors;
+        meshState.showInterior = _showInterior;
+        
         if (_mesh._triangles.size()) {
             _calls.emplace_back();
             Call& call = _calls.back();
             
-            call.meshState.hideTriangles = !_showTriangle;
-            call.meshState.showColors = _showColors;
-            call.meshState.showInterior = _showInterior;
+            call.meshState = meshState;
             
             call.type = kCallTypeMeshTriangles;
             call.state = uniforms;
@@ -529,9 +538,7 @@ using namespace std;
             _calls.emplace_back();
             Call& call = _calls.back();
             
-            call.meshState.hideTriangles = !_showTriangle;
-            call.meshState.showColors = _showColors;
-            call.meshState.showInterior = _showInterior;
+            call.meshState = meshState;
             
             call.type = kCallTypeMeshConcaveCurves;
             call.state = uniforms;
@@ -541,9 +548,8 @@ using namespace std;
             _calls.emplace_back();
             Call& call = _calls.back();
             
-            call.meshState.hideTriangles = !_showTriangle;
-            call.meshState.showColors = _showColors;
-            call.meshState.showInterior = _showInterior;
+            call.meshState = meshState;
+            
             
             call.type = kCallTypeMeshCurves;
             call.state = uniforms;

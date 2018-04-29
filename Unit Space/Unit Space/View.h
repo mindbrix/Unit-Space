@@ -24,6 +24,7 @@
 - (IBAction)toggleThree:(id)sender;
 - (IBAction)toggleFour:(id)sender;
 
+- (IBAction)toggleCurves:(id)sender;
 - (IBAction)toggleEllipse:(id)sender;
 - (IBAction)togglePoints:(id)sender;
 - (IBAction)toggleShowColors:(id)sender;

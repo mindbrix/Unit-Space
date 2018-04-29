@@ -178,6 +178,8 @@
                 instanceCount = call->lines.count;
                 break;
             case kCallTypeMeshCurves:
+                if (call->meshState.hideCurves)
+                    continue;
                 [commandEncoder setRenderPipelineState:_meshCurvePipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
@@ -186,6 +188,8 @@
                 instanceCount = _curvesBuffer.length / sizeof(Triangle);
                 break;
             case kCallTypeMeshConcaveCurves:
+                if (call->meshState.hideCurves)
+                    continue;
                 [commandEncoder setRenderPipelineState:call->meshState.showInterior && !call->meshState.hideTriangles ? _meshConcaveCurvePipelineState : _meshCurvePipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
