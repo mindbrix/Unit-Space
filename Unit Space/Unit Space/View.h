@@ -30,6 +30,7 @@
 - (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowInterior:(id)sender;
 - (IBAction)toggleTriangle:(id)sender;
+- (IBAction)toggleUseDelaunay:(id)sender;
 - (IBAction)toggleUseMask:(id)sender;
 
 @end

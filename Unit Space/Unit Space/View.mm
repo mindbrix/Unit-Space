@@ -39,6 +39,7 @@ using namespace std;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
+@property(nonatomic) BOOL useDelaunay;
 @property(nonatomic) BOOL useMask;
 @property(nonatomic) AffineTransform unitCTM;
 @property(nonatomic) AffineTransform ctm0;
@@ -284,6 +285,11 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleUseDelaunay:(id)sender {
+    _useDelaunay = !_useDelaunay;
+    [self reset];
+    [self redraw];
+}
 - (IBAction)toggleUseMask:(id)sender {
     _useMask = !_useMask;
     [self reset];
@@ -364,7 +370,7 @@ using namespace std;
                 _tess.addPath(p);
             }
         }
-        _tess.triangulate(_mesh, self.useMask);
+        _tess.triangulate(_mesh, self.useMask, self.useDelaunay);
         [self.metalLayer uploadMesh:_mesh];
         
         // Delete
@@ -410,7 +416,7 @@ using namespace std;
     if (self.pathBitmask & kPathBitmaskQuad)
         _tess.addPath(p2);
     
-    _tess.triangulate(_mesh, self.useMask);
+    _tess.triangulate(_mesh, self.useMask, self.useDelaunay);
     [self.metalLayer uploadMesh:_mesh];
 }
 

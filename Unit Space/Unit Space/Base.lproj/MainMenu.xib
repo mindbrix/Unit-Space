@@ -701,10 +701,16 @@
                                     <action selector="toggleShowInterior:" target="-1" id="Fvw-t5-c8n"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Use Mask" keyEquivalent="m" id="9z2-Fi-Oav">
+                            <menuItem title="Toggle Use Delaunay" keyEquivalent="d" id="9z2-Fi-Oav">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleUseMask:" target="-1" id="Nb7-ej-zoP"/>
+                                    <action selector="toggleUseDelaunay:" target="-1" id="b8b-se-YJE"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Use Mask" keyEquivalent="m" id="KkB-dm-jPl">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleUseMask:" target="-1" id="YtA-Ka-hQv"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">

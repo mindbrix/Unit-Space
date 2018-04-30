@@ -603,7 +603,7 @@ struct Tess {
         for (Path& path : _paths)
             mesh._colors.emplace_back(path._color);
     }
-    void triangulate(Mesh& mesh, bool useMasking) {
+    void triangulate(Mesh& mesh, bool useMasking, bool useDelaunay) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
         
@@ -615,8 +615,10 @@ struct Tess {
         if (useMasking)
             maskPaths(tess);
 
-//        writeTessTriangles(mesh, tess);
-        writeDelaunayTriangles(mesh);
+        if (useDelaunay)
+            writeDelaunayTriangles(mesh);
+        else
+            writeTessTriangles(mesh, tess);
     }
 
     shared_ptr<TESStesselator>			_tess;
