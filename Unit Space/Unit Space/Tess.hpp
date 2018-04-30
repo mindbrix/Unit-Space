@@ -165,6 +165,28 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     *dst++ = x3, *dst++ = y3;
 }
 
+static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sample *send) {
+    Edge *edge, *last, *src, *dst, *e0, *e1;
+    float lx;
+    
+    for (edge = begin; edge < end; ) {
+        last = edge;
+        lx = edge->lx;
+        
+        do
+            edge++;
+        while (edge < end && edge->lx == lx);
+        
+        src = dst = last;
+        while (--src >= begin)
+            if (src->ux > lx)
+                *(--dst) = *src;
+        begin = dst;
+        
+
+    }
+    return colors;
+}
 static void findIntersections(vector<Intersection>& intersections, Edge *begin, Edge *end) {
     Edge *edge, *last, *src, *dst, *e0, *e1;
     float lx;
@@ -448,13 +470,13 @@ struct Tess {
         
         Memory<Edge> edges0(count * sizeof(Edge));
         Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
+        for (Path& path : _paths)
+            end = path.writeEdges(end, (int) (& path - & _paths[0]));
         sort(begin, end);
         Memory<Edge> edges1 = edges0.clone();
         
         vector<Intersection> intersections;
         if (!useMasking) {
-            for (Path& path : _paths)
-                end = path.writeEdges(end, (int) (& path - & _paths[0]));
             findIntersections(intersections, begin, end);
             count += (int)intersections.size();
         }
@@ -510,10 +532,14 @@ struct Tess {
             x0 = points[t.i0].x, y0 = points[t.i0].y;
             x1 = points[t.i1].x, y1 = points[t.i1].y;
             x2 = points[t.i2].x, y2 = points[t.i2].y;
-            px = (x0 + x1 + x2) * 0.333f, py = (y0 + y1 + y2) * 0.333f;
-            new (sdst++) Sample(px, py, ti);
+            new (sdst++) Sample((x0 + x1 + x2) * 0.333f, (y0 + y1 + y2) * 0.333f, ti);
         }
         sort(sbegin, sdst);
+        
+//        edges = edges1.get(), begin = & edges[0], end = begin;
+//        Memory<int> colors(mesh._triangles.size() * sizeof(int));
+//        int *cbegin = colors.get(), *cdst = cbegin;
+//        cdst = writeColors(cdst, begin, end, sbegin, sdst);
         
         for (Path& path : _paths)
             mesh._colors.emplace_back(path._color);
