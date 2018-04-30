@@ -198,7 +198,7 @@ static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sam
                 if ((positive && area > 0) || (!positive && area < 0))
                     winding += positive ? 1 : -1;
             }
-            *colors++ = winding ? 1 : 0;
+            colors[si->i] = winding ? 1 : 0;
         }
     }
     return colors;
@@ -542,12 +542,19 @@ struct Tess {
         Memory<Sample> samples(mesh._triangles.size() * sizeof(Sample));
         Sample *sbegin = samples.get(), *send = sbegin;
         Vector *points = & mesh._points[0];
-        float x0, y0, x1, y1, x2, y2;
+        float x0, y0, x1, y1, x2, y2, uvw[3], d = -1e-6;
+        int imin;
         for (int ti = 0; ti < mesh._triangles.size(); ti++) {
             Triangle& t = mesh._triangles[ti];
             x0 = points[t.i0].x, y0 = points[t.i0].y;
             x1 = points[t.i1].x, y1 = points[t.i1].y;
             x2 = points[t.i2].x, y2 = points[t.i2].y;
+//            uvw[0] = uvw[1] = uvw[2] = -d;
+//            imin = x0 <= x1 && x1 <= x2 ? 0 : x1 <= x2 ? 1 : 2;
+//            uvw[imin] = 1.f + 2.f * d;
+//            px = uvw[0] * x0 + uvw[1] * x1 + uvw[2] * x2;
+//            py = uvw[0] * y0 + uvw[1] * y1 + uvw[2] * y2;
+//            new (send++) Sample(px, py, ti);
             new (send++) Sample((x0 + x1 + x2) * 0.333f, (y0 + y1 + y2) * 0.333f, ti);
         }
         sort(sbegin, send);
