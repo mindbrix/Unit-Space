@@ -24,7 +24,7 @@ struct Edge {
         kFlippedY = 1 << 1
     };
     
-    Edge(float lx, float ly, float ux, float uy, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), flags(0), p(0), ci((unsigned short int)ci), pi((unsigned short int)pi) {
+    Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {
         if (lx > ux)
             swap(this->lx, this->ux), flags |= kFlippedX;
         if (ly > uy)
@@ -156,7 +156,7 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     *dst++ = x3, *dst++ = y3;
 }
 
-static vector<Intersection> findIntersections(Edge *begin, Edge *end, bool filterDuplicates) {
+static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
     vector<Intersection> intersections;
     Edge *edge, *last, *src, *dst, *e0, *e1;
     float lx;
@@ -178,20 +178,10 @@ static vector<Intersection> findIntersections(Edge *begin, Edge *end, bool filte
         
         for (e0 = edge - 1; e0 >= last; e0--)
             for (e1 = e0 - 1; e1 >= begin; e1--)
-                if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
-                    if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
-                        bool duplicate = false;
-                        if (filterDuplicates) {
-                            for (auto& intersection : intersections)
-                                if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
-                                    intersection.e1.ci == e0->ci && intersection.e1.pi == e0->pi) {
-                                    duplicate = true;
-                                    break;
-                                }
-                        }
-                        if (!duplicate)
-                            intersections.emplace_back(*e0, *e1);
-                    }
+                if (e0->uy > e1->ly && e1->uy > e0->ly)
+                    if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr))
+                        intersections.emplace_back(*e0, *e1);
+                
     }
     return intersections;
 }
@@ -322,14 +312,14 @@ struct Path {
             count += s._npoints;
         return count;
     }
-    Edge *writeEdges(Edge *dst) {
+    Edge *writeEdges(Edge *dst, int p) {
         float lx, ly, ux, uy, *points;
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
             for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
                 lx = points[pi * 2], ly = points[pi * 2 + 1];
                 ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2], uy = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
-                new (dst++) Edge(lx, ly, ux, uy, ci, pi);
+                new (dst++) Edge(lx, ly, ux, uy, p, ci, pi);
             }
         }
         return dst;
@@ -352,9 +342,9 @@ struct Path {
     void resolveSelfIntersections() {
         int count = countPoints();
         Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
-        end = writeEdges(end);
+        end = writeEdges(end, 0);
         
-        auto intersections = findIntersections(begin, end, true);
+        auto intersections = findIntersections(begin, end);
         float *points, *controlPoints, px, py, x1, y1;
         float x01, x12, x123, y01, y12, y123;
         int ce0, ce1;
@@ -577,8 +567,8 @@ struct Tess {
         
         Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
         for (Path& path : _paths)
-            end = path.writeEdges(end);
-        auto intersections = findIntersections(begin, end, false);
+            end = path.writeEdges(end, (int) (& path - & _paths[0]));
+        auto intersections = findIntersections(begin, end);
         count += (int)intersections.size();
         
         Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
