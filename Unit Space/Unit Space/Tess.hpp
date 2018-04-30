@@ -30,15 +30,24 @@ struct Edge {
         if (ly > uy)
             swap(this->ly, this->uy), flags |= kFlippedY;
     }
-    
     float x0() { return  flags & kFlippedX ? ux : lx; }
     float y0() { return  flags & kFlippedY ? uy : ly; }
     float x1() { return ~flags & kFlippedX ? ux : lx; }
     float y1() { return ~flags & kFlippedY ? uy : ly; }
     
+    inline bool operator< (const Edge& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
+    
     float lx, ly, ux, uy;
     unsigned short int flags, p, ci, pi;
-    inline bool operator< (const Edge& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
+};
+
+struct Sample {
+    Sample(float x, float y, int i) : x(x), y(y), i(i) {}
+    
+    inline bool operator< (const Sample& other) const     { return x < other.x || (x == other.x && y < other.y); }
+    
+    float x, y;
+    int i;
 };
 
 struct Intersection {
