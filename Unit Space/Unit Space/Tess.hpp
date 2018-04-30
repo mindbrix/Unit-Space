@@ -524,7 +524,7 @@ struct Tess {
             mesh._triangles.emplace_back(t);
         }
         Memory<Sample> samples(mesh._triangles.size() * sizeof(Sample));
-        Sample *sbegin = samples.get(), *sdst = sbegin;
+        Sample *sbegin = samples.get(), *send = sbegin;
         Vector *points = & mesh._points[0];
         float x0, y0, x1, y1, x2, y2;
         for (int ti = 0; ti < mesh._triangles.size(); ti++) {
@@ -532,14 +532,15 @@ struct Tess {
             x0 = points[t.i0].x, y0 = points[t.i0].y;
             x1 = points[t.i1].x, y1 = points[t.i1].y;
             x2 = points[t.i2].x, y2 = points[t.i2].y;
-            new (sdst++) Sample((x0 + x1 + x2) * 0.333f, (y0 + y1 + y2) * 0.333f, ti);
+            new (send++) Sample((x0 + x1 + x2) * 0.333f, (y0 + y1 + y2) * 0.333f, ti);
         }
-        sort(sbegin, sdst);
+        sort(sbegin, send);
         
-//        edges = edges1.get(), begin = & edges[0], end = begin;
-//        Memory<int> colors(mesh._triangles.size() * sizeof(int));
-//        int *cbegin = colors.get(), *cdst = cbegin;
-//        cdst = writeColors(cdst, begin, end, sbegin, sdst);
+        size_t size = end - begin;
+        edges = edges1.get(), begin = & edges[0], end = begin + size;
+        Memory<int> colors(mesh._triangles.size() * sizeof(int));
+        int *cdst = colors.get();
+        writeColors(cdst, begin, end, sbegin, send);
         
         for (Path& path : _paths)
             mesh._colors.emplace_back(path._color);
