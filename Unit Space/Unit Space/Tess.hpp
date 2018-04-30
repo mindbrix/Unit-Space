@@ -156,7 +156,7 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     *dst++ = x3, *dst++ = y3;
 }
 
-static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
+static vector<Intersection> findIntersections(Edge *begin, Edge *end, bool filterDuplicates) {
     vector<Intersection> intersections;
     Edge *edge, *last, *src, *dst, *e0, *e1;
     float lx;
@@ -176,17 +176,19 @@ static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
                 *(--dst) = *src;
         begin = dst;
         
-        for (e0 = last; e0 < edge; e0++)
-            for (e1 = begin; e1 < edge; e1++)
+        for (e0 = edge - 1; e0 >= last; e0--)
+            for (e1 = e0 - 1; e1 >= begin; e1--)
                 if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
                     if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
                         bool duplicate = false;
-                        for (auto& intersection : intersections)
-                            if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
-                                intersection.e1.ci == e0->ci && intersection.e1.pi == e0->pi) {
-                                duplicate = true;
-                                break;
-                            }
+                        if (filterDuplicates) {
+                            for (auto& intersection : intersections)
+                                if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
+                                    intersection.e1.ci == e0->ci && intersection.e1.pi == e0->pi) {
+                                    duplicate = true;
+                                    break;
+                                }
+                        }
                         if (!duplicate)
                             intersections.emplace_back(*e0, *e1);
                     }
@@ -352,7 +354,7 @@ struct Path {
         Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
         end = writeEdges(end);
         
-        auto intersections = findIntersections(begin, end);
+        auto intersections = findIntersections(begin, end, true);
         float *points, *controlPoints, px, py, x1, y1;
         float x01, x12, x123, y01, y12, y123;
         int ce0, ce1;
@@ -576,7 +578,7 @@ struct Tess {
         Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
         for (Path& path : _paths)
             end = path.writeEdges(end);
-        auto intersections = findIntersections(begin, end);
+        auto intersections = findIntersections(begin, end, false);
         count += (int)intersections.size();
         
         Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
