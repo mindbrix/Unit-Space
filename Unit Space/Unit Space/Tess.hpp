@@ -276,10 +276,14 @@ struct Path {
             writeTessSubpaths(tess);
     }
     
-    vector<Intersection> findIntersections() {
+    int countPoints() {
         int count = 0;
         for (SubPath& s : _subPaths)
             count += s._npoints;
+        return count;
+    }
+    vector<Intersection> findIntersections() {
+        int count = countPoints();
         
         Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
         float lx, ly, ux, uy, *points;
@@ -560,8 +564,7 @@ struct Tess {
     void writeDelaunayTriangles(Mesh& mesh) {
         int count = 0;
         for (Path& path : _paths)
-            for (SubPath& s : path._subPaths)
-                count += s._npoints;
+            count += path.countPoints();
         
         Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
         XYZ *dst = xyz.get();
@@ -606,10 +609,6 @@ struct Tess {
     void triangulate(Mesh& mesh, bool useMasking, bool useDelaunay) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
-        
-//        if (!useMasking)
-//            for (Path& path : _paths)
-//                path.resolveSelfIntersections();
         
         writeCurves(mesh);
         if (useMasking)
