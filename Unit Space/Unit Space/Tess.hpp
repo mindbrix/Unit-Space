@@ -440,6 +440,8 @@ struct Tess {
         Memory<Edge> edges0(count * sizeof(Edge));
         Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
         sort(begin, end);
+        Memory<Edge> edges1 = edges0.clone();
+        
         vector<Intersection> intersections;
         if (!useMasking) {
             for (Path& path : _paths)
