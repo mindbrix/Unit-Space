@@ -16,74 +16,6 @@ constexpr int kPolySize = 3;
 constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
 
-#pragma mark - Algorithms
-
-// Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
-//
-static int countSplitCubics(const float *src, const int npoints, const float prec) {
-    float x0, y0, x1, y1, x2, y2, x3, y3;
-    float xD01, yD01, D01, tcubed;
-    int count = 0, calculated;
-    
-    constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
-    
-    for (int i = 0; i < npoints - 1; i += 3) {
-        const float *p = src + i * 2;
-        x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
-        
-        xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
-        D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-        tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
-        calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed));
-        count += calculated;
-    }
-    return count + 1;
-}
-
-static void splitCubics(float *dst, float *cpdst, const float *src, const int npoints, const float prec) {
-    float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
-    float xD01, yD01, D01, tcubed, t;
-    float n01, n12, n23;
-    float n012, n123;
-    float n0123;
-    
-    constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
-    
-    for (int i = 0; i < npoints - 1; i += 3) {
-        const float *p = src + i * 2;
-        x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
-        
-        do {
-            *dst++ = x0, *dst++ = y0;
-            
-            xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
-            D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-            tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
-            
-            if (tcubed < 0.999999) {
-                t = cbrt(tcubed);
-                
-                n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
-                n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
-                n0123 = lerp(t, n012, n123);
-                cpx = (3.0 * (n012 + n01) - x0 - n0123) * 0.25;
-                x0 = n0123, x1 = n123, x2 = n23;
-                
-                n01 = lerp(t, y0, y1), n12 = lerp(t, y1, y2), n23 = lerp(t, y2, y3);
-                n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
-                n0123 = lerp(t, n012, n123);
-                cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
-                y0 = n0123, y1 = n123, y2 = n23;
-                
-                *cpdst++ = cpx, *cpdst++ = cpy;
-            }
-        } while (tcubed < 0.999999);
-        
-        *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
-    }
-    *dst++ = x3, *dst++ = y3;
-}
-
 #pragma mark - Data structures
 
 struct Edge {
@@ -155,6 +87,112 @@ public:
     }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
 };
+
+#pragma mark - Algorithms
+
+// Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
+//
+static int countSplitCubics(const float *src, const int npoints, const float prec) {
+    float x0, y0, x1, y1, x2, y2, x3, y3;
+    float xD01, yD01, D01, tcubed;
+    int count = 0, calculated;
+    
+    constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
+    
+    for (int i = 0; i < npoints - 1; i += 3) {
+        const float *p = src + i * 2;
+        x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+        
+        xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
+        D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
+        tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
+        calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed));
+        count += calculated;
+    }
+    return count + 1;
+}
+
+static void splitCubics(float *dst, float *cpdst, const float *src, const int npoints, const float prec) {
+    float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
+    float xD01, yD01, D01, tcubed, t;
+    float n01, n12, n23;
+    float n012, n123;
+    float n0123;
+    
+    constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
+    
+    for (int i = 0; i < npoints - 1; i += 3) {
+        const float *p = src + i * 2;
+        x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+        
+        do {
+            *dst++ = x0, *dst++ = y0;
+            
+            xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
+            D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
+            tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
+            
+            if (tcubed < 0.999999) {
+                t = cbrt(tcubed);
+                
+                n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
+                n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+                n0123 = lerp(t, n012, n123);
+                cpx = (3.0 * (n012 + n01) - x0 - n0123) * 0.25;
+                x0 = n0123, x1 = n123, x2 = n23;
+                
+                n01 = lerp(t, y0, y1), n12 = lerp(t, y1, y2), n23 = lerp(t, y2, y3);
+                n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+                n0123 = lerp(t, n012, n123);
+                cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
+                y0 = n0123, y1 = n123, y2 = n23;
+                
+                *cpdst++ = cpx, *cpdst++ = cpy;
+            }
+        } while (tcubed < 0.999999);
+        
+        *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
+    }
+    *dst++ = x3, *dst++ = y3;
+}
+
+static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
+    vector<Intersection> intersections;
+    Edge *edge, *last, *src, *dst, *e0, *e1;
+    float lx;
+    
+    sort(begin, end);
+    for (edge = begin; edge < end; ) {
+        last = edge;
+        lx = edge->lx;
+        
+        do
+            edge++;
+        while (edge < end && edge->lx == lx);
+        
+        src = dst = last;
+        while (--src >= begin)
+            if (src->ux > lx)
+                *(--dst) = *src;
+        begin = dst;
+        
+        for (e0 = last; e0 < edge; e0++)
+            for (e1 = begin; e1 < edge; e1++)
+                if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
+                    if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
+                        bool duplicate = false;
+                        for (auto& intersection : intersections)
+                            if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
+                                intersection.e1.ci == e0->ci && intersection.e1.pi == e0->pi) {
+                                duplicate = true;
+                                break;
+                            }
+                        if (!duplicate)
+                            intersections.emplace_back(*e0, *e1);
+                    }
+    }
+    return intersections;
+}
 
 struct SubPath {
     enum Type {
@@ -282,54 +320,19 @@ struct Path {
             count += s._npoints;
         return count;
     }
-    vector<Intersection> findIntersections() {
-        int count = countPoints();
-        
-        Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
+    Edge *writeEdges(Edge *dst) {
         float lx, ly, ux, uy, *points;
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
             for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
                 lx = points[pi * 2], ly = points[pi * 2 + 1];
                 ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2], uy = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
-                new (end++) Edge(lx, ly, ux, uy, ci, pi);
+                new (dst++) Edge(lx, ly, ux, uy, ci, pi);
             }
         }
-        sort(begin, end);
-        
-        vector<Intersection> intersections;
-        Edge *edge, *last, *src, *dst, *e0, *e1;
-        for (edge = begin; edge < end; ) {
-            last = edge;
-            lx = edge->lx;
-            
-            do
-                edge++;
-            while (edge < end && edge->lx == lx);
-            
-            src = dst = last;
-            while (--src >= begin)
-                if (src->ux > lx)
-                    *(--dst) = *src;
-            begin = dst;
-            
-            for (e0 = last; e0 < edge; e0++)
-                for (e1 = begin; e1 < edge; e1++)
-                    if (e0 != e1 && e0->uy > e1->ly && e1->uy > e0->ly && e0->ux > e1->lx && e1->ux > e0->lx)
-                        if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr)) {
-                            bool duplicate = false;
-                            for (auto& intersection : intersections)
-                                if (intersection.e0.ci == e1->ci && intersection.e0.pi == e1->pi &&
-                                    intersection.e1.ci == e0->ci && intersection.e1.pi == e0->pi) {
-                                    duplicate = true;
-                                    break;
-                                }
-                            if (!duplicate)
-                                intersections.emplace_back(*e0, *e1);
-                        }
-        }
-        return intersections;
+        return dst;
     }
+    
     
     void resolveSelfIntersections(TESStesselator *tess) {
         if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3) {
@@ -345,7 +348,11 @@ struct Path {
             
     }
     void resolveSelfIntersections() {
-        auto intersections = findIntersections();
+        int count = countPoints();
+        Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
+        end = writeEdges(end);
+        
+        auto intersections = findIntersections(begin, end);
         float *points, *controlPoints, px, py, x1, y1;
         float x01, x12, x123, y01, y12, y123;
         int ce0, ce1;
@@ -566,6 +573,12 @@ struct Tess {
         for (Path& path : _paths)
             count += path.countPoints();
         
+        Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
+        for (Path& path : _paths)
+            end = path.writeEdges(end);
+        auto intersections = findIntersections(begin, end);
+        count += (int)intersections.size();
+        
         Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
         XYZ *dst = xyz.get();
         for (Path& path : _paths)
@@ -574,6 +587,11 @@ struct Tess {
                 for (int i = 0; i < s._npoints; i++)
                     dst->x = *src++, dst->y = *src++, dst->i = (int) (& path - & _paths[0]), dst++;
             }
+        float px, py;
+        for (auto& i : intersections) {
+            linesIntersection(i.e0.x0(), i.e0.y0(), i.e0.x1(), i.e0.y1(), i.e1.x0(), i.e1.y0(), i.e1.x1(), i.e1.y1(), & px, & py);
+            dst->x = px, dst->y = py, dst->i = 0, dst++;
+        }
         
         Memory<ITRIANGLE> itriangle((count + 3) * 4 * sizeof(ITRIANGLE));
         int ntri, status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
