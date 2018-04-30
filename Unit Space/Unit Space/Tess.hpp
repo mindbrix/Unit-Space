@@ -166,8 +166,10 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
 }
 
 static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sample *send) {
-    Edge *edge, *last, *src, *dst, *e0, *e1;
-    float lx;
+    Edge *edge, *last, *src, *dst, *e;
+    Sample *s = sbegin, *slast, *si;
+    float lx, nx, area;
+    int positive, winding;
     
     for (edge = begin; edge < end; ) {
         last = edge;
@@ -183,7 +185,21 @@ static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sam
                 *(--dst) = *src;
         begin = dst;
         
-
+        nx = edge < end ? edge->lx : FLT_MAX;
+        slast = s;
+        while (s < send && s->x < nx)
+            s++;
+        
+        for (si = slast; si < s; si++) {
+            winding = 0;
+            for (e = begin; e < edge; e++) {
+                area = (e->x1() - e->x0()) * (si->y - e->y0()) - (e->y1() - e->y0()) * (si->x - e->x0());
+                positive = e->x1() > e->x0() ? 1 : 0;
+                if ((positive && area > 0) || (!positive && area < 0))
+                    winding += positive ? 1 : -1;
+            }
+            *colors++ = winding ? 1 : 0;
+        }
     }
     return colors;
 }
@@ -541,9 +557,20 @@ struct Tess {
         Memory<int> colors(mesh._triangles.size() * sizeof(int));
         int *cdst = colors.get();
         writeColors(cdst, begin, end, sbegin, send);
+        for (int ti = 0; ti < mesh._triangles.size(); ti++)
+            mesh._triangles[ti].c = cdst[ti];
         
-        for (Path& path : _paths)
-            mesh._colors.emplace_back(path._color);
+        RGBA8 red(255, 0, 0, 255);
+        RGBA8 green(0, 255, 0, 255);
+        RGBA8 blue(0, 0, 255, 255);
+        RGBA8 black(0, 0, 0, 255);
+        RGBA8 alpha(255, 0, 0, 128);
+        
+        mesh._colors.emplace_back(red);
+        mesh._colors.emplace_back(green);
+        
+//        for (Path& path : _paths)
+//            mesh._colors.emplace_back(path._color);
     }
     void triangulate(Mesh& mesh, bool useMasking, bool useDelaunay) {
         mesh.empty();
