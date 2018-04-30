@@ -438,9 +438,10 @@ struct Tess {
         for (Path& path : _paths)
             count += path.countPoints();
         
+        Memory<Edge> edges0(count * sizeof(Edge));
+        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
         vector<Intersection> intersections;
         if (!useMasking) {
-            Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
             for (Path& path : _paths)
                 end = path.writeEdges(end, (int) (& path - & _paths[0]));
             findIntersections(intersections, begin, end);
