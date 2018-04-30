@@ -181,7 +181,6 @@ static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
                 if (e0->uy > e1->ly && e1->uy > e0->ly)
                     if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr))
                         intersections.emplace_back(*e0, *e1);
-                
     }
     return intersections;
 }
@@ -621,7 +620,7 @@ struct Tess {
         TESStesselator *tess = _tess.get();
         
         writeCurves(mesh);
-        if (useMasking)
+        if (useMasking && !useDelaunay)
             maskPaths(tess);
 
         if (useDelaunay)

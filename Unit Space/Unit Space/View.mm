@@ -401,9 +401,9 @@ using namespace std;
     
     Path p0(false, red);
     p0.addContour((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
-    Path p1(false, alpha);
+    Path p1(false, red);
     p1.addContour((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
-	Path p2(false, black);
+    Path p2(false, black);
 	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
 	
     _tess.reset(self.bounds.size.width, self.bounds.size.height);
@@ -411,7 +411,7 @@ using namespace std;
         _tess.addPath(p0);
     
     if (self.pathBitmask & kPathBitmaskLozenge)
-        _tess.addPath(p1);
+        _tess.addPath(p2), _tess.addPath(p1);
     
     if (self.pathBitmask & kPathBitmaskQuad)
         _tess.addPath(p2);
