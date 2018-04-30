@@ -501,6 +501,19 @@ struct Tess {
             Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, c };
             mesh._triangles.emplace_back(t);
         }
+        Memory<Sample> samples(mesh._triangles.size() * sizeof(Sample));
+        Sample *sbegin = samples.get(), *sdst = sbegin;
+        Vector *points = & mesh._points[0];
+        float x0, y0, x1, y1, x2, y2;
+        for (int ti = 0; ti < mesh._triangles.size(); ti++) {
+            Triangle& t = mesh._triangles[ti];
+            x0 = points[t.i0].x, y0 = points[t.i0].y;
+            x1 = points[t.i1].x, y1 = points[t.i1].y;
+            x2 = points[t.i2].x, y2 = points[t.i2].y;
+            px = (x0 + x1 + x2) * 0.333f, py = (y0 + y1 + y2) * 0.333f;
+            new (sdst++) Sample(px, py, ti);
+        }
+        sort(sbegin, sdst);
         
         for (Path& path : _paths)
             mesh._colors.emplace_back(path._color);
