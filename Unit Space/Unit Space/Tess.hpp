@@ -156,8 +156,7 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     *dst++ = x3, *dst++ = y3;
 }
 
-static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
-    vector<Intersection> intersections;
+static void findIntersections(vector<Intersection>& intersections, Edge *begin, Edge *end) {
     Edge *edge, *last, *src, *dst, *e0, *e1;
     float lx;
     
@@ -182,7 +181,6 @@ static vector<Intersection> findIntersections(Edge *begin, Edge *end) {
                     if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr))
                         intersections.emplace_back(*e0, *e1);
     }
-    return intersections;
 }
 
 struct SubPath {
@@ -343,7 +341,8 @@ struct Path {
         Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
         end = writeEdges(end, 0);
         
-        auto intersections = findIntersections(begin, end);
+        vector<Intersection> intersections;
+        findIntersections(intersections, begin, end);
         float *points, *controlPoints, px, py, x1, y1;
         float x01, x12, x123, y01, y12, y123;
         int ce0, ce1;
@@ -559,30 +558,35 @@ struct Tess {
             }
         }
     }
-    void writeDelaunayTriangles(Mesh& mesh) {
+    void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
         for (Path& path : _paths)
             count += path.countPoints();
         
-        Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
-        for (Path& path : _paths)
-            end = path.writeEdges(end, (int) (& path - & _paths[0]));
-        auto intersections = findIntersections(begin, end);
-        count += (int)intersections.size();
-        
+        vector<Intersection> intersections;
+        if (!useMasking) {
+            Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
+            for (Path& path : _paths)
+                end = path.writeEdges(end, (int) (& path - & _paths[0]));
+            findIntersections(intersections, begin, end);
+            count += (int)intersections.size();
+        }
+
         Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
         XYZ *dst = xyz.get();
+        
+        float px, py;
+        for (auto& i : intersections) {
+            linesIntersection(i.e0.x0(), i.e0.y0(), i.e0.x1(), i.e0.y1(), i.e1.x0(), i.e1.y0(), i.e1.x1(), i.e1.y1(), & px, & py);
+            dst->x = px, dst->y = py, dst->i = 0, dst++;
+        }
+        
         for (Path& path : _paths)
             for (SubPath& s : path._subPaths) {
                 float *src = s._points.get();
                 for (int i = 0; i < s._npoints; i++)
                     dst->x = *src++, dst->y = *src++, dst->i = (int) (& path - & _paths[0]), dst++;
             }
-        float px, py;
-        for (auto& i : intersections) {
-            linesIntersection(i.e0.x0(), i.e0.y0(), i.e0.x1(), i.e0.y1(), i.e1.x0(), i.e1.y0(), i.e1.x1(), i.e1.y1(), & px, & py);
-            dst->x = px, dst->y = py, dst->i = 0, dst++;
-        }
         
         Memory<ITRIANGLE> itriangle((count + 3) * 4 * sizeof(ITRIANGLE));
         int ntri, status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
@@ -620,11 +624,11 @@ struct Tess {
         TESStesselator *tess = _tess.get();
         
         writeCurves(mesh);
-        if (useMasking && !useDelaunay)
+        if (useMasking)
             maskPaths(tess);
 
         if (useDelaunay)
-            writeDelaunayTriangles(mesh);
+            writeDelaunayTriangles(mesh, useMasking);
         else
             writeTessTriangles(mesh, tess);
     }
