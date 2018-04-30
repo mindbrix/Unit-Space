@@ -205,59 +205,6 @@ struct SubPath {
             if (closed)
                 _npoints--;
         }
-        update();
-    }
-    
-    SubPath clone() {
-        SubPath c = *this;
-        _points = _points.clone();
-        _controlPoints = _controlPoints.clone();
-        return c;
-    }
-    
-    int index(Type type, float px, float py) {
-        float *points, *src, *end;
-        if ((points = (type == kPoints ? _points : _controlPoints).get()))
-            for (src = points, end = & points[_npoints * 2]; src < end; src += 2)
-                if (src[0] == px && src[1] == py)
-                    return (int)(src - points) / 2;
-        return INT_MAX;
-    }
-    void insert(Type type, int pi, float px, float py) {
-        if (type == kPoints)
-            _npoints++;
-        Memory<float>& memory = type == kPoints ? _points : _controlPoints;
-        memory.alloc(_npoints * kPointStride);
-        float *points = memory.get(), *dst, *src, *end;
-        dst = & points[(_npoints - 1) * 2], src = dst - 2, end = & points[pi * 2];
-        while (src > end)
-            *dst-- = *src--, *dst-- = *src--;
-        points[pi * 2] = px, points[pi * 2 + 1] = py;
-    }
-    void replace(Type type, int pi, float px, float py) {
-        float *points = (type == kPoints ? _points : _controlPoints).get();
-        points[pi * 2] = px, points[pi * 2 + 1] = py;
-    }
-    void splice(Type type, int di, int si, float px, float py) {
-        float *points, *dst, *src, *end;
-        if ((points = (type == kPoints ? _points : _controlPoints).get()) == nullptr)
-            return;
-        
-        di = di % _npoints, si = si % _npoints;
-        points[si * 2] = px, points[si * 2 + 1] = py;
-        
-        if (di > si)
-            dst = points, src = & points[si * 2], end = & points[di * 2];
-        else
-            dst = & points[di * 2], src = & points[si * 2], end = & points[_npoints * 2];
-        
-        if (type == kPoints)
-            _npoints = int(dst + (end - src) - points) / 2;
-
-        while (src < end)
-            *dst++ = *src++, *dst++ = *src++;
-    }
-    void update() {
         _area = pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, _points.get(), _points.get() + _npoints * 2, kPointStride);
     }
@@ -335,78 +282,6 @@ struct Path {
         if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess);
             
-    }
-    void resolveSelfIntersections() {
-        int count = countPoints();
-        Edge *edges = (Edge *)alloca(count * sizeof(Edge)), *begin = & edges[0], *end = begin;
-        end = writeEdges(end, 0);
-        
-        vector<Intersection> intersections;
-        findIntersections(intersections, begin, end);
-        float *points, *controlPoints, px, py, x1, y1;
-        float x01, x12, x123, y01, y12, y123;
-        int ce0, ce1;
-        for (int j = 0; j < intersections.size(); j++) {
-            Edge& e0 = intersections[j].e0, & e1 = intersections[j].e1;
-            if (e0.ci == e1.ci) {
-                ce0 = 0, ce1 = 0;
-                for (int k = j + 1; k < intersections.size(); k++) {
-                    Intersection& in = intersections[k];
-                    if (e0.ci == in.e0.ci && in.e0.ci == in.e1.ci) {
-                        if (e0.pi == in.e0.pi || e0.pi == in.e1.pi)
-                            ce0++;
-                        if (e1.pi == in.e0.pi || e1.pi == in.e1.pi)
-                            ce1++;
-                    }
-                }
-                
-                points = _subPaths[e0.ci]._points.get();
-                controlPoints = _subPaths[e0.ci]._controlPoints.get();
-                linesIntersection(e0.x0(), e0.y0(), e0.x1(), e0.y1(), e1.x0(), e1.y0(), e1.x1(), e1.y1(), & px, & py);
-                
-                if ((ce0 || ce1) && controlPoints != nullptr) {
-                    Edge& e = ce0 > ce1 ? e0 : e1;
-                    
-                    x1 = controlPoints[e.pi * 2], y1 = controlPoints[e.pi * 2 + 1];
-                    x01 = (e.x0() + x1) * 0.5, x12 = (x1 + e.x1()) * 0.5, x123 = (x01 + x12) * 0.5;
-                    y01 = (e.y0() + y1) * 0.5, y12 = (y1 + e.y1()) * 0.5, y123 = (y01 + y12) * 0.5;
-                    _subPaths[e.ci].insert(SubPath::kPoints, e.pi + 1, x123, y123);
-                    _subPaths[e.ci].replace(SubPath::kControlPoints, e.pi, x01, y01);
-                    _subPaths[e.ci].insert(SubPath::kControlPoints, e.pi + 1, x12, y12);
-                } else {
-                
-                    _subPaths.emplace_back(_subPaths[e0.ci].clone());
-                    _subPaths[e0.ci].splice(SubPath::kControlPoints, e1.pi + 1, e0.pi, px, py);
-                    _subPaths[e0.ci].splice(SubPath::kPoints, e1.pi + 1, e0.pi, px, py);
-                
-                    _subPaths.back().splice(SubPath::kControlPoints, e0.pi + 1, e1.pi, px, py);
-                    _subPaths.back().splice(SubPath::kPoints, e0.pi + 1, e1.pi, px, py);
-                    
-                    int ci, nci = (int)_subPaths.size() - 1, pi;
-                    for (int k = j + 1; k < intersections.size(); k++) {
-                        Edge& ie0 = intersections[k].e0, & ie1 = intersections[k].e1;
-                        if (e0.ci == ie0.ci && ie0.ci == ie1.ci) {
-                            ci = e0.ci;
-                            if ((pi = _subPaths[ci].index(SubPath::kPoints, ie0.x0(), ie0.y0())) == INT_MAX)
-                                ci = nci, pi = _subPaths[ci].index(SubPath::kPoints, ie0.x0(), ie0.y0());
-                            
-                            assert(pi != INT_MAX);
-                            if (pi != INT_MAX)
-                                ie0.ci = ci, ie0.pi = pi;
-                            
-                            ci = e0.ci;
-                            if ((pi = _subPaths[ci].index(SubPath::kPoints, ie1.x0(), ie1.y0())) == INT_MAX)
-                                ci = nci, pi = _subPaths[ci].index(SubPath::kPoints, ie1.x0(), ie1.y0());
-                            
-                            assert(pi != INT_MAX);
-                            if (pi != INT_MAX)
-                                ie1.ci = ci, ie1.pi = pi;
-                        }
-                    }
-                }
-            }
-        }
-        update();
     }
     
     void writeTessSubpaths(TESStesselator *tess) {
@@ -611,7 +486,6 @@ struct Tess {
             d01 = i1 - i0, d12 = i2 - i1, d20 = i0 - i2;
             c0 = pts[i0].i, c1 = pts[i1].i, c2 = pts[i2].i;
             c = std::abs(d01) > 1 ? c0 : std::abs(d12) > 1 ? c1 : std::abs(d20) > 1 ? c2 : c0;
-//            c = c != -1 ? c : c0 == c1 ? c0 : c1 == c2 ? c1 : c2 == c0 ? c2 : c0;
             Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, c };
             mesh._triangles.emplace_back(t);
         }
