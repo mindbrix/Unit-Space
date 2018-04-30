@@ -160,7 +160,6 @@ static void findIntersections(vector<Intersection>& intersections, Edge *begin, 
     Edge *edge, *last, *src, *dst, *e0, *e1;
     float lx;
     
-    sort(begin, end);
     for (edge = begin; edge < end; ) {
         last = edge;
         lx = edge->lx;
@@ -440,6 +439,7 @@ struct Tess {
         
         Memory<Edge> edges0(count * sizeof(Edge));
         Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
+        sort(begin, end);
         vector<Intersection> intersections;
         if (!useMasking) {
             for (Path& path : _paths)
