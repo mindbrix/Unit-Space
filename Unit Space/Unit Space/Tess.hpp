@@ -43,9 +43,9 @@ struct Edge {
 
 struct ActiveEdge {
     ActiveEdge(Edge *e) : e(e) {}
-    inline bool operator< (const ActiveEdge& other) const     { return lx < other.lx; }
+    inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
     
-    float *lx;
+    float *ly;
     Edge *e;
 };
 
@@ -486,6 +486,46 @@ struct Tess {
                 }
             }
         }
+    }
+    void writeTriangles(Mesh& mesh) {
+        int polyCount = 0;
+        for (Path& path : _paths)
+            polyCount += path._subPaths.size();
+        
+        int baseIndices[_paths.size()];
+        int bases[polyCount];
+        int base = 0, bi = 0;
+        for (int i = 0; i < _paths.size(); i++) {
+            baseIndices[i] = bi;
+            for (SubPath& s : _paths[i]._subPaths) {
+                bases[bi++] = base;
+                base += s._npoints;
+            }
+        }
+        int count = base;
+        
+        Memory<Edge> edges0(count * sizeof(Edge));
+        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
+        for (Path& path : _paths)
+            end = path.writeEdges(end, (int) (& path - & _paths[0]));
+        
+        vector<Intersection> intersections;
+        findIntersections(intersections, begin, end);
+        edges0.alloc((count + ((int)intersections.size()) * 4) * sizeof(Edge));
+        //            count += (int)intersections.size();
+        
+        edges = edges0.get(), begin = & edges[0], end = begin + count;
+        float ax, ay, bx, by, cx, cy, dx, dy, px, py;
+        for (auto& i : intersections) {
+            ax = i.e0.x0(), ay = i.e0.y0(), bx = i.e0.x1(), by = i.e0.y1();
+            cx = i.e1.x0(), cy = i.e1.y0(), dx = i.e1.x1(), dy = i.e1.y1();
+            linesIntersection(ax, ay, bx, by, cx, cy, dx, dy, & px, & py);
+            new (end++)Edge(ax, ay, px, py, i.e0.p, i.e0.ci, i.e0.pi);
+            new (end++)Edge(px, py, bx, by, i.e0.p, i.e0.ci, i.e0.pi);
+            new (end++)Edge(cx, cy, px, py, i.e1.p, i.e1.ci, i.e1.pi);
+            new (end++)Edge(px, py, dx, dy, i.e1.p, i.e1.ci, i.e1.pi);
+        }
+        sort(begin, end);
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
