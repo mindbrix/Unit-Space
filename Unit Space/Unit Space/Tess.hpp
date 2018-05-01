@@ -198,7 +198,7 @@ static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sam
                 if ((positive && area > 0) || (!positive && area < 0))
                     winding += positive ? 1 : -1;
             }
-            colors[si->i] = winding ? 1 : 0;
+            colors[si->i] = winding & 1 ? 1 : 0;
         }
     }
     return colors;
