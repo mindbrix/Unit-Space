@@ -195,7 +195,7 @@ static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sam
             for (e = begin; e < edge; e++) {
                 area = (e->x1() - e->x0()) * (si->y - e->y0()) - (e->y1() - e->y0()) * (si->x - e->x0());
                 positive = e->flags & Edge::kFlippedX ? 0 : 1;
-                if ((positive && area > 0) || (!positive && area < 0))
+                if (e->lx != e->ux && ((positive && area > 0) || (!positive && area < 0)))
                     winding += positive ? 1 : -1;
             }
             colors[si->i] = winding & 1 ? 1 : 0;
