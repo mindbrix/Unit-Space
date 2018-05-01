@@ -172,7 +172,19 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     }
     *dst++ = x3, *dst++ = y3;
 }
-
+static Edge* lowerBound(Edge *first, Edge *last, float lx) {
+    Edge *it;
+    int count = (int)(last - first), step;
+    while (count > 0) {
+        it = first; step = count / 2; it += step;
+        if (it->lx < lx) {
+            first = ++it;
+            count -= step + 1;
+        } else
+            count = step;
+    }
+    return first;
+}
 static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sample *send) {
     Edge *edge, *last, *src, *dst, *e;
     Sample *s = sbegin, *slast, *si;
@@ -488,44 +500,52 @@ struct Tess {
         }
     }
     void writeTriangles(Mesh& mesh) {
-        int polyCount = 0;
+        int count = 0;
         for (Path& path : _paths)
-            polyCount += path._subPaths.size();
-        
-        int baseIndices[_paths.size()];
-        int bases[polyCount];
-        int base = 0, bi = 0;
-        for (int i = 0; i < _paths.size(); i++) {
-            baseIndices[i] = bi;
-            for (SubPath& s : _paths[i]._subPaths) {
-                bases[bi++] = base;
-                base += s._npoints;
-            }
-        }
-        int count = base;
+            count += path.countPoints();
         
         Memory<Edge> edges0(count * sizeof(Edge));
-        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
+        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin, *lower, *lend;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
+        sort(begin, end);
+        Memory<Edge> edges1 = edges0.clone();
+        
         vector<Intersection> intersections;
         findIntersections(intersections, begin, end);
-        edges0.alloc((count + ((int)intersections.size()) * 4) * sizeof(Edge));
-        //            count += (int)intersections.size();
+        edges1.alloc((count + ((int)intersections.size()) * 4) * sizeof(Edge));
         
-        edges = edges0.get(), begin = & edges[0], end = begin + count;
+        edges = edges1.get(), begin = & edges[0], end = begin + count, lend = end;
         float ax, ay, bx, by, cx, cy, dx, dy, px, py;
         for (auto& i : intersections) {
             ax = i.e0.x0(), ay = i.e0.y0(), bx = i.e0.x1(), by = i.e0.y1();
             cx = i.e1.x0(), cy = i.e1.y0(), dx = i.e1.x1(), dy = i.e1.y1();
             linesIntersection(ax, ay, bx, by, cx, cy, dx, dy, & px, & py);
-            new (end++)Edge(ax, ay, px, py, i.e0.p, i.e0.ci, i.e0.pi);
-            new (end++)Edge(px, py, bx, by, i.e0.p, i.e0.ci, i.e0.pi);
-            new (end++)Edge(cx, cy, px, py, i.e1.p, i.e1.ci, i.e1.pi);
-            new (end++)Edge(px, py, dx, dy, i.e1.p, i.e1.ci, i.e1.pi);
+            new (end++) Edge(ax, ay, px, py, i.e0.p, i.e0.ci, i.e0.pi);
+            new (end++) Edge(px, py, bx, by, i.e0.p, i.e0.ci, i.e0.pi);
+            new (end++) Edge(cx, cy, px, py, i.e1.p, i.e1.ci, i.e1.pi);
+            new (end++) Edge(px, py, dx, dy, i.e1.p, i.e1.ci, i.e1.pi);
+            
+            lower = lowerBound(begin, lend, i.e0.lx);
+            for (; lower < lend && lower->lx == i.e0.lx; lower++)
+                if (lower->p == i.e0.p && lower->ci == i.e0.ci && lower->pi == i.e0.pi) {
+                    lower->lx = FLT_MAX;
+                    break;
+                }
+            lower = lowerBound(begin, lend, i.e1.lx);
+            for (; lower < lend && lower->lx == i.e1.lx; lower++)
+                if (lower->p == i.e1.p && lower->ci == i.e1.ci && lower->pi == i.e1.pi) {
+                    lower->lx = FLT_MAX;
+                    break;
+                }
+            
         }
         sort(begin, end);
+        while (end > edges && (end - 1)->lx == FLT_MAX)
+            end--;
+        
+        end = end;
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
@@ -635,6 +655,8 @@ struct Tess {
         if (useMasking)
             maskPaths(tess);
 
+        writeTriangles(mesh);
+        
         if (useDelaunay)
             writeDelaunayTriangles(mesh, useMasking);
         else
