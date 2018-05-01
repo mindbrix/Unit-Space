@@ -41,6 +41,14 @@ struct Edge {
     unsigned short int flags, p, ci, pi;
 };
 
+struct ActiveEdge {
+    ActiveEdge(Edge *e) : e(e) {}
+    inline bool operator< (const ActiveEdge& other) const     { return lx < other.lx; }
+    
+    float *lx;
+    Edge *e;
+};
+
 struct Sample {
     Sample(float x, float y, int i) : x(x), y(y), i(i) {}
     

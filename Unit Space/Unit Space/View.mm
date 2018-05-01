@@ -385,7 +385,7 @@ using namespace std;
         };
 
 		_quad = {
-			{ 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }
+            { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { -50, 50 }
 		};
 		
         [self triangulate];
@@ -411,7 +411,7 @@ using namespace std;
         _tess.addPath(p0);
     
     if (self.pathBitmask & kPathBitmaskLozenge)
-        _tess.addPath(p2), _tess.addPath(p1);
+        _tess.addPath(p1);
     
     if (self.pathBitmask & kPathBitmaskQuad)
         _tess.addPath(p2);
