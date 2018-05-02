@@ -29,9 +29,7 @@ struct Edge {
 
     inline float y(float x) {
         float t = (x - x0) / (x1 - x0);
-//        assert(t >= 0 && t <= 1);
-        if (t < 0)  t = 0;
-        if (t > 1)  t = 1;
+        assert(t >= 0 && t <= 1);
         return y0 + t * (y1 - y0);
     }
     float lx() const { return x0 > x1 ? x1 : x0; }
@@ -48,7 +46,7 @@ struct Edge {
 struct EdgeEvent {
     EdgeEvent(Edge *e, float x, bool isStart) : e(e), x(x), isStart(isStart) {}
     
-    inline bool operator< (const EdgeEvent& other) const     { return x < other.x || (x == other.x && !isStart && other.isStart); }
+    inline bool operator< (const EdgeEvent& other) const     { return x < other.x || (x == other.x && isStart && !other.isStart); }
     
     float x;
     bool isStart;
@@ -58,8 +56,12 @@ struct EdgeEvent {
 struct ActiveEdge {
     ActiveEdge(Edge *e) : e(e) {}
     inline void update(float x0, float x1) {
-        ly = e->y(x0), uy = e->y(x1);
-        if (ly > uy) std::swap(ly, uy);
+        if (e->x0 == e->x1)
+            ly = e->y0, uy = e->y1;
+        else
+            ly = e->y(x0), uy = e->y(x1);
+        if (ly > uy)
+            std::swap(ly, uy);
     }
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
     
@@ -518,11 +520,10 @@ struct Tess {
         Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
         EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *elast, *esrc, *edst;
         
-        for (src = begin; src < end; src++)
-            if (src->x0 != src->x1) {
-                new (eend++) EdgeEvent(src, src->lx(), true);
-                new (eend++) EdgeEvent(src, src->ux(), false);
-            }
+        for (src = begin; src < end; src++) {
+            new (eend++) EdgeEvent(src, src->lx(), true);
+            new (eend++) EdgeEvent(src, src->ux(), false);
+        }
         sort(ebegin, eend);
         
         
