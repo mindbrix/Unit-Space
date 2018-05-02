@@ -518,7 +518,7 @@ struct Tess {
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
         Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
-        EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *elast, *esrc, *edst;
+        EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *esrc;
         
         for (src = begin; src < end; src++) {
             new (eend++) EdgeEvent(src, src->lx(), true);
@@ -526,9 +526,9 @@ struct Tess {
         }
         sort(ebegin, eend);
         
-        
+        vector<Intersection> intersections;
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
-        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *active = abegin, *alower, *asrc, *adst, *a0;
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *asrc, *adst, *a0;
         
         float lx, ux, ly, uy, px, py;
         event = ebegin;
@@ -544,15 +544,16 @@ struct Tess {
                     ly = a.e->ly(), uy = a.e->uy();
                     for (a0 = abegin; a0 < aend; a0++)
                         if (a0->e->uy() > ly && uy > a0->e->ly())
-                            if (linesIntersection(a0->e->x0, a0->e->y0, a0->e->x1, a0->e->y1, a.e->x0, a.e->y0, a.e->x1, a.e->y1, & px, & py)) {
-                                a0 = a0;
-                            }
+                            if (linesIntersection(a0->e->x0, a0->e->y0, a0->e->x1, a0->e->y1, a.e->x0, a.e->y0, a.e->x1, a.e->y1, & px, & py))
+                                intersections.emplace_back(*(a0->e), *(a.e), px, py);
                     
-                    adst = aend, asrc = adst - 1;
-                    while (adst > abegin && asrc->ly > a.ly)
-                        *adst-- = *asrc--;
-                    *adst = a;
-                    aend++;
+                    *aend++ = a;
+                    
+//                    adst = aend, asrc = adst - 1;
+//                    while (adst > abegin && asrc->ly > a.ly)
+//                        *adst-- = *asrc--;
+//                    *adst = a;
+//                    aend++;
                 } else {
                     for (adst = abegin; adst < aend & adst->e != event->e; adst++) {}
                     asrc = adst + 1;
@@ -563,6 +564,7 @@ struct Tess {
             } while (++event < eend && event->x == lx);
                 
         }
+        int intersectionCount = 0;
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
