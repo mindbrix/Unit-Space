@@ -31,6 +31,12 @@ struct Edge {
         if (ly > uy)
             swap(this->ly, this->uy), flags |= kFlippedY;
     }
+    float y(float x) {
+        float t = (x - x0()) / (x1() - x0());
+        if (t < 0)  t = 0;
+        if (t > 1)  t = 1;
+        return y0() + t * (y1() - y0());
+    }
     float x0() { return  flags & kFlippedX ? ux : lx; }
     float y0() { return  flags & kFlippedY ? uy : ly; }
     float x1() { return ~flags & kFlippedX ? ux : lx; }
