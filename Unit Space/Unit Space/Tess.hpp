@@ -530,7 +530,7 @@ struct Tess {
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *active = abegin, *alower, *asrc, *adst, *a0;
         
-        float lx, ux, px, py;
+        float lx, ux, ly, uy, px, py;
         event = ebegin;
         while (event < eend) {
             lx = event->x;
@@ -540,10 +540,10 @@ struct Tess {
             do {
                 if (event->isStart) {
                     ActiveEdge a(event->e);
-                    a.update(lx, ux);
                     
+                    ly = a.e->ly(), uy = a.e->uy();
                     for (a0 = abegin; a0 < aend; a0++)
-                        if (a0->uy > a.ly && a.uy > a0->ly)
+                        if (a0->e->uy() > ly && uy > a0->e->ly())
                             if (linesIntersection(a0->e->x0, a0->e->y0, a0->e->x1, a0->e->y1, a.e->x0, a.e->y0, a.e->x1, a.e->y1, & px, & py)) {
                                 a0 = a0;
                             }
