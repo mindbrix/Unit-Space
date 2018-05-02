@@ -191,19 +191,6 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     }
     *dst++ = x3, *dst++ = y3;
 }
-static ActiveEdge* lowerBound(ActiveEdge *first, ActiveEdge *last, float ly) {
-    ActiveEdge *it;
-    int count = (int)(last - first), step;
-    while (count > 0) {
-        it = first; step = count / 2; it += step;
-        if (it->ly < ly) {
-            first = ++it;
-            count -= step + 1;
-        } else
-            count = step;
-    }
-    return first;
-}
 static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sample *send) {
     Edge *edge, *last, *src, *dst, *e;
     Sample *s = sbegin, *slast, *si;
@@ -528,8 +515,6 @@ struct Tess {
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
-//        sort(begin, end);
-        
         Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
         EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *elast, *esrc, *edst;
         
@@ -577,73 +562,6 @@ struct Tess {
             } while (++event < eend && event->x == lx);
                 
         }
-        
-        
-        /*
-        for (edge = begin; edge < end; ) {
-            last = edge;
-            lx = ux = edge->lx();
-            
-            do
-                edge++;
-            while (edge < end && edge->lx() == lx);
-            
-            if (edge < end)
-                ux = edge->lx();
-            
-            alast = active;
-            for (src = last; src < edge; src++)
-                if (src->x0 != src->x1)
-                    new (active++) ActiveEdge(src);
-            
-            asrc = adst = abegin;
-            for (; asrc < alast; asrc++)
-                if (asrc->e->ux() > lx)
-                    *adst++ = *asrc;
-            while (asrc < active)
-                *adst++ = *asrc++;
-            active = adst;
-            
-            for (adst = abegin; adst < active; adst++)
-                adst->update(lx, ux);
-            sort(abegin, active);
-            
-        }
-        
-       
-        Memory<Edge> edges1 = edges0.clone();
-        
-        vector<Intersection> intersections;
-        findIntersections(intersections, begin, end);
-        edges1.alloc((count + ((int)intersections.size()) * 4) * sizeof(Edge));
-        
-        edges = edges1.get(), begin = edges, end = begin + count;
-        for (auto& i : intersections) {
-            for (lower = lowerBound(begin, end, i.e0.lx()); lower < end && lower->lx() == i.e0.lx(); lower++)
-                if (lower->p == i.e0.p && lower->ci == i.e0.ci && lower->pi == i.e0.pi) {
-                    lower->flags |= Edge::kStale;
-                    break;
-                }
-            for (lower = lowerBound(begin, end, i.e1.lx()); lower < end && lower->lx() == i.e1.lx(); lower++)
-                if (lower->p == i.e1.p && lower->ci == i.e1.ci && lower->pi == i.e1.pi) {
-                    lower->flags |= Edge::kStale;
-                    break;
-                }
-        }
-        dst = src = begin;
-        for (; src < end; src++)
-            if (~src->flags & Edge::kStale)
-                *dst++ = *src;
-        end = dst;
-        
-        for (auto& i : intersections) {
-            new (end++) Edge(i.e0.x0, i.e0.y0, i.px, i.py, i.e0.p, i.e0.ci, i.e0.pi);
-            new (end++) Edge(i.px, i.py, i.e0.x1, i.e0.y1, i.e0.p, i.e0.ci, i.e0.pi);
-            new (end++) Edge(i.e1.x0, i.e1.y0, i.px, i.py, i.e1.p, i.e1.ci, i.e1.pi);
-            new (end++) Edge(i.px, i.py, i.e1.x1, i.e1.y1, i.e1.p, i.e1.ci, i.e1.pi);
-        }
-        sort(begin, end);
-         */
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
@@ -715,12 +633,6 @@ struct Tess {
             x0 = points[t.i0].x, y0 = points[t.i0].y;
             x1 = points[t.i1].x, y1 = points[t.i1].y;
             x2 = points[t.i2].x, y2 = points[t.i2].y;
-//            uvw[0] = uvw[1] = uvw[2] = -d;
-//            imin = x0 <= x1 && x1 <= x2 ? 0 : x1 <= x2 ? 1 : 2;
-//            uvw[imin] = 1.f + 2.f * d;
-//            px = uvw[0] * x0 + uvw[1] * x1 + uvw[2] * x2;
-//            py = uvw[0] * y0 + uvw[1] * y1 + uvw[2] * y2;
-//            new (send++) Sample(px, py, ti);
             new (send++) Sample((x0 + x1 + x2) * 0.333f, (y0 + y1 + y2) * 0.333f, ti);
         }
         sort(sbegin, send);
