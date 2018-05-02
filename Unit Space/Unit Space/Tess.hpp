@@ -29,7 +29,7 @@ struct Edge {
 
     inline float y(float x) {
         float t = (x - x0) / (x1 - x0);
-        assert(t >= 0 && t <= 1);
+//        assert(t >= 0 && t <= 1);
         if (t < 0)  t = 0;
         if (t > 1)  t = 1;
         return y0 + t * (y1 - y0);
@@ -43,6 +43,16 @@ struct Edge {
     
     float x0, y0, x1, y1;
     unsigned short int flags, p, ci, pi;
+};
+
+struct EdgeEvent {
+    EdgeEvent(Edge *e, float x, bool isStart) : e(e), x(x), isStart(isStart) {}
+    
+    inline bool operator< (const EdgeEvent& other) const     { return x < other.x; }
+    
+    float x;
+    bool isStart;
+    Edge *e;
 };
 
 struct ActiveEdge {
