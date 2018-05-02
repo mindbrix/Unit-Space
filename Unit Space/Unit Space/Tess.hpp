@@ -49,10 +49,10 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e) {}
+    ActiveEdge(Edge *e, float ly, float uy) : e(e), ly(ly), uy(uy) {}
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
     
-    float *ly;
+    float ly, uy;
     Edge *e;
 };
 
