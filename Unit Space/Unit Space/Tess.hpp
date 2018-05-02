@@ -48,7 +48,7 @@ struct Edge {
 struct EdgeEvent {
     EdgeEvent(Edge *e, float x, bool isStart) : e(e), x(x), isStart(isStart) {}
     
-    inline bool operator< (const EdgeEvent& other) const     { return x < other.x; }
+    inline bool operator< (const EdgeEvent& other) const     { return x < other.x || (x == other.x && !isStart && other.isStart); }
     
     float x;
     bool isStart;
@@ -191,12 +191,12 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     }
     *dst++ = x3, *dst++ = y3;
 }
-static Edge* lowerBound(Edge *first, Edge *last, float lx) {
-    Edge *it;
+static ActiveEdge* lowerBound(ActiveEdge *first, ActiveEdge *last, float ly) {
+    ActiveEdge *it;
     int count = (int)(last - first), step;
     while (count > 0) {
         it = first; step = count / 2; it += step;
-        if (it->lx() < lx) {
+        if (it->ly < ly) {
             first = ++it;
             count -= step + 1;
         } else
@@ -542,9 +542,9 @@ struct Tess {
         
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
-        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *active = abegin, *alast, *asrc, *adst;
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *active = abegin, *alower, *asrc, *adst, *a0;
         
-        float lx, ux;
+        float lx, ux, px, py;
         event = ebegin;
         while (event < eend) {
             lx = event->x;
@@ -555,6 +555,13 @@ struct Tess {
                 if (event->isStart) {
                     ActiveEdge a(event->e);
                     a.update(lx, ux);
+                    
+                    for (a0 = abegin; a0 < aend; a0++)
+                        if (a0->uy > a.ly && a.uy > a0->ly)
+                            if (linesIntersection(a0->e->x0, a0->e->y0, a0->e->x1, a0->e->y1, a.e->x0, a.e->y0, a.e->x1, a.e->y1, & px, & py)) {
+                                a0 = a0;
+                            }
+                    
                     adst = aend, asrc = adst - 1;
                     while (adst > abegin && asrc->ly > a.ly)
                         *adst-- = *asrc--;
@@ -562,14 +569,13 @@ struct Tess {
                     aend++;
                 } else {
                     for (adst = abegin; adst < aend & adst->e != event->e; adst++) {}
-                    assert(adst < aend);
-                    
                     asrc = adst + 1;
                     while (asrc < aend)
                         *adst++ = *asrc++;
                     aend--;
                 }
             } while (++event < eend && event->x == lx);
+                
         }
         
         
