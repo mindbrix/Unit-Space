@@ -548,18 +548,28 @@ struct Tess {
         event = ebegin;
         while (event < eend) {
             lx = event->x;
-            for (esrc = event; esrc < eend && esrc->x == lx; esrc++)
-                ;
+            for (esrc = event; esrc < eend && esrc->x == lx; esrc++) {}
             ux = esrc < eend ? esrc->x : lx;
             
             do {
                 if (event->isStart) {
-                    (new (active++) ActiveEdge(event->e))->update(lx, ux);
+                    ActiveEdge a(event->e);
+                    a.update(lx, ux);
+                    adst = aend, asrc = adst - 1;
+                    while (adst > abegin && asrc->ly > a.ly)
+                        *adst-- = *asrc--;
+                    *adst = a;
+                    aend++;
                 } else {
-                    ;
+                    for (adst = abegin; adst < aend & adst->e != event->e; adst++) {}
+                    assert(adst < aend);
+                    
+                    asrc = adst + 1;
+                    while (asrc < aend)
+                        *adst++ = *asrc++;
+                    aend--;
                 }
             } while (++event < eend && event->x == lx);
-            
         }
         
         
