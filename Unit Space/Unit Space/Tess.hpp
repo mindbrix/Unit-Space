@@ -528,12 +528,42 @@ struct Tess {
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
-        sort(begin, end);
+//        sort(begin, end);
+        
+        Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
+        EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *elast, *esrc, *edst;
+        
+        for (src = begin; src < end; src++)
+            if (src->x0 != src->x1) {
+                new (eend++) EdgeEvent(src, src->lx(), true);
+                new (eend++) EdgeEvent(src, src->ux(), false);
+            }
+        sort(ebegin, eend);
+        
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *active = abegin, *alast, *asrc, *adst;
         
         float lx, ux;
+        event = ebegin;
+        while (event < eend) {
+            lx = event->x;
+            for (esrc = event; esrc < eend && esrc->x == lx; esrc++)
+                ;
+            ux = esrc < eend ? esrc->x : lx;
+            
+            do {
+                if (event->isStart) {
+                    (new (active++) ActiveEdge(event->e))->update(lx, ux);
+                } else {
+                    ;
+                }
+            } while (++event < eend && event->x == lx);
+            
+        }
+        
+        
+        /*
         for (edge = begin; edge < end; ) {
             last = edge;
             lx = ux = edge->lx();
@@ -564,7 +594,7 @@ struct Tess {
             
         }
         
-        /*
+       
         Memory<Edge> edges1 = edges0.clone();
         
         vector<Intersection> intersections;
