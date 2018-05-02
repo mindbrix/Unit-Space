@@ -45,7 +45,11 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e, float ly, float uy) : e(e), ly(ly), uy(uy) {}
+    ActiveEdge(Edge *e) : e(e) {}
+    inline void update(float x0, float x1) {
+        ly = e->y(x0), uy = e->y(x1);
+        if (ly > uy) std::swap(ly, uy);
+    }
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
     
     float ly, uy;
@@ -514,6 +518,35 @@ struct Tess {
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
         sort(begin, end);
+        
+        Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *active = abegin, *alast, *asrc, *adst;
+        
+        float lx, ux;
+        for (edge = begin; edge < end; ) {
+            last = edge;
+            lx = ux = edge->lx();
+            
+            do
+                edge++;
+            while (edge < end && edge->lx() == lx);
+            
+            if (edge < end)
+                ux = edge->lx();
+            
+            for (src = last; src < edge; src++)
+                new (active++) ActiveEdge(src);
+            
+//            for (adst = abegin; adst < active; adst++)
+//                adst->update(lx, ux);
+            
+            src = dst = last;
+            while (--src >= begin)
+                if (src->ux() > lx)
+                    *(--dst) = *src;
+            begin = dst;
+        }
+        
         Memory<Edge> edges1 = edges0.clone();
         
         vector<Intersection> intersections;
