@@ -534,17 +534,19 @@ struct Tess {
             if (edge < end)
                 ux = edge->lx();
             
+            alast = active;
             for (src = last; src < edge; src++)
                 new (active++) ActiveEdge(src);
             
-//            for (adst = abegin; adst < active; adst++)
-//                adst->update(lx, ux);
+            asrc = adst = alast;
+            while (--asrc >= abegin)
+                if (asrc->e->ux() > lx)
+                    *(--adst) = *asrc;
+            abegin = adst;
             
-            src = dst = last;
-            while (--src >= begin)
-                if (src->ux() > lx)
-                    *(--dst) = *src;
-            begin = dst;
+            for (adst = abegin; adst < active; adst++)
+                adst->update(lx, ux);
+            
         }
         
         Memory<Edge> edges1 = edges0.clone();
