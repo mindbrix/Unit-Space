@@ -509,7 +509,7 @@ struct Tess {
             count += path.countPoints();
         
         Memory<Edge> edges0(count * sizeof(Edge));
-        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin, *lower, *src, *dst;
+        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *last, *lower, *src, *dst;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
@@ -520,7 +520,7 @@ struct Tess {
         findIntersections(intersections, begin, end);
         edges1.alloc((count + ((int)intersections.size()) * 4) * sizeof(Edge));
         
-        edges = edges1.get(), begin = & edges[0], end = begin + count;
+        edges = edges1.get(), begin = edges, end = begin + count;
         for (auto& i : intersections) {
             for (lower = lowerBound(begin, end, i.e0.lx()); lower < end && lower->lx() == i.e0.lx(); lower++)
                 if (lower->p == i.e0.p && lower->ci == i.e0.ci && lower->pi == i.e0.pi) {
@@ -555,7 +555,7 @@ struct Tess {
             count += path.countPoints();
         
         Memory<Edge> edges0(count * sizeof(Edge));
-        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin;
+        Edge *edges = edges0.get(), *begin = edges, *end = begin;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         sort(begin, end);
@@ -630,7 +630,7 @@ struct Tess {
         sort(sbegin, send);
         
         size_t size = end - begin;
-        edges = edges1.get(), begin = & edges[0], end = begin + size;
+        edges = edges1.get(), begin = edges, end = begin + size;
         Memory<int> colors(mesh._triangles.size() * sizeof(int));
         int *cdst = colors.get();
         writeColors(cdst, begin, end, sbegin, send);
