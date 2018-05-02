@@ -80,6 +80,9 @@ struct Sample {
 
 struct Intersection {
     Intersection(Edge e0, Edge e1, float px, float py) : e0(e0), e1(e1), px(px), py(py) {}
+    
+    inline bool operator< (const Intersection& other) const     { return px < other.px || (px == other.px && py < other.py); }
+    
     Edge e0, e1;
     float px, py;
 };
@@ -516,16 +519,23 @@ struct Tess {
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *last, *lower, *src, *dst;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
+//        sort(begin, end);
+//
+//        Memory<Edge> edges1 = edges0.clone();
+//
+//        vector<Intersection> intersections;
+//        findIntersections(intersections, begin, end);
+        
         
         Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
         EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *esrc;
-        
+
         for (src = begin; src < end; src++) {
             new (eend++) EdgeEvent(src, src->lx(), true);
             new (eend++) EdgeEvent(src, src->ux(), false);
         }
         sort(ebegin, eend);
-        
+        /**/
         vector<Intersection> intersections;
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *asrc, *adst, *a0;
@@ -564,6 +574,7 @@ struct Tess {
             } while (++event < eend && event->x == lx);
                 
         }
+         
         int intersectionCount = 0;
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
