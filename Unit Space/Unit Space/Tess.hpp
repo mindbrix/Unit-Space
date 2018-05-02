@@ -21,7 +21,8 @@ constexpr float kSplitCubicPrecision = 0.1;
 struct Edge {
     enum Flags {
         kFlippedX = 1 << 0,
-        kFlippedY = 1 << 1
+        kFlippedY = 1 << 1,
+        kStale    = 1 << 2
     };
     
     Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : lx(lx), ly(ly), ux(ux), uy(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {
@@ -59,8 +60,9 @@ struct Sample {
 };
 
 struct Intersection {
-    Intersection(Edge e0, Edge e1) : e0(e0), e1(e1) {}
+    Intersection(Edge e0, Edge e1, float px, float py) : e0(e0), e1(e1), px(px), py(py) {}
     Edge e0, e1;
+    float px, py;
 };
 
 template<typename T>
@@ -225,7 +227,7 @@ static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sam
 }
 static void findIntersections(vector<Intersection>& intersections, Edge *begin, Edge *end) {
     Edge *edge, *last, *src, *dst, *e0, *e1;
-    float lx;
+    float lx, px, py;
     
     for (edge = begin; edge < end; ) {
         last = edge;
@@ -244,8 +246,8 @@ static void findIntersections(vector<Intersection>& intersections, Edge *begin, 
         for (e0 = edge - 1; e0 >= last; e0--)
             for (e1 = e0 - 1; e1 >= begin; e1--)
                 if (e0->uy > e1->ly && e1->uy > e0->ly)
-                    if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), nullptr, nullptr))
-                        intersections.emplace_back(*e0, *e1);
+                    if (linesIntersection(e0->x0(), e0->y0(), e0->x1(), e0->y1(), e1->x0(), e1->y0(), e1->x1(), e1->y1(), & px, & py))
+                        intersections.emplace_back(*e0, *e1, px, py);
     }
 }
 
@@ -505,7 +507,7 @@ struct Tess {
             count += path.countPoints();
         
         Memory<Edge> edges0(count * sizeof(Edge));
-        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin, *lower, *lend;
+        Edge *edges = edges0.get(), *begin = & edges[0], *end = begin, *lower, *src, *dst;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
@@ -516,34 +518,32 @@ struct Tess {
         findIntersections(intersections, begin, end);
         edges1.alloc((count + ((int)intersections.size()) * 4) * sizeof(Edge));
         
-        edges = edges1.get(), begin = & edges[0], end = begin + count, lend = end;
-        float ax, ay, bx, by, cx, cy, dx, dy, px, py;
+        edges = edges1.get(), begin = & edges[0], end = begin + count;
         for (auto& i : intersections) {
-            ax = i.e0.x0(), ay = i.e0.y0(), bx = i.e0.x1(), by = i.e0.y1();
-            cx = i.e1.x0(), cy = i.e1.y0(), dx = i.e1.x1(), dy = i.e1.y1();
-            linesIntersection(ax, ay, bx, by, cx, cy, dx, dy, & px, & py);
-            new (end++) Edge(ax, ay, px, py, i.e0.p, i.e0.ci, i.e0.pi);
-            new (end++) Edge(px, py, bx, by, i.e0.p, i.e0.ci, i.e0.pi);
-            new (end++) Edge(cx, cy, px, py, i.e1.p, i.e1.ci, i.e1.pi);
-            new (end++) Edge(px, py, dx, dy, i.e1.p, i.e1.ci, i.e1.pi);
-            
-            lower = lowerBound(begin, lend, i.e0.lx);
-            for (; lower < lend && lower->lx == i.e0.lx; lower++)
+            for (lower = lowerBound(begin, end, i.e0.lx); lower < end && lower->lx == i.e0.lx; lower++)
                 if (lower->p == i.e0.p && lower->ci == i.e0.ci && lower->pi == i.e0.pi) {
-                    lower->lx = FLT_MAX;
+                    lower->flags |= Edge::kStale;
                     break;
                 }
-            lower = lowerBound(begin, lend, i.e1.lx);
-            for (; lower < lend && lower->lx == i.e1.lx; lower++)
+            for (lower = lowerBound(begin, end, i.e1.lx); lower < end && lower->lx == i.e1.lx; lower++)
                 if (lower->p == i.e1.p && lower->ci == i.e1.ci && lower->pi == i.e1.pi) {
-                    lower->lx = FLT_MAX;
+                    lower->flags |= Edge::kStale;
                     break;
                 }
-            
+        }
+        dst = src = begin;
+        for (; src < end; src++)
+            if (~src->flags & Edge::kStale)
+                *dst++ = *src;
+        end = dst;
+        
+        for (auto& i : intersections) {
+            new (end++) Edge(i.e0.x0(), i.e0.y0(), i.px, i.py, i.e0.p, i.e0.ci, i.e0.pi);
+            new (end++) Edge(i.px, i.py, i.e0.x1(), i.e0.y1(), i.e0.p, i.e0.ci, i.e0.pi);
+            new (end++) Edge(i.e1.x0(), i.e1.y0(), i.px, i.py, i.e1.p, i.e1.ci, i.e1.pi);
+            new (end++) Edge(i.px, i.py, i.e1.x1(), i.e1.y1(), i.e1.p, i.e1.ci, i.e1.pi);
         }
         sort(begin, end);
-        while (end > edges && (end - 1)->lx == FLT_MAX)
-            end--;
         
         end = end;
     }
@@ -571,7 +571,7 @@ struct Tess {
         float px, py;
         for (auto& i : intersections) {
             linesIntersection(i.e0.x0(), i.e0.y0(), i.e0.x1(), i.e0.y1(), i.e1.x0(), i.e1.y0(), i.e1.x1(), i.e1.y1(), & px, & py);
-            dst->x = px, dst->y = py, dst->i = 0, dst++;
+            dst->x = i.px, dst->y = i.py, dst->i = 0, dst++;
         }
         
         for (Path& path : _paths)
