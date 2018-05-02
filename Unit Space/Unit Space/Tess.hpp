@@ -27,8 +27,9 @@ struct Edge {
     
     Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
-    float y(float x) {
+    inline float y(float x) {
         float t = (x - x0) / (x1 - x0);
+        assert(t >= 0 && t <= 1);
         if (t < 0)  t = 0;
         if (t > 1)  t = 1;
         return y0 + t * (y1 - y0);
@@ -536,7 +537,8 @@ struct Tess {
             
             alast = active;
             for (src = last; src < edge; src++)
-                new (active++) ActiveEdge(src);
+                if (src->x0 != src->x1)
+                    new (active++) ActiveEdge(src);
             
             asrc = adst = abegin;
             for (; asrc < alast; asrc++)
