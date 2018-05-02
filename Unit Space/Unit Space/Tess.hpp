@@ -538,17 +538,21 @@ struct Tess {
             for (src = last; src < edge; src++)
                 new (active++) ActiveEdge(src);
             
-            asrc = adst = alast;
-            while (--asrc >= abegin)
+            asrc = adst = abegin;
+            for (; asrc < alast; asrc++)
                 if (asrc->e->ux() > lx)
-                    *(--adst) = *asrc;
-            abegin = adst;
+                    *adst++ = *asrc;
+            while (asrc < active)
+                *adst++ = *asrc++;
+            active = adst;
             
             for (adst = abegin; adst < active; adst++)
                 adst->update(lx, ux);
+            sort(abegin, active);
             
         }
         
+        /*
         Memory<Edge> edges1 = edges0.clone();
         
         vector<Intersection> intersections;
@@ -581,8 +585,7 @@ struct Tess {
             new (end++) Edge(i.px, i.py, i.e1.x1, i.e1.y1, i.e1.p, i.e1.ci, i.e1.pi);
         }
         sort(begin, end);
-        
-        end = end;
+         */
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
