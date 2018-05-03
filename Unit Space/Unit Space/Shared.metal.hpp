@@ -44,7 +44,12 @@ struct Bounds {
     float lx, ly, ux, uy;
 };
 
-struct Vector { float x, y; };
+struct Vector {
+    Vector() {}
+    Vector(float x, float y) : x(x), y(y) {}
+    
+    float x, y;
+};
 
 struct _Size { float w, h; };
 

@@ -574,6 +574,7 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend, *a;
         
         
+        int pi;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         ref = rbegin;
         for (division = dbegin; division < dend; ) {
@@ -603,10 +604,28 @@ struct Tess {
             for (a = abegin + 1; a < aend; a++) {
                 y3 = a->lyt(), y2 = a->uyt();
                 
+                pi = (int)mesh._points.size();
+                Triangle t0 = { pi, pi + 1, pi + 2, 0 };
+                Triangle t1 = { pi, pi + 2, pi + 3, 0 };
+                mesh._triangles.emplace_back(t0);
+                mesh._triangles.emplace_back(t1);
+                
+                mesh._points.emplace_back(x0, y0);
+                mesh._points.emplace_back(x1, y1);
+                mesh._points.emplace_back(x2, y2);
+                mesh._points.emplace_back(x3, y3);
+                
                 y0 = y3, y1 = y2;
             }
         }
-        int intersectionCount = 0;
+        RGBA8 red(255, 0, 0, 255);
+        RGBA8 green(0, 255, 0, 255);
+        RGBA8 blue(0, 0, 255, 255);
+        RGBA8 black(0, 0, 0, 255);
+        RGBA8 alpha(255, 0, 0, 128);
+        
+        mesh._colors.emplace_back(red);
+        mesh._colors.emplace_back(green);
     }
     
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
@@ -713,10 +732,10 @@ struct Tess {
 
         writeTriangles(mesh);
         
-        if (useDelaunay)
-            writeDelaunayTriangles(mesh, useMasking);
-        else
-            writeTessTriangles(mesh, tess);
+//        if (useDelaunay)
+//            writeDelaunayTriangles(mesh, useMasking);
+//        else
+//            writeTessTriangles(mesh, tess);
     }
 
     shared_ptr<TESStesselator>			_tess;
