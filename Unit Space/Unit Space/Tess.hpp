@@ -102,6 +102,8 @@ public:
             free(header->memory), free(header);
     }
     void alloc(size_t size) {
+        if (size == 0)
+            return;
         if (header)
             header->memory = ::realloc(header->memory, size);
         else {
@@ -519,12 +521,74 @@ struct Tess {
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *last, *lower, *src, *dst;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
-//        sort(begin, end);
+        
+        sort(begin, end);
+        Memory<Edge> edges1 = edges0.clone();
+
+        vector<Intersection> intersections;
+        findIntersections(intersections, begin, end);
+        
+        Memory<float> xDivisions(((count * 2) + (int)intersections.size()) * sizeof(float));
+        float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
+        
+        edges = edges1.get(), begin = edges, end = begin + count;
+        for (edge = begin; edge < end; edge++)
+            *dend++ = edge->x0, *dend++ = edge->x1;
+        for (auto& i : intersections)
+            *dend++ = i.px;
+        sort(dbegin, dend);
+        
+        Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend;
+        float lx, ux;
+        
+        edge = begin;
+        
+//        for (division = dbegin; division < dend; ) {
+//            lx = *division;
+//            do
+//                division++;
+//            while (division < dend && *division == lx);
+//            ux = division < dend ? *division : lx;
 //
-//        Memory<Edge> edges1 = edges0.clone();
+//            last = edge;
+//            do
+//                edge++;
+//            while (edge < end && edge->lx() == lx);
 //
-//        vector<Intersection> intersections;
-//        findIntersections(intersections, begin, end);
+//            src = dst = last;
+//            while (--src >= begin)
+//                if (src->ux() > lx)
+//                    *(--dst) = *src;
+//            begin = dst;
+//
+//
+//        }
+        
+        /*
+        for (edge = begin; edge < end; ) {
+            last = edge;
+            lx = edge->lx();
+            
+            do
+                edge++;
+            while (edge < end && edge->lx() == lx);
+            
+            ux = edge < end ? edge->lx() : (edge - 1)->ux();
+            
+            src = dst = last;
+            while (--src >= begin)
+                if (src->ux() > lx)
+                    *(--dst) = *src;
+            begin = dst;
+            
+            aend = abegin;
+            for (src = begin; src < edge; src++)
+                (new (aend++) ActiveEdge(src))->update(lx, ux);
+            
+        }
+        
+        
         
         
         Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
@@ -535,7 +599,7 @@ struct Tess {
             new (eend++) EdgeEvent(src, src->ux(), false);
         }
         sort(ebegin, eend);
-        /**/
+        
         vector<Intersection> intersections;
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *asrc, *adst, *a0;
@@ -572,9 +636,9 @@ struct Tess {
                     aend--;
                 }
             } while (++event < eend && event->x == lx);
-                
-        }
          
+        }
+         */
         int intersectionCount = 0;
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
