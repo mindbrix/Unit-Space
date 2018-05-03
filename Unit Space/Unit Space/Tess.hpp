@@ -86,6 +86,9 @@ struct ActiveEdge {
         if (ly > uy)
             std::swap(ly, uy);
     }
+    inline float lyt()  { return e->y0 + lt * (e->y1 - e->y0); }
+    inline float uyt()  { return e->y0 + ut * (e->y1 - e->y0); }
+    
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
     
     float ly, uy;
@@ -571,7 +574,7 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend, *a;
         
         
-        float lx, ux;
+        float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         ref = rbegin;
         for (division = dbegin; division < dend; ) {
             lx = *division;
@@ -595,8 +598,12 @@ struct Tess {
                 (new (aend++) ActiveEdge(rsrc->e, lx, ux));
             sort(abegin, aend);
             
-            for (a = abegin; a < aend; a++) {
-                a = a;
+            x0 = x3 = lx, x1 = x2 = ux;
+            y0 = abegin->lyt(), y1 = abegin->uyt();
+            for (a = abegin + 1; a < aend; a++) {
+                y3 = a->lyt(), y2 = a->uyt();
+                
+                y0 = y3, y1 = y2;
             }
         }
         int intersectionCount = 0;
