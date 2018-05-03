@@ -600,9 +600,9 @@ struct Tess {
             sort(abegin, aend);
             
             x0 = x3 = lx, x1 = x2 = ux;
-            y0 = abegin->lyt(), y1 = abegin->uyt();
-            winding = abegin->e->x0 > abegin->e->x1 ? 1 : -1;
-            for (a = abegin + 1; a < aend; a++) {
+            y0 = y1 = y2 = y3 = 0;
+            winding = 0;
+            for (a = abegin; a < aend; a++) {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
@@ -623,7 +623,6 @@ struct Tess {
                     mesh._points.emplace_back(x2, y2);
                     mesh._points.emplace_back(x3, y3);
                 }
-            
                 winding += a->e->x0 > a->e->x1 ? 1 : -1;
                 y0 = y3, y1 = y2;
             }
