@@ -525,7 +525,7 @@ struct Tess {
             count += path.countPoints();
         
         Memory<Edge> edges0(count * sizeof(Edge));
-        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *last, *lower, *src, *dst;
+        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
@@ -552,10 +552,10 @@ struct Tess {
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend;
+        
+        
         float lx, ux;
-        
         ref = rbegin;
-        
         for (division = dbegin; division < dend; ) {
             lx = *division;
             do
@@ -575,34 +575,9 @@ struct Tess {
 
 
         }
-        
         int intersectionCount = 0;
-        
-        /*
-        for (edge = begin; edge < end; ) {
-            last = edge;
-            lx = edge->lx();
-            
-            do
-                edge++;
-            while (edge < end && edge->lx() == lx);
-            
-            ux = edge < end ? edge->lx() : (edge - 1)->ux();
-            
-            src = dst = last;
-            while (--src >= begin)
-                if (src->ux() > lx)
-                    *(--dst) = *src;
-            begin = dst;
-            
-            aend = abegin;
-            for (src = begin; src < edge; src++)
-                (new (aend++) ActiveEdge(src))->update(lx, ux);
-         
-        }
-         */
-        
     }
+    
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
         for (Path& path : _paths)
