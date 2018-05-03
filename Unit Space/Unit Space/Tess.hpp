@@ -602,6 +602,9 @@ struct Tess {
             x0 = x3 = lx, x1 = x2 = ux;
             y0 = abegin->lyt(), y1 = abegin->uyt();
             for (a = abegin + 1; a < aend; a++) {
+                if (a->e->x0 == a->e->x1)
+                    continue;
+                
                 y3 = a->lyt(), y2 = a->uyt();
                 
                 pi = (int)mesh._points.size();
