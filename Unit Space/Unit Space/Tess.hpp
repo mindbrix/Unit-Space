@@ -27,15 +27,8 @@ struct Edge {
     
     Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
-    inline float tx(float x) {
-        float t = (x - x0) / (x1 - x0);
-        assert(t >= 0 && t <= 1);
-        return t;
-    }
     inline float y(float x) {
-        float t = (x - x0) / (x1 - x0);
-        assert(t >= 0 && t <= 1);
-        return y0 + t * (y1 - y0);
+        return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
     }
     float lx() const { return x0 > x1 ? x1 : x0; }
     float ly() const { return y0 > y1 ? y1 : y0; }
@@ -69,11 +62,11 @@ struct ActiveEdge {
     ActiveEdge(Edge *e, float lx, float ux) : e(e) {
         if (e->x0 == e->x1) {
             ly = e->y0, uy = e->y1;
-            lt = ut = 0;
+            lyt = uyt = 0;
             if (ly > uy)
                 std::swap(ly, uy);
         } else {
-            ut = e->tx(lx);
+            uyt = e->y(lx);
             update(ux);
         }
     }
@@ -81,18 +74,16 @@ struct ActiveEdge {
         if (e->x0 == e->x1)
             return;
         
-        lt = ut, ut = e->tx(ux);
-        ly = e->y0 + lt * (e->y1 - e->y0), uy = e->y0 + ut * (e->y1 - e->y0);
+        lyt = uyt, uyt = e->y(ux);
+        ly = lyt, uy = uyt;
         if (ly > uy)
             std::swap(ly, uy);
     }
-    inline float lyt()  { return e->y0 + lt * (e->y1 - e->y0); }
-    inline float uyt()  { return e->y0 + ut * (e->y1 - e->y0); }
     
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly || (ly == other.ly && uy < other.uy); }
     
     float ly, uy;
-    float lt, ut;
+    float lyt, uyt;
     Edge *e;
 };
 
@@ -606,7 +597,7 @@ struct Tess {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
-                y3 = a->lyt(), y2 = a->uyt();
+                y3 = a->lyt, y2 = a->uyt;
                 
                 if ((winding & 1) != 0) {
                     pi = (int)mesh._points.size();
