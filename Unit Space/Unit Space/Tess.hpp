@@ -594,7 +594,6 @@ struct Tess {
                     *(--rdst) = *rsrc;
             rbegin = rdst;
 
-            winding = 0;
             aend = abegin;
             for (rsrc = rbegin; rsrc < ref; rsrc++)
                 (new (aend++) ActiveEdge(rsrc->e, lx, ux));
@@ -602,30 +601,30 @@ struct Tess {
             
             x0 = x3 = lx, x1 = x2 = ux;
             y0 = abegin->lyt(), y1 = abegin->uyt();
+            winding = abegin->e->x0 > abegin->e->x1 ? 1 : -1;
             for (a = abegin + 1; a < aend; a++) {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
-                winding += a->e->x0 > a->e->x1 ? 1 : -1;
-                
-                if ((winding & 1) == 0)
-                    continue;
                 y3 = a->lyt(), y2 = a->uyt();
                 
-                pi = (int)mesh._points.size();
-                if (y1 == y2)
-                    mesh._triangles.emplace_back(pi, pi + 1, pi + 3, 0);
-                else if (y0 == y3)
-                    mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
-                else {
-                    mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
-                    mesh._triangles.emplace_back(pi, pi + 2, pi + 3, 0);
+                if ((winding & 1) != 0) {
+                    pi = (int)mesh._points.size();
+                    if (y1 == y2)
+                        mesh._triangles.emplace_back(pi, pi + 1, pi + 3, 0);
+                    else if (y0 == y3)
+                        mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
+                    else {
+                        mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
+                        mesh._triangles.emplace_back(pi, pi + 2, pi + 3, 0);
+                    }
+                    mesh._points.emplace_back(x0, y0);
+                    mesh._points.emplace_back(x1, y1);
+                    mesh._points.emplace_back(x2, y2);
+                    mesh._points.emplace_back(x3, y3);
                 }
-                mesh._points.emplace_back(x0, y0);
-                mesh._points.emplace_back(x1, y1);
-                mesh._points.emplace_back(x2, y2);
-                mesh._points.emplace_back(x3, y3);
-                
+            
+                winding += a->e->x0 > a->e->x1 ? 1 : -1;
                 y0 = y3, y1 = y2;
             }
         }
