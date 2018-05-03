@@ -43,6 +43,13 @@ struct Edge {
     unsigned short int flags, p, ci, pi;
 };
 
+struct EdgeRef {
+    EdgeRef(Edge *edge) : e(edge) {}
+    
+    inline bool operator< (const EdgeRef& other) const     { return *e < *other.e; }
+    Edge *e;
+};
+
 struct EdgeEvent {
     EdgeEvent(Edge *e, float x, bool isStart) : e(e), x(x), isStart(isStart) {}
     
@@ -538,11 +545,16 @@ struct Tess {
             *dend++ = i.px;
         sort(dbegin, dend);
         
+        Memory<EdgeRef> edgeRefs(count * sizeof(EdgeRef));
+        EdgeRef *refs = edgeRefs.get(), *rbegin = refs, *rend = refs, *ref, *rlast, *rsrc, *rdst;
+        for (edge = begin; edge < end; edge++)
+            new (rend++) EdgeRef(edge);
+        
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend;
         float lx, ux;
         
-        edge = begin;
+        ref = rbegin;
         
         for (division = dbegin; division < dend; ) {
             lx = *division;
@@ -551,15 +563,15 @@ struct Tess {
             while (division < dend && *division == lx);
             ux = division < dend ? *division : lx;
 
-            last = edge;
-            while (edge < end && edge->lx() == lx)
-                edge++;
+            rlast = ref;
+            while (ref < rend && ref->e->lx() == lx)
+                ref++;
 
-            src = dst = last;
-            while (--src >= begin)
-                if (src->ux() > lx)
-                    *(--dst) = *src;
-            begin = dst;
+            rsrc = rdst = rlast;
+            while (--rsrc >= rbegin)
+                if (rsrc->e->ux() > lx)
+                    *(--rdst) = *rsrc;
+            rbegin = rdst;
 
 
         }
