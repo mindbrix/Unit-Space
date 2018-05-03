@@ -89,7 +89,7 @@ struct ActiveEdge {
     inline float lyt()  { return e->y0 + lt * (e->y1 - e->y0); }
     inline float uyt()  { return e->y0 + ut * (e->y1 - e->y0); }
     
-    inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
+    inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly || (ly == other.ly && uy < other.uy); }
     
     float ly, uy;
     float lt, ut;
@@ -574,7 +574,7 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend, *a;
         
         
-        int pi;
+        int pi, winding;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         ref = rbegin;
         for (division = dbegin; division < dend; ) {
@@ -594,6 +594,7 @@ struct Tess {
                     *(--rdst) = *rsrc;
             rbegin = rdst;
 
+            winding = 0;
             aend = abegin;
             for (rsrc = rbegin; rsrc < ref; rsrc++)
                 (new (aend++) ActiveEdge(rsrc->e, lx, ux));
@@ -605,6 +606,10 @@ struct Tess {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
+                winding += a->e->x0 > a->e->x1 ? 1 : -1;
+                
+                if ((winding & 1) == 0)
+                    continue;
                 y3 = a->lyt(), y2 = a->uyt();
                 
                 pi = (int)mesh._points.size();
