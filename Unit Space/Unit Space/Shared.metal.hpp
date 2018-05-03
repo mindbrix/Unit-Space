@@ -104,6 +104,9 @@ struct MeshState {
 };
 
 struct Triangle {
+    Triangle() {}
+    Triangle(int i0, int i1, int i2, int c) : i0(i0), i1(i1), i2(i2), c(c) {}
+    
     int i0, i1, i2, c;
 };
 

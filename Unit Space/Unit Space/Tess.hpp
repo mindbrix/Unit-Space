@@ -608,10 +608,8 @@ struct Tess {
                 y3 = a->lyt(), y2 = a->uyt();
                 
                 pi = (int)mesh._points.size();
-                Triangle t0 = { pi, pi + 1, pi + 2, 0 };
-                Triangle t1 = { pi, pi + 2, pi + 3, 0 };
-                mesh._triangles.emplace_back(t0);
-                mesh._triangles.emplace_back(t1);
+                mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
+                mesh._triangles.emplace_back(pi, pi + 2, pi + 3, 0);
                 
                 mesh._points.emplace_back(x0, y0);
                 mesh._points.emplace_back(x1, y1);
