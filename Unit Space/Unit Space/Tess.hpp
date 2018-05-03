@@ -27,6 +27,11 @@ struct Edge {
     
     Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
+    inline float tx(float x) {
+        float t = (x - x0) / (x1 - x0);
+        assert(t >= 0 && t <= 1);
+        return t;
+    }
     inline float y(float x) {
         float t = (x - x0) / (x1 - x0);
         assert(t >= 0 && t <= 1);
@@ -61,18 +66,30 @@ struct EdgeEvent {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e) {}
-    inline void update(float x0, float x1) {
-        if (e->x0 == e->x1)
+    ActiveEdge(Edge *e, float lx, float ux) : e(e) {
+        if (e->x0 == e->x1) {
             ly = e->y0, uy = e->y1;
-        else
-            ly = e->y(x0), uy = e->y(x1);
+            lt = ut = 0;
+            if (ly > uy)
+                std::swap(ly, uy);
+        } else {
+            ut = e->tx(lx);
+            update(ux);
+        }
+    }
+    inline void update(float ux) {
+        if (e->x0 == e->x1)
+            return;
+        
+        lt = ut, ut = e->tx(ux);
+        ly = e->y0 + lt * (e->y1 - e->y0), uy = e->y0 + ut * (e->y1 - e->y0);
         if (ly > uy)
             std::swap(ly, uy);
     }
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly; }
     
     float ly, uy;
+    float lt, ut;
     Edge *e;
 };
 
@@ -575,7 +592,7 @@ struct Tess {
 
             aend = abegin;
             for (rsrc = rbegin; rsrc < ref; rsrc++)
-                (new (aend++) ActiveEdge(rsrc->e))->update(lx, ux);
+                (new (aend++) ActiveEdge(rsrc->e, lx, ux));
             sort(abegin, aend);
             
             for (a = abegin; a < aend; a++) {
