@@ -544,26 +544,27 @@ struct Tess {
         
         edge = begin;
         
-//        for (division = dbegin; division < dend; ) {
-//            lx = *division;
-//            do
-//                division++;
-//            while (division < dend && *division == lx);
-//            ux = division < dend ? *division : lx;
-//
-//            last = edge;
-//            do
-//                edge++;
-//            while (edge < end && edge->lx() == lx);
-//
-//            src = dst = last;
-//            while (--src >= begin)
-//                if (src->ux() > lx)
-//                    *(--dst) = *src;
-//            begin = dst;
-//
-//
-//        }
+        for (division = dbegin; division < dend; ) {
+            lx = *division;
+            do
+                division++;
+            while (division < dend && *division == lx);
+            ux = division < dend ? *division : lx;
+
+            last = edge;
+            while (edge < end && edge->lx() == lx)
+                edge++;
+
+            src = dst = last;
+            while (--src >= begin)
+                if (src->ux() > lx)
+                    *(--dst) = *src;
+            begin = dst;
+
+
+        }
+        
+        int intersectionCount = 0;
         
         /*
         for (edge = begin; edge < end; ) {
@@ -585,61 +586,10 @@ struct Tess {
             aend = abegin;
             for (src = begin; src < edge; src++)
                 (new (aend++) ActiveEdge(src))->update(lx, ux);
-            
-        }
-        
-        
-        
-        
-        Memory<EdgeEvent> edgeEvents(count * 2 * sizeof(EdgeEvent));
-        EdgeEvent *events = edgeEvents.get(), *ebegin = events, *eend = ebegin, *event = ebegin, *esrc;
-
-        for (src = begin; src < end; src++) {
-            new (eend++) EdgeEvent(src, src->lx(), true);
-            new (eend++) EdgeEvent(src, src->ux(), false);
-        }
-        sort(ebegin, eend);
-        
-        vector<Intersection> intersections;
-        Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
-        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *asrc, *adst, *a0;
-        
-        float lx, ux, ly, uy, px, py;
-        event = ebegin;
-        while (event < eend) {
-            lx = event->x;
-            for (esrc = event; esrc < eend && esrc->x == lx; esrc++) {}
-            ux = esrc < eend ? esrc->x : lx;
-            
-            do {
-                if (event->isStart) {
-                    ActiveEdge a(event->e);
-                    
-                    ly = a.e->ly(), uy = a.e->uy();
-                    for (a0 = abegin; a0 < aend; a0++)
-                        if (a0->e->uy() > ly && uy > a0->e->ly())
-                            if (linesIntersection(a0->e->x0, a0->e->y0, a0->e->x1, a0->e->y1, a.e->x0, a.e->y0, a.e->x1, a.e->y1, & px, & py))
-                                intersections.emplace_back(*(a0->e), *(a.e), px, py);
-                    
-                    *aend++ = a;
-                    
-//                    adst = aend, asrc = adst - 1;
-//                    while (adst > abegin && asrc->ly > a.ly)
-//                        *adst-- = *asrc--;
-//                    *adst = a;
-//                    aend++;
-                } else {
-                    for (adst = abegin; adst < aend & adst->e != event->e; adst++) {}
-                    asrc = adst + 1;
-                    while (asrc < aend)
-                        *adst++ = *asrc++;
-                    aend--;
-                }
-            } while (++event < eend && event->x == lx);
          
         }
          */
-        int intersectionCount = 0;
+        
     }
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
         int count = 0;
