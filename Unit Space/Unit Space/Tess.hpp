@@ -551,7 +551,7 @@ struct Tess {
             new (rend++) EdgeRef(edge);
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
-        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend;
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend, *a;
         
         
         float lx, ux;
@@ -573,7 +573,14 @@ struct Tess {
                     *(--rdst) = *rsrc;
             rbegin = rdst;
 
-
+            aend = abegin;
+            for (rsrc = rbegin; rsrc < ref; rsrc++)
+                (new (aend++) ActiveEdge(rsrc->e))->update(lx, ux);
+            sort(abegin, aend);
+            
+            for (a = abegin; a < aend; a++) {
+                a = a;
+            }
         }
         int intersectionCount = 0;
     }
