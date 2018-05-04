@@ -70,6 +70,11 @@
     descriptor.label = @"Edge";
     self.meshEdgePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
+    descriptor.label = @"Interior";
+    self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;

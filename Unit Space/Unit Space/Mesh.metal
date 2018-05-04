@@ -66,6 +66,38 @@ fragment float4 edge_fragment_main(EdgeVertex vert [[stage_in]], constant State 
     return 1;
 }
 
+#pragma mark - Interior
+
+struct InteriorVertex
+{
+    float4 position [[position]];
+    float4 color;
+};
+
+vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+{
+    device Triangle &triangle = triangles[iid - biid];
+    
+    int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
+    Vector p = points[i];
+    
+    float2 devicePoint = {
+        p.x * state.CTM.a + p.y * state.CTM.c + state.CTM.tx,
+        p.x * state.CTM.b + p.y * state.CTM.d + state.CTM.ty
+    };
+    
+    InteriorVertex vert;
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
+    RGBA8 color = colors[triangle.c];
+    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
+    return vert;
+}
+
+fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    return vert.color;
+}
+
 #pragma mark - Triangle
 
 struct TriangleVertex

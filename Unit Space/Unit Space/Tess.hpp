@@ -736,12 +736,11 @@ struct Tess {
         if (useMasking)
             maskPaths(tess);
 
-        writeTriangles(mesh);
-        
-//        if (useDelaunay)
+        if (useDelaunay)
+            writeTriangles(mesh);
 //            writeDelaunayTriangles(mesh, useMasking);
-//        else
-//            writeTessTriangles(mesh, tess);
+        else
+            writeTessTriangles(mesh, tess);
     }
 
     shared_ptr<TESStesselator>			_tess;
