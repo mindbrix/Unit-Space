@@ -27,6 +27,12 @@ static void boundsLimits(float *limits, const float *begin, const float *end, si
     limits[0] = minX;  limits[1] = minY;  limits[2] = maxX;  limits[3] = maxY;
 }
 
+inline void encodeBits(float *n, uint32_t mask, uint32_t value) {
+    *n += copysign(1e-9, *n);
+    auto ptr = (uint32_t *)n;
+    *ptr = (*ptr & ~mask) | (value & mask);
+}
+
 inline float lerp(float t, float n0, float n1) {
     return n0 + t * (n1 - n0);
 }

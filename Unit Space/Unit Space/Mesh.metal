@@ -43,6 +43,8 @@ struct EdgeVertex
 vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device Vector *edges [[buffer(2)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     Vector v0 = edges[iid], v1 = edges[iid + 1];
+    bool end = as_type<uint>(v0.x) & 0x3;
+    
     float2 p0 = {
         v0.x * state.CTM.a + v0.y * state.CTM.c + state.CTM.tx,
         v0.x * state.CTM.b + v0.y * state.CTM.d + state.CTM.ty
@@ -54,6 +56,7 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
     const float dilation = 0.7071;
     float2 up = normalize(p1 - p0), left = { -up.y, up.x };
     float2 devicePoint = select(p0, p1, vid > 1) + (select(-up, up, vid > 1) + select(left, -left, vid & 1)) * dilation;
+    devicePoint = select(devicePoint, 0, end);
     
     EdgeVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);

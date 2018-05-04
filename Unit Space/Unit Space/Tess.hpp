@@ -536,10 +536,14 @@ struct Tess {
         for (Path& path : _paths)
             for (SubPath& s : path._subPaths) {
                 float *points = s._points.get();
+                size_t base = mesh._edges.size();
                 for (int i = 0; i < s._npoints; i++)
                     mesh._edges.emplace_back(points[i * 2], points[i * 2 + 1]);
                 if (!s._closed)
                     mesh._edges.emplace_back(points[0], points[1]);
+                for (; base < mesh._edges.size() - 1; base++)
+                    encodeBits(& mesh._edges[base].x, 0x3, 0x0);
+                encodeBits(& mesh._edges[base].x, 0x3, 0x1);
             }
         
         int count = 0;
