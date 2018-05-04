@@ -54,7 +54,9 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
         _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
         _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
     };
-    float2 devicePoint = select(p0, p1, vid > 1);
+    const float dilation = 0.7071;
+    float2 up = normalize(p1 - p0), left = { -up.y, up.x };
+    float2 devicePoint = select(p0, p1, vid > 1) + (select(-up, up, vid > 1) + select(left, -left, vid == 1 || vid == 2)) * dilation;
     
     EdgeVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
