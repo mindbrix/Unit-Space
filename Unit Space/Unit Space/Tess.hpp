@@ -577,7 +577,7 @@ struct Tess {
             new (rend++) EdgeRef(edge);
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
-        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend, *a;
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
         
         
         int pi, winding;
@@ -600,8 +600,15 @@ struct Tess {
                     *(--rdst) = *rsrc;
             rbegin = rdst;
 
-            aend = abegin;
-            for (rsrc = rbegin; rsrc < ref; rsrc++)
+            asrc = adst = abegin;
+            for (; asrc < aend; asrc++)
+                if (asrc->e->ux() > lx)
+                    *adst++ = *asrc;
+            aend = adst;
+            for (a = abegin; a < aend; a++)
+                a->update(ux);
+            
+            for (rsrc = rlast; rsrc < ref; rsrc++)
                 (new (aend++) ActiveEdge(rsrc->e, lx, ux));
             sort(abegin, aend);
             
