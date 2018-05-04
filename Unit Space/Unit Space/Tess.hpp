@@ -590,6 +590,11 @@ struct Tess {
                 (new (aend++) ActiveEdge(rsrc->e, lx, ux));
             sort(abegin, aend);
             
+            for (a = abegin; a < aend - 1; a++)
+                if (std::abs(a->ly - (a + 1)->ly) < 1e-3)
+                    (a + 1)->ly = a->ly;
+            sort(abegin, aend);
+                
             x0 = x3 = lx, x1 = x2 = ux;
             y0 = y1 = y2 = y3 = 0;
             winding = 0;
