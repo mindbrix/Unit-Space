@@ -212,7 +212,11 @@
                 instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
                 break;
             case kCallTypeMeshEdges:
-                continue;
+                [commandEncoder setRenderPipelineState:_meshEdgePipelineState];
+                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:2];
+                instanceCount = _pointsBuffer.length / sizeof(Vector) - 1;
+                break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)

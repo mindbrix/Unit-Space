@@ -53,7 +53,7 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
     };
     const float dilation = 0.7071;
     float2 up = normalize(p1 - p0), left = { -up.y, up.x };
-    float2 devicePoint = select(p0, p1, vid > 1) + (select(-up, up, vid > 1) + select(left, -left, vid == 1 || vid == 2)) * dilation;
+    float2 devicePoint = select(p0, p1, vid > 1) + (select(-up, up, vid > 1) + select(left, -left, vid & 1)) * dilation;
     
     EdgeVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
@@ -62,7 +62,7 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 edge_fragment_main(EdgeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    return 0.5;
+    return float4(0, 0, 0, 1);
 }
 
 #pragma mark - Interior
