@@ -41,13 +41,6 @@ struct Edge {
     unsigned short int flags, p, ci, pi;
 };
 
-struct EdgeRef {
-    EdgeRef(Edge *edge) : e(edge) {}
-    
-    inline bool operator< (const EdgeRef& other) const     { return *e < *other.e; }
-    Edge *e;
-};
-
 struct ActiveEdge {
     ActiveEdge(Edge *e, float lx, float ux) : e(e) {
         if (e->x0 == e->x1) {
@@ -570,7 +563,6 @@ struct Tess {
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         
         sort(begin, end);
-        Memory<Edge> edges1 = edges0.clone();
 
         Memory<IntersectionEdge> intersectionEdges(count * sizeof(IntersectionEdge));
         IntersectionEdge *iedges = intersectionEdges.get(), *ibegin = iedges, *iend = ibegin;
@@ -583,17 +575,11 @@ struct Tess {
         Memory<float> xDivisions(((count * 2) + (int)intersections.size()) * sizeof(float));
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         
-        edges = edges1.get(), begin = edges, end = begin + count;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
         for (auto& i : intersections)
             *dend++ = i.px;
         sort(dbegin, dend);
-        
-        Memory<EdgeRef> edgeRefs(count * sizeof(EdgeRef));
-        EdgeRef *refs = edgeRefs.get(), *rbegin = refs, *rend = refs, *ref, *rlast, *r;
-        for (edge = begin; edge < end; edge++)
-            new (rend++) EdgeRef(edge);
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
@@ -601,7 +587,7 @@ struct Tess {
         
         int winding;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
-        ref = rbegin;
+        edge = begin;
         for (division = dbegin; division < dend; ) {
             lx = *division;
             do
@@ -617,8 +603,8 @@ struct Tess {
             for (a = abegin; a < aend; a++)
                 a->update(ux);
             
-            while (ref < rend && ref->e->lx() == lx)
-                new (aend++) ActiveEdge(ref++->e, lx, ux);
+            while (edge < end && edge->lx() == lx)
+                new (aend++) ActiveEdge(edge++, lx, ux);
 
             sort(abegin, aend);
             
