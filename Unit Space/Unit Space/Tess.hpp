@@ -609,10 +609,6 @@ struct Tess {
             while (division < dend && *division == lx);
             ux = division < dend ? *division : lx;
 
-            rlast = ref;
-            while (ref < rend && ref->e->lx() == lx)
-                ref++;
-
             asrc = adst = abegin;
             for (; asrc < aend; asrc++)
                 if (asrc->e->ux() > lx)
@@ -621,8 +617,9 @@ struct Tess {
             for (a = abegin; a < aend; a++)
                 a->update(ux);
             
-            for (r = rlast; r < ref; r++)
-                new (aend++) ActiveEdge(r->e, lx, ux);
+            while (ref < rend && ref->e->lx() == lx)
+                new (aend++) ActiveEdge(ref++->e, lx, ux);
+
             sort(abegin, aend);
             
             for (a = abegin; a < aend - 1; a++)
