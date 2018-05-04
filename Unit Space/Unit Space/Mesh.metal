@@ -42,17 +42,14 @@ struct EdgeVertex
 
 vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device Vector *edges [[buffer(2)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    Vector _v0 = edges[iid], _v1 = edges[iid + 1];
-    constant AffineTransform& ctm = state.CTM;
-    
+    Vector v0 = edges[iid], v1 = edges[iid + 1];
     float2 p0 = {
-        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
-        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
+        v0.x * state.CTM.a + v0.y * state.CTM.c + state.CTM.tx,
+        v0.x * state.CTM.b + v0.y * state.CTM.d + state.CTM.ty
     };
-    
     float2 p1 = {
-        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
-        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
+        v1.x * state.CTM.a + v1.y * state.CTM.c + state.CTM.tx,
+        v1.x * state.CTM.b + v1.y * state.CTM.d + state.CTM.ty
     };
     const float dilation = 0.7071;
     float2 up = normalize(p1 - p0), left = { -up.y, up.x };
@@ -65,7 +62,7 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 edge_fragment_main(EdgeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    return 1;
+    return 0.5;
 }
 
 #pragma mark - Interior
