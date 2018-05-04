@@ -64,6 +64,12 @@
     descriptor.label = @"Unit";
     self.unitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.colorAttachments[0].blendingEnabled = NO;
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"edge_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"edge_fragment_main"];
+    descriptor.label = @"Edge";
+    self.meshEdgePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;

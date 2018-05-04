@@ -33,6 +33,39 @@ float fragmentWinding(float2 p0, float2 p1) {
 }
 
 
+#pragma mark - Edge
+
+struct EdgeVertex
+{
+    float4 position [[position]];
+};
+
+vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device Vector *edges [[buffer(2)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+{
+    Vector _v0 = edges[iid], _v1 = edges[iid + 1];
+    constant AffineTransform& ctm = state.CTM;
+    
+    float2 p0 = {
+        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
+        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
+    };
+    
+    float2 p1 = {
+        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
+        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
+    };
+    float2 devicePoint = select(p0, p1, vid > 1);
+    
+    EdgeVertex vert;
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
+    return vert;
+}
+
+fragment float4 edge_fragment_main(EdgeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    return 1;
+}
+
 #pragma mark - Triangle
 
 struct TriangleVertex
