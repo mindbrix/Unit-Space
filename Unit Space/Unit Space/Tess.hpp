@@ -288,7 +288,7 @@ struct SubPath {
     
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type) {
-        bool closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
+        _closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
         
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
@@ -299,7 +299,7 @@ struct SubPath {
             _npoints = npoints;
             _points.alloc(_npoints * kPointStride);
             memcpy(_points.get(), points, npoints * kPointStride);
-            if (closed)
+            if (_closed)
                 _npoints--;
         }
         _area = pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
@@ -307,6 +307,7 @@ struct SubPath {
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
+    bool                        _closed;
     int                         _npoints;
     float                       _area;
     Bounds                      _bounds;
@@ -533,11 +534,13 @@ struct Tess {
     }
     void writeTriangles(Mesh& mesh) {
         for (Path& path : _paths)
-            for (SubPath& s : path._subPaths)
-                for (int i = 0; i < s._npoints; i++) {
-                    float *points = s._points.get();
+            for (SubPath& s : path._subPaths) {
+                float *points = s._points.get();
+                for (int i = 0; i < s._npoints; i++)
                     mesh._edges.emplace_back(points[i * 2], points[i * 2 + 1]);
-                }
+                if (!s._closed)
+                    mesh._edges.emplace_back(points[0], points[1]);
+            }
         
         int count = 0;
         for (Path& path : _paths)

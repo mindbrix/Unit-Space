@@ -168,7 +168,7 @@
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = 1;
-        
+        BOOL drawQuads = YES;
         switch (call->type) {
             case kCallTypeArcs:
                 [commandEncoder setRenderPipelineState:_arcPipelineState];
@@ -200,6 +200,7 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
                 instanceCount = _curvesBuffer.length / sizeof(Triangle);
+                drawQuads = NO;
                 break;
             case kCallTypeMeshConcaveCurves:
                 if (call->meshState.hideCurves)
@@ -210,12 +211,15 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
                 instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
+                drawQuads = NO;
                 break;
             case kCallTypeMeshEdges:
+                if (_edgesBuffer.length == 0)
+                    continue;
                 [commandEncoder setRenderPipelineState:_meshEdgePipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:2];
-                instanceCount = _pointsBuffer.length / sizeof(Vector) - 1;
+                [commandEncoder setVertexBuffer:_edgesBuffer offset:0 atIndex:2];
+                instanceCount = _edgesBuffer.length / sizeof(Vector) - 1;
                 break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshTriangles:
@@ -228,6 +232,7 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
                 instanceCount = _trianglesBuffer.length / sizeof(Triangle);
+                drawQuads = NO;
                 break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
@@ -244,20 +249,19 @@
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         
-        if (call->type == kCallTypeMeshTriangles || call->type == kCallTypeMeshCurves || call->type == kCallTypeMeshConcaveCurves) {
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
-                               vertexStart:0
-                               vertexCount:3
-                             instanceCount:instanceCount
-                              baseInstance:0];
-        } else {
+        if (drawQuads)
             [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                        indexCount:6
                                         indexType:MTLIndexTypeUInt16
                                       indexBuffer:_indexBuffer
                                 indexBufferOffset:0
                                     instanceCount:instanceCount];
-        }
+        else
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
+                               vertexStart:0
+                               vertexCount:3
+                             instanceCount:instanceCount
+                              baseInstance:0];
     }
     
     [commandEncoder endEncoding];
