@@ -532,6 +532,13 @@ struct Tess {
         }
     }
     void writeTriangles(Mesh& mesh) {
+        for (Path& path : _paths)
+            for (SubPath& s : path._subPaths)
+                for (int i = 0; i < s._npoints; i++) {
+                    float *points = s._points.get();
+                    mesh._edges.emplace_back(points[i * 2], points[i * 2 + 1]);
+                }
+        
         int count = 0;
         for (Path& path : _paths)
             count += path.countPoints();
