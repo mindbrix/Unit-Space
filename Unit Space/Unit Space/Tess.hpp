@@ -546,6 +546,21 @@ struct Tess {
                 encodeBits(& mesh._edges[base].x, 0x3, 0x1);
             }
     }
+    void writeQuad(Mesh& mesh, float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3) {
+        int pi = (int)mesh._points.size();
+        if (y1 == y2)
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 3, 0);
+        else if (y0 == y3)
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
+        else {
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
+            mesh._triangles.emplace_back(pi, pi + 2, pi + 3, 0);
+        }
+        mesh._points.emplace_back(x0, y0);
+        mesh._points.emplace_back(x1, y1);
+        mesh._points.emplace_back(x2, y2);
+        mesh._points.emplace_back(x3, y3);
+    }
     void writeTriangles(Mesh& mesh) {
         int count = 0;
         for (Path& path : _paths)
@@ -581,7 +596,7 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
         
         
-        int pi, winding;
+        int winding;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         ref = rbegin;
         for (division = dbegin; division < dend; ) {
@@ -621,21 +636,9 @@ struct Tess {
                 
                 y3 = a->lyt, y2 = a->uyt;
                 
-                if ((winding & 1) != 0) {
-                    pi = (int)mesh._points.size();
-                    if (y1 == y2)
-                        mesh._triangles.emplace_back(pi, pi + 1, pi + 3, 0);
-                    else if (y0 == y3)
-                        mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
-                    else {
-                        mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
-                        mesh._triangles.emplace_back(pi, pi + 2, pi + 3, 0);
-                    }
-                    mesh._points.emplace_back(x0, y0);
-                    mesh._points.emplace_back(x1, y1);
-                    mesh._points.emplace_back(x2, y2);
-                    mesh._points.emplace_back(x3, y3);
-                }
+                if ((winding & 1) != 0)
+                    writeQuad(mesh, x0, y0, x1, y1, x2, y2, x3, y3);
+                
                 winding += a->e->x0 > a->e->x1 ? 1 : -1;
                 y0 = y3, y1 = y2;
             }
