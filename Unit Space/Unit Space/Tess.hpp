@@ -532,7 +532,7 @@ struct Tess {
             }
         }
     }
-    void writeTriangles(Mesh& mesh) {
+    void writeEdges(Mesh& mesh) {
         for (Path& path : _paths)
             for (SubPath& s : path._subPaths) {
                 float *points = s._points.get();
@@ -545,7 +545,8 @@ struct Tess {
                     encodeBits(& mesh._edges[base].x, 0x3, 0x0);
                 encodeBits(& mesh._edges[base].x, 0x3, 0x1);
             }
-        
+    }
+    void writeTriangles(Mesh& mesh) {
         int count = 0;
         for (Path& path : _paths)
             count += path.countPoints();
@@ -609,7 +610,7 @@ struct Tess {
                 a->update(ux);
             
             for (rsrc = rlast; rsrc < ref; rsrc++)
-                (new (aend++) ActiveEdge(rsrc->e, lx, ux));
+                new (aend++) ActiveEdge(rsrc->e, lx, ux);
             sort(abegin, aend);
             
             for (a = abegin; a < aend - 1; a++)
@@ -757,6 +758,8 @@ struct Tess {
         if (useMasking)
             maskPaths(tess);
 
+        writeEdges(mesh);
+        
         if (useDelaunay)
             writeTriangles(mesh);
 //            writeDelaunayTriangles(mesh, useMasking);
