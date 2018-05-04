@@ -48,16 +48,6 @@ struct EdgeRef {
     Edge *e;
 };
 
-struct EdgeEvent {
-    EdgeEvent(Edge *e, float x, bool isStart) : e(e), x(x), isStart(isStart) {}
-    
-    inline bool operator< (const EdgeEvent& other) const     { return x < other.x || (x == other.x && isStart && !other.isStart); }
-    
-    float x;
-    bool isStart;
-    Edge *e;
-};
-
 struct ActiveEdge {
     ActiveEdge(Edge *e, float lx, float ux) : e(e) {
         if (e->x0 == e->x1) {
@@ -84,6 +74,13 @@ struct ActiveEdge {
     
     float ly, uy;
     float lyt, uyt;
+    Edge *e;
+};
+
+struct IntersectionEdge {
+    IntersectionEdge(Edge *e, float ly, float uy) : e(e), ly(ly), uy(uy) {}
+    
+    float ly, uy;
     Edge *e;
 };
 
@@ -254,29 +251,30 @@ static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sam
     }
     return colors;
 }
-static void findIntersections(vector<Intersection>& intersections, Edge *begin, Edge *end) {
-    Edge *edge, *last, *src, *dst, *e0, *e1;
+static void findIntersections(vector<Intersection>& intersections, IntersectionEdge *begin, IntersectionEdge *end) {
+    IntersectionEdge *edge, *last, *src, *dst, *e0, *e1;
     float lx, px, py;
     
     for (edge = begin; edge < end; ) {
         last = edge;
-        lx = edge->lx();
+        lx = edge->e->lx();
         
         do
             edge++;
-        while (edge < end && edge->lx() == lx);
+        while (edge < end && edge->e->lx() == lx);
         
         src = dst = last;
         while (--src >= begin)
-            if (src->ux() > lx)
+            if (src->e->ux() > lx)
                 *(--dst) = *src;
         begin = dst;
         
         for (e0 = edge - 1; e0 >= last; e0--)
             for (e1 = e0 - 1; e1 >= begin; e1--)
-                if (e0->uy() > e1->ly() && e1->uy() > e0->ly())
-                    if (linesIntersection(e0->x0, e0->y0, e0->x1, e0->y1, e1->x0, e1->y0, e1->x1, e1->y1, & px, & py))
-                        intersections.emplace_back(*e0, *e1, px, py);
+                if (e0->uy > e1->ly && e1->uy > e0->ly)
+                    if (linesIntersection(e0->e->x0, e0->e->y0, e0->e->x1, e0->e->y1,
+                                          e1->e->x0, e1->e->y0, e1->e->x1, e1->e->y1, & px, & py))
+                        intersections.emplace_back(*(e0->e), *(e1->e), px, py);
     }
 }
 
@@ -574,8 +572,13 @@ struct Tess {
         sort(begin, end);
         Memory<Edge> edges1 = edges0.clone();
 
+        Memory<IntersectionEdge> intersectionEdges(count * sizeof(IntersectionEdge));
+        IntersectionEdge *iedges = intersectionEdges.get(), *ibegin = iedges, *iend = ibegin;
+        for (edge = begin; edge < end; edge++)
+            new (iend++) IntersectionEdge(edge, edge->ly(), edge->uy());
+        
         vector<Intersection> intersections;
-        findIntersections(intersections, begin, end);
+        findIntersections(intersections, ibegin, iend);
         
         Memory<float> xDivisions(((count * 2) + (int)intersections.size()) * sizeof(float));
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
@@ -665,20 +668,20 @@ struct Tess {
         sort(begin, end);
         Memory<Edge> edges1 = edges0.clone();
         
-        vector<Intersection> intersections;
-        if (!useMasking) {
-            findIntersections(intersections, begin, end);
-            count += (int)intersections.size();
-        }
+//        vector<Intersection> intersections;
+//        if (!useMasking) {
+//            findIntersections(intersections, begin, end);
+//            count += (int)intersections.size();
+//        }
 
         Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
         XYZ *dst = xyz.get();
         
-        float px, py;
-        for (auto& i : intersections) {
-            linesIntersection(i.e0.x0, i.e0.y0, i.e0.x1, i.e0.y1, i.e1.x0, i.e1.y0, i.e1.x1, i.e1.y1, & px, & py);
-            dst->x = i.px, dst->y = i.py, dst->i = 0, dst++;
-        }
+//        float px, py;
+//        for (auto& i : intersections) {
+//            linesIntersection(i.e0.x0, i.e0.y0, i.e0.x1, i.e0.y1, i.e1.x0, i.e1.y0, i.e1.x1, i.e1.y1, & px, & py);
+//            dst->x = i.px, dst->y = i.py, dst->i = 0, dst++;
+//        }
         
         for (Path& path : _paths)
             for (SubPath& s : path._subPaths) {
