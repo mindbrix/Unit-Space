@@ -35,6 +35,7 @@ using namespace std;
 @property(nonatomic) uint64_t pathBitmask;
 @property(nonatomic) BOOL showCurves;
 @property(nonatomic) BOOL showColors;
+@property(nonatomic) BOOL showEdges;
 @property(nonatomic) BOOL showEllipse;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
@@ -253,6 +254,10 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleEdges:(id)sender {
+    _showEdges = !_showEdges;
+    [self redraw];
+}
 - (IBAction)toggleCurves:(id)sender {
     _showCurves = !_showCurves;
     [self redraw];
@@ -535,7 +540,7 @@ using namespace std;
             _calls.emplace_back();
             Call& call = _calls.back();
             call.meshState = meshState;
-            call.type = kCallTypeMeshEdges;
+            call.type = _showEdges ? kCallTypeMeshEdges : kCallTypeMeshTriangles;
             call.state = uniforms;
         }
         

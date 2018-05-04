@@ -677,10 +677,15 @@
                                     <action selector="toggleCurves:" target="-1" id="hAV-mP-g6E"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Ellipse" keyEquivalent="e" id="wM3-ZR-EEO">
+                            <menuItem title="Toggle Edges" keyEquivalent="e" id="wM3-ZR-EEO">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleEllipse:" target="-1" id="eeV-c6-Ll3"/>
+                                    <action selector="toggleEdges:" target="-1" id="XZr-WB-bvI"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Ellipse" keyEquivalent="e" id="EYR-b5-kdc">
+                                <connections>
+                                    <action selector="toggleEllipse:" target="-1" id="B02-Dr-4Pi"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle Points" keyEquivalent="p" id="FEL-y9-7ve">
