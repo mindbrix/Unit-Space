@@ -418,13 +418,14 @@ struct Path {
 
 struct Mesh {
     vector<RGBA8>                       _colors;
+    vector<Vector>                      _edges;
     vector<Vector>                      _points;
     vector<Triangle>                    _triangles;
     vector<Triangle>                    _curves;
     vector<Triangle>                    _concaveCurves;
     
     void empty() {
-        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0);
+        _colors.resize(0), _edges.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0);
     }
 };
 

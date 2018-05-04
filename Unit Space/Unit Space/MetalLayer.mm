@@ -17,6 +17,7 @@
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> edgesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
@@ -24,9 +25,11 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshConcaveCurvePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshEdgePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 
 @end
@@ -197,6 +200,9 @@
                 [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
                 instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
                 break;
+            case kCallTypeMeshEdges:
+            case kCallTypeMeshInterior:
+                continue;
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
                     continue;
@@ -248,43 +254,28 @@
 #pragma mark - Public
 
 - (void)uploadMesh:(Mesh &)mesh {
-    [self createColorsBuffer:& mesh._colors[0] ncolors:mesh._colors.size()];
-    if (mesh._curves.size())
-        [self createCurvesBuffer:& mesh._curves[0] ncurves:mesh._curves.size()];
-    if (mesh._concaveCurves.size())
-        [self createConcaveCurvesBuffer:& mesh._concaveCurves[0] ncurves:mesh._concaveCurves.size()];
-    [self createPointsBuffer:& mesh._points[0] npoints:mesh._points.size()];
-    [self createTrianglesBuffer:& mesh._triangles[0] ntriangles:mesh._triangles.size()];
-}
-
-- (void)createColorsBuffer:(RGBA8 *)colors ncolors:(size_t)ncolors {
-    _colorsBuffer = [self.device newBufferWithBytes:(void *)colors
-                                                   length:ncolors * sizeof(RGBA8)
-                                                  options:MTLResourceStorageModeShared];
-}
-
-- (void)createCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves {
-    _curvesBuffer = [self.device newBufferWithBytes:(void *)curves
-                                                length:ncurves * sizeof(Triangle)
-                                               options:MTLResourceStorageModeShared];
-}
-
-- (void)createConcaveCurvesBuffer:(Triangle *)curves ncurves:(size_t)ncurves {
-    _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)curves
-                                             length:ncurves * sizeof(Triangle)
+    _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
+                                             length:mesh._colors.size() * sizeof(RGBA8)
                                             options:MTLResourceStorageModeShared];
-}
-
-- (void)createPointsBuffer:(Vector *)points npoints:(size_t)npoints {
-    _pointsBuffer = [self.device newBufferWithBytes:(void *)points
-                                                   length:npoints * sizeof(Vector)
-                                                  options:MTLResourceStorageModeShared];
-}
-
-- (void)createTrianglesBuffer:(Triangle *)triangles ntriangles:(size_t)ntriangles {
-    _trianglesBuffer = [self.device newBufferWithBytes:(void *)triangles
-                                                   length:ntriangles * sizeof(Triangle)
-                                                  options:MTLResourceStorageModeShared];
+    _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
+                                                length:mesh._triangles.size() * sizeof(Triangle)
+                                               options:MTLResourceStorageModeShared];
+    if (mesh._curves.size())
+        _curvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._curves[0]
+                                                 length:mesh._curves.size() * sizeof(Triangle)
+                                                options:MTLResourceStorageModeShared];
+    if (mesh._concaveCurves.size())
+        _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._concaveCurves[0]
+                                                        length:mesh._concaveCurves.size() * sizeof(Triangle)
+                                                       options:MTLResourceStorageModeShared];
+    if (mesh._edges.size())
+        _edgesBuffer = [self.device newBufferWithBytes:(void *)& mesh._edges[0]
+                                                 length:mesh._edges.size() * sizeof(Vector)
+                                                options:MTLResourceStorageModeShared];
+    if (mesh._points.size())
+        _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
+                                                length:mesh._points.size() * sizeof(Vector)
+                                               options:MTLResourceStorageModeShared];
 }
 
 @end
