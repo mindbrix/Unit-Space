@@ -572,20 +572,20 @@ struct Tess {
                 encodeBits(& mesh._edges[base].x, 0x3, 0x1);
             }
     }
-    void writeQuad(Mesh& mesh, float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3) {
+    void writeQuad(Mesh& mesh, Quad *q) {
         int pi = (int)mesh._points.size();
-        if (y1 == y2)
-            mesh._triangles.emplace_back(pi, pi + 1, pi + 3, 0);
-        else if (y0 == y3)
-            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
+        if (q->y1 == q->y2)
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 3, q->le->p);
+        else if (q->y0 == q->y3)
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, q->le->p);
         else {
-            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, 0);
-            mesh._triangles.emplace_back(pi, pi + 2, pi + 3, 0);
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, q->le->p);
+            mesh._triangles.emplace_back(pi, pi + 2, pi + 3, q->le->p);
         }
-        mesh._points.emplace_back(x0, y0);
-        mesh._points.emplace_back(x1, y1);
-        mesh._points.emplace_back(x2, y2);
-        mesh._points.emplace_back(x3, y3);
+        mesh._points.emplace_back(q->x0, q->y0);
+        mesh._points.emplace_back(q->x1, q->y1);
+        mesh._points.emplace_back(q->x2, q->y2);
+        mesh._points.emplace_back(q->x3, q->y3);
     }
     void writeTriangles(Mesh& mesh) {
         int count = 0;
@@ -659,17 +659,12 @@ struct Tess {
                 y0 = y3, y1 = y2, le = ue;
             }
             for (q = qbegin; q < qend; q++)
-                writeQuad(mesh, q->x0, q->y0, q->x1, q->y1, q->x2, q->y2, q->x3, q->y3);
+                writeQuad(mesh, q);
             qend = qbegin;
         }
-        RGBA8 red(255, 0, 0, 255);
-        RGBA8 green(0, 255, 0, 255);
-        RGBA8 blue(0, 0, 255, 255);
-        RGBA8 black(0, 0, 0, 255);
-        RGBA8 alpha(255, 0, 0, 128);
         
-        mesh._colors.emplace_back(red);
-        mesh._colors.emplace_back(green);
+        for (Path& path : _paths)
+            mesh._colors.emplace_back(path._color);
     }
     
     void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
@@ -762,9 +757,6 @@ struct Tess {
         
         mesh._colors.emplace_back(red);
         mesh._colors.emplace_back(green);
-        
-//        for (Path& path : _paths)
-//            mesh._colors.emplace_back(path._color);
     }
     void triangulate(Mesh& mesh, bool useMasking, bool useDelaunay) {
         mesh.empty();
