@@ -573,7 +573,7 @@ struct Tess {
             count += path.countPoints();
         
         Memory<Edge> edges0(count);
-        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
+        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *le, *ue;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         sort(begin, end);
@@ -595,6 +595,10 @@ struct Tess {
         
         Memory<ActiveEdge> activeEdges(count);
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
+        
+        Memory<Quad> activeQuads(count);
+        Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
+        
         int winding;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         for (edge = begin, division = dbegin; division < dend; ) {
@@ -619,19 +623,24 @@ struct Tess {
             
             x0 = x3 = lx, x1 = x2 = ux;
             y0 = y1 = y2 = y3 = 0;
+            le = ue = nullptr;
             winding = 0;
             for (a = abegin; a < aend; a++) {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
                 y3 = a->lyt, y2 = a->uyt;
+                ue = a->e;
                 
                 if ((winding & 1) != 0)
-                    writeQuad(mesh, x0, y0, x1, y1, x2, y2, x3, y3);
+                    new (qend++) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
                 
                 winding += a->e->x0 > a->e->x1 ? 1 : -1;
-                y0 = y3, y1 = y2;
+                y0 = y3, y1 = y2, le = ue;
             }
+            for (q = qbegin; q < qend; q++)
+                writeQuad(mesh, q->x0, q->y0, q->x1, q->y1, q->x2, q->y2, q->x3, q->y3);
+            qend = qbegin;
         }
         RGBA8 red(255, 0, 0, 255);
         RGBA8 green(0, 255, 0, 255);
