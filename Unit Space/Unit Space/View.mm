@@ -540,7 +540,7 @@ using namespace std;
             _calls.emplace_back();
             Call& call = _calls.back();
             call.meshState = meshState;
-            call.type = _showEdges ? kCallTypeMeshEdges : kCallTypeMeshTriangles;
+            call.type = _showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
             call.state = uniforms;
         }
         
