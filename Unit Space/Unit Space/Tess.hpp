@@ -87,12 +87,12 @@ struct Sample {
 };
 
 struct Intersection {
-    Intersection(Edge e0, Edge e1, float px, float py) : e0(e0), e1(e1), px(px), py(py) {}
+    Intersection(Edge *e0, Edge *e1, float px, float py) : e0(e0), e1(e1), px(px), py(py) {}
     
     inline bool operator< (const Intersection& other) const     { return px < other.px || (px == other.px && py < other.py); }
     
-    Edge e0, e1;
     float px, py;
+    Edge *e0, *e1;
 };
 
 template<typename T>
@@ -267,7 +267,7 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
                 if (e0->uy > e1->ly && e1->uy > e0->ly)
                     if (linesIntersection(e0->e->x0, e0->e->y0, e0->e->x1, e0->e->y1,
                                           e1->e->x0, e1->e->y0, e1->e->x1, e1->e->y1, & px, & py))
-                        intersections.emplace_back(*(e0->e), *(e1->e), px, py);
+                        intersections.emplace_back(e0->e, e1->e, px, py);
     }
 }
 
