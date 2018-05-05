@@ -106,6 +106,21 @@ struct Quad {
     Quad(Edge *le, Edge *ue, float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
     : le(le), ue(ue), x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2), x3(x3), y3(y3) {}
     
+    bool merge(Quad *rq) {
+        if (y1 == y2 || rq->y0 == rq->y3)
+            return false;
+        if (y0 == y3) {
+            if (rq->y1 == rq->y2) {
+                if (le == rq->le) {
+                    x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y1 = rq->y2, x3 = rq->x3, y3 = rq->y3;
+                } else if (ue == rq->ue) {
+                    x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y1 = rq->y2;
+                } else
+                    return false;
+            }
+        }
+        return false;
+    }
     float x0, y0, x1, y1, x2, y2, x3, y3;
     Edge *le, *ue;
 };
