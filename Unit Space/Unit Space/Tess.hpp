@@ -102,24 +102,24 @@ private:
     Header *header = nullptr;
 public:
     Memory()                            {}
-    Memory(size_t size)                 { alloc(size); }
+    Memory(size_t count)                { alloc(count); }
     Memory(const Memory& other)         { assign(other); }
     Memory& operator= (Memory other)    { assign(other); return *this; }
     ~Memory() {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
     }
-    void alloc(size_t size) {
-        if (size == 0)
+    void alloc(size_t count) {
+        if (count == 0)
             return;
         if (header)
-            header->memory = ::realloc(header->memory, size);
+            header->memory = ::realloc(header->memory, count * sizeof(T));
         else {
             header = (Header *)malloc(sizeof(Header));
-            header->memory = malloc(size);
+            header->memory = malloc(count * sizeof(T));
             header->refCount = 1;
         }
-        header->size = size;
+        header->size = count * sizeof(T);
     }
     void assign(const Memory& other) {
         if (this != & other) {
@@ -283,12 +283,12 @@ struct SubPath {
         
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
-            _points.alloc(_npoints * kPointStride);
-            _controlPoints.alloc(_npoints * kPointStride);
+            _points.alloc(_npoints * 2);
+            _controlPoints.alloc(_npoints * 2);
             splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
         } else {
             _npoints = npoints;
-            _points.alloc(_npoints * kPointStride);
+            _points.alloc(_npoints * 2);
             memcpy(_points.get(), points, npoints * kPointStride);
             if (_closed)
                 _npoints--;
@@ -557,20 +557,20 @@ struct Tess {
         for (Path& path : _paths)
             count += path.countPoints();
         
-        Memory<Edge> edges0(count * sizeof(Edge));
+        Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
         sort(begin, end);
 
-        Memory<IntersectionEdge> intersectionEdges(count * sizeof(IntersectionEdge));
+        Memory<IntersectionEdge> intersectionEdges(count);
         IntersectionEdge *iedges = intersectionEdges.get(), *ibegin = iedges, *iend = ibegin;
         for (edge = begin; edge < end; edge++)
             new (iend++) IntersectionEdge(edge, edge->ly(), edge->uy());
         vector<Intersection> intersections;
         findIntersections(intersections, ibegin, iend);
         
-        Memory<float> xDivisions(((count * 2) + (int)intersections.size()) * sizeof(float));
+        Memory<float> xDivisions(((count * 2) + (int)intersections.size()));
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
@@ -578,7 +578,7 @@ struct Tess {
             *dend++ = i.px;
         sort(dbegin, dend);
         
-        Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
+        Memory<ActiveEdge> activeEdges(count);
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
         int winding;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
@@ -638,7 +638,7 @@ struct Tess {
         for (Path& path : _paths)
             count += path.countPoints();
         
-        Memory<Edge> edges0(count * sizeof(Edge));
+        Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
@@ -651,7 +651,7 @@ struct Tess {
 //            count += (int)intersections.size();
 //        }
 
-        Memory<XYZ> xyz((count + 3) * sizeof(XYZ));
+        Memory<XYZ> xyz((count + 3));
         XYZ *dst = xyz.get();
         
 //        float px, py;
@@ -667,7 +667,7 @@ struct Tess {
                     dst->x = *src++, dst->y = *src++, dst->i = (int) (& path - & _paths[0]), dst++;
             }
         
-        Memory<ITRIANGLE> itriangle((count + 3) * 4 * sizeof(ITRIANGLE));
+        Memory<ITRIANGLE> itriangle((count + 3) * 4);
         int ntri, status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
         if (status)
             return;
@@ -693,7 +693,7 @@ struct Tess {
             Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, c };
             mesh._triangles.emplace_back(t);
         }
-        Memory<Sample> samples(mesh._triangles.size() * sizeof(Sample));
+        Memory<Sample> samples(mesh._triangles.size());
         Sample *sbegin = samples.get(), *send = sbegin;
         Vector *points = & mesh._points[0];
         float x0, y0, x1, y1, x2, y2, uvw[3], d = -1e-6;
@@ -709,7 +709,7 @@ struct Tess {
         
         size_t size = end - begin;
         edges = edges1.get(), begin = edges, end = begin + size;
-        Memory<int> colors(mesh._triangles.size() * sizeof(int));
+        Memory<int> colors(mesh._triangles.size());
         int *cdst = colors.get();
         writeColors(cdst, begin, end, sbegin, send);
         for (int ti = 0; ti < mesh._triangles.size(); ti++)
