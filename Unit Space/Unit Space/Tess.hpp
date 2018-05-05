@@ -109,14 +109,19 @@ struct Quad {
     bool merge(Quad *rq) {
         if (y1 == y2 || rq->y0 == rq->y3)
             return false;
+        if (le == rq->le && ue == rq->ue) {
+            x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
+            return true;
+        }
         if (y0 == y3) {
             if (rq->y1 == rq->y2) {
                 if (le == rq->le) {
                     x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y1 = rq->y2, x3 = rq->x3, y3 = rq->y3;
+                    return true;
                 } else if (ue == rq->ue) {
-                    x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y1 = rq->y2;
-                } else
-                    return false;
+                    x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
+                    return true;
+                } 
             }
         }
         return false;
