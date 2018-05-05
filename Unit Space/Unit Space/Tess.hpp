@@ -48,9 +48,10 @@ struct ActiveEdge {
                 ly = e->y0, uy = e->y1;
             else
                 ly = e->y1, uy = e->y0;
-            lyt = uyt = 0;
+            lyt = uyt = lift = 0;
         } else {
-            lyt = e->y(lx), uyt = e->y(ux);
+            lift = 1e-3 * std::abs((e->y1 - e->y0) / (e->x1 - e->x0));
+            lyt = e->y(lx) + lift, uyt = e->y(ux) + lift;
             if (lyt < uyt)
                 ly = lyt, uy = uyt;
             else
@@ -61,7 +62,7 @@ struct ActiveEdge {
         if (e->x0 == e->x1)
             return;
         
-        lyt = uyt, uyt = e->y(ux);
+        lyt = uyt, uyt = e->y(ux) + lift;
         if (lyt < uyt)
             ly = uy, uy = uyt;
         else
@@ -72,6 +73,7 @@ struct ActiveEdge {
     
     float ly, uy;
     float lyt, uyt;
+    float lift;
     Edge *e;
 };
 
@@ -607,11 +609,6 @@ struct Tess {
 
             sort(abegin, aend);
             
-            for (a = abegin; a < aend - 1; a++)
-                if (std::abs(a->ly - (a + 1)->ly) < 1e-3)
-                    (a + 1)->ly = a->ly;
-            sort(abegin, aend);
-                
             x0 = x3 = lx, x1 = x2 = ux;
             y0 = y1 = y2 = y3 = 0;
             winding = 0;
