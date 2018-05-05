@@ -249,9 +249,9 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
     float lx, px, py;
     
     for (edge = begin; edge < end; ) {
-        last = edge;
         lx = edge->e->lx();
         
+        last = edge;
         do
             edge++;
         while (edge < end && edge->e->lx() == lx);
@@ -561,20 +561,17 @@ struct Tess {
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : _paths)
             end = path.writeEdges(end, (int) (& path - & _paths[0]));
-        
         sort(begin, end);
 
         Memory<IntersectionEdge> intersectionEdges(count * sizeof(IntersectionEdge));
         IntersectionEdge *iedges = intersectionEdges.get(), *ibegin = iedges, *iend = ibegin;
         for (edge = begin; edge < end; edge++)
             new (iend++) IntersectionEdge(edge, edge->ly(), edge->uy());
-        
         vector<Intersection> intersections;
         findIntersections(intersections, ibegin, iend);
         
         Memory<float> xDivisions(((count * 2) + (int)intersections.size()) * sizeof(float));
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
-        
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
         for (auto& i : intersections)
@@ -583,12 +580,9 @@ struct Tess {
         
         Memory<ActiveEdge> activeEdges(count * sizeof(ActiveEdge));
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
-        
-        
         int winding;
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
-        edge = begin;
-        for (division = dbegin; division < dend; ) {
+        for (edge = begin, division = dbegin; division < dend; ) {
             lx = *division;
             do
                 division++;
