@@ -649,8 +649,7 @@ struct Tess {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
-                y3 = a->lyt, y2 = a->uyt;
-                ue = a->e;
+                y3 = a->lyt, y2 = a->uyt, ue = a->e;
                 
                 if ((winding & 1) != 0)
                     new (qend++) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
