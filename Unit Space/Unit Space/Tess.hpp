@@ -417,6 +417,18 @@ struct Mesh {
     }
 };
 
+struct Scene {
+    Scene(float w, float h) : w(w), h(h) {}
+    
+    void addPath(Path& path) {
+        if (path._subPaths.size() != 0)
+            _paths.emplace_back(path);
+    }
+    
+    float w, h;
+    vector<Path> _paths;
+};
+
 struct Tess {
     Tess() {}
     Tess(float w, float h) {
@@ -426,18 +438,12 @@ struct Tess {
     void reset(float w, float h) {
         _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
         _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
-        _paths.resize(0);
     }
-    
-    void addPath(Path& path) {
-        if (path._subPaths.size() != 0)
-            _paths.emplace_back(path);
-    }
-    
-    void writeCurves(Mesh& mesh) {
+        
+    void writeCurves(Mesh& mesh, Scene& scene) {
         int pi, c;
         float area, flip;
-        for (Path& path : _paths) {
+        for (Path& path : scene._paths) {
             size_t outerIndex = path._outerIndex;
             SubPath* outer = & path._subPaths[outerIndex];
             
@@ -446,7 +452,7 @@ struct Tess {
                     const float *points = s._points.get();
                     const float *controlPoints = s._controlPoints.get();
                     pi = (int)mesh._points.size();
-                    c = (int)(& path - & _paths[0]);
+                    c = (int)(& path - & scene._paths[0]);
                     
                     Vector p0 = { points[0], points[1] }, p1, p2;
                     mesh._points.emplace_back(p0);
@@ -478,24 +484,24 @@ struct Tess {
                 }
         }
     }
-    void maskPaths(TESStesselator *tess) {
-        for (Path& path : _paths)
+    void maskPaths(TESStesselator *tess, Scene& scene) {
+        for (Path& path : scene._paths)
             path.resolveSelfIntersections(tess);
         
-        for (size_t i = 0; i < _paths.size(); i++) {
-            Path& path = _paths[i];
+        for (size_t i = 0; i < scene._paths.size(); i++) {
+            Path& path = scene._paths[i];
             
             auto matches = _quadtree->find(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
             for (auto j : matches)
-                _paths[j].maskOut(tess, path);
+                scene._paths[j].maskOut(tess, path);
             _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
         }
     }
-    static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, vector<Path>& paths) {
+    static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
         assert(kPolySize == 3);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
-        for (Path& path : paths) {
+        for (Path& path : scene._paths) {
             mesh._colors.emplace_back(path._color);
             
             for (SubPath& s : path._subPaths)
@@ -519,8 +525,8 @@ struct Tess {
             }
         }
     }
-    void writeEdges(Mesh& mesh) {
-        for (Path& path : _paths)
+    void writeEdges(Mesh& mesh, Scene& scene) {
+        for (Path& path : scene._paths)
             for (SubPath& s : path._subPaths) {
                 float *points = s._points.get();
                 size_t base = mesh._edges.size();
@@ -533,7 +539,7 @@ struct Tess {
                 encodeBits(& mesh._edges[base].x, 0x3, 0x1);
             }
     }
-    void writeQuad(Mesh& mesh, Quad *q) {
+    static void writeQuad(Mesh& mesh, Quad *q) {
         int pi = (int)mesh._points.size();
         if (q->y1 == q->y2)
             mesh._triangles.emplace_back(pi, pi + 1, pi + 3, q->le->p);
@@ -548,15 +554,15 @@ struct Tess {
         mesh._points.emplace_back(q->x2, q->y2);
         mesh._points.emplace_back(q->x3, q->y3);
     }
-    void writeTriangles(Mesh& mesh) {
+    static void writeTriangles(Mesh& mesh, Scene& scene) {
         int count = 0;
-        for (Path& path : _paths)
+        for (Path& path : scene._paths)
             count += path.countPoints();
         
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *le, *ue;
-        for (Path& path : _paths)
-            end = path.writeEdges(end, (int) (& path - & _paths[0]));
+        for (Path& path : scene._paths)
+            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
         sort(begin, end);
 
         Memory<IntersectionEdge> intersectionEdges(count);
@@ -623,27 +629,26 @@ struct Tess {
             qend = qbegin;
         }
         
-        for (Path& path : _paths)
+        for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
     }
 
-    void triangulate(Mesh& mesh, bool useMasking, bool useDelaunay) {
+    void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
         
-        writeCurves(mesh);
-        writeEdges(mesh);
+        writeCurves(mesh, scene);
+        writeEdges(mesh, scene);
         
         if (useDelaunay)
-            writeTriangles(mesh);
+            writeTriangles(mesh, scene);
         else {
             if (useMasking)
-                maskPaths(tess);
-            writeTessTriangles(mesh, tess, _paths);
+                maskPaths(tess, scene);
+            writeTessTriangles(mesh, tess, scene);
         }
     }
 
     shared_ptr<TESStesselator>			_tess;
     shared_ptr<VG::QuadTree<size_t>>    _quadtree;
-    vector<Path>                        _paths;
 };

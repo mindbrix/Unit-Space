@@ -357,6 +357,7 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
+        Scene scene(image->width, image->height);
         _tess.reset(image->width, image->height);
         int limit = 60000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
@@ -372,10 +373,10 @@ using namespace std;
                     
                     p.addContour(path->pts, path->npts, SubPath::kCubic);
                 }
-                _tess.addPath(p);
+                scene.addPath(p);
             }
         }
-        _tess.triangulate(_mesh, self.useMask, self.useDelaunay);
+        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
         [self.metalLayer uploadMesh:_mesh];
         
         // Delete
@@ -411,17 +412,18 @@ using namespace std;
     Path p2(false, black);
 	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
 	
+    Scene scene(self.bounds.size.width, self.bounds.size.height);
     _tess.reset(self.bounds.size.width, self.bounds.size.height);
     if (self.pathBitmask & kPathBitmaskTriangle)
-        _tess.addPath(p0);
+        scene.addPath(p0);
     
     if (self.pathBitmask & kPathBitmaskLozenge)
-        _tess.addPath(p1);
+        scene.addPath(p1);
     
     if (self.pathBitmask & kPathBitmaskQuad)
-        _tess.addPath(p2);
+        scene.addPath(p2);
     
-    _tess.triangulate(_mesh, self.useMask, self.useDelaunay);
+    _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     [self.metalLayer uploadMesh:_mesh];
 }
 
