@@ -81,15 +81,6 @@ struct IntersectionEdge {
     Edge *e;
 };
 
-struct Sample {
-    Sample(float x, float y, int i) : x(x), y(y), i(i) {}
-    
-    inline bool operator< (const Sample& other) const     { return x < other.x || (x == other.x && y < other.y); }
-    
-    float x, y;
-    int i;
-};
-
 struct Intersection {
     Intersection(Edge *e0, Edge *e1, float px, float py) : e0(e0), e1(e1), px(px), py(py) {}
     
