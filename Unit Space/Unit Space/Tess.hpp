@@ -317,11 +317,11 @@ struct Path {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
     
-    void maskOut(TESStesselator *tess, Path& mask) {
-        bool isPositive = _subPaths[_outerIndex]._area > 0;
+    static void maskPath(TESStesselator *tess, Path& path, Path& mask) {
+        bool isPositive = path._subPaths[path._outerIndex]._area > 0;
         bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
         
-        for (SubPath& subPath : _subPaths) {
+        for (SubPath& subPath : path._subPaths) {
             tessSetOption(tess, TESS_REVERSE_CONTOURS, !isPositive);
             tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         }
@@ -332,7 +332,7 @@ struct Path {
         }
         
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeTessSubpaths(tess);
+            writeTessSubpaths(tess, path);
     }
     
     int countPoints() {
@@ -355,22 +355,22 @@ struct Path {
     }
     
     
-    void resolveSelfIntersections(TESStesselator *tess) {
-        if (_subPaths.size() == 1 && _subPaths[0]._npoints == 3) {
-            update();
+    static void resolveSelfIntersections(TESStesselator *tess, Path& path) {
+        if (path._subPaths.size() == 1 && path._subPaths[0]._npoints == 3) {
+            path.update();
             return;
         }
-        for (SubPath& subPath : _subPaths)
+        for (SubPath& subPath : path._subPaths)
             if (subPath._npoints > 2)
                 tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
         
-        if (tessTesselate(tess, _evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeTessSubpaths(tess);
+        if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+            writeTessSubpaths(tess, path);
             
     }
     
-    void writeTessSubpaths(TESStesselator *tess) {
-        _subPaths.resize(0);
+    static void writeTessSubpaths(TESStesselator *tess, Path& path) {
+        path._subPaths.resize(0);
         
         const float *verts = tessGetVertices(tess);
         const int *elems = tessGetElements(tess);
@@ -381,9 +381,9 @@ struct Path {
             const float *points = verts + base * 2;
             
             if (npoints > 2)
-                _subPaths.emplace_back(points, npoints, SubPath::kLine);
+                path._subPaths.emplace_back(points, npoints, SubPath::kLine);
         }
-        update();
+        path.update();
     }
     
     void update() {
@@ -486,14 +486,14 @@ struct Tess {
     }
     void maskPaths(TESStesselator *tess, Scene& scene) {
         for (Path& path : scene._paths)
-            path.resolveSelfIntersections(tess);
+            Path::resolveSelfIntersections(tess, path);
         
         for (size_t i = 0; i < scene._paths.size(); i++) {
             Path& path = scene._paths[i];
             
             auto matches = _quadtree->find(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
             for (auto j : matches)
-                scene._paths[j].maskOut(tess, path);
+                Path::maskPath(tess, scene._paths[j], path);
             _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
         }
     }
