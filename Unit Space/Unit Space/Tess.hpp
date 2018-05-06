@@ -241,44 +241,6 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     }
     *dst++ = x3, *dst++ = y3;
 }
-static int *writeColors(int *colors, Edge *begin, Edge *end, Sample *sbegin, Sample *send) {
-    Edge *edge, *last, *src, *dst, *e;
-    Sample *s = sbegin, *slast, *si;
-    float lx, nx, area;
-    int positive, winding;
-    
-    for (edge = begin; edge < end; ) {
-        last = edge;
-        lx = edge->lx();
-        
-        do
-            edge++;
-        while (edge < end && edge->lx() == lx);
-        
-        src = dst = last;
-        while (--src >= begin)
-            if (src->ux() > lx)
-                *(--dst) = *src;
-        begin = dst;
-        
-        nx = edge < end ? edge->lx() : FLT_MAX;
-        slast = s;
-        while (s < send && s->x < nx)
-            s++;
-        
-        for (si = slast; si < s; si++) {
-            winding = 0;
-            for (e = begin; e < edge; e++) {
-                area = (e->x1 - e->x0) * (si->y - e->y0) - (e->y1 - e->y0) * (si->x - e->x0);
-                positive = e->x1 > e->x0 ? 0 : 1;
-                if (e->x0 != e->x1 && ((positive && area > 0) || (!positive && area < 0)))
-                    winding += positive ? 1 : -1;
-            }
-            colors[si->i] = winding & 1 ? 1 : 0;
-        }
-    }
-    return colors;
-}
 static void findIntersections(vector<Intersection>& intersections, IntersectionEdge *begin, IntersectionEdge *end) {
     IntersectionEdge *edge, *last, *src, *dst, *e0, *e1;
     float lx, px, py;
@@ -665,98 +627,7 @@ struct Tess {
         for (Path& path : _paths)
             mesh._colors.emplace_back(path._color);
     }
-    
-    void writeDelaunayTriangles(Mesh& mesh, bool useMasking) {
-        int count = 0;
-        for (Path& path : _paths)
-            count += path.countPoints();
-        
-        Memory<Edge> edges0(count);
-        Edge *edges = edges0.get(), *begin = edges, *end = begin;
-        for (Path& path : _paths)
-            end = path.writeEdges(end, (int) (& path - & _paths[0]));
-        sort(begin, end);
-        Memory<Edge> edges1 = edges0.clone();
-        
-//        vector<Intersection> intersections;
-//        if (!useMasking) {
-//            findIntersections(intersections, begin, end);
-//            count += (int)intersections.size();
-//        }
 
-        Memory<XYZ> xyz((count + 3));
-        XYZ *dst = xyz.get();
-        
-//        float px, py;
-//        for (auto& i : intersections) {
-//            linesIntersection(i.e0.x0, i.e0.y0, i.e0.x1, i.e0.y1, i.e1.x0, i.e1.y0, i.e1.x1, i.e1.y1, & px, & py);
-//            dst->x = i.px, dst->y = i.py, dst->i = 0, dst++;
-//        }
-        
-        for (Path& path : _paths)
-            for (SubPath& s : path._subPaths) {
-                float *src = s._points.get();
-                for (int i = 0; i < s._npoints; i++)
-                    dst->x = *src++, dst->y = *src++, dst->i = (int) (& path - & _paths[0]), dst++;
-            }
-        
-        Memory<ITRIANGLE> itriangle((count + 3) * 4);
-        int ntri, status = Triangulate(count, xyz.get(), itriangle.get(), (count + 3) * 4, &ntri);
-        if (status)
-            return;
-        
-        int pi = (int)mesh._points.size();
-        XYZ *src = xyz.get();
-        for (int i = 0; i < count; i++) {
-            Vector p = { src[i].x, src[i].y };
-            mesh._points.emplace_back(p);
-        }
-        
-        for (Path& path : _paths)
-            path.update();
-        
-        XYZ *pts = xyz.get();
-        int i0, i1, i2, d01, d12, d20, c0, c1, c2, c;;
-        ITRIANGLE *triangles = itriangle.get();
-        for (int i = 0; i < ntri; i++) {
-            i0 = triangles[i].p1, i1 = triangles[i].p2, i2 = triangles[i].p3;
-            d01 = i1 - i0, d12 = i2 - i1, d20 = i0 - i2;
-            c0 = pts[i0].i, c1 = pts[i1].i, c2 = pts[i2].i;
-            c = std::abs(d01) > 1 ? c0 : std::abs(d12) > 1 ? c1 : std::abs(d20) > 1 ? c2 : c0;
-            Triangle t = { triangles[i].p1 + pi, triangles[i].p2 + pi, triangles[i].p3 + pi, c };
-            mesh._triangles.emplace_back(t);
-        }
-        Memory<Sample> samples(mesh._triangles.size());
-        Sample *sbegin = samples.get(), *send = sbegin;
-        Vector *points = & mesh._points[0];
-        float x0, y0, x1, y1, x2, y2, uvw[3], d = -1e-6;
-        int imin;
-        for (int ti = 0; ti < mesh._triangles.size(); ti++) {
-            Triangle& t = mesh._triangles[ti];
-            x0 = points[t.i0].x, y0 = points[t.i0].y;
-            x1 = points[t.i1].x, y1 = points[t.i1].y;
-            x2 = points[t.i2].x, y2 = points[t.i2].y;
-            new (send++) Sample((x0 + x1 + x2) * 0.333f, (y0 + y1 + y2) * 0.333f, ti);
-        }
-        sort(sbegin, send);
-        
-        size_t size = end - begin;
-        edges = edges1.get(), begin = edges, end = begin + size;
-        Memory<int> colors(mesh._triangles.size());
-        int *cdst = colors.get();
-        writeColors(cdst, begin, end, sbegin, send);
-        for (int ti = 0; ti < mesh._triangles.size(); ti++)
-            mesh._triangles[ti].c = cdst[ti];
-        
-        RGBA8 red(255, 0, 0, 255);
-        RGBA8 green(0, 255, 0, 255);
-        RGBA8 blue(0, 0, 255, 255);
-        RGBA8 black(0, 0, 0, 255);
-        RGBA8 alpha(255, 0, 0, 128);
-        
-        mesh._colors.emplace_back(red);
-        mesh._colors.emplace_back(green);
-    }
     void triangulate(Mesh& mesh, bool useMasking, bool useDelaunay) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
