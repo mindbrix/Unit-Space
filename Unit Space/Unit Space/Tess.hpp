@@ -430,16 +430,6 @@ struct Scene {
 };
 
 struct Tess {
-    Tess() {}
-    Tess(float w, float h) {
-        reset(w, h);
-    }
-    
-    void reset(float w, float h) {
-        _tess = shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess);
-        _quadtree = shared_ptr<VG::QuadTree<size_t>>(new VG::QuadTree<size_t>(0.f, 0.f, w, h));
-    }
-        
     void writeCurves(Mesh& mesh, Scene& scene) {
         int pi, c;
         float area, flip;
@@ -482,47 +472,6 @@ struct Tess {
                         p0 = p2;
                     }
                 }
-        }
-    }
-    void maskPaths(TESStesselator *tess, Scene& scene) {
-        for (Path& path : scene._paths)
-            Path::resolveSelfIntersections(tess, path);
-        
-        for (size_t i = 0; i < scene._paths.size(); i++) {
-            Path& path = scene._paths[i];
-            
-            auto matches = _quadtree->find(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
-            for (auto j : matches)
-                Path::maskPath(tess, scene._paths[j], path);
-            _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
-        }
-    }
-    static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
-        assert(kPolySize == 3);
-        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-        
-        for (Path& path : scene._paths) {
-            mesh._colors.emplace_back(path._color);
-            
-            for (SubPath& s : path._subPaths)
-                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-            
-            if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
-                float *points = (float *)tessGetVertices(tess);
-                int npoints = tessGetVertexCount(tess);
-                const int nelems = tessGetElementCount(tess);
-                const TESSindex *polygon = tessGetElements(tess);
-                
-                int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
-                for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                    Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
-                    mesh._triangles.emplace_back(tri);
-                }
-                for (int i = 0; i < npoints; i++) {
-                    Vector p = { points[i * 2], points[i * 2 + 1] };
-                    mesh._points.emplace_back(p);
-                }
-            }
         }
     }
     void writeEdges(Mesh& mesh, Scene& scene) {
@@ -635,20 +584,8 @@ struct Tess {
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
         mesh.empty();
-        TESStesselator *tess = _tess.get();
-        
         writeCurves(mesh, scene);
         writeEdges(mesh, scene);
-        
-        if (useDelaunay)
-            writeTriangles(mesh, scene);
-        else {
-            if (useMasking)
-                maskPaths(tess, scene);
-            writeTessTriangles(mesh, tess, scene);
-        }
+        writeTriangles(mesh, scene);
     }
-
-    shared_ptr<TESStesselator>			_tess;
-    shared_ptr<VG::QuadTree<size_t>>    _quadtree;
 };

@@ -15,6 +15,7 @@
 #import "nanosvg.h"
 
 #import "Tess.hpp"
+#import "libTess.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -52,6 +53,7 @@ using namespace std;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
+@property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
 
 @end
@@ -358,7 +360,6 @@ using namespace std;
         // Use...
         
         Scene scene(image->width, image->height);
-        _tess.reset(image->width, image->height);
         int limit = 60000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
@@ -376,7 +377,12 @@ using namespace std;
                 scene.addPath(p);
             }
         }
-        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        
+        if (self.useDelaunay)
+            _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        else
+            _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        
         [self.metalLayer uploadMesh:_mesh];
         
         // Delete
@@ -413,7 +419,6 @@ using namespace std;
 	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
 	
     Scene scene(self.bounds.size.width, self.bounds.size.height);
-    _tess.reset(self.bounds.size.width, self.bounds.size.height);
     if (self.pathBitmask & kPathBitmaskTriangle)
         scene.addPath(p0);
     
@@ -423,7 +428,10 @@ using namespace std;
     if (self.pathBitmask & kPathBitmaskQuad)
         scene.addPath(p2);
     
-    _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+    if (self.useDelaunay)
+        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+    else
+        _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     [self.metalLayer uploadMesh:_mesh];
 }
 
