@@ -10,8 +10,6 @@
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
 
-constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
-constexpr int kPolySize = 3;
 constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
 
@@ -317,24 +315,6 @@ struct Path {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
     
-    static void maskPath(TESStesselator *tess, Path& path, Path& mask) {
-        bool isPositive = path._subPaths[path._outerIndex]._area > 0;
-        bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
-        
-        for (SubPath& subPath : path._subPaths) {
-            tessSetOption(tess, TESS_REVERSE_CONTOURS, !isPositive);
-            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        }
-        
-        for (SubPath& subPath : mask._subPaths) {
-            tessSetOption(tess, TESS_REVERSE_CONTOURS, maskIsPositive);
-            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        }
-        
-        if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeTessSubpaths(tess, path);
-    }
-    
     int countPoints() {
         int count = 0;
         for (SubPath& s : _subPaths)
@@ -353,39 +333,7 @@ struct Path {
         }
         return dst;
     }
-    
-    
-    static void resolveSelfIntersections(TESStesselator *tess, Path& path) {
-        if (path._subPaths.size() == 1 && path._subPaths[0]._npoints == 3) {
-            path.update();
-            return;
-        }
-        for (SubPath& subPath : path._subPaths)
-            if (subPath._npoints > 2)
-                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        
-        if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeTessSubpaths(tess, path);
-            
-    }
-    
-    static void writeTessSubpaths(TESStesselator *tess, Path& path) {
-        path._subPaths.resize(0);
-        
-        const float *verts = tessGetVertices(tess);
-        const int *elems = tessGetElements(tess);
-        const int nelems = tessGetElementCount(tess);
-        
-        for (int i = 0; i < nelems; i++) {
-            int base = elems[i * 2], npoints = elems[i * 2 + 1];
-            const float *points = verts + base * 2;
-            
-            if (npoints > 2)
-                path._subPaths.emplace_back(points, npoints, SubPath::kLine);
-        }
-        path.update();
-    }
-    
+
     void update() {
         float area, maxArea = 0;
         _outerIndex = 0;
