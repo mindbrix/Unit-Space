@@ -633,16 +633,15 @@ struct Tess {
         TESStesselator *tess = _tess.get();
         
         writeCurves(mesh);
-        if (useMasking)
-            maskPaths(tess);
-
         writeEdges(mesh);
         
         if (useDelaunay)
             writeTriangles(mesh);
-//            writeDelaunayTriangles(mesh, useMasking);
-        else
+        else {
+            if (useMasking)
+                maskPaths(tess);
             writeTessTriangles(mesh, tess);
+        }
     }
 
     shared_ptr<TESStesselator>			_tess;
