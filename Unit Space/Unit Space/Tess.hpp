@@ -9,7 +9,6 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
-#import "delaunay.h"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
@@ -492,11 +491,11 @@ struct Tess {
             _quadtree->add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
         }
     }
-    void writeTessTriangles(Mesh& mesh, TESStesselator *tess) {
+    static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, vector<Path>& paths) {
         assert(kPolySize == 3);
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         
-        for (Path& path : _paths) {
+        for (Path& path : paths) {
             mesh._colors.emplace_back(path._color);
             
             for (SubPath& s : path._subPaths)
@@ -640,7 +639,7 @@ struct Tess {
         else {
             if (useMasking)
                 maskPaths(tess);
-            writeTessTriangles(mesh, tess);
+            writeTessTriangles(mesh, tess, _paths);
         }
     }
 

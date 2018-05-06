@@ -49,7 +49,6 @@
 		E9DF4DC22075877400DF2668 /* hawaii.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = hawaii.svg; sourceTree = "<group>"; };
 		E9DF4DC32075877400DF2668 /* paris-30k.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "paris-30k.svg"; sourceTree = "<group>"; };
 		E9DFC48D2093190A00AFDAC7 /* Mesh.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
-		E9DFC48F20962BC400AFDAC7 /* delaunay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = delaunay.h; path = ../../../../delaunay.h/delaunay.h; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
 		E9EE5F7B20851100005823F7 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
 		E9EE5F7C20851100005823F7 /* bucketalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bucketalloc.h; sourceTree = "<group>"; };
@@ -106,7 +105,6 @@
 			isa = PBXGroup;
 			children = (
 				E9EE5F6A20851100005823F7 /* libtess2 */,
-				E9DFC48F20962BC400AFDAC7 /* delaunay.h */,
 				E96B3465207BDECB006D74B1 /* nanosvg.h */,
 			);
 			name = libs;
