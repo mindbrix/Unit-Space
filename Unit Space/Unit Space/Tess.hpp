@@ -508,6 +508,8 @@ struct Tess {
                     intend->x0 = x0, intend->y0 = y0, intend->x1 = x1, intend++->y1 = y1;
                     x0 = x1, y0 = y1;
                 }
+                *intend = *(in - 1)->e;
+                intend->x0 = x0, intend++->y0 = y0;
             } else {
                 x1 = inbegin->e->x1, y1 = inbegin->e->y1;
                 while (inbegin < in) {
@@ -516,6 +518,8 @@ struct Tess {
                     intend->x0 = x0, intend->y0 = y0, intend->x1 = x1, intend++->y1 = y1;
                     x1 = x0, y1 = y0;
                 }
+                *intend = *(in - 1)->e;
+                intend->x1 = x1, intend++->y1 = y1;
             }
         }
         Memory<float> xDivisions(((count * 2) + (int)intersections.size()));
