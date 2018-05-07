@@ -536,8 +536,10 @@ struct Tess {
                 y3 = a->lyt, y2 = a->uyt, ue = a->e;
                 
                 if ((winding & 1) != 0) {
+                    Quad qw(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
+                    writeQuad(mesh, &qw);
+                   /*********************************************************
                     new (qsrc) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
-                    
                     while (qdst < qend && qdst->y1 < qend->y0)
                         qdst++;
                     
@@ -545,16 +547,13 @@ struct Tess {
                         qdst++;
                     else
                         qsrc++;
-                    
-                    
-//                    new (qend++) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
+                    *********************************************************/
                 }
-                
-                
                 winding += a->e->x0 > a->e->x1 ? 1 : -1;
                 y0 = y3, y1 = y2, le = ue;
             }
-            
+
+           /************************************
             for (q = qbegin; q < qend; q++)
                 if (q->x1 < ux) {
                     writeQuad(mesh, q);
@@ -564,10 +563,7 @@ struct Tess {
             while ((qsrc - 1)->y0 == FLT_MAX)
                 qsrc--;
             qend = qsrc;
-            
-//            for (q = qbegin; q < qend; q++)
-//                writeQuad(mesh, q);
-//            qend = qbegin;
+            ************************************/
         }
         
         for (q = qbegin; q < qend; q++)
