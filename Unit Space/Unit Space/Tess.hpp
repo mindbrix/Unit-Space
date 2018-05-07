@@ -83,7 +83,7 @@ struct IntersectionEdge {
 struct Intersection {
     Intersection(Edge *e, float px, float py) : e(e), px(px), py(py) {}
     
-    inline bool operator< (const Intersection& other) const     { return px < other.px || (px == other.px && py < other.py); }
+    inline bool operator< (const Intersection& other) const     { return e < other.e || (e == other.e && (px < other.px || (px == other.px && py < other.py))); }
     
     float px, py;
     Edge *e;
@@ -489,6 +489,7 @@ struct Tess {
             new (iend++) IntersectionEdge(edge, edge->ly(), edge->uy());
         vector<Intersection> intersections;
         findIntersections(intersections, ibegin, iend);
+        sort(intersections.begin(), intersections.end());
         
         Memory<float> xDivisions(((count * 2) + (int)intersections.size()));
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
