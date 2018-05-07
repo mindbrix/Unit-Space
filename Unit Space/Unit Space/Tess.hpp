@@ -473,6 +473,8 @@ struct Tess {
         mesh._points.emplace_back(q->x3, q->y3);
     }
     static void writeTriangles(Mesh& mesh, Scene& scene) {
+        float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
+        
         int count = 0;
         for (Path& path : scene._paths)
             count += path.countPoints();
@@ -490,7 +492,32 @@ struct Tess {
         vector<Intersection> intersections;
         findIntersections(intersections, ibegin, iend);
         sort(intersections.begin(), intersections.end());
-        
+        Memory<Edge> intersectedEdges(intersections.size() * 2);
+        Edge *intbegin = intersectedEdges.get(), *intend = intbegin;
+        Intersection *inbegin = & intersections[0], *inend = inbegin + intersections.size(), *in = inbegin;
+        while (in < inend) {
+            do {
+                in++;
+            } while (in < inend && in->e == inbegin->e);
+            
+            if (inbegin->e->x0 < inbegin->e->x1) {
+                x0 = inbegin->e->x0, y0 = inbegin->e->y0;
+                while (inbegin < in) {
+                    x1 = inbegin->px, y1 = inbegin->py;
+                    *intend = *(inbegin++)->e;
+                    intend->x0 = x0, intend->y0 = y0, intend->x1 = x1, intend++->y1 = y1;
+                    x0 = x1, y0 = y1;
+                }
+            } else {
+                x1 = inbegin->e->x1, y1 = inbegin->e->y1;
+                while (inbegin < in) {
+                    x0 = inbegin->px, y0 = inbegin->py;
+                    *intend = *(inbegin++)->e;
+                    intend->x0 = x0, intend->y0 = y0, intend->x1 = x1, intend++->y1 = y1;
+                    x1 = x0, y1 = y0;
+                }
+            }
+        }
         Memory<float> xDivisions(((count * 2) + (int)intersections.size()));
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
@@ -506,7 +533,6 @@ struct Tess {
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
         
         int winding;
-        float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         for (edge = begin, division = dbegin; division < dend; ) {
             lx = *division;
             do
