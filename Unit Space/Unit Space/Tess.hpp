@@ -22,10 +22,10 @@ struct Edge {
         kStale    = 1 << 2
     };
     
-    Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
+    Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), lift(1e-3 * std::abs((y1 - y0) / (x1 - x0))), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
     inline float y(float x) {
-        return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+        return x == x0 ? y0 : x == x1 ? y1 : y0 + (x - x0) * (y1 - y0) / (x1 - x0) + lift;
     }
     float lx() const { return x0 > x1 ? x1 : x0; }
     float ly() const { return y0 > y1 ? y1 : y0; }
@@ -35,6 +35,7 @@ struct Edge {
     inline bool operator< (const Edge& other) const     { return lx() < other.lx() || (lx() == other.lx() && ly() < other.ly()); }
     
     float x0, y0, x1, y1;
+    float lift;
     unsigned short int flags, p, ci, pi;
 };
 
@@ -45,10 +46,9 @@ struct ActiveEdge {
                 ly = e->y0, uy = e->y1;
             else
                 ly = e->y1, uy = e->y0;
-            lyt = uyt = lift = 0;
+            lyt = uyt;
         } else {
-            lift = 1e-3 * std::abs((e->y1 - e->y0) / (e->x1 - e->x0));
-            lyt = e->y(lx) + lift, uyt = e->y(ux) + lift;
+            lyt = e->y(lx), uyt = e->y(ux);
             if (lyt < uyt)
                 ly = lyt, uy = uyt;
             else
@@ -59,7 +59,7 @@ struct ActiveEdge {
         if (e->x0 == e->x1)
             return;
         
-        lyt = uyt, uyt = e->y(ux) + lift;
+        lyt = uyt, uyt = e->y(ux);
         if (lyt < uyt)
             ly = uy, uy = uyt;
         else
@@ -70,7 +70,6 @@ struct ActiveEdge {
     
     float ly, uy;
     float lyt, uyt;
-    float lift;
     Edge *e;
 };
 
@@ -97,6 +96,8 @@ struct Quad {
     bool merge(Quad *rq) {
         if (y1 == y2 || rq->y0 == rq->y3)
             return false;
+        if (! (y1 == rq->y0 && y2 == rq->y3))
+            return false;
         if (le == rq->le && ue == rq->ue) {
             x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
             return true;
@@ -104,16 +105,43 @@ struct Quad {
         if (y0 == y3) {
             if (rq->y1 == rq->y2) {
                 if (le == rq->le) {
-                    x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y1 = rq->y2, x3 = rq->x3, y3 = rq->y3;
+                    x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2, x3 = rq->x3, y3 = rq->y3;
+                    ue = rq->ue;
                     return true;
                 } else if (ue == rq->ue) {
                     x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
+                    le = rq->le;
                     return true;
-                } 
+                }
+            } else {
+                if (le == rq->le && (x2 - x0) * (rq->y2 - y2) - (y2 - y0) * (rq->x2 - x2) < 0) {
+                    x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2, x3 = rq->x3, y3 = rq->y3;
+                    ue = rq->ue;
+                    return true;
+                } else if (ue == rq->ue && (x1 - x0) * (rq->y1 - y1) - (y1 - y0) * (rq->x1 - x1) > 0) {
+                    x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
+                    le = rq->le;
+                    return true;
+                }
+            }
+        } else {
+            if (rq->y1 == rq->y2) {
+                if (le == rq->le) {
+                    x1 = rq->x1, y1 = rq->y1;
+                    return true;
+                } else if (ue == rq->ue && (x1 - x0) * (rq->y1 - y1) - (y1 - y0) * (rq->x1 - x1) > 0) {
+                    x2 = rq->x2, y2 = rq->y2;
+                    return true;
+                }
             }
         }
+        
         return false;
     }
+    inline float ly() const { return y0 < y1 ? y0 : y1; }
+    inline float uy() const { return y2 < y3 ? y3 : y2; }
+    inline bool operator< (const Quad& other) const     { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
+    
     float x0, y0, x1, y1, x2, y2, x3, y3;
     Edge *le, *ue;
 };
@@ -429,9 +457,9 @@ struct Tess {
     }
     static void writeQuad(Mesh& mesh, Quad *q) {
         int pi = (int)mesh._points.size();
-        if (q->y1 == q->y2)
+        if (q->x1 == q->x2 && q->y1 == q->y2)
             mesh._triangles.emplace_back(pi, pi + 1, pi + 3, q->le->p);
-        else if (q->y0 == q->y3)
+        else if (q->x0 == q->x3 && q->y0 == q->y3)
             mesh._triangles.emplace_back(pi, pi + 1, pi + 2, q->le->p);
         else {
             mesh._triangles.emplace_back(pi, pi + 1, pi + 2, q->le->p);
@@ -500,25 +528,54 @@ struct Tess {
             y0 = y1 = y2 = y3 = 0;
             le = ue = nullptr;
             winding = 0;
+            qdst = qbegin, qsrc = qend;
             for (a = abegin; a < aend; a++) {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
                 y3 = a->lyt, y2 = a->uyt, ue = a->e;
                 
-                if ((winding & 1) != 0)
-                    new (qend++) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
+                if ((winding & 1) != 0) {
+                    new (qsrc) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
+                    
+                    while (qdst < qend && qdst->y1 < qend->y0)
+                        qdst++;
+                    
+                    if (qdst < qend && qdst->merge(qsrc))
+                        qdst++;
+                    else
+                        qsrc++;
+                    
+                    
+//                    new (qend++) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
+                }
+                
                 
                 winding += a->e->x0 > a->e->x1 ? 1 : -1;
                 y0 = y3, y1 = y2, le = ue;
             }
+            
             for (q = qbegin; q < qend; q++)
-                writeQuad(mesh, q);
-            qend = qbegin;
+                if (q->x1 < ux) {
+                    writeQuad(mesh, q);
+                    q->y0 = q->y1 = FLT_MAX;
+                }
+            sort(qbegin, qsrc);
+            while ((qsrc - 1)->y0 == FLT_MAX)
+                qsrc--;
+            qend = qsrc;
+            
+//            for (q = qbegin; q < qend; q++)
+//                writeQuad(mesh, q);
+//            qend = qbegin;
         }
         
+        for (q = qbegin; q < qend; q++)
+            writeQuad(mesh, q);
+        
+        RGBA8 red(255, 0, 0, 255);
         for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
+            mesh._colors.emplace_back(red);
     }
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
