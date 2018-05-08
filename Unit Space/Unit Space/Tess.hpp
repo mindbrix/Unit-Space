@@ -187,6 +187,7 @@ public:
         }
         return Memory();
     }
+    size_t size() { return header ? header->size : 0; }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
 };
 
@@ -500,40 +501,48 @@ struct Tess {
                 in++;
             } while (in < inend && in->e == inbegin->e);
             
+            if (in == inbegin)
+                continue;
+            for (int j = 0; j < in - inbegin; j++)
+                intend[j] = *inbegin->e;
             if (inbegin->e->x0 < inbegin->e->x1) {
-                x0 = inbegin->e->x0, y0 = inbegin->e->y0;
+                x1 = inbegin->px, y1 = inbegin->py;
+                inbegin->e->x1 = x1, inbegin->e->y1 = y1;
+                x0 = x1, y0 = y1, inbegin++;
                 while (inbegin < in) {
-                    x1 = inbegin->px, y1 = inbegin->py;
-                    *intend = *(inbegin++)->e;
+                    x1 = inbegin->px, y1 = inbegin++->py;
                     intend->x0 = x0, intend->y0 = y0, intend->x1 = x1, intend++->y1 = y1;
                     x0 = x1, y0 = y1;
                 }
-                *intend = *(in - 1)->e;
                 intend->x0 = x0, intend++->y0 = y0;
             } else {
-                x1 = inbegin->e->x1, y1 = inbegin->e->y1;
+                x0 = inbegin->px, y0 = inbegin->py;
+                inbegin->e->x0 = x0, inbegin->e->y0 = y0;
+                x1 = x0, y1 = y0, inbegin++;
                 while (inbegin < in) {
-                    x0 = inbegin->px, y0 = inbegin->py;
-                    *intend = *(inbegin++)->e;
+                    x0 = inbegin->px, y0 = inbegin++->py;
                     intend->x0 = x0, intend->y0 = y0, intend->x1 = x1, intend++->y1 = y1;
                     x1 = x0, y1 = y0;
                 }
-                *intend = *(in - 1)->e;
                 intend->x1 = x1, intend++->y1 = y1;
             }
         }
-        Memory<float> xDivisions(((count * 2) + (int)intersections.size()));
+        Memory<Edge> edges1(intend - intbegin + count);
+        memcpy(edges1.get(), edges0.get(), edges0.size());
+        memcpy(edges1.get() + count, intersectedEdges.get(), edges1.size() - edges0.size());
+        begin = edges1.get(), end = begin + (intend - intbegin + count);
+        sort(begin, end);
+        
+        Memory<float> xDivisions((end - begin) * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
-        for (auto& i : intersections)
-            *dend++ = i.px;
         sort(dbegin, dend);
         
-        Memory<ActiveEdge> activeEdges(count);
+        Memory<ActiveEdge> activeEdges(end - begin);
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
         
-        Memory<Quad> activeQuads(count);
+        Memory<Quad> activeQuads(end - begin);
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
         
         int winding;
