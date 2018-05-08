@@ -16,13 +16,7 @@ constexpr float kSplitCubicPrecision = 0.1;
 #pragma mark - Data structures
 
 struct Edge {
-    enum Flags {
-        kFlippedX = 1 << 0,
-        kFlippedY = 1 << 1,
-        kStale    = 1 << 2
-    };
-    
-    Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
+    Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
     inline float y(float x) {
         return x == x0 ? y0 : x == x1 ? y1 : y0 + (x - x0) * (y1 - y0) / (x1 - x0);
