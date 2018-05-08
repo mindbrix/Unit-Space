@@ -542,11 +542,15 @@ struct Tess {
                 a->update(ux);
             
             while (edge < end && edge->lx() == lx) {
-                if (edge->x0 != edge->x1)
-                    new (aend++) ActiveEdge(edge, lx, ux);
+                if (edge->x0 != edge->x1) {
+                    ActiveEdge anew(edge, lx, ux);
+                    adst = aend++, asrc = adst - 1;
+                    while (adst > abegin && anew < *asrc)
+                        *adst-- = *asrc--;
+                    *adst = anew;
+                }
                 edge++;
             }
-            sort(abegin, aend);
             
             x0 = x3 = lx, x1 = x2 = ux;
             y0 = y1 = y2 = y3 = 0;
