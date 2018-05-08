@@ -22,10 +22,10 @@ struct Edge {
         kStale    = 1 << 2
     };
     
-    Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), lift(1e-3 * std::abs((y1 - y0) / (x1 - x0))), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
+    Edge(float lx, float ly, float ux, float uy, int p, int ci, int pi) : x0(lx), y0(ly), x1(ux), y1(uy), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
     inline float y(float x) {
-        return x == x0 ? y0 : x == x1 ? y1 : y0 + (x - x0) * (y1 - y0) / (x1 - x0) + lift;
+        return x == x0 ? y0 : x == x1 ? y1 : y0 + (x - x0) * (y1 - y0) / (x1 - x0);
     }
     float lx() const { return x0 > x1 ? x1 : x0; }
     float ly() const { return y0 > y1 ? y1 : y0; }
@@ -35,7 +35,6 @@ struct Edge {
     inline bool operator< (const Edge& other) const     { return lx() < other.lx() || (lx() == other.lx() && ly() < other.ly()); }
     
     float x0, y0, x1, y1;
-    float lift;
     unsigned short int flags, p, ci, pi;
 };
 
