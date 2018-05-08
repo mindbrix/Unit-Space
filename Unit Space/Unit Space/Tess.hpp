@@ -492,7 +492,7 @@ struct Tess {
         vector<Intersection> intersections;
         findIntersections(intersections, ibegin, iend);
         sort(intersections.begin(), intersections.end());
-        Memory<Edge> intersectedEdges(intersections.size() * 2);
+        Memory<Edge> intersectedEdges(intersections.size());
         Edge *intbegin = intersectedEdges.get(), *intend = intbegin;
         Intersection *inbegin = & intersections[0], *inend = inbegin + intersections.size(), *in = inbegin;
         while (in < inend) {
