@@ -19,7 +19,7 @@ struct Edge {
     Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
     inline float y(float x) {
-        return x == x0 ? y0 : x == x1 ? y1 : y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+        return x == x1 ? y1 : y0 + (x - x0) / (x1 - x0) * (y1 - y0);
     }
     float lx() const { return x0 > x1 ? x1 : x0; }
     float ly() const { return y0 > y1 ? y1 : y0; }
@@ -34,24 +34,13 @@ struct Edge {
 
 struct ActiveEdge {
     ActiveEdge(Edge *e, float lx, float ux) : e(e) {
-        if (e->x0 == e->x1) {
-            if (e->y0 < e->y1)
-                ly = e->y0, uy = e->y1;
-            else
-                ly = e->y1, uy = e->y0;
-            lyt = uyt;
-        } else {
-            lyt = e->y(lx), uyt = e->y(ux);
-            if (lyt < uyt)
-                ly = lyt, uy = uyt;
-            else
-                ly = uyt, uy = lyt;
-        }
+        lyt = e->y(lx), uyt = e->y(ux);
+        if (lyt < uyt)
+            ly = lyt, uy = uyt;
+        else
+            ly = uyt, uy = lyt;
     }
     inline void update(float ux) {
-        if (e->x0 == e->x1)
-            return;
-        
         lyt = uyt, uyt = e->y(ux);
         if (lyt < uyt)
             ly = uy, uy = uyt;
@@ -562,9 +551,11 @@ struct Tess {
             for (a = abegin; a < aend; a++)
                 a->update(ux);
             
-            while (edge < end && edge->lx() == lx)
-                new (aend++) ActiveEdge(edge++, lx, ux);
-
+            while (edge < end && edge->lx() == lx) {
+                if (edge->x0 != edge->x1)
+                    new (aend++) ActiveEdge(edge, lx, ux);
+                edge++;
+            }
             sort(abegin, aend);
             
             x0 = x3 = lx, x1 = x2 = ux;
