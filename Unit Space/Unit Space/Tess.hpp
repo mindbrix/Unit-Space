@@ -579,9 +579,6 @@ struct Tess {
                 y3 = a->lyt, y2 = a->uyt, ue = a->e;
                 
                 if ((winding & 1) != 0) {
-//                    Quad qw(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
-//                    writeQuad(mesh, &qw);
-                   /*********************************************************/
                     new (qsrc) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
                     while (qdst < qend && qdst->y1 < qsrc->y0)
                         qdst++;
@@ -590,31 +587,27 @@ struct Tess {
                         qdst++;
                     else
                         qsrc++;
-                    /*********************************************************/
                 }
                 winding += a->e->x0 > a->e->x1 ? 1 : -1;
                 y0 = y3, y1 = y2, le = ue;
             }
 
-           /************************************/
             for (q = qbegin; q < qend; q++)
                 if (q->x1 < ux) {
                     writeQuad(mesh, q);
                     q->y0 = q->y1 = FLT_MAX;
                 }
             sort(qbegin, qsrc);
-            while ((qsrc - 1)->y0 == FLT_MAX)
+            while (qsrc > qbegin && (qsrc - 1)->y0 == FLT_MAX)
                 qsrc--;
             qend = qsrc;
-            /************************************/
         }
         
         for (q = qbegin; q < qend; q++)
             writeQuad(mesh, q);
         
-        RGBA8 red(255, 0, 0, 255);
         for (Path& path : scene._paths)
-            mesh._colors.emplace_back(red);
+            mesh._colors.emplace_back(path._color);
     }
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
