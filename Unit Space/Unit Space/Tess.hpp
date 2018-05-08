@@ -481,7 +481,7 @@ struct Tess {
             count += path.countPoints();
         
         Memory<Edge> edges0(count);
-        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge, *le, *ue;
+        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : scene._paths)
             end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
         sort(begin, end);
@@ -540,16 +540,16 @@ struct Tess {
         Memory<Edge> edges = createEdgeList(scene);
         Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *le, *ue;
         
-        Memory<float> xDivisions((end - begin) * 2);
+        Memory<float> xDivisions(edges.count() * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
         sort(dbegin, dend);
         
-        Memory<ActiveEdge> activeEdges(end - begin);
+        Memory<ActiveEdge> activeEdges(edges.count());
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
         
-        Memory<Quad> activeQuads(end - begin);
+        Memory<Quad> activeQuads(edges.count());
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
         
         int winding;
