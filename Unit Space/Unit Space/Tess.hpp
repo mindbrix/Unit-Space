@@ -324,7 +324,7 @@ struct Path {
     Path() {}
     Path(bool evenOdd, RGBA8 color) : _color(color), _evenOdd(evenOdd), _outerIndex(0) {}
     
-    void addContour(float *points, int npoints, SubPath::Type type) {
+    void addSubPath(float *points, int npoints, SubPath::Type type) {
         if (npoints > 2) {
             _subPaths.emplace_back(points, npoints, type);
             
@@ -618,9 +618,9 @@ struct Tess {
 //        for (q = qbegin; q < qend; q++)
 //            writeQuad(mesh, q);
         
-        RGBA8 red(255, 0, 0, 255);
+//        RGBA8 red(255, 0, 0, 255);
         for (Path& path : scene._paths)
-            mesh._colors.emplace_back(red);
+            mesh._colors.emplace_back(path._color);
     }
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {

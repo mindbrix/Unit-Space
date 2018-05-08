@@ -372,7 +372,7 @@ using namespace std;
                     for (int i = 0; i < path->npts; i++)
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                     
-                    p.addContour(path->pts, path->npts, SubPath::kCubic);
+                    p.addSubPath(path->pts, path->npts, SubPath::kCubic);
                 }
                 scene.addPath(p);
             }
@@ -412,11 +412,11 @@ using namespace std;
     RGBA8 alpha(255, 0, 0, 128);
     
     Path p0(false, red);
-    p0.addContour((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
+    p0.addSubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
     Path p1(false, red);
-    p1.addContour((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
+    p1.addSubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
     Path p2(false, black);
-	p2.addContour((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
+	p2.addSubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
 	
     Scene scene(self.bounds.size.width, self.bounds.size.height);
     if (self.pathBitmask & kPathBitmaskTriangle)
