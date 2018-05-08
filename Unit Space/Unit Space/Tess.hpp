@@ -186,6 +186,7 @@ public:
         }
         return Memory();
     }
+    size_t count() { return header ? header->size / sizeof(T) : 0; }
     size_t size() { return header ? header->size : 0; }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
 };
@@ -472,8 +473,8 @@ struct Tess {
         mesh._points.emplace_back(q->x2, q->y2);
         mesh._points.emplace_back(q->x3, q->y3);
     }
-    static void writeTriangles(Mesh& mesh, Scene& scene) {
-        float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
+    static Memory<Edge> createEdgeList(Scene& scene) {
+        float x0, y0, x1, y1;
         
         int count = 0;
         for (Path& path : scene._paths)
@@ -531,6 +532,13 @@ struct Tess {
         memcpy(edges1.get() + count, intersectedEdges.get(), edges1.size() - edges0.size());
         begin = edges1.get(), end = begin + (intend - intbegin + count);
         sort(begin, end);
+        return edges1;
+    }
+    static void writeTriangles(Mesh& mesh, Scene& scene) {
+        float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
+        
+        Memory<Edge> edges = createEdgeList(scene);
+        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *le, *ue;
         
         Memory<float> xDivisions((end - begin) * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
@@ -607,8 +615,8 @@ struct Tess {
             ************************************/
         }
         
-        for (q = qbegin; q < qend; q++)
-            writeQuad(mesh, q);
+//        for (q = qbegin; q < qend; q++)
+//            writeQuad(mesh, q);
         
         RGBA8 red(255, 0, 0, 255);
         for (Path& path : scene._paths)
