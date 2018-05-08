@@ -34,18 +34,14 @@ struct Edge {
 
 struct ActiveEdge {
     ActiveEdge(Edge *e, float lx, float ux) : e(e) {
-        lyt = e->y(lx), uyt = e->y(ux);
-        if (lyt < uyt)
-            ly = lyt, uy = uyt;
-        else
-            ly = uyt, uy = lyt;
+        ly = lyt = e->y(lx), uy = uyt = e->y(ux);
+        if (ly > uy)
+            std::swap(ly, uy);
     }
     inline void update(float ux) {
-        lyt = uyt, uyt = e->y(ux);
-        if (lyt < uyt)
-            ly = uy, uy = uyt;
-        else
-            uy = ly, ly = uyt;
+        ly = lyt = uyt, uy = uyt = e->y(ux);
+        if (ly > uy)
+            std::swap(ly, uy);
     }
     
     inline bool operator< (const ActiveEdge& other) const     { return ly < other.ly || (ly == other.ly && uy < other.uy); }
