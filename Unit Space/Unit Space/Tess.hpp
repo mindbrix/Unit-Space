@@ -231,6 +231,7 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
     }
     *dst++ = x3, *dst++ = y3;
 }
+// The Bentley-Ottmann Algorithm: http://geomalgorithms.com/a09-_intersect-3.html
 static void findIntersections(vector<Intersection>& intersections, IntersectionEdge *begin, IntersectionEdge *end) {
     IntersectionEdge *edge, *last, *src, *dst, *e0, *e1;
     float lx, px, py;
