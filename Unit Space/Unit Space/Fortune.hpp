@@ -89,6 +89,7 @@ struct Fortune {
     int                         _total_alloc = 0;
     vector<shared_ptr<void>>    _memory;
     vector<Site>                _sites;
+    Site                        *_lastSite;
     vector<Ref<Site>>           _sitesIndex;
     Mesh                        *_mesh;
     
@@ -120,7 +121,8 @@ struct Fortune {
             _sitesIndex.emplace_back(site);
         sort(_sitesIndex.begin(), _sitesIndex.end());
         siteidx = 0;
-
+        _lastSite = nullptr;
+        
         xmin = ymin = 0, xmax = scene.w, ymax = scene.h;
         deltay = ymax - ymin, deltax = xmax - xmin;
         
@@ -133,11 +135,15 @@ struct Fortune {
 private:
     void out_triple(Site * s1, Site * s2, Site * s3) {
         int i0 = s1->sitenbr, i1 = s2->sitenbr, i2 = s3->sitenbr;
-        _mesh->_triangles.emplace_back(i0, i1, i2, 0);
+        _mesh->_triangles.emplace_back(i2, i1, i0, 0);
     }
     
     Site *nextone(void) {
         Site *site = siteidx < _sitesIndex.size() ? _sitesIndex[siteidx++] : NULL;
+        if (site && _lastSite && site->coord.x == _lastSite->coord.x && site->coord.y == _lastSite->coord.y)
+            return nextone();
+        
+        _lastSite = site;
         return site;
     }
     
