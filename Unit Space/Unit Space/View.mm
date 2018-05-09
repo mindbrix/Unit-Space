@@ -16,6 +16,7 @@
 
 #import "Tess.hpp"
 #import "libTess.hpp"
+#import "Fortune.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -53,6 +54,7 @@ using namespace std;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
+@property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
 
@@ -379,7 +381,8 @@ using namespace std;
         }
         
         if (self.useDelaunay)
-            _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+            _fortune.triangulate(_mesh, scene);
+//            _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
         else
             _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
         
@@ -429,7 +432,8 @@ using namespace std;
         scene.addPath(p2);
     
     if (self.useDelaunay)
-        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        _fortune.triangulate(_mesh, scene);
+//        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     else
         _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     [self.metalLayer uploadMesh:_mesh];

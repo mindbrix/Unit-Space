@@ -45,6 +45,7 @@
 		E90D1DC4203E9F6D00F9F35B /* Library.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
 		E90D1DC6203E9FA100F9F35B /* Headers.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Headers.metal; sourceTree = "<group>"; };
 		E913A4FF209EEAA6003CBC77 /* libTess.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libTess.hpp; sourceTree = "<group>"; };
+		E913A50020A386CD003CBC77 /* Fortune.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Fortune.hpp; sourceTree = "<group>"; };
 		E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VGQuadTree.hpp; sourceTree = "<group>"; };
 		E96B3465207BDECB006D74B1 /* nanosvg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
 		E9DF4DC22075877400DF2668 /* hawaii.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = hawaii.svg; sourceTree = "<group>"; };
@@ -198,6 +199,7 @@
 				E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */,
 				E913A4FF209EEAA6003CBC77 /* libTess.hpp */,
 				E9F50F9B2072CF9400C26317 /* Tess.hpp */,
+				E913A50020A386CD003CBC77 /* Fortune.hpp */,
 			);
 			path = "Unit Space";
 			sourceTree = "<group>";
