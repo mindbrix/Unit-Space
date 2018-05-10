@@ -10,23 +10,19 @@
 struct Kismet {
     struct Site {
         Site(float x, float y, int i) : x(x), y(y), i(i) {}
-        
         inline bool operator< (const Site& other) const     { return y < other.y || (y == other.y && x < other.x); }
-        
         float x, y;
         int i;
     };
     
     struct Triangle {
         Triangle(int i0, int i1, int i2) : i0(i0), i1(i1), i2(i2) {}
-        
         int i0, i1, i2;
     };
     
     struct TriangleEvent {
         TriangleEvent(Site *s0, Site *s1, Site *s2) : uy(FLT_MAX), s(s1), t(s0->i, s1->i, s2->i) {
             float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, x, y, r, dx, dy;
-            
             cross = (s1->x - s0->x) * (s2->y - s1->y) - (s1->y - s0->y) * (s2->x - s1->x);
             convex = cross < 0;
             if (cross != 0) {
@@ -96,7 +92,7 @@ struct Kismet {
                     *bdst-- = *bsrc--;
                 *bdst = *s;
                 bleft = bdst - 1, bright = bdst + 1;
-                if (bleft <= bbegin && bright < bend) {
+                if (bleft >= bbegin && bright < bend) {
                     TriangleEvent tnew(bleft, bdst, bright);
                     if (tnew.uy != FLT_MAX) {
                         tdst = tend++, tsrc = tdst - 1;
@@ -106,11 +102,31 @@ struct Kismet {
                     }
                 }
                 blleft = bleft - 1;
-                if (blleft <= bbegin) {
+                if (blleft >= bbegin) {
+                    TriangleEvent tnew(blleft, bleft, bdst);
+                    if (tnew.uy != FLT_MAX) {
+                        for (tdst = tbegin; tdst < tend && tdst->s != tnew.s; tdst++) {}
+                        if (tdst == tend) {
+                            tdst = tend++, tsrc = tdst - 1;
+                            while (tdst > tbegin && tnew.uy < tsrc->uy)
+                                *tdst-- = *tsrc--;
+                        }
+                        *tdst = tnew;
+                    }
                 }
                 
                 brright = bright + 1;
                 if (brright < bend) {
+                    TriangleEvent tnew(bdst, bright, brright);
+                    if (tnew.uy != FLT_MAX) {
+                        for (tdst = tbegin; tdst < tend && tdst->s != tnew.s; tdst++) {}
+                        if (tdst == tend) {
+                            tdst = tend++, tsrc = tdst - 1;
+                            while (tdst > tbegin && tnew.uy < tsrc->uy)
+                                *tdst-- = *tsrc--;
+                        }
+                        *tdst = tnew;
+                    }
                 }
             }
             
