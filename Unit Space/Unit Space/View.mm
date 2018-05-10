@@ -55,6 +55,7 @@ using namespace std;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
+@property(nonatomic) Kismet kismet;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
@@ -432,6 +433,7 @@ using namespace std;
     if (self.pathBitmask & kPathBitmaskQuad)
         scene.addPath(p2);
     
+    _kismet.triangulate(_mesh, scene);
     if (self.useDelaunay)
         _fortune.triangulate(_mesh, scene);
 //        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
