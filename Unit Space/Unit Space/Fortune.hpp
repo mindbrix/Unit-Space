@@ -38,10 +38,10 @@ struct Fortune {
     };
     
     struct Point {
-        float x, y ;
+        double x, y ;
         
         inline Point() {}
-        inline Point(float x, float y) : x(x), y(y)          {}
+        inline Point(double x, double y) : x(x), y(y)          {}
         inline bool operator< (const Point& other) const     { return y < other.y || (y == other.y && x < other.x); }
     };
     
@@ -49,17 +49,17 @@ struct Fortune {
         Point coord ;
         int sitenbr, refcnt ;
         
-        Site(float x, float y, int sitenbr) : coord(x, y), sitenbr(sitenbr), refcnt(0)      {}
+        Site(double x, double y, int sitenbr) : coord(x, y), sitenbr(sitenbr), refcnt(0)      {}
         inline Site *ref()                                   { refcnt++; return this; }
         inline bool operator< (const Site& other) const      { return coord < other.coord; }
     };
     
     struct Edge {
-        float a, b, c ;
+        double a, b, c ;
         Site *ep[2], *reg[2] ;
         int edgenbr ;
         
-        Edge(float a, float b, float c, Site *s1, Site *s2, int edgenbr) : a(a), b(b), c(c), ep { NULL, NULL }, reg { s1->ref(), s2->ref() }, edgenbr(edgenbr) {}
+        Edge(double a, double b, double c, Site *s1, Site *s2, int edgenbr) : a(a), b(b), c(c), ep { NULL, NULL }, reg { s1->ref(), s2->ref() }, edgenbr(edgenbr) {}
     };
     
     struct Halfedge {
@@ -265,7 +265,7 @@ private:
 #pragma mark - geometry.c
     
     inline Edge *bisect(Site * s1, Site * s2) {
-        float a, b, c, dx = s2->coord.x - s1->coord.x, dy = s2->coord.y - s1->coord.y;
+        double a, b, c, dx = s2->coord.x - s1->coord.x, dy = s2->coord.y - s1->coord.y;
         if (std::abs(dx) > std::abs(dy)) {
             a = 1.0;
             b = dy / dx;
@@ -281,7 +281,7 @@ private:
     Site *intersect(Halfedge * el1, Halfedge * el2) {
         Edge * e1, * e2, * e ;
         Halfedge * el ;
-        float d, xint, yint ;
+        double d, xint, yint ;
         int right_of_site ;
         
         e1 = el1->ELedge ;
