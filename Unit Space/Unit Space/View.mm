@@ -16,6 +16,7 @@
 
 #import "Tess.hpp"
 #import "libTess.hpp"
+#import "Kismet.hpp"
 #import "Fortune.hpp"
 
 constexpr float kPointDeviceRadius = 8;
