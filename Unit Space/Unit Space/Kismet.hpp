@@ -56,14 +56,14 @@ struct Kismet {
         Memory<Site> sites(count);
         Site *site = sites.get();
         
-        int sitenbr = 0;
+        int idx = 0;
         for (Path& path : scene._paths) {
             mesh._colors.emplace_back(path._color);
             
             for (SubPath& s : path._subPaths) {
                 float *points = s._points.get();
                 for (int i = 0; i < s._npoints; i++) {
-                    new (site++) Site(points[i * 2], points[i * 2 + 1], sitenbr++);
+                    new (site++) Site(points[i * 2], points[i * 2 + 1], idx++);
                     mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
                 }
             }
@@ -72,30 +72,46 @@ struct Kismet {
     }
     void triangulate(Mesh& mesh, Scene& scene) {
         Memory<Site> sites = writeSceneSites(mesh, scene);
-        size_t count = sites.count();
+        Site *begin = sites.get(), *end = begin + sites.count(), *s = begin;
         
-        if (count < 3)
+        if (sites.count() < 3)
             return;
         
-        Site *begin = sites.get(), *end = begin + count, *s = begin;
+        Memory<Site> beachline(sites.count());
+        Site *bbegin = beachline.get(), *bend = bbegin, *bsrc, *bdst, *bleft, *blleft, *bright, *brright;
         
-        Memory<Site> beachline(count);
-        Site *bbegin = beachline.get(), *bend = bbegin, *bsrc, *bdst;
-        
-        Memory<TriangleEvent> triangleEvents(count);
-        TriangleEvent *tbegin = triangleEvents.get(), *tend = tbegin, *t;
+        Memory<TriangleEvent> triangleEvents(sites.count());
+        TriangleEvent *tbegin = triangleEvents.get(), *tend = tbegin, *tsrc, *tdst;
         
         sort(begin, end);
-        
-        TriangleEvent te(begin, begin + 1, begin + 2);
+        float y;
         
         do {
-            float y = s->y;
-            while (s < end && s->y == y) {
+            for (y = s->y; s < end && s->y == y; s++) {
+                if (s > begin && s->x == (s - 1)->x && s->y == (s - 1)->y)
+                    continue;
+                
                 bdst = bend++, bsrc = bdst - 1;
                 while (bdst > bbegin && s->x < bsrc->x)
                     *bdst-- = *bsrc--;
-                *bdst = *s++;
+                *bdst = *s;
+                bleft = bdst - 1, bright = bdst + 1;
+                if (bleft <= bbegin && bright < bend) {
+                    TriangleEvent tnew(bleft, bdst, bright);
+                    if (tnew.uy != FLT_MAX) {
+                        tdst = tend++, tsrc = tdst - 1;
+                        while (tdst > tbegin && tnew.uy < tsrc->uy)
+                            *tdst-- = *tsrc--;
+                        *tdst = tnew;
+                    }
+                }
+                blleft = bleft - 1;
+                if (blleft <= bbegin) {
+                }
+                
+                brright = bright + 1;
+                if (brright < bend) {
+                }
             }
             
             if (tbegin < tend) {
