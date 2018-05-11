@@ -67,6 +67,7 @@ struct Kismet {
         return sites;
     }
     void triangulate(Mesh& mesh, Scene& scene) {
+        mesh.empty();
         Memory<Site> sites = writeSceneSites(mesh, scene);
         Site *begin = sites.get(), *end = begin + sites.count(), *s = begin;
         
@@ -80,7 +81,7 @@ struct Kismet {
         TriangleEvent *tbegin = triangleEvents.get(), *tend = tbegin, *tsrc, *tdst;
         
         sort(begin, end);
-        float y;
+        float y, ynext;
         
         do {
             for (y = s->y; s < end && s->y == y; s++) {
@@ -130,9 +131,30 @@ struct Kismet {
                 }
             }
             
-            if (tbegin < tend) {
-                
+            ynext = s < end ? s->y : FLT_MAX;
+            
+            tsrc = tbegin;
+            while (tsrc < tend && tsrc->uy < ynext) {
+                if (tsrc->convex)
+                    mesh._triangles.emplace_back(tsrc->t.i2, tsrc->t.i1, tsrc->t.i0, 0);
+                else
+                    mesh._triangles.emplace_back(tsrc->t.i0, tsrc->t.i1, tsrc->t.i2, 0);
+                tsrc++;
             }
-        } while (s < end);
+            if (tsrc != tbegin) {
+                for (tdst = tbegin; tdst < tsrc; tdst++)
+                    if (!tdst->convex) {
+                        bsrc = bdst = bbegin;
+                        for (; bsrc < bend; bsrc++)
+                            if (bsrc != tdst->s)
+                                *bdst++ = *bsrc;
+                        bend = bdst;
+                    }
+                tdst = tbegin;
+                while (tsrc < tend)
+                    *tdst++ = *tsrc++;
+                tend = tdst;
+            }
+        } while (s < end || tbegin < tend);
     }
 };
