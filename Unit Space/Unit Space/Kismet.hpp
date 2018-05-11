@@ -20,6 +20,7 @@ struct Kismet {
         int i0, i1, i2;
     };
     
+    // https://en.wikipedia.org/wiki/Circumscribed_circle
     struct TriangleEvent {
         TriangleEvent(Site *s0, Site *s1, Site *s2) : uy(FLT_MAX), s(s1), t(s0->i, s1->i, s2->i) {
             float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, x, y, r, dx, dy;
