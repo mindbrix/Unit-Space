@@ -15,6 +15,11 @@ struct Kismet {
         int i;
     };
     
+    struct BeachSite {
+        BeachSite(Site *s) : s(s) {}
+        Site *s;
+    };
+    
     struct Triangle {
         Triangle(int i0, int i1, int i2) : i0(i0), i1(i1), i2(i2) {}
         int i0, i1, i2;
@@ -75,8 +80,8 @@ struct Kismet {
         if (sites.count() < 3)
             return;
         
-        Memory<Site> beachline(sites.count());
-        Site *bbegin = beachline.get(), *bend = bbegin, *bsrc, *bdst, *b0, *b1, *b2;
+        Memory<BeachSite> beachline(sites.count());
+        BeachSite *bbegin = beachline.get(), *bend = bbegin, *bsrc, *bdst, *b0, *b1, *b2;
         
         Memory<TriangleEvent> triangleEvents(sites.count());
         TriangleEvent *tbegin = triangleEvents.get(), *tend = tbegin, *tsrc, *tdst;
@@ -90,9 +95,9 @@ struct Kismet {
                     continue;
                 
                 bdst = bend++, bsrc = bdst - 1;
-                while (bdst > bbegin && s->x < bsrc->x)
+                while (bdst > bbegin && s->x < bsrc->s->x)
                     *bdst-- = *bsrc--;
-                *bdst = *s;
+                *bdst = BeachSite(s);
                 
                 if (bend - bbegin < 3)
                     continue;
@@ -105,23 +110,23 @@ struct Kismet {
                     b0 = bdst - 1;
                 
                 b1 = b0 + 1, b2 = b0 + 2;
-                TriangleEvent tnew(b0, b1, b2);
+                TriangleEvent tnew(b0->s, b1->s, b2->s);
                 tdst = tend++, tsrc = tdst - 1;
                 while (tdst > tbegin && tnew.uy < tsrc->uy)
                     *tdst-- = *tsrc--;
                 *tdst = tnew;
                 
                 if (b0 > bbegin) {
-                    for (tdst = tbegin; tdst < tend && tdst->s != b0; tdst++) {}
+                    for (tdst = tbegin; tdst < tend && tdst->s != b0->s; tdst++) {}
                     if (tdst < tend) {
-                        new (tdst) TriangleEvent(b0 - 1, b0, b1);
+                        new (tdst) TriangleEvent((b0 - 1)->s, b0->s, b1->s);
                     }
                 }
                 
                 if (b2 < bend - 1) {
-                    for (tdst = tbegin; tdst < tend && tdst->s != b2; tdst++) {}
+                    for (tdst = tbegin; tdst < tend && tdst->s != b2->s; tdst++) {}
                     if (tdst < tend) {
-                        new (tdst) TriangleEvent(b1, b2, b2 + 1);
+                        new (tdst) TriangleEvent(b0->s->x < b1->s->x ? b0->s : b1->s, b2->s, (b2 + 1)->s);
                     }
                 }
             }
@@ -141,7 +146,7 @@ struct Kismet {
                     if (!tdst->convex) {
                         bsrc = bdst = bbegin;
                         for (; bsrc < bend; bsrc++)
-                            if (bsrc != tdst->s)
+                            if (bsrc->s != tdst->s)
                                 *bdst++ = *bsrc;
                         bend = bdst;
                     }
