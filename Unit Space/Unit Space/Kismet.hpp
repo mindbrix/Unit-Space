@@ -111,8 +111,11 @@ struct Kismet {
         if (sites.count() < 3)
             return;
         
-        Memory<BeachSite> beachline(sites.count());
+        Memory<BeachSite> beachline(sites.count() * 2 + 1);
         BeachSite *bbegin = beachline.get(), *bend = bbegin, *bsrc, *bdst, *b0, *b1, *b2;
+        
+        Memory<CircleEvent> circleEvents(sites.count() - 2);
+        CircleEvent *cbegin = circleEvents.get(), *cend = cbegin, *csrc, *cdst;
         
         Memory<TriangleEvent> triangleEvents(sites.count());
         TriangleEvent *tbegin = triangleEvents.get(), *tend = tbegin, *tsrc, *tdst;
