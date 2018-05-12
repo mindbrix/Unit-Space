@@ -16,7 +16,9 @@ struct Kismet {
     };
     
     struct BeachSite {
-        BeachSite(Site *s) : s(s) {}
+        BeachSite(Site *s, int n) : s(s), n(n) {}
+        
+        int n;
         Site *s;
     };
     
@@ -88,6 +90,7 @@ struct Kismet {
         
         sort(begin, end);
         float y, ynext;
+        int n = 0;
         
         do {
             for (y = s->y; s < end && s->y == y; s++) {
@@ -97,7 +100,7 @@ struct Kismet {
                 bdst = bend++, bsrc = bdst - 1;
                 while (bdst > bbegin && s->x < bsrc->s->x)
                     *bdst-- = *bsrc--;
-                *bdst = BeachSite(s);
+                *bdst = BeachSite(s, n++);
                 
                 if (bend - bbegin < 3)
                     continue;
@@ -119,7 +122,7 @@ struct Kismet {
                 if (b0 > bbegin) {
                     for (tdst = tbegin; tdst < tend && tdst->s != b0->s; tdst++) {}
                     if (tdst < tend) {
-                        new (tdst) TriangleEvent((b0 - 1)->s, b0->s, b1->s);
+                        new (tdst) TriangleEvent((b0 - 1)->s, b0->s, b2->s);
                     }
                 }
                 
