@@ -24,8 +24,9 @@ struct Kismet {
     };
     
     struct BeachSite {
-        BeachSite(Site *s, int n) : s(s), n(n) {}
+        BeachSite(Site *s, float x, int n) : x(x), n(n), s(s) {}
         
+        float x;
         int n;
         Site *s;
     };
@@ -132,7 +133,7 @@ struct Kismet {
                 bdst = bend++, bsrc = bdst - 1;
                 while (bdst > bbegin && s->x < bsrc->s->x)
                     *bdst-- = *bsrc--;
-                *bdst = BeachSite(s, n++);
+                *bdst = BeachSite(s, s->x, n++);
                 
                 if (bend - bbegin < 3)
                     continue;
