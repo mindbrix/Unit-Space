@@ -130,6 +130,26 @@ struct Kismet {
                 if (s > begin && s->x == (s - 1)->x && s->y == (s - 1)->y)
                     continue;
                 
+                for (bdst = bbegin; bdst < bend && bdst->x < s->x; bdst++) {}
+                if (bdst == bend)
+                    new (bend++) BeachSite(s, s->x, n++);
+                else if (bdst == bbegin) {
+                    for (bdst = bend++, bsrc = bdst - 1; bdst > bbegin; *bdst-- = *bsrc--) {}
+                    new (bdst) BeachSite(s, s->x, n++);
+                } else {
+                    b0 = bdst - 1, b1 = bdst, bend += 2;
+                    for (bdst = bend - 1, bsrc = bdst - 2; bsrc > b0; *bdst-- = *bsrc--) {}
+                    bdst = b1;
+                    if (Site::intersection(b0->s, b1->s, s) == 0) {
+                        new (bdst++) BeachSite(s, s->x, n++);
+                        new (bdst++) BeachSite(b0->s, s->x, n++);
+                    } else {
+                        new (bdst++) BeachSite(b1->s, s->x, n++);
+                        new (bdst++) BeachSite(s, s->x, n++);
+                    }
+                }
+                
+                /*
                 bdst = bend++, bsrc = bdst - 1;
                 while (bdst > bbegin && s->x < bsrc->s->x)
                     *bdst-- = *bsrc--;
@@ -165,8 +185,10 @@ struct Kismet {
                         new (tdst) TriangleEvent(b0->s->x < b1->s->x ? b0->s : b1->s, b2->s, (b2 + 1)->s);
                     }
                 }
+                 */
             }
             
+                
             ynext = s < end ? s->y : FLT_MAX;
             
             tsrc = tbegin;
