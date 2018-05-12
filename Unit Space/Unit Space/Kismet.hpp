@@ -27,6 +27,13 @@ struct Kismet {
         int i0, i1, i2;
     };
     
+    struct CircleEvent {
+        CircleEvent(float x, float y, int n) : x(x), y(y), n(n) {}
+        inline bool operator< (const CircleEvent& other) const     { return y < other.y || (y == other.y && x < other.x); }
+        
+        float x, y;
+        int n;
+    };
     // https://en.wikipedia.org/wiki/Circumscribed_circle
     struct TriangleEvent {
         TriangleEvent(Site *s0, Site *s1, Site *s2) : uy(FLT_MAX), s(s1), t(s0->i, s1->i, s2->i) {
