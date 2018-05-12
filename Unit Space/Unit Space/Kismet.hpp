@@ -16,8 +16,8 @@ struct Kismet {
             assert(ns->x >= s0->x && ns->x <= s1->x);
             float vy0 = (s0->y + ns->y) * 0.5, vy1 = (s1->y + ns->y) * 0.5;
             float dx0 = ns->x - s0->x, dx1 = ns->x - s1->x;
-            float y0 = vy0 + dx0 * dx0, y1 = vy1 + dx1 * dx1;
-            return y0 < y1 ? 0 : 1;
+            float y0 = vy0 - dx0 * dx0, y1 = vy1 - dx1 * dx1;
+            return y0 > y1 ? 0 : 1;
         }
         float x, y;
         int i;
