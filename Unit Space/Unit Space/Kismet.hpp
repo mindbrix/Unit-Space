@@ -25,13 +25,12 @@ struct Kismet {
     
     struct BeachSite {
         BeachSite(Site *s, float x, int n) : x(x), n(n), s(s) {}
-        
+    
         float x;
         int n;
         Site *s;
     };
     
-    // https://en.wikipedia.org/wiki/Circumscribed_circle
     struct CircleEvent {
         CircleEvent(Site *s0, Site *s1, Site *s2, int n) : x(s1->x), y(FLT_MAX), n(n) {
             float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, ccx, ccy, ccr, dx, dy;
@@ -57,29 +56,6 @@ struct Kismet {
     struct Triangle {
         Triangle(int i0, int i1, int i2) : i0(i0), i1(i1), i2(i2) {}
         int i0, i1, i2;
-    };
-    struct TriangleEvent {
-        TriangleEvent(Site *s0, Site *s1, Site *s2) : uy(FLT_MAX), s(s1), t(s0->i, s1->i, s2->i) {
-            float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, ccx, ccy, ccr, dx, dy;
-            cross = (s1->x - s0->x) * (s2->y - s1->y) - (s1->y - s0->y) * (s2->x - s1->x);
-            convex = cross < 0;
-            if (cross != 0) {
-                ax = s2->x - s1->x, ay = s2->y - s1->y, a = ax * ax + ay * ay;
-                bx = s0->x - s2->x, by = s0->y - s2->y, b = bx * bx + by * by;
-                cx = s1->x - s0->x, cy = s1->y - s0->y, c = cx * cx + cy * cy;
-                d = 4.0 * cross * cross;
-                u = a * (b + c - a) / d, v = b * (c + a - b) / d, w = c * (a + b - c) / d;
-                ccx = s0->x * u + s1->x * v + s2->x * w;
-                ccy = s0->y * u + s1->y * v + s2->y * w;
-                dx = ccx - s0->x, dy = ccy - s0->y;
-                ccr = sqrtf(dx * dx + dy * dy);
-                uy = ccy + ccr;
-            }
-        }
-        float uy;
-        bool convex;
-        Site *s;
-        Triangle t;
     };
     
     Memory<Site> writeSceneSites(Mesh& mesh, Scene& scene) {
@@ -117,10 +93,7 @@ struct Kismet {
         
         Memory<CircleEvent> circleEvents(sites.count() - 2);
         CircleEvent *cbegin = circleEvents.get(), *cend = cbegin, *csrc, *cdst;
-        
-        Memory<TriangleEvent> triangleEvents(sites.count());
-        TriangleEvent *tbegin = triangleEvents.get(), *tend = tbegin, *tsrc, *tdst;
-        
+
         sort(begin, end);
         float y, ynext;
         int n = 0;
@@ -131,11 +104,13 @@ struct Kismet {
                     continue;
                 
                 for (bdst = bbegin; bdst < bend && bdst->x < s->x; bdst++) {}
-                if (bdst == bend)
+                if (bdst == bend) {
                     new (bend++) BeachSite(s, s->x, n++);
-                else if (bdst == bbegin) {
+                    b0 = bend - 3;
+                } else if (bdst == bbegin) {
                     for (bdst = bend++, bsrc = bdst - 1; bdst > bbegin; *bdst-- = *bsrc--) {}
                     new (bdst) BeachSite(s, s->x, n++);
+                    b0 = bbegin;
                 } else {
                     b0 = bdst - 1, b1 = bdst, bend += 2;
                     for (bdst = bend - 1, bsrc = bdst - 2; bsrc > b0; *bdst-- = *bsrc--) {}
@@ -147,72 +122,29 @@ struct Kismet {
                         new (bdst++) BeachSite(b1->s, s->x, n++);
                         new (bdst++) BeachSite(s, s->x, n++);
                     }
-                }
-                
-                /*
-                bdst = bend++, bsrc = bdst - 1;
-                while (bdst > bbegin && s->x < bsrc->s->x)
-                    *bdst-- = *bsrc--;
-                *bdst = BeachSite(s, s->x, n++);
-                
-                if (bend - bbegin < 3)
-                    continue;
-                
-                if (bdst == bbegin)
-                    b0 = bdst;
-                else if (bdst == bend - 1)
                     b0 = bdst - 2;
-                else
-                    b0 = bdst - 1;
-                
+                }
                 b1 = b0 + 1, b2 = b0 + 2;
-                TriangleEvent tnew(b0->s, b1->s, b2->s);
-                tdst = tend++, tsrc = tdst - 1;
-                while (tdst > tbegin && tnew.uy < tsrc->uy)
-                    *tdst-- = *tsrc--;
-                *tdst = tnew;
-                
-                if (b0 > bbegin) {
-                    for (tdst = tbegin; tdst < tend && tdst->s != b0->s; tdst++) {}
-                    if (tdst < tend) {
-                        new (tdst) TriangleEvent((b0 - 1)->s, b0->s, b2->s);
-                    }
+                if (b0 > bbegin && b2 < bend) {
+                    CircleEvent cnew(b0->s, b1->s, b2->s, b1->n);
+                    cdst = cend++, csrc = cdst - 1;
+                    while (cdst > cbegin && cnew < *csrc)
+                        *cdst-- = *csrc--;
+                    *cdst = cnew;
                 }
-                
-                if (b2 < bend - 1) {
-                    for (tdst = tbegin; tdst < tend && tdst->s != b2->s; tdst++) {}
-                    if (tdst < tend) {
-                        new (tdst) TriangleEvent(b0->s->x < b1->s->x ? b0->s : b1->s, b2->s, (b2 + 1)->s);
-                    }
-                }
-                 */
             }
             
-                
             ynext = s < end ? s->y : FLT_MAX;
-            
-            tsrc = tbegin;
-            while (tsrc < tend && tsrc->uy < ynext) {
-                if (tsrc->convex)
-                    mesh._triangles.emplace_back(tsrc->t.i2, tsrc->t.i1, tsrc->t.i0, 0);
-                else
-                    mesh._triangles.emplace_back(tsrc->t.i0, tsrc->t.i1, tsrc->t.i2, 0);
-                tsrc++;
+            for (csrc = cbegin; csrc < cend && csrc->y < ynext; csrc++) {
+                for (bdst = bbegin; bdst < bend && bdst->n != csrc->n; bdst++) {}
+                assert(bdst->n == csrc->n);
+                for (bsrc = bdst + 1; bsrc < bend; *bdst++ = *bsrc++) {}
+                bend = bdst;
+                
+//                mesh._triangles.emplace_back(tsrc->t.i2, tsrc->t.i1, tsrc->t.i0, 0);
             }
-            if (tsrc != tbegin) {
-                for (tdst = tbegin; tdst < tsrc; tdst++)
-                    if (!tdst->convex) {
-                        bsrc = bdst = bbegin;
-                        for (; bsrc < bend; bsrc++)
-                            if (bsrc->s != tdst->s)
-                                *bdst++ = *bsrc;
-                        bend = bdst;
-                    }
-                tdst = tbegin;
-                while (tsrc < tend)
-                    *tdst++ = *tsrc++;
-                tend = tdst;
-            }
-        } while (s < end || tbegin < tend);
+            for (cdst = cbegin; csrc < cend; *cdst++ = *csrc++) {}
+            cend = cdst;
+        } while (s < end || cbegin < cend);
     }
 };
