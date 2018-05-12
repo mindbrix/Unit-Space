@@ -30,22 +30,36 @@ struct Kismet {
         Site *s;
     };
     
-    struct Triangle {
-        Triangle(int i0, int i1, int i2) : i0(i0), i1(i1), i2(i2) {}
-        int i0, i1, i2;
-    };
-    
+    // https://en.wikipedia.org/wiki/Circumscribed_circle
     struct CircleEvent {
-        CircleEvent(float x, float y, int n) : x(x), y(y), n(n) {}
+        CircleEvent(Site *s0, Site *s1, Site *s2, int n) : x(s1->x), y(FLT_MAX), n(n) {
+            float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, ccx, ccy, ccr, dx, dy;
+            cross = (s1->x - s0->x) * (s2->y - s1->y) - (s1->y - s0->y) * (s2->x - s1->x);
+            if (cross != 0) {
+                ax = s2->x - s1->x, ay = s2->y - s1->y, a = ax * ax + ay * ay;
+                bx = s0->x - s2->x, by = s0->y - s2->y, b = bx * bx + by * by;
+                cx = s1->x - s0->x, cy = s1->y - s0->y, c = cx * cx + cy * cy;
+                d = 4.0 * cross * cross;
+                u = a * (b + c - a) / d, v = b * (c + a - b) / d, w = c * (a + b - c) / d;
+                ccx = s0->x * u + s1->x * v + s2->x * w;
+                ccy = s0->y * u + s1->y * v + s2->y * w;
+                dx = ccx - s0->x, dy = ccy - s0->y;
+                ccr = sqrtf(dx * dx + dy * dy);
+                x = ccx, y = ccy + ccr;
+            }
+        }
         inline bool operator< (const CircleEvent& other) const     { return y < other.y || (y == other.y && x < other.x); }
         
         float x, y;
         int n;
     };
-    // https://en.wikipedia.org/wiki/Circumscribed_circle
+    struct Triangle {
+        Triangle(int i0, int i1, int i2) : i0(i0), i1(i1), i2(i2) {}
+        int i0, i1, i2;
+    };
     struct TriangleEvent {
         TriangleEvent(Site *s0, Site *s1, Site *s2) : uy(FLT_MAX), s(s1), t(s0->i, s1->i, s2->i) {
-            float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, x, y, r, dx, dy;
+            float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, ccx, ccy, ccr, dx, dy;
             cross = (s1->x - s0->x) * (s2->y - s1->y) - (s1->y - s0->y) * (s2->x - s1->x);
             convex = cross < 0;
             if (cross != 0) {
@@ -54,11 +68,11 @@ struct Kismet {
                 cx = s1->x - s0->x, cy = s1->y - s0->y, c = cx * cx + cy * cy;
                 d = 4.0 * cross * cross;
                 u = a * (b + c - a) / d, v = b * (c + a - b) / d, w = c * (a + b - c) / d;
-                x = s0->x * u + s1->x * v + s2->x * w;
-                y = s0->y * u + s1->y * v + s2->y * w;
-                dx = x - s0->x, dy = y - s0->y;
-                r = sqrtf(dx * dx + dy * dy);
-                uy = y + r;
+                ccx = s0->x * u + s1->x * v + s2->x * w;
+                ccy = s0->y * u + s1->y * v + s2->y * w;
+                dx = ccx - s0->x, dy = ccy - s0->y;
+                ccr = sqrtf(dx * dx + dy * dy);
+                uy = ccy + ccr;
             }
         }
         float uy;
