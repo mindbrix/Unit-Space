@@ -68,7 +68,7 @@ struct Fortune {
         int ELrefcnt ;
         char ELpm ;
         Site * vertex ;
-        float ystar ;
+        double ystar ;
         struct Halfedge * PQnext ;
         
         Halfedge(Edge *e, int pm) : ELedge(e), ELpm(pm), PQnext(NULL), vertex(NULL), ELrefcnt(0) {}
@@ -380,8 +380,8 @@ private:
         Halfedge * last, * next ;
         
         he->vertex = ref(v);
-        float dx = s->coord.x - v->coord.x, dy = s->coord.y - v->coord.y;
-        he->ystar = v->coord.y + sqrtf(dx * dx + dy * dy);
+        double dx = s->coord.x - v->coord.x, dy = s->coord.y - v->coord.y;
+        he->ystar = v->coord.y + sqrt(dx * dx + dy * dy);
         last = &PQhash[ PQbucket(he)] ;
         while ((next = last->PQnext) != (Halfedge *)NULL && (he->ystar > next->ystar || (he->ystar == next->ystar && v->coord.x > next->vertex->coord.x)))
             last = next ;
@@ -406,7 +406,7 @@ private:
     
     inline int PQbucket(Halfedge * he) {
         int bucket;
-        float ystar = __inline_isnanf(he->ystar) || __inline_isinff(he->ystar) ? 0.f : he->ystar;
+        double ystar = __inline_isnand(he->ystar) || __inline_isinfd(he->ystar) ? 0.f : he->ystar;
         
         if (ystar < ymin)
             bucket = 0;
@@ -434,7 +434,7 @@ private:
     
     void PQinitialize(void) {
         PQcount = PQmin = 0 ;
-        PQhashsize = 4 * sqrt_nsites ;
+        PQhashsize = 32 * sqrt_nsites ;
         PQhashsizeMul = 1.f / deltay * (PQhashsize - 1);
         PQhash = (Halfedge *)myalloc(PQhashsize * sizeof *PQhash) ;
         
@@ -445,7 +445,7 @@ private:
     
     void ELinitialize(void) {
         freeinit(&hfl, sizeof(Halfedge)) ;
-        ELhashsize = 2 * sqrt_nsites ;
+        ELhashsize = 4 * sqrt_nsites ;
         ELhash = (Halfedge **)myalloc( sizeof(*ELhash) * ELhashsize) ;
         for (int i = 0; i < ELhashsize; i++)
             ELhash[i] = (Halfedge *)NULL ;
