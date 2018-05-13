@@ -113,17 +113,23 @@ struct Kismet {
                 }
                 for (bdst = bbegin; bdst < bend && bdst->x < s->x; bdst++) {}
                 if (bdst == bend) {
-                    b0 = bdst - 1;
+                    b0 = bend, b1 = bdst - 1;
                     new (bend++) BeachSite(s, s->x, n++);
-                    new (bend++) BeachSite(b0->s, s->x, n++);
-                    b0 = bend - 4;
+                    if (b1->s->y != s->y) {
+                        new (bend++) BeachSite(b1->s, s->x, n++);
+                        b0 = bend - 4;
+                    }
                 } else if (bdst == bbegin) {
-                    bend += 2;
-                    for (bdst = bend - 1, bsrc = bdst - 2; bsrc >= bbegin; *bdst-- = *bsrc--) {}
-                    bdst = bbegin, b0 = bbegin + 2;
-                    new (bdst++) BeachSite(b0->s, s->x, n++);
+                    int size = bdst->s->y == s->y ? 1 : 2;
+                    bend += size;
+                    for (bdst = bend - 1, bsrc = bdst - size; bsrc >= bbegin; *bdst-- = *bsrc--) {}
+                    bdst = bbegin, b0 = bend;
+                    if (size == 2) {
+                        new (bdst++) BeachSite((bbegin + size)->s, s->x, n++);
+                        b0 = bbegin + 1;
+                    }
                     new (bdst++) BeachSite(s, s->x, n++);
-                    b0 = bbegin + 1;
+                    
                 } else {
                     b0 = bdst - 1, b1 = bdst, bend += 2;
                     for (bdst = bend - 1, bsrc = bdst - 2; bsrc >= b1; *bdst-- = *bsrc--) {}
