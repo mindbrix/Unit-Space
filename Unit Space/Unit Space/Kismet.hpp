@@ -103,33 +103,42 @@ struct Kismet {
                 if (s > begin && s->x == (s - 1)->x && s->y == (s - 1)->y)
                     continue;
                 
+                if (bbegin == bend) {
+                    new (bend++) BeachSite(s, s->x, n++);
+                    continue;
+                }
                 for (bdst = bbegin; bdst < bend && bdst->x < s->x; bdst++) {}
                 if (bdst == bend) {
+                    b0 = bdst - 1;
                     new (bend++) BeachSite(s, s->x, n++);
-                    b0 = bend - 3;
+                    new (bend++) BeachSite(b0->s, s->x, n++);
+                    b0 = bend - 4;
                 } else if (bdst == bbegin) {
-                    for (bdst = bend++, bsrc = bdst - 1; bdst > bbegin; *bdst-- = *bsrc--) {}
-                    new (bdst) BeachSite(s, s->x, n++);
-                    b0 = bbegin;
+                    bend += 2;
+                    for (bdst = bend - 1, bsrc = bdst - 2; bsrc >= bbegin; *bdst-- = *bsrc--) {}
+                    bdst = bbegin, b0 = bbegin + 2;
+                    new (bdst++) BeachSite(b0->s, s->x, n++);
+                    new (bdst++) BeachSite(s, s->x, n++);
+                    b0 = bbegin + 1;
                 } else {
                     b0 = bdst - 1, b1 = bdst, bend += 2;
-                    for (bdst = bend - 1, bsrc = bdst - 2; bsrc > b0; *bdst-- = *bsrc--) {}
-                    bdst = b1;
+                    for (bdst = bend - 1, bsrc = bdst - 2; bsrc >= b1; *bdst-- = *bsrc--) {}
+                    bdst = b1, b1 += 2;
                     if (Site::intersection(b0->s, b1->s, s) == 0) {
                         new (bdst++) BeachSite(s, s->x, n++);
                         new (bdst++) BeachSite(b0->s, s->x, n++);
+                        b0 = bdst - 2;
                     } else {
                         new (bdst++) BeachSite(b1->s, s->x, n++);
                         new (bdst++) BeachSite(s, s->x, n++);
+                        b0 = bdst - 3;
                     }
-                    b0 = bdst - 2;
+                    
                 }
                 b1 = b0 + 1, b2 = b0 + 2;
                 if (b0 > bbegin && b2 < bend) {
                     CircleEvent cnew(b0->s, b1->s, b2->s, b1->n);
-                    cdst = cend++, csrc = cdst - 1;
-                    while (cdst > cbegin && cnew < *csrc)
-                        *cdst-- = *csrc--;
+                    for (cdst = cend++, csrc = cdst - 1; cdst > cbegin && cnew < *csrc; *cdst-- = *csrc--) {}
                     *cdst = cnew;
                 }
             }
@@ -138,10 +147,10 @@ struct Kismet {
             for (csrc = cbegin; csrc < cend && csrc->y < ynext; csrc++) {
                 for (bdst = bbegin; bdst < bend && bdst->n != csrc->n; bdst++) {}
                 assert(bdst->n == csrc->n);
+                
+                mesh._triangles.emplace_back((bdst - 1)->s->i, bdst->s->i, (bdst + 1)->s->i, 0);
                 for (bsrc = bdst + 1; bsrc < bend; *bdst++ = *bsrc++) {}
                 bend = bdst;
-                
-//                mesh._triangles.emplace_back(tsrc->t.i2, tsrc->t.i1, tsrc->t.i0, 0);
             }
             for (cdst = cbegin; csrc < cend; *cdst++ = *csrc++) {}
             cend = cdst;
