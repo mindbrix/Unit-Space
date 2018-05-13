@@ -83,7 +83,7 @@ struct Kismet {
     void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
         Memory<Site> sites = writeSceneSites(mesh, scene);
-        Site *begin = sites.get(), *end = begin + sites.count(), *s = begin;
+        Site *begin = sites.get(), *end = begin + sites.count(), *s = begin, *s0, *s1, *s2;
         
         if (sites.count() < 3)
             return;
@@ -148,7 +148,10 @@ struct Kismet {
                 for (bdst = bbegin; bdst < bend && bdst->n != csrc->n; bdst++) {}
                 assert(bdst->n == csrc->n);
                 
-                mesh._triangles.emplace_back((bdst - 1)->s->i, bdst->s->i, (bdst + 1)->s->i, 0);
+                s0 = (bdst - 1)->s, s1 = bdst->s, s2 = (bdst + 1)->s;
+                if ((s1->x - s0->x) * (s2->y - s1->y) - (s1->y - s0->y) * (s2->x - s1->x) < 0)
+                    std::swap(s0, s2);
+                mesh._triangles.emplace_back(s0->i, s1->i, s2->i, 0);
                 for (bsrc = bdst + 1; bsrc < bend; *bdst++ = *bsrc++) {}
                 bend = bdst;
             }
