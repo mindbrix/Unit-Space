@@ -19,6 +19,10 @@ struct Kismet {
             float y0 = vy0 - dx0 * dx0, y1 = vy1 - dx1 * dx1;
             return y0 > y1 ? 0 : 1;
         }
+        static float intersection(Site *s0, Site *s1, float ly) {
+            float vy0 = (s0->y + ly) * 0.5, vy1 = (s1->y + ly) * 0.5;
+            return 0.5 * (vy1 - vy0 + s0->x * s0->x - s1->x * s1->x) / (s0->x - s1->x);
+        }
         float x, y;
         int i;
     };
@@ -136,7 +140,7 @@ struct Kismet {
                     
                 }
                 b1 = b0 + 1, b2 = b0 + 2;
-                if (b0 > bbegin && b2 < bend) {
+                if (b0 >= bbegin && b2 < bend) {
                     CircleEvent cnew(b0->s, b1->s, b2->s, b1->n);
                     for (cdst = cend++, csrc = cdst - 1; cdst > cbegin && cnew < *csrc; *cdst-- = *csrc--) {}
                     *cdst = cnew;
@@ -154,6 +158,8 @@ struct Kismet {
                 mesh._triangles.emplace_back(s0->i, s1->i, s2->i, 0);
                 for (bsrc = bdst + 1; bsrc < bend; *bdst++ = *bsrc++) {}
                 bend = bdst;
+//                b0 = bend - 2, b1 = bend - 1;
+//                b1->x = Site::intersection(b0->s, b1->s, csrc->y);
             }
             for (cdst = cbegin; csrc < cend; *cdst++ = *csrc++) {}
             cend = cdst;
