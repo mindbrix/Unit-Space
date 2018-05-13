@@ -383,8 +383,9 @@ using namespace std;
         }
         
         if (self.useDelaunay)
+            _kismet.triangulate(_mesh, scene);
 //            _fortune.triangulate(_mesh, scene);
-            _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+//            _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
         else
             _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
         

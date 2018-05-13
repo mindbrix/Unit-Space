@@ -32,7 +32,7 @@ struct Kismet {
     };
     
     struct CircleEvent {
-        CircleEvent(Site *s0, Site *s1, Site *s2, int n) : x(s1->x), y(FLT_MAX), n(n) {
+        CircleEvent(Site *s0, Site *s1, Site *s2, int n) : x(s1->x), y(1e20), n(n) {
             float cross, ax, ay, bx, by, cx, cy, a, b, c, d, u, v, w, ccx, ccy, ccr, dx, dy;
             cross = (s1->x - s0->x) * (s2->y - s1->y) - (s1->y - s0->y) * (s2->x - s1->x);
             if (cross != 0) {
