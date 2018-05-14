@@ -243,6 +243,8 @@
                 [commandEncoder setVertexBytes:&call->units length:sizeof(Units) atIndex:1];
                 break;
         }
+        if (instanceCount == 0)
+            continue;
         
         State state = call->state;
         state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
