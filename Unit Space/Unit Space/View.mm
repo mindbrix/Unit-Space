@@ -609,6 +609,15 @@ using namespace std;
             }
             circles.count = i;
         }
+        if (_flags & 16) {
+            uniforms.fillColor = { 0, 0, 0, 1 };
+            
+            MeshState meshState;
+            meshState.hideCurves = !_showCurves;
+            meshState.hideTriangles = !_showTriangle;
+            meshState.showColors = _showColors;
+            meshState.showInterior = _showInterior;
+        }
     }
 }
 
