@@ -7,10 +7,6 @@
 //
 #import "Tess.hpp"
 #import <vector>
-#import "tesselator.h"
-#import "Algorithms.hpp"
-#import "VGQuadTree.hpp"
-
 
 using namespace std;
 
