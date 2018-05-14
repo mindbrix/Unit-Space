@@ -609,18 +609,36 @@ using namespace std;
             }
             circles.count = i;
         }
-        if (_flags & 16) {
-            uniforms.fillColor = { 0, 0, 0, 1 };
-            
-            MeshState meshState;
-            meshState.hideCurves = !_showCurves;
-            meshState.hideTriangles = !_showTriangle;
-            meshState.showColors = _showColors;
-            meshState.showInterior = _showInterior;
-            
-            _mesh.empty();
-            _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
+    }
+    if (_flags & 16) {
+        uniforms.fillColor = { 0, 0, 0, 1 };
+        
+        MeshState meshState;
+        meshState.hideCurves = !_showCurves;
+        meshState.hideTriangles = !_showTriangle;
+        meshState.showColors = _showColors;
+        meshState.showInterior = _showInterior;
+        
+        _calls.emplace_back();
+        Call& call = _calls.back();
+        call.meshState = meshState;
+        call.type = _showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
+        call.state = uniforms;
+        
+        _mesh.empty();
+        
+        RGBA8 red(255, 0, 0, 255);
+        _mesh._colors.emplace_back(red);
+        int count = 1000;
+        float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(count), t;
+        float f = 20, a;
+        for (int i = 0; i < count; i++) {
+            t = float(i) * tmul;
+            a = t * f * 2 * M_PI;
+            _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
         }
+        _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
+        [self.metalLayer uploadMesh:_mesh];
     }
 }
 
