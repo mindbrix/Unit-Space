@@ -97,6 +97,7 @@ struct Fortune {
     
     
     void triangulate(Mesh& mesh, Scene& scene) {
+        _mesh = & mesh;
         mesh.empty();
         for (Path& path : scene._paths) {
             mesh._colors.emplace_back(path._color);
@@ -107,19 +108,17 @@ struct Fortune {
                     mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
             }
         }
-        triangulate(mesh, scene.w, scene.h);
+        triangulate(& mesh._points[0].x, (int)mesh._points.size(), scene.w, scene.h);
     }
     
-    void triangulate(Mesh& mesh, float w, float h) {
-        _mesh = & mesh;
+    void triangulate(const float *points, int npoints, float w, float h) {
         _sites = vector<Site>();
         _sitesIndex = vector<Ref<Site>>();
         
         freeinit(&sfl, sizeof(Site)) ;
         
-        int sitenbr = 0;
-        for (auto& point : mesh._points)
-            _sites.emplace_back(point.x, point.y, sitenbr++);
+        for (int i = 0; i < npoints; i++)
+            _sites.emplace_back(points[i * 2], points[i * 2 + 1], i);
         
         for (auto& site : _sites)
             _sitesIndex.emplace_back(site);
