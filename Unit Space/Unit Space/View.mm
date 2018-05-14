@@ -260,6 +260,12 @@ using namespace std;
     [self redraw];
 }
 
+- (IBAction)toggleFive:(id)sender {
+    _flags &= 16;
+    _flags ^= 16;
+    [self redraw];
+}
+
 - (IBAction)toggleEdges:(id)sender {
     _showEdges = !_showEdges;
     [self redraw];

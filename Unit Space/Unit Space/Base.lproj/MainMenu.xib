@@ -671,6 +671,12 @@
                                     <action selector="toggleFour:" target="-1" id="42d-EB-p16"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle 5" keyEquivalent="5" id="owO-NT-gVP">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleFive:" target="-1" id="9Xt-sL-q9y"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Curves" keyEquivalent="y" id="87r-mG-RYi">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

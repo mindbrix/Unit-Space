@@ -23,6 +23,7 @@
 - (IBAction)toggleTwo:(id)sender;
 - (IBAction)toggleThree:(id)sender;
 - (IBAction)toggleFour:(id)sender;
+- (IBAction)toggleFive:(id)sender;
 
 - (IBAction)toggleCurves:(id)sender;
 - (IBAction)toggleEdges:(id)sender;
