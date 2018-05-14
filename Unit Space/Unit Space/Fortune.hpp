@@ -111,6 +111,8 @@ struct Fortune {
     }
     
     void triangulate(Mesh& mesh, const float *points, int npoints) {
+        if (npoints < 3)
+            return;
         float x, y;
         xmin = ymin = FLT_MAX, xmax = ymax = -FLT_MAX;
         for (int i = 0; i < npoints; i++) {
