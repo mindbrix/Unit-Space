@@ -630,12 +630,12 @@ using namespace std;
         RGBA8 red(255, 0, 0, 255);
         _mesh._colors.emplace_back(red);
         int count = 1000;
-        float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(count), t;
+        float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(count - 1), t;
         float f = 20, a;
         for (int i = 0; i < count; i++) {
             t = float(i) * tmul;
             a = t * f * 2 * M_PI;
-            _mesh._points.emplace_back(cx + r * cosf(a), cy + r * sinf(a));
+            _mesh._points.emplace_back(cx + r  * t * cosf(a), cy + r * t * sinf(a));
         }
         _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
         [self.metalLayer uploadMesh:_mesh];

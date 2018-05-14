@@ -117,16 +117,19 @@ struct Fortune {
         
         freeinit(&sfl, sizeof(Site)) ;
         
+        float x, y;
+        xmin = ymin = FLT_MAX, xmax = ymax = -FLT_MAX;
+        for (int i = 0; i < npoints; i++) {
+            x = points[i * 2], y = points[i * 2 + 1];
+            if (x < xmin)  xmin = x;
+            if (x > xmax)  xmax = x;
+            if (y < ymin)  ymin = y;
+            if (y > ymax)  ymax = y;
+        }
+        
         for (int i = 0; i < npoints; i++)
             _sites.emplace_back(points[i * 2], points[i * 2 + 1], i);
         
-        xmin = ymin = FLT_MAX, xmax = ymax = -FLT_MAX;
-        for (auto& site : _sites) {
-            if (site.coord.x < xmin)  xmin = site.coord.x;
-            if (site.coord.x > xmax)  xmax = site.coord.x;
-            if (site.coord.y < ymin)  ymin = site.coord.y;
-            if (site.coord.y > ymax)  ymax = site.coord.y;
-        }
         for (auto& site : _sites)
             _sitesIndex.emplace_back(site);
         
