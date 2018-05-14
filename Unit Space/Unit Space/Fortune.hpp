@@ -154,7 +154,7 @@ private:
         if (site && _lastSite)
             dx = site->coord.x - _lastSite->coord.x, dy = site->coord.y - _lastSite->coord.y;
         
-        if (dx * dx + dy * dy < 1e-9)
+        if (dx * dx + dy * dy < 1e-6)
             return nextone();
         
         _lastSite = site;
