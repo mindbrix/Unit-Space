@@ -59,6 +59,8 @@ using namespace std;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
+@property(nonatomic) float f;
+@property(nonatomic) int count;
 
 @end
 
@@ -81,6 +83,9 @@ using namespace std;
     self.showTriangle = YES;
     self.useMask = NO;
     self.pathBitmask = kPathBitmaskTriangle;
+    
+    self.f = 20;
+    self.count = 1000;
     
     [self redraw];
 
@@ -208,7 +213,14 @@ using namespace std;
     BOOL isInverted = ([event respondsToSelector:@selector(isDirectionInvertedFromDevice)] && [event isDirectionInvertedFromDevice]);
     CGFloat inversion = isInverted ? 1.0f : -1.0f;
     
-    [self.transform translateByX:event.deltaX * inversion andY:-event.deltaY * inversion];
+    if ([event modifierFlags] & NSEventModifierFlagShift) {
+        _count += event.deltaX;
+        if (_count < 0)
+            _count = 0;
+        _f += event.deltaY * 0.1;
+    } else
+        [self.transform translateByX:event.deltaX * inversion andY:-event.deltaY * inversion];
+    
     [self redrawWithMouseLocation:event.locationInWindow];
 }
 
@@ -629,13 +641,12 @@ using namespace std;
         
         RGBA8 red(255, 0, 0, 255);
         _mesh._colors.emplace_back(red);
-        int count = 1000;
-        float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(count - 1), t;
-        float f = 20, a;
-        for (int i = 0; i < count; i++) {
+        float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(_count - 1), t;
+        float a;
+        for (int i = 0; i < _count; i++) {
             t = float(i) * tmul;
-            a = t * f * 2 * M_PI;
-            _mesh._points.emplace_back(cx + r  * t * cosf(a), cy + r * t * sinf(a));
+            a = t * _f * 2 * M_PI;
+            _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
         }
         _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
         [self.metalLayer uploadMesh:_mesh];
