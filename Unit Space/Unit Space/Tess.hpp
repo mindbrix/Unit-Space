@@ -374,7 +374,7 @@ struct Scene {
 };
 
 struct Tess {
-    void writeCurves(Mesh& mesh, Scene& scene) {
+    static void writeCurves(Mesh& mesh, Scene& scene) {
         int pi, c;
         float area, flip;
         for (Path& path : scene._paths) {

@@ -112,6 +112,7 @@ struct libTess {
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
         mesh.empty();
+        Tess::writeCurves(mesh, scene);
         TESStesselator *tess = _tess.get();
         
         if (useMasking)
