@@ -642,14 +642,12 @@ using namespace std;
         float a;
         for (int i = 0; i < _count; i++) {
             t = float(i) * tmul;
-            
-            RGBA8 color(255 * t, 255 * t, 255 * t, 255);
-            _mesh._colors.emplace_back(color);
-            
             a = t * _f * 2 * M_PI;
             _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
         }
         _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
+        _mesh._colors.resize(_mesh._triangles.size());
+        
         Vector v0, v1, v2, *points = & _mesh._points[0];
         float l0, l1, l2, lmax;
         for (auto& tr : _mesh._triangles) {
@@ -662,7 +660,9 @@ using namespace std;
             lmax = l0 > l1 ? l0 : l1;
             lmax = l2 > lmax ? l2 : lmax;
             t = std::sqrt(lmax / (r * r));
-            t = t * 20, t = t - std::floor(t);
+            t = t * _f * 0.5, t = t - std::floor(t);
+            RGBA8 color(255 * t, 255 * t, 255 * t, 255);
+            _mesh._colors[t * _mesh._triangles.size()] = color;
             tr.c = t * _mesh._triangles.size();
         }
         [self.metalLayer uploadMesh:_mesh];
