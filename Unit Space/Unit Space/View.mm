@@ -660,8 +660,11 @@ using namespace std;
             lmax = l0 > l1 ? l0 : l1;
             lmax = l2 > lmax ? l2 : lmax;
             t = std::sqrt(lmax / (r * r));
-            t = t * _f * 0.5, t = t - std::floor(t);
-            RGBA8 color(255 * t, 255 * t, 255 * t, 255);
+//            t = int(t * _f * _mesh._triangles.size()) % 2;
+            t = t * _f, t = t - std::floor(t);
+            RGBA hsv = RGBA::hsv2rgb(t, 1, 1);
+            RGBA8 color(hsv);
+//            RGBA8 color(255 * t, 255 * t, 255 * t, 255);
             _mesh._colors[t * _mesh._triangles.size()] = color;
             tr.c = t * _mesh._triangles.size();
         }

@@ -17,10 +17,43 @@ struct Arc { float x, y, r, t0, t1; };
 
 struct Circle { float x, y, r; };
 
-struct RGBA { float r, g, b, a; };
+struct RGBA { float r, g, b, a;
+    static RGBA hsv2rgb(float H, float S, float V) {
+        RGBA RGB;
+        float P, Q, T;
+        float fract;
+        
+        H *= 360;
+        (H == 360.)?(H = 0.):(H /= 60.);
+        fract = H - int(H);
+        
+        P = V*(1. - S);
+        Q = V*(1. - S*fract);
+        T = V*(1. - S*(1. - fract));
+        
+        if (0. <= H && H < 1.)
+            RGB = (RGBA){.r = V, .g = T, .b = P};
+        else if (1. <= H && H < 2.)
+            RGB = (RGBA){.r = Q, .g = V, .b = P};
+        else if (2. <= H && H < 3.)
+            RGB = (RGBA){.r = P, .g = V, .b = T};
+        else if (3. <= H && H < 4.)
+            RGB = (RGBA){.r = P, .g = Q, .b = V};
+        else if (4. <= H && H < 5.)
+            RGB = (RGBA){.r = T, .g = P, .b = V};
+        else if (5. <= H && H < 6.)
+            RGB = (RGBA){.r = V, .g = P, .b = Q};
+        else
+            RGB = (RGBA){.r = 0., .g = 0., .b = 0.};
+        
+        RGB.a = 1;
+        return RGB;
+    }
+};
 
 struct RGBA8 {
     RGBA8() {}
+    RGBA8(RGBA rgba) : r(rgba.r * 255), g(rgba.g * 255), b(rgba.b * 255), a(rgba.a * 255) {}
     RGBA8(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
     
     unsigned char r, g, b, a;
