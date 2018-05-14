@@ -617,6 +617,10 @@ using namespace std;
             meshState.hideTriangles = !_showTriangle;
             meshState.showColors = _showColors;
             meshState.showInterior = _showInterior;
+            
+            _mesh.empty();
+            float lx, ly, ux, uy;
+            _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size(), lx, ly, ux, uy);
         }
     }
 }
