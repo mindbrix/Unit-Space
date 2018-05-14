@@ -150,7 +150,11 @@ private:
     
     Site *nextone(void) {
         Site *site = siteidx < _sitesIndex.size() ? _sitesIndex[siteidx++] : NULL;
-        if (site && _lastSite && site->coord.x == _lastSite->coord.x && site->coord.y == _lastSite->coord.y)
+        float dx = FLT_MAX, dy = FLT_MAX;
+        if (site && _lastSite)
+            dx = site->coord.x - _lastSite->coord.x, dy = site->coord.y - _lastSite->coord.y;
+        
+        if (dx * dx + dy * dy < 1e-9)
             return nextone();
         
         _lastSite = site;

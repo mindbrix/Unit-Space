@@ -635,7 +635,7 @@ using namespace std;
         for (int i = 0; i < count; i++) {
             t = float(i) * tmul;
             a = t * f * 2 * M_PI;
-            _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
+            _mesh._points.emplace_back(cx + r * cosf(a), cy + r * sinf(a));
         }
         _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
         [self.metalLayer uploadMesh:_mesh];
