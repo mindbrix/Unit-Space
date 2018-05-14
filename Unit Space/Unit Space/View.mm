@@ -638,17 +638,33 @@ using namespace std;
         call.state = uniforms;
         
         _mesh.empty();
-        
-        RGBA8 red(255, 0, 0, 255);
-        _mesh._colors.emplace_back(red);
         float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(_count - 1), t;
         float a;
         for (int i = 0; i < _count; i++) {
             t = float(i) * tmul;
+            
+            RGBA8 color(255 * t, 255 * t, 255 * t, 255);
+            _mesh._colors.emplace_back(color);
+            
             a = t * _f * 2 * M_PI;
             _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
         }
         _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
+        Vector v0, v1, v2, *points = & _mesh._points[0];
+        float l0, l1, l2, lmax;
+        for (auto& tr : _mesh._triangles) {
+            v0 = { points[tr.i0].x - cx, points[tr.i0].y - cy};
+            v1 = { points[tr.i1].x - cx, points[tr.i1].y - cy};
+            v2 = { points[tr.i2].x - cx, points[tr.i2].y - cy};
+            l0 = v0.x * v0.x + v0.y * v0.y;
+            l1 = v1.x * v1.x + v1.y * v1.y;
+            l2 = v2.x * v2.x + v2.y * v2.y;
+            lmax = l0 > l1 ? l0 : l1;
+            lmax = l2 > lmax ? l2 : lmax;
+            t = std::sqrt(lmax / (r * r));
+            t = t * 20, t = t - std::floor(t);
+            tr.c = t * _mesh._triangles.size();
+        }
         [self.metalLayer uploadMesh:_mesh];
     }
 }
