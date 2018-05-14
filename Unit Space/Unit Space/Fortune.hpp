@@ -142,6 +142,8 @@ struct Fortune {
         sqrt_nsites = sqrt(_sites.size() + 4) ;
         _mesh = & mesh;
         voronoi();
+        _memory.resize(0);
+        _total_alloc = 0;
     }
     
 private:
