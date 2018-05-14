@@ -111,12 +111,6 @@ struct Fortune {
     }
     
     void triangulate(Mesh& mesh, const float *points, int npoints) {
-        _mesh = & mesh;
-        _sites = vector<Site>();
-        _sitesIndex = vector<Ref<Site>>();
-        
-        freeinit(&sfl, sizeof(Site)) ;
-        
         float x, y;
         xmin = ymin = FLT_MAX, xmax = ymax = -FLT_MAX;
         for (int i = 0; i < npoints; i++) {
@@ -126,22 +120,24 @@ struct Fortune {
             if (y < ymin)  ymin = y;
             if (y > ymax)  ymax = y;
         }
+        deltay = ymax - ymin, deltax = xmax - xmin;
         
+        _sites = vector<Site>();
         for (int i = 0; i < npoints; i++)
             _sites.emplace_back(points[i * 2], points[i * 2 + 1], i);
         
+        _sitesIndex = vector<Ref<Site>>();
         for (auto& site : _sites)
             _sitesIndex.emplace_back(site);
-        
         sort(_sitesIndex.begin(), _sitesIndex.end());
+        
         siteidx = 0;
         _lastSite = nullptr;
-        
-        deltay = ymax - ymin, deltax = xmax - xmin;
-    
+        freeinit(&sfl, sizeof(Site)) ;
         freeinit(&efl, sizeof(Edge)) ;
         nvertices = nedges = 0 ;
         sqrt_nsites = sqrt(_sites.size() + 4) ;
+        _mesh = & mesh;
         voronoi();
     }
     
