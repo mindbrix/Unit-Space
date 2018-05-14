@@ -107,10 +107,10 @@ struct Fortune {
                     mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
             }
         }
-        triangulate(mesh, & mesh._points[0].x, (int)mesh._points.size(), 0, 0, scene.w, scene.h);
+        triangulate(mesh, & mesh._points[0].x, (int)mesh._points.size());
     }
     
-    void triangulate(Mesh& mesh, const float *points, int npoints, float lx, float ly, float ux, float uy) {
+    void triangulate(Mesh& mesh, const float *points, int npoints) {
         _mesh = & mesh;
         _sites = vector<Site>();
         _sitesIndex = vector<Ref<Site>>();
@@ -120,6 +120,13 @@ struct Fortune {
         for (int i = 0; i < npoints; i++)
             _sites.emplace_back(points[i * 2], points[i * 2 + 1], i);
         
+        xmin = ymin = FLT_MAX, xmax = ymax = -FLT_MAX;
+        for (auto& site : _sites) {
+            if (site.coord.x < xmin)  xmin = site.coord.x;
+            if (site.coord.x > xmax)  xmax = site.coord.x;
+            if (site.coord.y < ymin)  ymin = site.coord.y;
+            if (site.coord.y > ymax)  ymax = site.coord.y;
+        }
         for (auto& site : _sites)
             _sitesIndex.emplace_back(site);
         
@@ -127,9 +134,8 @@ struct Fortune {
         siteidx = 0;
         _lastSite = nullptr;
         
-        xmin = lx, ymin = ly, xmax = uy, ymax = ly;
         deltay = ymax - ymin, deltax = xmax - xmin;
-        
+    
         freeinit(&efl, sizeof(Edge)) ;
         nvertices = nedges = 0 ;
         sqrt_nsites = sqrt(_sites.size() + 4) ;
