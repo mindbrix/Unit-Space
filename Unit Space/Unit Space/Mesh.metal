@@ -218,9 +218,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
     
     if (!vert.showInterior) {
-        const float offset = -0.7071;
-        float min_dist = min(vert.distance.x + offset, min(vert.distance.y + offset, vert.distance.z + offset));
-        return vert.color * (1.0 - abs(min_dist));
+        float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
+        return vert.color * (1.0 - abs(min_dist - 0.7071));
     }
     
     if (min_dist > 0.7071)
