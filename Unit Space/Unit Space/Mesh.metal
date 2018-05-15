@@ -14,31 +14,6 @@ using namespace metal;
 
 #pragma mark - Library
 
-float arcos(float x) {
-    float negate = float(x < 0);
-    x = abs(x);
-    float ret = -0.0187293;
-    ret = ret * x;
-    ret = ret + 0.0742610;
-    ret = ret * x;
-    ret = ret - 0.2121144;
-    ret = ret * x;
-    ret = ret + 1.5707288;
-    ret = ret * sqrt(1.0-x);
-    ret = ret - 2 * negate * ret;
-    return negate * 3.14159265358979 + ret;
-}
-
-float segmentAlpha(float d) {
-    const float r = 0.564189583547756, r2 = r * r, rr2 = 1.0 / r2, PIr2 = PI * r * r;
-    d = clamp(d, -r, r);
-    float cosine = 2.0 * d * d * rr2 - 1.0;
-    float sine = sqrt(1.0 - cosine * cosine);
-    float theta = arcos(cosine);
-    float area = 0.5 * (theta - sine) * r2;
-    return select(PIr2 - area, area, d < 0.0);
-}
-
 float fragmentWinding(float2 p0, float2 p1) {
     float y0 = saturate(p0.y), y1 = saturate(p1.y);
     float coverage = y1 - y0;
@@ -134,7 +109,6 @@ struct TriangleVertex
     float2 p0, p1, p2;
     float u, v;
     float3 distance;
-    float3 theta;
     bool showInterior;
     float4 color;
 };
@@ -199,16 +173,12 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     
-//    devicePoint -= 0.5;
+    devicePoint -= 0.5;
     vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
     
     vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
     vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
-    
     vert.distance = { d0, d1, d2 };
-    
-    float2 t01 = { -n01.y, n01.x }, t12 = { -n12.y, n12.x }, t20 = { -n20.y, n20.x };
-    vert.theta = { arcos(dot(t01, -t20)), arcos(dot(t12, -t01)), arcos(dot(t20, -t12)) };
     vert.showInterior = meshState.showInterior;
     vert.color = select(float4(0, 0, 0, 0.666), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), meshState.showColors);
     
@@ -223,11 +193,8 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     float dfx = dfdx(f), dfy = dfdy(f);
     float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
-    if (!vert.showInterior) {
-        float mul = 0.5;
-        float alpha = (1.0 - (1.0 - segmentAlpha(dist * mul)) - (1.0 - segmentAlpha(vert.distance.z * mul)));
-        return vert.color * fract(saturate(alpha));
-    }
+    if (!vert.showInterior)
+        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
     
     if (dist < -0.7071)
         return 0;
@@ -247,26 +214,11 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
     
-    if (!vert.showInterior) {
-        float mul = 0.5;
-        float alpha = (1.0 - (1.0 - saturate(vert.distance.x + mul)) - (1.0 - saturate(vert.distance.y + mul)) - (1.0 - saturate(vert.distance.z + mul)));
-//        float alpha = (1.0 - (1.0 - segmentAlpha(vert.distance.x * mul)) - (1.0 - segmentAlpha(vert.distance.y * mul)) - (1.0 - segmentAlpha(vert.distance.z * mul)));
-        return vert.color * fract(saturate(alpha));
-    }
+    if (!vert.showInterior)
+        return vert.color * (1.0 - abs(min_dist - 0.7071));
     
     if (min_dist > 0.7071)
         return vert.color;
-    
-    const float r = 0.564189583547756, r2 = r * r;
-    float a0 = segmentAlpha(vert.distance.x), a1 = segmentAlpha(vert.distance.y), a2 = segmentAlpha(vert.distance.z);
-    
-    float d0 = max(0.0, r2 - dot(vert.p0, vert.p0));
-    float d1 = max(0.0, r2 - dot(vert.p1, vert.p1));
-    float d2 = max(0.0, r2 - dot(vert.p2, vert.p2));
-    d0 = d0 * vert.theta.x * 0.5, d1 = d1 * vert.theta.y * 0.5, d2 = d2 * vert.theta.z * 0.5;
-        
-    float alpha = (1.0 - (1.0 - a0 - d0) - (1.0 - a1 - d1) - (1.0 - a2 - d2));// + d0 + d1 + d2;
-    return vert.color * alpha;
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
