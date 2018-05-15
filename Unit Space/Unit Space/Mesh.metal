@@ -32,7 +32,48 @@ float fragmentWinding(float2 p0, float2 p1) {
     return coverage * (t1 - ((t1 - t0) * area));
 }
 
-
+float triangleWinding(float2 p0, float2 t0, float2 p1, float2 t1, float2 p2, float2 t2) {
+    float tx0, tx1, ty0, ty1, xt0, xt1, yt0, yt1, _t0, _t1;
+    float x01, y01, x02, y02;
+    float x11, y11, x12, y12;
+    float x21, y21, x22, y22;
+    
+    tx0 = t0.x - dfdx(t0.x) * 0.5, tx1 = t0.x + dfdx(t0.x) * 0.5;
+    ty0 = t0.y - dfdy(t0.y) * 0.5, ty1 = t0.y + dfdy(t0.y) * 0.5;
+    xt0 = min(tx0, tx1), xt1 = max(tx0, tx1);
+    yt0 = min(ty0, ty1), yt1 = max(ty0, ty1);
+    _t0 = saturate(max(xt0, yt0)), _t1 = saturate(min(xt1, yt1));
+    x01 = p0.x + _t0 * (p1.x - p0.x), y01 = p0.y + _t0 * (p1.y - p0.y);
+    x02 = p0.x + _t1 * (p1.x - p0.x), y02 = p0.y + _t1 * (p1.y - p0.y);
+    
+    tx0 = t1.x - dfdx(t1.x) * 0.5, tx1 = t1.x + dfdx(t1.x) * 0.5;
+    ty0 = t1.y - dfdy(t1.y) * 0.5, ty1 = t1.y + dfdy(t1.y) * 0.5;
+    xt0 = min(tx0, tx1), xt1 = max(tx0, tx1);
+    yt0 = min(ty0, ty1), yt1 = max(ty0, ty1);
+    _t0 = saturate(max(xt0, yt0)), _t1 = saturate(min(xt1, yt1));
+    x11 = p1.x + _t0 * (p2.x - p1.x), y11 = p1.y + _t0 * (p2.y - p1.y);
+    x12 = p1.x + _t1 * (p2.x - p1.x), y12 = p1.y + _t1 * (p2.y - p1.y);
+    
+    tx0 = t2.x - dfdx(t2.x) * 0.5, tx1 = t2.x + dfdx(t2.x) * 0.5;
+    ty0 = t2.y - dfdy(t2.y) * 0.5, ty1 = t2.y + dfdy(t2.y) * 0.5;
+    xt0 = min(tx0, tx1), xt1 = max(tx0, tx1);
+    yt0 = min(ty0, ty1), yt1 = max(ty0, ty1);
+    _t0 = saturate(max(xt0, yt0)), _t1 = saturate(min(xt1, yt1));
+    x21 = p2.x + _t0 * (p0.x - p2.x), y21 = p2.y + _t0 * (p0.y - p2.y);
+    x22 = p2.x + _t1 * (p0.x - p2.x), y22 = p2.y + _t1 * (p0.y - p2.y);
+    
+    p0 = saturate(p0), p1 = saturate(p1), p2 = saturate(p2);
+    // p0, p01, p12, p1, p11, p12, p2, p21, p22
+    return p0.x * y01 - p0.y * x01
+    + x01 * y02 - y01 * x02
+    + x02 * p1.y - y02 * p1.x
+    + p1.x * y11 - p1.y * x11
+    + x11 * y12 - y11 * x12
+    + x12 * p2.y - y12 * p2.x
+    + p2.x * y21 - p2.y * x21
+    + x21 * y22 - y21 * x22
+    + x22 * p0.y - y11 * p0.x;
+}
 #pragma mark - Edge
 
 struct EdgeVertex
@@ -107,6 +148,7 @@ struct TriangleVertex
     float4 position [[position]];
     
     float2 p0, p1, p2;
+    float2 t0, t1, t2;
     float u, v;
     float3 distance;
     bool showInterior;
@@ -173,6 +215,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     
+    vert.t0 = { (p0.x - devicePoint.x) / (p1.x - p0.x), (p0.y - devicePoint.y) / (p1.y - p0.y) };
+    vert.t1 = { (p1.x - devicePoint.x) / (p2.x - p1.x), (p1.y - devicePoint.y) / (p2.y - p1.y) };
+    vert.t2 = { (p2.x - devicePoint.x) / (p0.x - p2.x), (p2.y - devicePoint.y) / (p0.y - p2.y) };
+    
     devicePoint -= 0.5;
     vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
     
@@ -219,6 +265,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     
     if (min_dist > 0.7071)
         return vert.color;
+    
+//    float winding = triangleWinding(vert.p0, vert.t0, vert.p1, vert.t1, vert.p2, vert.t2) * 0.5;
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
