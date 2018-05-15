@@ -14,6 +14,15 @@ using namespace metal;
 
 #pragma mark - Library
 
+float segmentAlpha(float d, float r) {
+    d = clamp(d, -r, r);
+    float cosine = 2.0 * d * d / (r * r) - 1.0;
+    float sine = sqrt(1.0 - cosine * cosine);
+    float theta = acos(cosine);
+    float area = 0.5 * (theta - sine) * r * r;
+    return select(PI * r * r - area, area, d < 0.0);
+}
+
 float fragmentWinding(float2 p0, float2 p1) {
     float y0 = saturate(p0.y), y1 = saturate(p1.y);
     float coverage = y1 - y0;
@@ -195,7 +204,8 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
     if (!vert.showInterior)
-        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
+        return vert.color * (1.0 - segmentAlpha((min(dist, vert.distance.z) - 0.7071) * 0.7071, 0.564189583547756));
+//        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
     
     if (dist < -0.7071)
         return 0;
@@ -215,9 +225,13 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
     
+//    return vert.color * segmentAlpha(min_dist, 0.564189583547756);
+    
     if (!vert.showInterior) {
         float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
-        return vert.color * (1.0 - abs(min_dist - 0.7071));
+        float alpha = segmentAlpha((min_dist - 0.7071) * 0.5, 0.564189583547756);
+        return vert.color * saturate((0.5 - abs(alpha - 0.5)) * 2);
+//        return vert.color * (1.0 - abs(min_dist - 0.7071));
     }
     
     if (min_dist > 0.7071)
