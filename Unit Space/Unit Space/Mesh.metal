@@ -30,13 +30,13 @@ float arcos(float x) {
 }
 
 float segmentAlpha(float d) {
-    const float r = 0.564189583547756, r2 = r * r;
+    const float r = 0.564189583547756, r2 = r * r, rr2 = 1.0 / r2, PIr2 = PI * r * r;
     d = clamp(d, -r, r);
-    float cosine = 2.0 * d * d / (r * r) - 1.0;
+    float cosine = 2.0 * d * d * rr2 - 1.0;
     float sine = sqrt(1.0 - cosine * cosine);
     float theta = arcos(cosine);
-    float area = 0.5 * (theta - sine) * r * r;
-    return select(PI * r * r - area, area, d < 0.0);
+    float area = 0.5 * (theta - sine) * r2;
+    return select(PIr2 - area, area, d < 0.0);
 }
 
 float fragmentWinding(float2 p0, float2 p1) {
@@ -249,8 +249,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
         return vert.color * fract(saturate(alpha));
     }
     
-//    if (min_dist > 0.7071)
-//        return vert.color;
+    if (min_dist > 0.7071)
+        return vert.color;
     
     float alpha = (1.0 - (1.0 - segmentAlpha(vert.distance.x)) - (1.0 - segmentAlpha(vert.distance.y)) - (1.0 - segmentAlpha(vert.distance.z )));
     return vert.color * alpha;
