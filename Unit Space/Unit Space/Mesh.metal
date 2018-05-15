@@ -106,7 +106,6 @@ struct TriangleVertex
     float4 position [[position]];
     
     float2 p0, p1, p2;
-    float2 t0, t1, t2;
     float u, v;
     float3 distance;
     bool showInterior;
@@ -172,10 +171,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
-    
-    vert.t0 = { (p0.x - devicePoint.x) / (p1.x - p0.x), (p0.y - devicePoint.y) / (p1.y - p0.y) };
-    vert.t1 = { (p1.x - devicePoint.x) / (p2.x - p1.x), (p1.y - devicePoint.y) / (p2.y - p1.y) };
-    vert.t2 = { (p2.x - devicePoint.x) / (p0.x - p2.x), (p2.y - devicePoint.y) / (p0.y - p2.y) };
     
     devicePoint -= 0.5;
     vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
