@@ -14,11 +14,27 @@ using namespace metal;
 
 #pragma mark - Library
 
-float segmentAlpha(float d, float r) {
+float arcos(float x) {
+    float negate = float(x < 0);
+    x = abs(x);
+    float ret = -0.0187293;
+    ret = ret * x;
+    ret = ret + 0.0742610;
+    ret = ret * x;
+    ret = ret - 0.2121144;
+    ret = ret * x;
+    ret = ret + 1.5707288;
+    ret = ret * sqrt(1.0-x);
+    ret = ret - 2 * negate * ret;
+    return negate * 3.14159265358979 + ret;
+}
+
+float segmentAlpha(float d) {
+    const float r = 0.564189583547756, r2 = r * r;
     d = clamp(d, -r, r);
     float cosine = 2.0 * d * d / (r * r) - 1.0;
     float sine = sqrt(1.0 - cosine * cosine);
-    float theta = acos(cosine);
+    float theta = arcos(cosine);
     float area = 0.5 * (theta - sine) * r * r;
     return select(PI * r * r - area, area, d < 0.0);
 }
@@ -203,9 +219,11 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     float dfx = dfdx(f), dfy = dfdy(f);
     float dist = f * rsqrt(dfx * dfx + dfy * dfy);
     
-    if (!vert.showInterior)
-        return vert.color * (1.0 - segmentAlpha((min(dist, vert.distance.z) - 0.7071) * 0.7071, 0.564189583547756));
-//        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
+    if (!vert.showInterior) {
+        float mul = 0.5;
+        float alpha = (1.0 - (1.0 - segmentAlpha(dist * mul)) - (1.0 - segmentAlpha(vert.distance.z * mul)));
+        return vert.color * fract(saturate(alpha));
+    }
     
     if (dist < -0.7071)
         return 0;
@@ -225,17 +243,17 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
     
-//    return vert.color * segmentAlpha(min_dist, 0.564189583547756);
-    
     if (!vert.showInterior) {
-        float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
-        float alpha = segmentAlpha((min_dist - 0.7071) * 0.5, 0.564189583547756);
-        return vert.color * saturate((0.5 - abs(alpha - 0.5)) * 2);
-//        return vert.color * (1.0 - abs(min_dist - 0.7071));
+        float mul = 0.5;
+        float alpha = (1.0 - (1.0 - segmentAlpha(vert.distance.x * mul)) - (1.0 - segmentAlpha(vert.distance.y * mul)) - (1.0 - segmentAlpha(vert.distance.z * mul)));
+        return vert.color * fract(saturate(alpha));
     }
     
-    if (min_dist > 0.7071)
-        return vert.color;
+//    if (min_dist > 0.7071)
+//        return vert.color;
+    
+    float alpha = (1.0 - (1.0 - segmentAlpha(vert.distance.x)) - (1.0 - segmentAlpha(vert.distance.y)) - (1.0 - segmentAlpha(vert.distance.z )));
+    return vert.color * alpha;
     
     float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
