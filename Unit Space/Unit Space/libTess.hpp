@@ -234,10 +234,10 @@ struct libTess {
         cell.writeLeaves(leaves, paths, stack);
         assert(paths.size() == count);
         size_t pi = 0;
-        int pmax = 0;
+        int dmax = 0, p;
         for (Cell::Leaf& leaf : leaves) {
-            if (leaf.c->p > pmax)
-                pmax = leaf.c->p;
+            if (leaf.count > dmax)
+                dmax = leaf.count;
             
             pi = mesh._points.size();
             mesh._points.emplace_back(leaf.c->lx, leaf.c->ly);
@@ -245,15 +245,17 @@ struct libTess {
             mesh._points.emplace_back(leaf.c->ux, leaf.c->uy);
             mesh._points.emplace_back(leaf.c->lx, leaf.c->uy);
             
-            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, paths[leaf.begin + leaf.count - 1]);
-            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, paths[leaf.begin + leaf.count - 1]);
+            p = leaf.count;
+//            p = paths[leaf.begin + leaf.count - 1];
+            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
+            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
         }
         
-//        for (int i = 0; i < pmax; i++)
-//            mesh._colors.emplace_back(RGBA8(255 * i / pmax, 255 * i / pmax, 255 * i / pmax, 255));
+        for (int i = 0; i < dmax; i++)
+            mesh._colors.emplace_back(RGBA8(255 * i / dmax, 255 * i / dmax, 255 * i / dmax, 255));
         
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
+//        for (Path& path : scene._paths)
+//            mesh._colors.emplace_back(path._color);
         
         
         
