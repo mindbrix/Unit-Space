@@ -17,7 +17,9 @@ constexpr int kPolySize = 3;
 
 struct libTess {
     struct Cell {
-        Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {}
+        Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {
+            assert(lx != ux && ly != uy);
+        }
         ~Cell() {
             for (int i = 0; i < count; i++)
                 delete children[i];
@@ -31,7 +33,7 @@ struct libTess {
                 ruy = uy < iuy ? uy : iuy;
                 assert(rlx != rux && rly != ruy);
                 
-                children[count++] = new Cell(rlx, rly, rlx, ruy, ip);
+                children[count++] = new Cell(rlx, rly, rux, ruy, ip);
                 if (rly > ly)
                     children[count++] = new Cell(lx, ly, ux, rly, p);
                 if (rlx > lx)
@@ -42,7 +44,7 @@ struct libTess {
                     children[count++] = new Cell(lx, ruy, ux, uy, p);
             } else
                 for (int i = 0; i < count; i++)
-                    if (ux > ilx && iux > lx && uy > ily && iuy > ly)
+                    if (children[i]->ux > ilx && iux > children[i]->lx && children[i]->uy > ily && iuy > children[i]->ly)
                         children[i]->intersect(ilx, ily, iux, iuy, ip);
         }
         float lx, ly, ux, uy;
@@ -147,7 +149,11 @@ struct libTess {
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
         Cell cell(0, 0, scene.w, scene.h);
-        
+        for (Path& path : scene._paths) {
+            path.update();
+            cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
+        }
+
         mesh.empty();
         Tess::writeCurves(mesh, scene);
         TESStesselator *tess = _tess.get();
