@@ -29,7 +29,7 @@ struct libTess {
                 delete children[i];
         }
         inline bool operator< (const Cell& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
-        inline bool canCluster(Cell &other) { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
+        inline bool canCluster(Cell &other)                 { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
         
         void intersect(float ilx, float ily, float iux, float iuy, int ip) {
             float rlx, rly, rux, ruy;
@@ -54,15 +54,11 @@ struct libTess {
                     if (children[i]->ux > ilx && iux > children[i]->lx && children[i]->uy > ily && iuy > children[i]->ly)
                         children[i]->intersect(ilx, ily, iux, iuy, ip);
         }
-        bool merge(Cell &other) {
-            if (canCluster(other)) {
-                lx = lx < other.lx ? lx : other.lx;
-                ly = ly < other.ly ? ly : other.ly;
-                ux = ux > other.ux ? ux : other.ux;
-                uy = uy > other.uy ? uy : other.uy;
-                return true;
-            }
-            return false;
+        void merge(Cell &other) {
+            lx = lx < other.lx ? lx : other.lx;
+            ly = ly < other.ly ? ly : other.ly;
+            ux = ux > other.ux ? ux : other.ux;
+            uy = uy > other.uy ? uy : other.uy;
         }
         int countPaths(int depth = 0) {
             if (p != INT_MAX)
@@ -212,7 +208,8 @@ struct libTess {
             if (bbox.ux - bbox.lx < wmax && bbox.uy - bbox.ly < hmax) {
                 bool merged = false;
                 for (Cell& cluster : clusters)
-                    if (cluster.merge(bbox)) {
+                    if (cluster.canCluster(bbox)) {
+                        cluster.merge(bbox);
                         cluster.p++;
                         merged = true;
                         break;
