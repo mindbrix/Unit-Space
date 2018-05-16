@@ -17,9 +17,7 @@ constexpr int kPolySize = 3;
 
 struct libTess {
     struct Cell {
-        Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {
-            assert(lx != ux && ly != uy);
-        }
+        Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {}
         ~Cell() {
             for (int i = 0; i < count; i++)
                 delete children[i];
@@ -47,6 +45,14 @@ struct libTess {
                     if (children[i]->ux > ilx && iux > children[i]->lx && children[i]->uy > ily && iuy > children[i]->ly)
                         children[i]->intersect(ilx, ily, iux, iuy, ip);
         }
+        void writeLeaves(vector<Cell *>& leaves) {
+            if (count == 0)
+                leaves.emplace_back(this);
+            else
+                for (int i = 0; i < count; i++)
+                    children[i]->writeLeaves(leaves);
+        }
+        
         float lx, ly, ux, uy;
         Cell *children[5];
         int count;
@@ -148,19 +154,41 @@ struct libTess {
     }
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
+        mesh.empty();
+        
         Cell cell(0, 0, scene.w, scene.h);
         for (Path& path : scene._paths) {
             path.update();
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         }
 
-        mesh.empty();
-        Tess::writeCurves(mesh, scene);
-        TESStesselator *tess = _tess.get();
+        vector<Cell *> leaves;
+        cell.writeLeaves(leaves);
+        size_t pi = 0;
+        for (Cell *leaf : leaves) {
+            if (leaf->p == INT_MAX)
+                continue;
+            pi = mesh._points.size();
+            mesh._points.emplace_back(leaf->lx, leaf->ly);
+            mesh._points.emplace_back(leaf->ux, leaf->ly);
+            mesh._points.emplace_back(leaf->ux, leaf->uy);
+            mesh._points.emplace_back(leaf->lx, leaf->uy);
+            
+            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, leaf->p);
+            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, leaf->p);
+        }
         
-        if (useMasking)
-            maskPaths(tess, scene);
-        writeTessTriangles(mesh, tess, scene);
+        for (Path& path : scene._paths)
+            mesh._colors.emplace_back(path._color);
+            
+        
+        
+//        Tess::writeCurves(mesh, scene);
+//        TESStesselator *tess = _tess.get();
+//
+//        if (useMasking)
+//            maskPaths(tess, scene);
+//        writeTessTriangles(mesh, tess, scene);
     }
     
     shared_ptr<TESStesselator>            _tess;
