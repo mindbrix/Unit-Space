@@ -75,14 +75,14 @@ struct libTess {
                 c += children[i]->countPaths(depth);
             return c;
         }
-        void writeLeaves(vector<Cell *>& leaves, int *stack, int depth = 0) {
+        void writeLeaves(vector<Leaf>& leaves, int *stack, int depth = 0) {
             if (p != INT_MAX)
                 stack[depth++] = p;
             else
                 p = stack[depth];
             if (count == 0) {
                 if (depth)
-                    leaves.emplace_back(this);
+                    leaves.emplace_back(nullptr, 0, this);
             } else
                 for (int i = 0; i < count; i++)
                     children[i]->writeLeaves(leaves, stack, depth);
@@ -228,26 +228,26 @@ struct libTess {
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
         int count = cell.countPaths();
-        
-        vector<Cell *> leaves;
+        int paths[count];
+        vector<Cell::Leaf> leaves;
         int stack[scene._paths.size()];
         cell.writeLeaves(leaves, stack);
         size_t pi = 0;
         int pmax = 0;
-        for (Cell *leaf : leaves) {
-            if (leaf->p == INT_MAX)
+        for (Cell::Leaf& leaf : leaves) {
+            if (leaf.c->p == INT_MAX)
                 continue;
-            if (leaf->p > pmax)
-                pmax = leaf->p;
+            if (leaf.c->p > pmax)
+                pmax = leaf.c->p;
             
             pi = mesh._points.size();
-            mesh._points.emplace_back(leaf->lx, leaf->ly);
-            mesh._points.emplace_back(leaf->ux, leaf->ly);
-            mesh._points.emplace_back(leaf->ux, leaf->uy);
-            mesh._points.emplace_back(leaf->lx, leaf->uy);
+            mesh._points.emplace_back(leaf.c->lx, leaf.c->ly);
+            mesh._points.emplace_back(leaf.c->ux, leaf.c->ly);
+            mesh._points.emplace_back(leaf.c->ux, leaf.c->uy);
+            mesh._points.emplace_back(leaf.c->lx, leaf.c->uy);
             
-            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, leaf->p);
-            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, leaf->p);
+            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, leaf.c->p);
+            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, leaf.c->p);
         }
         
 //        for (int i = 0; i < pmax; i++)
