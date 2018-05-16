@@ -17,6 +17,13 @@ constexpr int kPolySize = 3;
 
 struct libTess {
     struct Cell {
+        struct Leaf {
+            Leaf(int *paths, int count, Cell *c) : paths(paths), count(count), c(c) {}
+            
+            int *paths;
+            int count;
+            Cell *c;
+        };
         Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {}
         ~Cell() {
             for (int i = 0; i < count; i++)
@@ -57,7 +64,7 @@ struct libTess {
             }
             return false;
         }
-        int countLeaves(int depth = 0) {
+        int countPaths(int depth = 0) {
             if (p != INT_MAX)
                 depth++;
             if (count == 0)
@@ -65,7 +72,7 @@ struct libTess {
 
             int c = 0;
             for (int i = 0; i < count; i++)
-                c += children[i]->countLeaves(depth);
+                c += children[i]->countPaths(depth);
             return c;
         }
         void writeLeaves(vector<Cell *>& leaves, int *stack, int depth = 0) {
@@ -220,7 +227,7 @@ struct libTess {
         for (Path& path : scene._paths)
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
-        int count = cell.countLeaves();
+        int count = cell.countPaths();
         
         vector<Cell *> leaves;
         int stack[scene._paths.size()];
