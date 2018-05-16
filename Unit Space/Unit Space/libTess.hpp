@@ -29,6 +29,7 @@ struct libTess {
                 delete children[i];
         }
         inline bool operator< (const Cell& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
+        inline bool canCluster(Cell &other) { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
         
         void intersect(float ilx, float ily, float iux, float iuy, int ip) {
             float rlx, rly, rux, ruy;
@@ -54,7 +55,7 @@ struct libTess {
                         children[i]->intersect(ilx, ily, iux, iuy, ip);
         }
         bool merge(Cell &other) {
-            if (other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly) {
+            if (canCluster(other)) {
                 lx = lx < other.lx ? lx : other.lx;
                 ly = ly < other.ly ? ly : other.ly;
                 ux = ux > other.ux ? ux : other.ux;
@@ -160,36 +161,39 @@ struct libTess {
             quadtree.add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
         }
     }
-    static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
-        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+    static void writePathTriangles(Mesh& mesh, TESStesselator *tess, Path& path) {
+        mesh._colors.emplace_back(path._color);
         
-        for (Path& path : scene._paths) {
-            mesh._colors.emplace_back(path._color);
+        for (SubPath& s : path._subPaths)
+            tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+        
+        if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+            float *points = (float *)tessGetVertices(tess);
+            int npoints = tessGetVertexCount(tess);
+            const int nelems = tessGetElementCount(tess);
+            const TESSindex *polygon = tessGetElements(tess);
             
-            for (SubPath& s : path._subPaths)
-                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-            
-            if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
-                float *points = (float *)tessGetVertices(tess);
-                int npoints = tessGetVertexCount(tess);
-                const int nelems = tessGetElementCount(tess);
-                const TESSindex *polygon = tessGetElements(tess);
-                
-                int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
-                for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                    Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
-                    mesh._triangles.emplace_back(tri);
-                }
-                for (int i = 0; i < npoints; i++) {
-                    Vector p = { points[i * 2], points[i * 2 + 1] };
-                    mesh._points.emplace_back(p);
-                }
+            int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
+            for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
+                mesh._triangles.emplace_back(tri);
+            }
+            for (int i = 0; i < npoints; i++) {
+                Vector p = { points[i * 2], points[i * 2 + 1] };
+                mesh._points.emplace_back(p);
             }
         }
     }
     
+    static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
+        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+        for (Path& path : scene._paths)
+            writePathTriangles(mesh, tess, path);
+    }
+    
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
         mesh.empty();
+        TESStesselator *tess = _tess.get();
         
         for (Path& path : scene._paths)
             path.update();
@@ -239,16 +243,21 @@ struct libTess {
             if (leaf.count > dmax)
                 dmax = leaf.count;
             
-            pi = mesh._points.size();
-            mesh._points.emplace_back(leaf.c->lx, leaf.c->ly);
-            mesh._points.emplace_back(leaf.c->ux, leaf.c->ly);
-            mesh._points.emplace_back(leaf.c->ux, leaf.c->uy);
-            mesh._points.emplace_back(leaf.c->lx, leaf.c->uy);
-            
-            p = leaf.count;
-//            p = paths[leaf.begin + leaf.count - 1];
-            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
-            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
+            p = paths[leaf.begin + leaf.count - 1];
+            Path& path = scene._paths[p];
+            if (leaf.count == 1 && path._bounds.lx == leaf.c->lx && path._bounds.ly == leaf.c->ly && path._bounds.ux == leaf.c->ux && path._bounds.uy == leaf.c->uy)
+                writePathTriangles(mesh, tess, path);
+            else {
+                pi = mesh._points.size();
+                mesh._points.emplace_back(leaf.c->lx, leaf.c->ly);
+                mesh._points.emplace_back(leaf.c->ux, leaf.c->ly);
+                mesh._points.emplace_back(leaf.c->ux, leaf.c->uy);
+                mesh._points.emplace_back(leaf.c->lx, leaf.c->uy);
+                
+                p = leaf.count;
+                mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
+                mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
+            }
         }
         
         for (int i = 0; i < dmax; i++)
@@ -260,7 +269,7 @@ struct libTess {
         
         
 //        Tess::writeCurves(mesh, scene);
-//        TESStesselator *tess = _tess.get();
+//
 //
 //        if (useMasking)
 //            maskPaths(tess, scene);
