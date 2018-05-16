@@ -60,17 +60,6 @@ struct libTess {
             ux = ux > other.ux ? ux : other.ux;
             uy = uy > other.uy ? uy : other.uy;
         }
-        int countPaths(int depth = 0) {
-            if (p != INT_MAX)
-                depth++;
-            if (count == 0)
-                return depth;
-
-            int c = 0;
-            for (int i = 0; i < count; i++)
-                c += children[i]->countPaths(depth);
-            return c;
-        }
         void writeLeaves(vector<Leaf>& leaves, vector<int>& paths, int *stack, int depth = 0) {
             if (p != INT_MAX)
                 stack[depth++] = p;
@@ -228,12 +217,10 @@ struct libTess {
         for (Path& path : scene._paths)
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
-        int count = cell.countPaths();
         vector<int> paths;
         vector<Cell::Leaf> leaves;
         int stack[scene._paths.size()];
         cell.writeLeaves(leaves, paths, stack);
-        assert(paths.size() == count);
         size_t pi = 0;
         int dmax = 0, p;
         for (Cell::Leaf& leaf : leaves) {
