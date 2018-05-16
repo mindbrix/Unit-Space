@@ -57,17 +57,17 @@ struct libTess {
             }
             return false;
         }
-        void writeLeaves(vector<Cell *>& leaves, int *paths, int depth = 0) {
+        void writeLeaves(vector<Cell *>& leaves, int *stack, int depth = 0) {
             if (p != INT_MAX)
-                paths[depth++] = p;
+                stack[depth++] = p;
             else
-                p = paths[depth];
+                p = stack[depth];
             if (count == 0) {
                 if (depth)
                     leaves.emplace_back(this);
             } else
                 for (int i = 0; i < count; i++)
-                    children[i]->writeLeaves(leaves, paths, depth);
+                    children[i]->writeLeaves(leaves, stack, depth);
         }
         
         float lx, ly, ux, uy;
@@ -210,8 +210,8 @@ struct libTess {
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
         vector<Cell *> leaves;
-        int paths[scene._paths.size()];
-        cell.writeLeaves(leaves, paths);
+        int stack[scene._paths.size()];
+        cell.writeLeaves(leaves, stack);
         size_t pi = 0;
         int pmax = 0;
         for (Cell *leaf : leaves) {
