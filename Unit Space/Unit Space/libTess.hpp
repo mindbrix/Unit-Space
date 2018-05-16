@@ -179,6 +179,7 @@ struct libTess {
         }
     }
     static void writePathTriangles(Mesh& mesh, TESStesselator *tess, Path& path) {
+        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         mesh._colors.emplace_back(path._color);
         
         for (SubPath& s : path._subPaths)
@@ -203,7 +204,6 @@ struct libTess {
     }
     
     static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
-        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (Path& path : scene._paths)
             writePathTriangles(mesh, tess, path);
     }
@@ -301,17 +301,17 @@ struct libTess {
                 mesh._points.emplace_back(leaf.c->ux, leaf.c->uy);
                 mesh._points.emplace_back(leaf.c->lx, leaf.c->uy);
                 
-                p = leaf.count;
+//                p = leaf.count;
                 mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
                 mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
             }
         }
         
-        for (int i = 0; i < dmax; i++)
-            mesh._colors.emplace_back(RGBA8(255 * i / dmax, 255 * i / dmax, 255 * i / dmax, 255));
+//        for (int i = 0; i < dmax; i++)
+//            mesh._colors.emplace_back(RGBA8(255 * i / dmax, 255 * i / dmax, 255 * i / dmax, 255));
         
-//        for (Path& path : scene._paths)
-//            mesh._colors.emplace_back(path._color);
+        for (Path& path : scene._paths)
+            mesh._colors.emplace_back(path._color);
         
         
         
