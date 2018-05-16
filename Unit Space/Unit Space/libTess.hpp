@@ -16,6 +16,26 @@ constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
 
 struct libTess {
+    struct Cell {
+        Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {}
+        ~Cell() {
+            for (int i = 0; i < count; i++)
+                delete children[i];
+        }
+        void intersect(float ilx, float ily, float iux, float iuy, int ip) {
+            if (count)
+                for (int i = 0; i < count; i++)
+                    if (ux > ilx && iux > lx && uy > ily && iuy > ly)
+                        children[i]->intersect(ilx, ily, iux, iuy, ip);
+            
+            children[count++] = new Cell(ilx, ily, iux, iuy, ip);
+        }
+        float lx, ly, ux, uy;
+        Cell *children[5];
+        int count;
+        int p;
+    };
+    
     libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
     
     static void writeTessSubpaths(TESStesselator *tess, Path& path) {
