@@ -57,6 +57,17 @@ struct libTess {
             }
             return false;
         }
+        int countLeaves(int depth = 0) {
+            if (p != INT_MAX)
+                depth++;
+            if (count == 0)
+                return depth;
+
+            int c = 0;
+            for (int i = 0; i < count; i++)
+                c += children[i]->countLeaves(depth);
+            return c;
+        }
         void writeLeaves(vector<Cell *>& leaves, int *stack, int depth = 0) {
             if (p != INT_MAX)
                 stack[depth++] = p;
@@ -208,6 +219,8 @@ struct libTess {
         
         for (Path& path : scene._paths)
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
+        
+        int count = cell.countLeaves();
         
         vector<Cell *> leaves;
         int stack[scene._paths.size()];
