@@ -154,7 +154,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     
     
     const float r = 10.0;
-    const float dilation = 0.7071067812;
+    const float dilation = -0.7071067812;
     const float hmin = 0.1;
     
     float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
