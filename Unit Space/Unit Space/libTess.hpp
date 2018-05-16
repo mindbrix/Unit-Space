@@ -258,25 +258,10 @@ struct libTess {
         
         Cell cell(0, 0, scene.w, scene.h);
         
-        float lx, ux;
-        for (Cell::Run& run : runs) {
-            lx = run.aabb.lx;
-            ux = run.cells[0]->ux;
-            for (int i = 1; i < run.cells.size(); i++) {
-                ux = (ux + run.cells[i]->lx) * 0.5;
-                
-                cell.intersect(lx, run.aabb.ly, ux, run.aabb.uy, INT_MAX);
-                
-                ux = run.cells[i]->ux;
-            }
-            ux = run.aabb.ux;
-            cell.intersect(lx, run.aabb.ly, ux, run.aabb.uy, INT_MAX);
-        }
-        
-//        for (Cell& cluster : clusters)
-//            if (cluster.p > 0)
-//                cell.intersect(cluster.lx, cluster.ly, cluster.ux, cluster.uy, INT_MAX);
-        
+        for (Cell::Run& run : runs) 
+            for (int i = 0; i < run.cells.size(); i++)
+                cell.intersect(run.cells[i]->lx, run.aabb.ly, run.cells[i]->ux, run.aabb.uy, INT_MAX);
+            
         for (Path& path : scene._paths)
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
