@@ -23,12 +23,27 @@ struct libTess {
                 delete children[i];
         }
         void intersect(float ilx, float ily, float iux, float iuy, int ip) {
-            if (count)
+            float rlx, rly, rux, ruy;
+            if (count == 0) {
+                rlx = lx > ilx ? lx : ilx;
+                rly = ly > ily ? ly : ily;
+                rux = ux < iux ? ux : iux;
+                ruy = uy < iuy ? uy : iuy;
+                assert(rlx != rux && rly != ruy);
+                
+                children[count++] = new Cell(rlx, rly, rlx, ruy, ip);
+                if (rly > ly)
+                    children[count++] = new Cell(lx, ly, ux, rly, p);
+                if (rlx > lx)
+                    children[count++] = new Cell(lx, rly, rlx, ruy, p);
+                if (rux < ux)
+                    children[count++] = new Cell(rux, rly, ux, ruy, p);
+                if (ruy < uy)
+                    children[count++] = new Cell(lx, ruy, ux, uy, p);
+            } else
                 for (int i = 0; i < count; i++)
                     if (ux > ilx && iux > lx && uy > ily && iuy > ly)
                         children[i]->intersect(ilx, ily, iux, iuy, ip);
-            
-            children[count++] = new Cell(ilx, ily, iux, iuy, ip);
         }
         float lx, ly, ux, uy;
         Cell *children[5];
@@ -131,6 +146,8 @@ struct libTess {
     }
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
+        Cell cell(0, 0, scene.w, scene.h);
+        
         mesh.empty();
         Tess::writeCurves(mesh, scene);
         TESStesselator *tess = _tess.get();
