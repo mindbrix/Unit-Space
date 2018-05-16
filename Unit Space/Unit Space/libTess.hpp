@@ -60,11 +60,11 @@ struct libTess {
         void writeLeaves(vector<Cell *>& leaves, int *paths, int depth = 0) {
             if (p != INT_MAX)
                 paths[depth++] = p;
-//            depth += p != INT_MAX ? 1 : 0;
             p = depth;
-            if (count == 0)
-                leaves.emplace_back(this);
-            else
+            if (count == 0) {
+                if (depth)
+                    leaves.emplace_back(this);
+            } else
                 for (int i = 0; i < count; i++)
                     children[i]->writeLeaves(leaves, paths, depth);
         }
