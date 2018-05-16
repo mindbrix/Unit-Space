@@ -29,7 +29,7 @@ struct libTess {
                 delete children[i];
         }
         inline bool operator< (const Cell& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
-        inline bool canCluster(Cell &other)                 { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
+        inline bool touches(Cell &other)                 { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
         
         void intersect(float ilx, float ily, float iux, float iuy, int ip) {
             float rlx, rly, rux, ruy;
@@ -197,7 +197,7 @@ struct libTess {
             if (bbox.ux - bbox.lx < wmax && bbox.uy - bbox.ly < hmax) {
                 bool merged = false;
                 for (Cell& cluster : clusters)
-                    if (cluster.canCluster(bbox)) {
+                    if (cluster.touches(bbox)) {
                         cluster.unite(bbox);
                         cluster.p++;
                         merged = true;
