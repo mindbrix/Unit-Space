@@ -17,12 +17,43 @@ constexpr int kPolySize = 3;
 
 struct libTess {
     struct Cell {
+        struct AABB {
+            AABB(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy) {}
+            inline bool operator< (const AABB& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
+            inline bool follows(AABB &other, float sp)          { return other.ux >= lx - sp && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
+            inline bool touches(AABB &other)                    { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
+            
+            AABB intersection(AABB& other) {
+                float rlx, rly, rux, ruy;
+                
+                rlx = lx > other.lx ? lx : other.lx;
+                rly = ly > other.ly ? ly : other.ly;
+                rux = ux < other.ux ? ux : other.ux;
+                ruy = uy < other.uy ? uy : other.uy;
+                return AABB(rlx, rly, rux, ruy);
+            }
+            void unite(AABB& other) {
+                lx = lx < other.lx ? lx : other.lx;
+                ly = ly < other.ly ? ly : other.ly;
+                ux = ux > other.ux ? ux : other.ux;
+                uy = uy > other.uy ? uy : other.uy;
+            }
+            float lx, ly, ux, uy;
+        };
         struct Leaf {
             Leaf(int begin, int count, Cell *c) : begin(begin), count(count), c(c) {}
             
             int begin, count;
             Cell *c;
         };
+        
+        struct Run {
+            Run(Cell& c) : aabb(c.lx, c.ly, c.ux, c.uy) { cells.emplace_back(& c); }
+            
+            AABB aabb;
+            vector<Cell *> cells;
+        };
+        
         Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {}
         ~Cell() {
             for (int i = 0; i < count; i++)
@@ -184,7 +215,7 @@ struct libTess {
         for (Path& path : scene._paths)
             path.update();
         
-        vector<Cell> bboxes, clusters, runs;
+        vector<Cell> bboxes, clusters;
         for (Path& path : scene._paths)
             bboxes.emplace_back(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, 0);
         sort(bboxes.begin(), bboxes.end());
@@ -209,13 +240,15 @@ struct libTess {
                     clusters.emplace_back(bbox);
             }
         }
-        Cell cell(0, 0, scene.w, scene.h);
         
+        vector<Cell::Run> runs;
         for (Cell& cluster : clusters) {
+            Cell::AABB aabb(cluster.lx, cluster.ly, cluster.ux, cluster.uy);
             bool merged = false;
-            for (Cell& run : runs)
-                if (cluster.follows(run, wmax * 0.1)) {
-                    run.unite(cluster);
+            for (Cell::Run& run : runs)
+                if (aabb.follows(run.aabb, wmax)) {
+                    run.aabb.unite(aabb);
+                    run.cells.emplace_back(& cluster);
                     merged = true;
                     break;
                 }
@@ -223,8 +256,22 @@ struct libTess {
                 runs.emplace_back(cluster);
         }
         
-        for (Cell& run : runs)
-            cell.intersect(run.lx, run.ly, run.ux, run.uy, INT_MAX);
+        Cell cell(0, 0, scene.w, scene.h);
+        
+        float lx, ux;
+        for (Cell::Run& run : runs) {
+            lx = run.aabb.lx;
+            ux = run.cells[0]->ux;
+            for (int i = 1; i < run.cells.size(); i++) {
+                ux = (ux + run.cells[i]->lx) * 0.5;
+                
+                cell.intersect(lx, run.aabb.ly, ux, run.aabb.uy, INT_MAX);
+                
+                ux = run.cells[i]->ux;
+            }
+            ux = run.aabb.ux;
+            cell.intersect(lx, run.aabb.ly, ux, run.aabb.uy, INT_MAX);
+        }
         
 //        for (Cell& cluster : clusters)
 //            if (cluster.p > 0)
