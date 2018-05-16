@@ -35,13 +35,13 @@ struct libTess {
                 
                 children[count++] = new Cell(rlx, rly, rux, ruy, ip);
                 if (rly > ly)
-                    children[count++] = new Cell(lx, ly, ux, rly, p);
+                    children[count++] = new Cell(lx, ly, ux, rly, INT_MAX);
                 if (rlx > lx)
-                    children[count++] = new Cell(lx, rly, rlx, ruy, p);
+                    children[count++] = new Cell(lx, rly, rlx, ruy, INT_MAX);
                 if (rux < ux)
-                    children[count++] = new Cell(rux, rly, ux, ruy, p);
+                    children[count++] = new Cell(rux, rly, ux, ruy, INT_MAX);
                 if (ruy < uy)
-                    children[count++] = new Cell(lx, ruy, ux, uy, p);
+                    children[count++] = new Cell(lx, ruy, ux, uy, INT_MAX);
             } else
                 for (int i = 0; i < count; i++)
                     if (children[i]->ux > ilx && iux > children[i]->lx && children[i]->uy > ily && iuy > children[i]->ly)
@@ -57,14 +57,16 @@ struct libTess {
             }
             return false;
         }
-        void writeLeaves(vector<Cell *>& leaves, int depth = 0) {
-            depth += p != INT_MAX ? 1 : 0;
-//            p = depth;
+        void writeLeaves(vector<Cell *>& leaves, int *paths, int depth = 0) {
+            if (p != INT_MAX)
+                paths[depth++] = p;
+//            depth += p != INT_MAX ? 1 : 0;
+            p = depth;
             if (count == 0)
                 leaves.emplace_back(this);
             else
                 for (int i = 0; i < count; i++)
-                    children[i]->writeLeaves(leaves, depth);
+                    children[i]->writeLeaves(leaves, paths, depth);
         }
         
         float lx, ly, ux, uy;
@@ -207,7 +209,8 @@ struct libTess {
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
         vector<Cell *> leaves;
-        cell.writeLeaves(leaves);
+        int paths[scene._paths.size()];
+        cell.writeLeaves(leaves, paths);
         size_t pi = 0;
         int pmax = 0;
         for (Cell *leaf : leaves) {
@@ -226,11 +229,11 @@ struct libTess {
             mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, leaf->p);
         }
         
-//        for (int i = 0; i < pmax; i++)
-//            mesh._colors.emplace_back(RGBA8(255 * i / pmax, 255 * i / pmax, 255 * i / pmax, 255));
+        for (int i = 0; i < pmax; i++)
+            mesh._colors.emplace_back(RGBA8(255 * i / pmax, 255 * i / pmax, 255 * i / pmax, 255));
         
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
+//        for (Path& path : scene._paths)
+//            mesh._colors.emplace_back(path._color);
         
         
         
