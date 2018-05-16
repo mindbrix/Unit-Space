@@ -29,7 +29,8 @@ struct libTess {
                 delete children[i];
         }
         inline bool operator< (const Cell& other) const     { return lx < other.lx || (lx == other.lx && ly < other.ly); }
-        inline bool touches(Cell &other)                 { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
+        inline bool follows(Cell &other, float sp)          { return other.ux >= lx - sp && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
+        inline bool touches(Cell &other)                    { return other.ux >= lx && ux >= other.lx && other.uy >= ly && uy >= other.ly; }
         
         void intersect(float ilx, float ily, float iux, float iuy, int ip) {
             float rlx, rly, rux, ruy;
@@ -183,7 +184,7 @@ struct libTess {
         for (Path& path : scene._paths)
             path.update();
         
-        vector<Cell> bboxes, clusters, clustered;
+        vector<Cell> bboxes, clusters, runs;
         for (Path& path : scene._paths)
             bboxes.emplace_back(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, 0);
         sort(bboxes.begin(), bboxes.end());
@@ -210,9 +211,24 @@ struct libTess {
         }
         Cell cell(0, 0, scene.w, scene.h);
         
-        for (Cell& cluster : clusters)
-            if (cluster.p > 0)
-                cell.intersect(cluster.lx, cluster.ly, cluster.ux, cluster.uy, INT_MAX);
+        for (Cell& cluster : clusters) {
+            bool merged = false;
+            for (Cell& run : runs)
+                if (cluster.follows(run, wmax * 0.1)) {
+                    run.unite(cluster);
+                    merged = true;
+                    break;
+                }
+            if (!merged)
+                runs.emplace_back(cluster);
+        }
+        
+        for (Cell& run : runs)
+            cell.intersect(run.lx, run.ly, run.ux, run.uy, INT_MAX);
+        
+//        for (Cell& cluster : clusters)
+//            if (cluster.p > 0)
+//                cell.intersect(cluster.lx, cluster.ly, cluster.ux, cluster.uy, INT_MAX);
         
         for (Path& path : scene._paths)
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
