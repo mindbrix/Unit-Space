@@ -60,7 +60,8 @@ struct libTess {
         void writeLeaves(vector<Cell *>& leaves, int *paths, int depth = 0) {
             if (p != INT_MAX)
                 paths[depth++] = p;
-            p = depth;
+            else
+                p = paths[depth];
             if (count == 0) {
                 if (depth)
                     leaves.emplace_back(this);
@@ -229,11 +230,11 @@ struct libTess {
             mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, leaf->p);
         }
         
-        for (int i = 0; i < pmax; i++)
-            mesh._colors.emplace_back(RGBA8(255 * i / pmax, 255 * i / pmax, 255 * i / pmax, 255));
+//        for (int i = 0; i < pmax; i++)
+//            mesh._colors.emplace_back(RGBA8(255 * i / pmax, 255 * i / pmax, 255 * i / pmax, 255));
         
-//        for (Path& path : scene._paths)
-//            mesh._colors.emplace_back(path._color);
+        for (Path& path : scene._paths)
+            mesh._colors.emplace_back(path._color);
         
         
         
