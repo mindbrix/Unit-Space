@@ -54,7 +54,7 @@ struct libTess {
                     if (children[i]->ux > ilx && iux > children[i]->lx && children[i]->uy > ily && iuy > children[i]->ly)
                         children[i]->intersect(ilx, ily, iux, iuy, ip);
         }
-        void merge(Cell &other) {
+        void unite(Cell &other) {
             lx = lx < other.lx ? lx : other.lx;
             ly = ly < other.ly ? ly : other.ly;
             ux = ux > other.ux ? ux : other.ux;
@@ -198,7 +198,7 @@ struct libTess {
                 bool merged = false;
                 for (Cell& cluster : clusters)
                     if (cluster.canCluster(bbox)) {
-                        cluster.merge(bbox);
+                        cluster.unite(bbox);
                         cluster.p++;
                         merged = true;
                         break;
