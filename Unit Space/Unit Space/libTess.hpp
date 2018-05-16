@@ -18,10 +18,9 @@ constexpr int kPolySize = 3;
 struct libTess {
     struct Cell {
         struct Leaf {
-            Leaf(int *paths, int count, Cell *c) : paths(paths), count(count), c(c) {}
+            Leaf(int begin, int count, Cell *c) : begin(begin), count(count), c(c) {}
             
-            int *paths;
-            int count;
+            int begin, count;
             Cell *c;
         };
         Cell(float lx, float ly, float ux, float uy, int p = INT_MAX) : lx(lx), ly(ly), ux(ux), uy(uy), count(0), p(p) {}
@@ -75,17 +74,18 @@ struct libTess {
                 c += children[i]->countPaths(depth);
             return c;
         }
-        void writeLeaves(vector<Leaf>& leaves, int *stack, int depth = 0) {
+        void writeLeaves(vector<Leaf>& leaves, vector<int>& paths, int *stack, int depth = 0) {
             if (p != INT_MAX)
                 stack[depth++] = p;
-            else
-                p = stack[depth];
             if (count == 0) {
-                if (depth)
-                    leaves.emplace_back(nullptr, 0, this);
+                if (depth) {
+                    leaves.emplace_back((int)paths.size(), depth, this);
+                    for (int j = 0; j < depth; j++)
+                        paths.emplace_back(stack[j]);
+                }
             } else
                 for (int i = 0; i < count; i++)
-                    children[i]->writeLeaves(leaves, stack, depth);
+                    children[i]->writeLeaves(leaves, paths, stack, depth);
         }
         
         float lx, ly, ux, uy;
@@ -228,15 +228,14 @@ struct libTess {
             cell.intersect(path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy, int(& path - & scene._paths[0]));
         
         int count = cell.countPaths();
-        int paths[count];
+        vector<int> paths;
         vector<Cell::Leaf> leaves;
         int stack[scene._paths.size()];
-        cell.writeLeaves(leaves, stack);
+        cell.writeLeaves(leaves, paths, stack);
+        assert(paths.size() == count);
         size_t pi = 0;
         int pmax = 0;
         for (Cell::Leaf& leaf : leaves) {
-            if (leaf.c->p == INT_MAX)
-                continue;
             if (leaf.c->p > pmax)
                 pmax = leaf.c->p;
             
@@ -246,8 +245,8 @@ struct libTess {
             mesh._points.emplace_back(leaf.c->ux, leaf.c->uy);
             mesh._points.emplace_back(leaf.c->lx, leaf.c->uy);
             
-            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, leaf.c->p);
-            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, leaf.c->p);
+            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, paths[leaf.begin + leaf.count - 1]);
+            mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, paths[leaf.begin + leaf.count - 1]);
         }
         
 //        for (int i = 0; i < pmax; i++)
