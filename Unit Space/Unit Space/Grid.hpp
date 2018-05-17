@@ -9,8 +9,29 @@
 #import "Tess.hpp"
 #import <vector>
 
+constexpr int kDivisions = 32;
+
 struct Grid {
-    void triangulate(Mesh& mesh, Scene& scene) {
+    struct Cell {
+        Cell() : edge(false), winding(0) {}
+        
+        bool edge;
+        float winding;
+    };
+    
+    Grid(float w, float h) {
+        float dmax = w > h ? w : h;
+        dimension = std::ceil(dmax / float(kDivisions));
+        iw = std::ceil(w / dimension), ih = std::ceil(h / dimension);
+        cells.resize(iw * ih);
+    }
+    
+    float dimension;
+    int iw, ih;
+    vector<Cell> cells;
+    static void triangulate(Mesh& mesh, Scene& scene) {
+        Grid grid(scene.w, scene.h);
+        
         mesh.empty();
         for (Path& path : scene._paths) {
             mesh._colors.emplace_back(path._color);
