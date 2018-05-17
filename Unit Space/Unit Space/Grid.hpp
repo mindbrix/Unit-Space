@@ -61,9 +61,6 @@ struct Grid {
         }
     }
     void writePathCells(Path& path) {
-        int ilx = path._bounds.lx / dimension;
-        int ily = path._bounds.ly / dimension;
-        
         float *points, x0, y0, x1, y1;
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
