@@ -84,6 +84,12 @@ struct Grid {
         iux = std::floor((path._bounds.ux - lx) / dimension);
         iuy = std::floor((path._bounds.uy - ly) / dimension);
         
+        if (ilx == iux && ily == iuy) {
+            pathCell = & pathCells[ilx + ily * iw];
+            pathCell->paths[pathCell->count++ % 16] = -ip;
+            return;
+        }
+        
         for (iy = ily; iy <= iuy; iy++) {
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++)
