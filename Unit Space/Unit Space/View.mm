@@ -16,7 +16,6 @@
 
 #import "Tess.hpp"
 #import "libTess.hpp"
-#import "Kismet.hpp"
 #import "Fortune.hpp"
 
 constexpr float kPointDeviceRadius = 8;
@@ -55,7 +54,6 @@ using namespace std;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
-@property(nonatomic) Kismet kismet;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
