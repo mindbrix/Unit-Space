@@ -73,7 +73,7 @@ struct Grid {
     }
     void writePathCells(Path& path, int ip) {
         float *points, x0, y0, x1, y1, winding;
-        int ilx, ily, iux, iuy, ix, iy;
+        int ilx, ily, iux, iuy, ix, iy, depth;
         Cell *cell;
         PathCell *pathCell;
         
@@ -124,7 +124,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, pi;
+        int ix, iy, pi, depth, p;
         float winding, x0, y0, x1, y1;
         PathCell *pathCell;
         
@@ -139,12 +139,10 @@ struct Grid {
         for (Path& path : scene._paths)
             grid.writePathCells(path, (int)(& path - &scene._paths[0]));
         
-//        for (int i = 0; i < 16; i++)
-//            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
-//        mesh._colors.emplace_back(RGBA8(0, 0, 0, 255));
-//        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
+        for (int i = 0; i < 16; i++)
+            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
+//        for (Path& path : scene._paths)
+//            mesh._colors.emplace_back(path._color);
         
         for (iy = 0; iy < grid.ih; iy++) {
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
@@ -152,6 +150,10 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
                 if (pathCell->count) {
+                    depth = pathCell->count - 1;
+                    while (depth && pathCell->paths[depth] < 0)
+                        depth--;
+                    
                     pi = (int)mesh._points.size();
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
@@ -160,8 +162,10 @@ struct Grid {
                     mesh._points.emplace_back(x1, y1);
                     mesh._points.emplace_back(x0, y1);
                     
-                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, std::abs(pathCell->paths[pathCell->count - 1]));
-                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, std::abs(pathCell->paths[pathCell->count - 1]));
+                    p = pathCell->count - depth;
+//                    p = std::abs(pathCell->paths[pathCell->count - 1]);
+                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
+                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
                 }
             }
         }
