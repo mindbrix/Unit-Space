@@ -44,8 +44,6 @@ struct Grid {
         
         dxdy = (x1 - x0) / (y1 - y0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-        ly = ly > 0 ? ly : 0;
-        uy = uy < height ? uy : height;
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
         for (cly = ily; cly <= iuy; cly += dimension) {
