@@ -73,7 +73,7 @@ struct Grid {
     }
     void writePathCells(Path& path, int ip) {
         float *points, x0, y0, x1, y1, winding;
-        int ilx, ily, iux, iuy, ix, iy, depth;
+        int ilx, ily, iux, iuy, ix, iy;
         Cell *cell;
         PathCell *pathCell;
         
@@ -139,10 +139,11 @@ struct Grid {
         for (Path& path : scene._paths)
             grid.writePathCells(path, (int)(& path - &scene._paths[0]));
         
-        for (int i = 0; i < 16; i++)
-            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
-//        for (Path& path : scene._paths)
-//            mesh._colors.emplace_back(path._color);
+//        for (int i = 0; i < 16; i++)
+//            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
+        for (Path& path : scene._paths)
+            mesh._colors.emplace_back(path._color);
+        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
         
         for (iy = 0; iy < grid.ih; iy++) {
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
@@ -162,8 +163,10 @@ struct Grid {
                     mesh._points.emplace_back(x1, y1);
                     mesh._points.emplace_back(x0, y1);
                     
-                    p = pathCell->count - depth;
-//                    p = std::abs(pathCell->paths[pathCell->count - 1]);
+//                    p = pathCell->count - depth;
+                    p = pathCell->paths[pathCell->count - 1];
+//                    p = p < 0 ? 0 : p;
+                    p = pathCell->count - depth < 4 ? std::abs(p) : (int)scene._paths.size();
                     mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
                     mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
                 }
