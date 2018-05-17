@@ -453,11 +453,13 @@ using namespace std;
         scene.addPath(p2);
     
     Grid::triangulate(_mesh, scene);
+    /*
     if (self.useDelaunay)
         _fortune.triangulate(_mesh, scene);
 //        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     else
         _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+     */
     [self.metalLayer uploadMesh:_mesh];
 }
 

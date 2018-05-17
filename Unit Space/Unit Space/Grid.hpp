@@ -31,31 +31,29 @@ struct Grid {
         int ilx, iux, iy, ix;
         Cell *cell;
         
-        if (y0 == y1)
-            return;
         dxdy = (x1 - x0) / (y1 - y0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         ily = std::floor(ly / dimension) * dimension;
-        iuy = std::ceil(uy / dimension) * dimension;
-        for (cly = ily; cly < iuy; cly += dimension) {
+        iuy = std::floor(uy / dimension) * dimension;
+        for (cly = ily; cly <= iuy; cly += dimension) {
             cuy = cly + dimension;
             cy0 = y0 > cly ? y0 : cly;
             cy0 = cy0 < cuy ? cy0 : cuy;
             cy1 = y1 > cly ? y1 : cly;
             cy1 = cy1 < cuy ? cy1 : cuy;
             
-            cx0 = (cy0 - y0) * dxdy + x0;
-            cx1 = (cy1 - y0) * dxdy + x0;
+            cx0 = y0 == y1 ? x0 : (cy0 - y0) * dxdy + x0;
+            cx1 = y0 == y1 ? x1 : (cy1 - y0) * dxdy + x0;
             clx = cx0 < cx1 ? cx0 : cx1;
             cux = cx0 > cx1 ? cx0 : cx1;
             ilx = clx / dimension;
-            iux = std::ceil(cux / dimension);
+            iux = std::floor(cux / dimension);
             
             iy = cly / dimension;
             coverage = cy1 - cy0;
             
-            for (ix = ilx; ix < iux; ix++) {
-                cell = & cells[ix * iy];
+            for (ix = ilx; ix <= iux; ix++) {
+                cell = & cells[ix + iy * iw];
                 cell->edge = true;
                 if (ix == ilx)
                     cell->winding += coverage;
@@ -85,6 +83,12 @@ struct Grid {
     int iw, ih;
     vector<Cell> cells;
     static void triangulate(Mesh& mesh, Scene& scene) {
+        mesh.empty();
+        if (scene._paths.size() == 0)
+            return;
+        int ix, iy, pi;
+        float winding, x0, y0, x1, y1;
+        Cell *cell;
         Grid grid(scene.w, scene.h);
         
         for (Path& path : scene._paths)
@@ -93,8 +97,30 @@ struct Grid {
         for (Path& path : scene._paths)
             grid.writePathCells(path);
         
-        mesh.empty();
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
+        mesh._colors.emplace_back(RGBA8(0, 0, 0, 255));
+        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
+//        for (Path& path : scene._paths)
+//            mesh._colors.emplace_back(path._color);
+        
+        for (iy = 0; iy < grid.ih; iy++) {
+            y0 = iy * grid.dimension, y1 = (iy + 1) * grid.dimension;
+            winding = 0;
+            for (ix = 0; ix < grid.iw; ix++) {
+                cell = & grid.cells[ix + iy * grid.iw];
+                winding += cell->winding / grid.dimension;
+                if (cell->edge || std::abs(winding) > 1e-3) {
+                    pi = (int)mesh._points.size();
+                    x0 = ix * grid.dimension, x1 = (ix + 1) * grid.dimension;
+                    
+                    mesh._points.emplace_back(x0, y0);
+                    mesh._points.emplace_back(x1, y0);
+                    mesh._points.emplace_back(x1, y1);
+                    mesh._points.emplace_back(x0, y1);
+                    
+                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, cell->edge ? 0 : 1);
+                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, cell->edge ? 0 : 1);
+                }
+            }
+        }
     }
 };
