@@ -96,14 +96,11 @@ struct libTess {
             const TESSindex *polygon = tessGetElements(tess);
             
             int pi = (int)mesh._points.size(), c = (int)mesh._colors.size() - 1;
-            for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                Triangle tri = { pi + polygon[0], pi + polygon[1], pi + polygon[2], c };
-                mesh._triangles.emplace_back(tri);
-            }
-            for (int i = 0; i < npoints; i++) {
-                Vector p = { points[i * 2], points[i * 2 + 1] };
-                mesh._points.emplace_back(p);
-            }
+            for (int i = 0; i < nelems; i++, polygon += kPolySize)
+                mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], c);
+            
+            for (int i = 0; i < npoints; i++) 
+                mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
         }
     }
     
