@@ -19,10 +19,10 @@ struct Grid {
         float winding;
     };
     
-    Grid(float w, float h) : width(w), height(h) {
-        float dmax = w > h ? w : h;
+    Grid(float lx, float ly, float ux, float uy) : width(ux - lx), height(uy - ly) {
+        float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
-        iw = std::ceil(w / dimension), ih = std::ceil(h / dimension);
+        iw = std::ceil(width / dimension), ih = std::ceil(height / dimension);
         cells.resize((iw + 1) * (ih + 1));
     }
     
@@ -82,6 +82,7 @@ struct Grid {
     float width, height;
     int iw, ih;
     vector<Cell> cells;
+    
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
         if (scene._paths.size() == 0)
@@ -89,7 +90,7 @@ struct Grid {
         int ix, iy, pi;
         float winding, x0, y0, x1, y1;
         Cell *cell;
-        Grid grid(scene.w, scene.h);
+        Grid grid(0, 0, scene.w, scene.h);
         
         for (Path& path : scene._paths)
             path.update();
