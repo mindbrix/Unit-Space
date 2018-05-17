@@ -90,11 +90,15 @@ struct Grid {
         int ix, iy, pi;
         float winding, x0, y0, x1, y1;
         Cell *cell;
-        Grid grid(0, 0, scene.w, scene.h);
         
         for (Path& path : scene._paths)
             path.update();
         
+        Bounds bounds = scene._paths[0]._bounds;
+        for (Path& path : scene._paths)
+            bounds.unite(path._bounds);
+        
+        Grid grid(0, 0, scene.w, scene.h);
         for (Path& path : scene._paths)
             grid.writePathCells(path);
         
