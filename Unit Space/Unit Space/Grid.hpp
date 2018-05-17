@@ -19,11 +19,19 @@ struct Grid {
         float winding;
     };
     
+    struct PathCell {
+        PathCell() : count(0) {}
+        
+        int paths[16];
+        int count;
+    };
+    
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
         cells.resize(iw * ih);
+        pathCells.resize(iw * ih);
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
@@ -63,10 +71,11 @@ struct Grid {
             }
         }
     }
-    void writePathCells(Path& path) {
-        float *points, x0, y0, x1, y1;
+    void writePathCells(Path& path, int ip) {
+        float *points, x0, y0, x1, y1, winding;
         int ilx, ily, iux, iuy, ix, iy;
         Cell *cell;
+        PathCell *pathCell;
         
         ilx = std::floor((path._bounds.lx - lx) / dimension);
         ily = std::floor((path._bounds.ly - ly) / dimension);
@@ -91,6 +100,17 @@ struct Grid {
                 x1 = points[0], y1 = points[1];
                 writeEdgeCells(x0, y0, x1, y1);
             }
+        
+        for (iy = ily; iy <= iuy; iy++) {
+            winding = 0;
+            cell = & cells[ilx + iy * iw];
+            pathCell = & pathCells[ilx + iy * iw];
+            for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
+                winding += cell->winding / dimension;
+                if (cell->edge || std::abs(winding) > 1e-3)
+                    pathCell->paths[pathCell->count++ % 16] = cell->edge ? -ip : ip;
+            }
+        }
     }
     
     float lx, ly, ux, uy;
@@ -98,6 +118,7 @@ struct Grid {
     float dimension;
     int iw, ih;
     vector<Cell> cells;
+    vector<PathCell> pathCells;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
@@ -105,7 +126,7 @@ struct Grid {
             return;
         int ix, iy, pi;
         float winding, x0, y0, x1, y1;
-        Cell *cell;
+        PathCell *pathCell;
         
         for (Path& path : scene._paths)
             path.update();
@@ -116,10 +137,12 @@ struct Grid {
         
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (Path& path : scene._paths)
-            grid.writePathCells(path);
+            grid.writePathCells(path, (int)(& path - &scene._paths[0]));
         
-        mesh._colors.emplace_back(RGBA8(0, 0, 0, 255));
-        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
+        for (int i = 0; i < 16; i++)
+            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
+//        mesh._colors.emplace_back(RGBA8(0, 0, 0, 255));
+//        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
 //        for (Path& path : scene._paths)
 //            mesh._colors.emplace_back(path._color);
         
@@ -127,9 +150,8 @@ struct Grid {
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
             winding = 0;
             for (ix = 0; ix < grid.iw; ix++) {
-                cell = & grid.cells[ix + iy * grid.iw];
-                winding += cell->winding / grid.dimension;
-                if (cell->edge || std::abs(winding) > 1e-3) {
+                pathCell = & grid.pathCells[ix + iy * grid.iw];
+                if (pathCell->count) {
                     pi = (int)mesh._points.size();
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
@@ -138,8 +160,8 @@ struct Grid {
                     mesh._points.emplace_back(x1, y1);
                     mesh._points.emplace_back(x0, y1);
                     
-                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, cell->edge ? 0 : 1);
-                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, cell->edge ? 0 : 1);
+                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, pathCell->count);
+                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, pathCell->count);
                 }
             }
         }
