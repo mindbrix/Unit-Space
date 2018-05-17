@@ -9,7 +9,7 @@
 #import "Tess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 32;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -19,11 +19,11 @@ struct Grid {
         float winding;
     };
     
-    Grid(float w, float h) {
+    Grid(float w, float h) : width(w), height(h) {
         float dmax = w > h ? w : h;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(w / dimension), ih = std::ceil(h / dimension);
-        cells.resize(iw * ih);
+        cells.resize((iw + 1) * (ih + 1));
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
@@ -33,6 +33,8 @@ struct Grid {
         
         dxdy = (x1 - x0) / (y1 - y0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
+        ly = ly > 0 ? ly : 0;
+        uy = uy < height ? uy : height;
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
         for (cly = ily; cly <= iuy; cly += dimension) {
@@ -77,6 +79,7 @@ struct Grid {
     }
     
     float dimension;
+    float width, height;
     int iw, ih;
     vector<Cell> cells;
     static void triangulate(Mesh& mesh, Scene& scene) {
