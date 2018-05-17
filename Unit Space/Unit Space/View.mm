@@ -17,6 +17,7 @@
 #import "Tess.hpp"
 #import "libTess.hpp"
 #import "Fortune.hpp"
+#import "Grid.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -54,6 +55,7 @@ using namespace std;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
+@property(nonatomic) Grid grid;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
