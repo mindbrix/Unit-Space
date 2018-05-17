@@ -161,23 +161,20 @@ struct Grid {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
                 if (pathCell->count) {
                     depth = pathCell->count - 1;
-                    while (depth && pathCell->paths[depth] < 0)
-                        depth--;
+                    p = pathCell->paths[depth];
+                    if (p >= 0) {
+                        pi = (int)mesh._points.size();
+                        x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
+                        
+                        mesh._points.emplace_back(x0, y0);
+                        mesh._points.emplace_back(x1, y0);
+                        mesh._points.emplace_back(x1, y1);
+                        mesh._points.emplace_back(x0, y1);
+                        
+                        mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
+                        mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
+                    }
                     
-                    pi = (int)mesh._points.size();
-                    x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
-                    
-                    mesh._points.emplace_back(x0, y0);
-                    mesh._points.emplace_back(x1, y0);
-                    mesh._points.emplace_back(x1, y1);
-                    mesh._points.emplace_back(x0, y1);
-                    
-//                    p = pathCell->count - depth;
-                    p = pathCell->paths[pathCell->count - 1];
-//                    p = p < 0 ? 0 : p;
-                    p = pathCell->count - depth < 4 ? std::abs(p) : (int)scene._paths.size();
-                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
-                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
                 }
             }
         }
