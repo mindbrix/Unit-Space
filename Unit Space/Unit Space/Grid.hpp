@@ -55,8 +55,8 @@ struct Grid {
             iy = cly / dimension;
             coverage = cy1 - cy0;
             
-            for (ix = ilx; ix <= iux; ix++) {
-                cell = & cells[ix + iy * iw];
+            cell = & cells[ilx + iy * iw];
+            for (ix = ilx; ix <= iux; ix++, cell++) {
                 cell->edge = true;
                 if (ix == ilx)
                     cell->winding += coverage;
