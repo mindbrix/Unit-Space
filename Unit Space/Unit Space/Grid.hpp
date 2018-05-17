@@ -11,6 +11,7 @@
 #import <vector>
 
 constexpr int kDivisions = 128;
+constexpr int kEdgeMask = 0x80000000;
 
 struct Grid {
     struct Cell {
@@ -21,7 +22,7 @@ struct Grid {
     };
     
     struct PathCell {
-        PathCell() : count(0) {}
+         PathCell() : count(0) {}
         
         int paths[16];
         int count;
@@ -87,7 +88,7 @@ struct Grid {
             for (iy = ily; iy <= iuy; iy++) {
                 pathCell = & pathCells[ilx + iy * iw];
                 for (ix = ilx; ix <= iux; ix++, pathCell++)
-                    pathCell->paths[pathCell->count++ % 16] = -ip;
+                    pathCell->paths[pathCell->count++ % 16] = ip | kEdgeMask;
             }
             return;
         }
@@ -118,7 +119,7 @@ struct Grid {
             for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
                 winding += cell->winding / dimension;
                 if (cell->edge || std::abs(winding) > 1e-3)
-                    pathCell->paths[pathCell->count++ % 16] = cell->edge ? -ip : ip;
+                    pathCell->paths[pathCell->count++ % 16] = cell->edge ? ip | kEdgeMask : ip;
             }
         }
     }
@@ -174,7 +175,7 @@ struct Grid {
                     
                     depth = pathCell->count - 1;
                     p = pathCell->paths[depth];
-                    if (p >= 0) {
+                    if (~p & kEdgeMask) {
                         pi = (int)mesh._points.size();
                         
                         
@@ -186,7 +187,8 @@ struct Grid {
                         mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
                         mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
                     } else {
-                        Path& path = scene._paths[-p];
+                        p &= ~kEdgeMask;
+                        Path& path = scene._paths[p];
                         if (path._subPaths.size() == 1) {
                             SubPath& s = path._subPaths[0];
                             
@@ -201,7 +203,7 @@ struct Grid {
                             out = _ury.clip(out);
                             
                             if (out->size() == 3) {
-                                writeTriangle(mesh, (*out)[0].x, (*out)[0].y, (*out)[1].x, (*out)[1].y, (*out)[2].x, (*out)[2].y, -p);
+                                writeTriangle(mesh, (*out)[0].x, (*out)[0].y, (*out)[1].x, (*out)[1].y, (*out)[2].x, (*out)[2].y, p);
                             }
                         }
                     }
