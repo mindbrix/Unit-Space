@@ -65,6 +65,20 @@ struct Grid {
     }
     void writePathCells(Path& path) {
         float *points, x0, y0, x1, y1;
+        int ilx, ily, iux, iuy, ix, iy;
+        Cell *cell;
+        
+        ilx = std::floor((path._bounds.lx - lx) / dimension);
+        ily = std::floor((path._bounds.ly - ly) / dimension);
+        iux = std::floor((path._bounds.ux - lx) / dimension);
+        iuy = std::floor((path._bounds.uy - ly) / dimension);
+        
+        for (iy = ily; iy <= iuy; iy++) {
+            cell = & cells[ilx + iy * iw];
+            for (ix = ilx; ix <= iux; ix++, cell++)
+                cell->edge = false, cell->winding = 0;
+        }
+
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
                 points = s._points.get();
