@@ -19,7 +19,7 @@ struct Grid {
         float winding;
     };
     
-    Grid(float lx, float ly, float ux, float uy) : width(ux - lx), height(uy - ly) {
+    Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension), ih = std::ceil(height / dimension);
@@ -27,6 +27,7 @@ struct Grid {
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
+        x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, cx0, cx1, clx, cux, coverage;
         int ilx, iux, iy, ix;
         Cell *cell;
@@ -78,8 +79,9 @@ struct Grid {
             }
     }
     
-    float dimension;
+    float lx, ly, ux, uy;
     float width, height;
+    float dimension;
     int iw, ih;
     vector<Cell> cells;
     
@@ -98,7 +100,7 @@ struct Grid {
         for (Path& path : scene._paths)
             bounds.unite(path._bounds);
         
-        Grid grid(0, 0, scene.w, scene.h);
+        Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (Path& path : scene._paths)
             grid.writePathCells(path);
         
@@ -108,14 +110,14 @@ struct Grid {
 //            mesh._colors.emplace_back(path._color);
         
         for (iy = 0; iy < grid.ih; iy++) {
-            y0 = iy * grid.dimension, y1 = (iy + 1) * grid.dimension;
+            y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
             winding = 0;
             for (ix = 0; ix < grid.iw; ix++) {
                 cell = & grid.cells[ix + iy * grid.iw];
                 winding += cell->winding / grid.dimension;
                 if (cell->edge || std::abs(winding) > 1e-3) {
                     pi = (int)mesh._points.size();
-                    x0 = ix * grid.dimension, x1 = (ix + 1) * grid.dimension;
+                    x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
                     mesh._points.emplace_back(x0, y0);
                     mesh._points.emplace_back(x1, y0);
