@@ -7,6 +7,7 @@
 //
 
 #import "Tess.hpp"
+#import "EdgeClipper.hpp"
 #import <vector>
 
 constexpr int kDivisions = 128;
