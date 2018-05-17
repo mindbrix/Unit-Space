@@ -139,12 +139,12 @@ struct Grid {
         for (Path& path : scene._paths)
             grid.writePathCells(path, (int)(& path - &scene._paths[0]));
         
-        for (int i = 0; i < 16; i++)
-            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
+//        for (int i = 0; i < 16; i++)
+//            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
 //        mesh._colors.emplace_back(RGBA8(0, 0, 0, 255));
 //        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
-//        for (Path& path : scene._paths)
-//            mesh._colors.emplace_back(path._color);
+        for (Path& path : scene._paths)
+            mesh._colors.emplace_back(path._color);
         
         for (iy = 0; iy < grid.ih; iy++) {
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
@@ -160,8 +160,8 @@ struct Grid {
                     mesh._points.emplace_back(x1, y1);
                     mesh._points.emplace_back(x0, y1);
                     
-                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, pathCell->count);
-                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, pathCell->count);
+                    mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, std::abs(pathCell->paths[pathCell->count - 1]));
+                    mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, std::abs(pathCell->paths[pathCell->count - 1]));
                 }
             }
         }
