@@ -130,6 +130,17 @@ struct Grid {
     vector<Cell> cells;
     vector<PathCell> pathCells;
     
+    static void writeTriangle(Mesh& mesh, float x0, float y0, float x1, float y1, float x2, float y2, int p) {
+        int pi = (int)mesh._points.size();
+        mesh._points.emplace_back(x0, y0);
+        mesh._points.emplace_back(x1, y1);
+        mesh._points.emplace_back(x2, y2);
+        
+        if ((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1) > 0)
+            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
+        else
+            mesh._triangles.emplace_back(pi + 2, pi + 1, pi + 0, p);
+    }
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
         if (scene._paths.size() == 0)
@@ -137,7 +148,7 @@ struct Grid {
         int ix, iy, pi, depth, p;
         float winding, x0, y0, x1, y1;
         PathCell *pathCell;
-        
+        EdgeClipper _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
         
@@ -159,11 +170,13 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
                 if (pathCell->count) {
+                    x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
+                    
                     depth = pathCell->count - 1;
                     p = pathCell->paths[depth];
                     if (p >= 0) {
                         pi = (int)mesh._points.size();
-                        x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
+                        
                         
                         mesh._points.emplace_back(x0, y0);
                         mesh._points.emplace_back(x1, y0);
@@ -172,6 +185,25 @@ struct Grid {
                         
                         mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
                         mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
+                    } else {
+                        Path& path = scene._paths[-p];
+                        if (path._subPaths.size() == 1) {
+                            SubPath& s = path._subPaths[0];
+                            
+                            _llx.init(EdgeClipper::LLX, x0);
+                            _lly.init(EdgeClipper::LLY, y0);
+                            _urx.init(EdgeClipper::URX, x1);
+                            _ury.init(EdgeClipper::URY, y1);
+                            
+                            auto out = _lly.clip((Vector *)s._points.get(), s._npoints);
+                            out = _llx.clip(out);
+                            out = _urx.clip(out);
+                            out = _ury.clip(out);
+                            
+                            if (out->size() == 3) {
+                                writeTriangle(mesh, (*out)[0].x, (*out)[0].y, (*out)[1].x, (*out)[1].y, (*out)[2].x, (*out)[2].y, -p);
+                            }
+                        }
                     }
                 }
             }
