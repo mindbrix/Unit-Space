@@ -35,6 +35,8 @@ struct Grid {
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
+        if (x0 == x1 && y0 == y1)
+            return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, cx0, cx1, clx, cux, coverage;
         int ilx, iux, iy, ix;
