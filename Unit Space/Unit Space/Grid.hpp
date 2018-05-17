@@ -22,8 +22,8 @@ struct Grid {
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
-        iw = std::ceil(width / dimension), ih = std::ceil(height / dimension);
-        cells.resize((iw + 1) * (ih + 1));
+        iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
+        cells.resize(iw * ih);
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
