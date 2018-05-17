@@ -148,8 +148,6 @@ struct Grid {
         for (Path& path : scene._paths)
             grid.writePathCells(path, (int)(& path - &scene._paths[0]));
         
-//        for (int i = 0; i < 16; i++)
-//            mesh._colors.emplace_back(RGBA8(255 * i / 16, 255 * i / 16, 255 * i / 16, 255));
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
         mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
@@ -174,7 +172,6 @@ struct Grid {
                         mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
                         mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
                     }
-                    
                 }
             }
         }
