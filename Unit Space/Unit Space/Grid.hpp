@@ -17,7 +17,6 @@ constexpr int kEdgeMask = 0x80000000;
 struct Grid {
     struct Cell {
         Cell() : edge(false), winding(0) {}
-        
         bool edge;
         float winding;
     };
@@ -142,7 +141,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, pi, depth, p;
+        int ix, iy, pi, p;
         float winding, x0, y0, x1, y1;
         PathCell *pathCell;
         EdgeClipper _llx, _lly, _urx, _ury;
@@ -171,8 +170,7 @@ struct Grid {
                 if (pathCell->count) {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
-                    depth = pathCell->count - 1;
-                    p = pathCell->paths[depth];
+                    p = pathCell->paths[pathCell->count - 1];
                     if (~p & kEdgeMask) {
                         pi = (int)mesh._points.size();
                         mesh._points.emplace_back(x0, y0);
