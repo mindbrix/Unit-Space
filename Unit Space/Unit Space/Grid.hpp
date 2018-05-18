@@ -156,6 +156,8 @@ struct Grid {
         for (Path& path : scene._paths)
             path.update();
         
+        Tess::writeCurves(mesh, scene);
+        
         Bounds bounds = scene._paths[0]._bounds;
         for (Path& path : scene._paths)
             bounds.unite(path._bounds);
