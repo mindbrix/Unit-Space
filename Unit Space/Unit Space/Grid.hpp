@@ -23,7 +23,8 @@ struct Grid {
     };
     
     struct PathCell {
-         PathCell() : count(0) {}
+        PathCell() : count(0) {}
+        void writePath(int ip, bool edge) { paths[count++ % 16] = ip | (edge ? kEdgeMask : 0); }
         
         int paths[16];
         int count;
@@ -89,7 +90,7 @@ struct Grid {
             for (iy = ily; iy <= iuy; iy++) {
                 pathCell = & pathCells[ilx + iy * iw];
                 for (ix = ilx; ix <= iux; ix++, pathCell++)
-                    pathCell->paths[pathCell->count++ % 16] = ip | kEdgeMask;
+                    pathCell->writePath(ip, true);
             }
             return;
         }
@@ -120,7 +121,7 @@ struct Grid {
             for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
                 winding += cell->winding / dimension;
                 if (cell->edge || std::abs(winding) > 1e-3)
-                    pathCell->paths[pathCell->count++ % 16] = cell->edge ? ip | kEdgeMask : ip;
+                    pathCell->writePath(ip, cell->edge);
             }
         }
     }
