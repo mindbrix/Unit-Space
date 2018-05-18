@@ -26,10 +26,10 @@ struct EdgeClipper {
         _limit = limit;
     }
     
-    Element* clip(Vector *p, size_t count) {
+    Element* make(Vector *p, size_t count) {
         _in.resize(count);
         memcpy(& _in[0], p, count * sizeof(*p));
-        return clip(& _in);
+        return & _in;
     }
     
     Element* clip(Element* in) {

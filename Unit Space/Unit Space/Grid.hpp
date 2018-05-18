@@ -144,7 +144,7 @@ struct Grid {
         int ix, iy, pi, p;
         float winding, x0, y0, x1, y1;
         PathCell *pathCell;
-        EdgeClipper _llx, _lly, _urx, _ury;
+        EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
         
@@ -186,12 +186,14 @@ struct Grid {
                         if (path._subPaths.size() == 1) {
                             SubPath& s = path._subPaths[0];
                             
+                            auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                            
                             _llx.init(EdgeClipper::LLX, x0);
                             _lly.init(EdgeClipper::LLY, y0);
                             _urx.init(EdgeClipper::URX, x1);
                             _ury.init(EdgeClipper::URY, y1);
                             
-                            auto out = _lly.clip((Vector *)s._points.get(), s._npoints);
+                            out = _lly.clip(out);
                             out = _llx.clip(out);
                             out = _urx.clip(out);
                             out = _ury.clip(out);
