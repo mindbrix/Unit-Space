@@ -24,8 +24,11 @@ struct Grid {
     
     struct PathCell {
         PathCell() : count(0) {}
-        void writePath(int ip, bool edge) { paths[count++ % 16] = ip | (edge ? kEdgeMask : 0); }
-        
+        void writePath(int ip, bool edge) {
+            if (!edge)
+                count = 0;
+            paths[count++ % 16] = ip | (edge ? kEdgeMask : 0);
+        }
         int paths[16];
         int count;
     };
