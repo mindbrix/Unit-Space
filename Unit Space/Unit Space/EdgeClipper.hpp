@@ -15,7 +15,6 @@ struct EdgeClipper {
     typedef vector<Vector> Element;
     enum Type { LLX, LLY, URX, URY };
     
-    Vector  _first, _p0;
     float   _limit;
     Type    _type;
     Element _in, _out;
@@ -23,34 +22,26 @@ struct EdgeClipper {
     EdgeClipper() {}
     
     void init(Type type, float limit) {
-        _p0 = { FLT_MAX, FLT_MAX };
         _type = type;
         _limit = limit;
     }
     
     Element* clip(Vector *p, size_t count) {
-        _in.resize(0);
-        if (p == nullptr)
-            _in.emplace_back(FLT_MAX, FLT_MAX);
-        else {
-            _in.resize(count);
-            memcpy(& _in[0], p, count * sizeof(*p));
-        }
+        _in.resize(count);
+        memcpy(& _in[0], p, count * sizeof(*p));
         return clip(& _in);
     }
     
     Element* clip(Element* in) {
         _out.resize(0);
-        for (auto& p1: *in) {
-            if (_p0.x == FLT_MAX)
-                _first = p1;
-            else if (p1.x == FLT_MAX) {
-                clip(_p0, _first);
-                _out.emplace_back(p1);
-            } else
-                clip(_p0, p1);
+        
+        if (in->size() > 2) {
+            size_t last = in->size() - 1;
+            for (int i = 0; i < last; i++)
+                clip((*in)[i], (*in)[i + 1]);
             
-            _p0 = p1;
+            if ((*in)[last].x != (*in)[0].x && (*in)[last].y != (*in)[0].y)
+                clip((*in)[last], (*in)[0]);
         }
         return &_out;
     }
