@@ -182,21 +182,20 @@ struct Grid {
                         mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
                     } else {
                         p &= ~kEdgeMask;
+                        Bounds bounds(x0, y0, x1, y1);
                         Path& path = scene._paths[p];
-                        if (path._subPaths.size() == 1) {
-                            SubPath& s = path._subPaths[0];
-                            
-                            auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                            out = _llx.clip(out, EdgeClipper::LLX, x0);
-                            out = _lly.clip(out, EdgeClipper::LLY, y0);
-                            out = _urx.clip(out, EdgeClipper::URX, x1);
-                            out = _ury.clip(out, EdgeClipper::URY, y1);
-                            
-                            if (out->size() > 2) {
-                                tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                                libTess::writeTriangles(mesh, tess, p);
+                        for (SubPath& s : path._subPaths)
+                            if (s._bounds.intersects(bounds)) {
+                                auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                                out = _llx.clip(out, EdgeClipper::LLX, x0);
+                                out = _lly.clip(out, EdgeClipper::LLY, y0);
+                                out = _urx.clip(out, EdgeClipper::URX, x1);
+                                out = _ury.clip(out, EdgeClipper::URY, y1);
+                                
+                                if (out->size() > 2)
+                                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
                             }
-                        }
+                        libTess::writeTriangles(mesh, tess, p);
                     }
                 }
             }
