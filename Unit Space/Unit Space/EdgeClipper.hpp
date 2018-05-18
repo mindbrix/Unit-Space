@@ -21,20 +21,16 @@ struct EdgeClipper {
     
     EdgeClipper() {}
     
-    void init(Type type, float limit) {
-        _type = type;
-        _limit = limit;
-    }
-    
     Element* make(Vector *p, size_t count) {
         _in.resize(count);
         memcpy(& _in[0], p, count * sizeof(*p));
         return & _in;
     }
     
-    Element* clip(Element* in) {
+    Element* clip(Element* in, Type type, float limit) {
         _out.resize(0);
-        
+        _type = type;
+        _limit = limit;
         if (in->size() > 2) {
             size_t last = in->size() - 1;
             for (int i = 0; i < last; i++)

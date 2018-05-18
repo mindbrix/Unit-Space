@@ -187,16 +187,10 @@ struct Grid {
                             SubPath& s = path._subPaths[0];
                             
                             auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                            
-                            _llx.init(EdgeClipper::LLX, x0);
-                            _lly.init(EdgeClipper::LLY, y0);
-                            _urx.init(EdgeClipper::URX, x1);
-                            _ury.init(EdgeClipper::URY, y1);
-                            
-                            out = _lly.clip(out);
-                            out = _llx.clip(out);
-                            out = _urx.clip(out);
-                            out = _ury.clip(out);
+                            out = _llx.clip(out, EdgeClipper::LLX, x0);
+                            out = _lly.clip(out, EdgeClipper::LLY, y0);
+                            out = _urx.clip(out, EdgeClipper::URX, x1);
+                            out = _ury.clip(out, EdgeClipper::URY, y1);
                             
                             if (out->size() > 2) {
                                 tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
