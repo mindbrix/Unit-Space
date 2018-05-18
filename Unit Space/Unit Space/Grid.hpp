@@ -132,17 +132,6 @@ struct Grid {
     vector<Cell> cells;
     vector<PathCell> pathCells;
     
-    static void writeTriangle(Mesh& mesh, float x0, float y0, float x1, float y1, float x2, float y2, int p) {
-        int pi = (int)mesh._points.size();
-        mesh._points.emplace_back(x0, y0);
-        mesh._points.emplace_back(x1, y1);
-        mesh._points.emplace_back(x2, y2);
-        
-        if ((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1) > 0)
-            mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
-        else
-            mesh._triangles.emplace_back(pi + 2, pi + 1, pi + 0, p);
-    }
     static void triangulate(Mesh& mesh, Scene& scene) {
         TESStesselator *tess = tessNewTess(NULL);
         
@@ -205,9 +194,7 @@ struct Grid {
                             out = _urx.clip(out);
                             out = _ury.clip(out);
                             
-                            if (out->size() == 3) {
-                                writeTriangle(mesh, (*out)[0].x, (*out)[0].y, (*out)[1].x, (*out)[1].y, (*out)[2].x, (*out)[2].y, p);
-                            } else if (out->size() > 3) {
+                            if (out->size() > 2) {
                                 tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
                                 libTess::writeTriangles(mesh, tess, p);
                             }
