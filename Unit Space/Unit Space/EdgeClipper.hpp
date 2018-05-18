@@ -76,9 +76,9 @@ struct EdgeClipper {
             case LLY:
                 return p.y >= _limit;
             case URX:
-                return p.x < _limit;
+                return p.x <= _limit;
             case URY:
-                return p.y < _limit;
+                return p.y <= _limit;
         }
     }
     
