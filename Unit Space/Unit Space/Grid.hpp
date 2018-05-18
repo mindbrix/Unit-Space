@@ -7,6 +7,7 @@
 //
 
 #import "Tess.hpp"
+#import "libTess.hpp"
 #import "EdgeClipper.hpp"
 #import <vector>
 
@@ -143,6 +144,8 @@ struct Grid {
             mesh._triangles.emplace_back(pi + 2, pi + 1, pi + 0, p);
     }
     static void triangulate(Mesh& mesh, Scene& scene) {
+        TESStesselator *tess = tessNewTess(NULL);
+        
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
@@ -177,8 +180,6 @@ struct Grid {
                     p = pathCell->paths[depth];
                     if (~p & kEdgeMask) {
                         pi = (int)mesh._points.size();
-                        
-                        
                         mesh._points.emplace_back(x0, y0);
                         mesh._points.emplace_back(x1, y0);
                         mesh._points.emplace_back(x1, y1);
@@ -204,11 +205,15 @@ struct Grid {
                             
                             if (out->size() == 3) {
                                 writeTriangle(mesh, (*out)[0].x, (*out)[0].y, (*out)[1].x, (*out)[1].y, (*out)[2].x, (*out)[2].y, p);
+                            } else if (out->size() > 3) {
+                                tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                                libTess::writeTriangles(mesh, tess, p);
                             }
                         }
                     }
                 }
             }
         }
+        tessDeleteTess(tess);
     }
 };
