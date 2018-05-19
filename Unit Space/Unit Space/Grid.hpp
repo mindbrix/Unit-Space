@@ -52,7 +52,7 @@ struct Grid {
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, coverage, sx0, sx1, slx, sux;
-        int ilx, iux, iy, ix;
+        int ilx, iux, ix;
         bool xedge, yedge;
         Cell *cell;
         
@@ -70,11 +70,9 @@ struct Grid {
             sx1 = y0 == y1 ? x1 : (cy1 - y0) * dxdy + x0;
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
-            ilx = slx / dimension;
-            iux = sux / dimension;
-            iy = cly / dimension;
+            ilx = slx / dimension, iux = sux / dimension;
             
-            cell = & cells[ilx + iy * iw];
+            cell = & cells[ilx + int(cly / dimension) * iw];
             for (ix = ilx; ix <= iux; ix++, cell++) {
                 xedge = ix != ilx && ix != iux;
                 if (cell->si)
