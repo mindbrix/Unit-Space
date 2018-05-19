@@ -27,13 +27,14 @@ struct Grid {
     struct PathCell {
         struct Piece {
             Piece() {}
-            Piece(int p, int si) : p(p), si(si) {}
+            Piece(int p, int si, float winding) : p(p), si(si), winding(winding) {}
             int p, si;
+            float winding;
         };
-        void writePath(int ip, int si) {
+        void writePath(int ip, int si, float winding) {
             if (si == 0)
                 pieces.resize(0);
-            pieces.emplace_back(ip, si);
+            pieces.emplace_back(ip, si, winding);
         }
         vector<Piece> pieces;
     };
@@ -52,16 +53,16 @@ struct Grid {
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, dydx, ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, cx0, cx1, cy0, cy1;
-        int ilx, iux, ix;
+        float ilx, iux;
         bool xedge, yedge;
         Cell *cell;
         
         dxdy = (x1 - x0) / (y1 - y0), dydx = (y1 - y0) / (x1 - x0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         ily = std::floor(ly / dimension) * dimension;
-        iuy = std::floor(uy / dimension) * dimension;
-        for (cly = ily, cuy = ily + dimension; cly <= iuy; cly = cuy, cuy += dimension) {
-            yedge = cly != ily && cly != iuy;
+        iuy = ly == uy ? ily + dimension : std::ceil(uy / dimension) * dimension;
+        for (cly = ily, cuy = ily + dimension; cly < iuy; cly = cuy, cuy += dimension) {
+            yedge = cly != ily && cuy != iuy;
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
@@ -70,27 +71,26 @@ struct Grid {
             sx1 = y0 == y1 ? x1 : (sy1 - y0) * dxdy + x0;
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
-            ilx = slx / dimension, iux = sux / dimension;
             
-            cell = & cells[ilx + int(cly / dimension) * iw];
-            for (ix = ilx; ix <= iux; ix++, cell++) {
-                xedge = ix != ilx && ix != iux;
+            ilx = std::floor(slx / dimension) * dimension;
+            iux = slx == sux ? ilx + dimension : std::ceil(sux / dimension) * dimension;
+            cell = & cells[int(slx / dimension) + int(cly / dimension) * iw];
+            for (clx = ilx, cux = clx + dimension; clx < iux; clx = cux, cux += dimension, cell++) {
+                xedge = clx != ilx && cux != iux;
                 if (cell->si)
                     sixFloats[cell->si] = SixFloat(0, 0, 0, 0, 0, 0);
                 else {
                     cell->si = (int)sixFloats.size();
                     if (xedge || yedge) {
-                        clx = ix * dimension, cux = clx + dimension;
                         cx0 = sx0 < clx ? clx : sx0 > cux ? cux : sx0;
                         cx1 = sx1 < clx ? clx : sx1 > cux ? cux : sx1;
                         cy0 = x0 == x1 ? sy0 : (cx0 - sx0) * dydx + sy0;
                         cy1 = x0 == x1 ? sy1 : (cx1 - sx0) * dydx + sy0;
-                        
                         sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
                     } else
                         sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
                 }
-                if (ix == ilx)
+                if (clx == ilx)
                     cell->winding += coverage;
             }
         }
@@ -132,7 +132,7 @@ struct Grid {
             for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
                 winding += cell->winding / dimension;
                 if (cell->si || std::abs(winding) > 1e-3)
-                    pathCell->writePath(ip, cell->si);
+                    pathCell->writePath(ip, cell->si, winding);
             }
         }
     }
@@ -186,7 +186,8 @@ struct Grid {
                         mesh.writeRect(x0, y0, x1, y1, piece->p);
                     else {
                         sixFloat = & grid.sixFloats[piece->si];
-                        if (sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0) {
+                        if (sixFloat->x == 0 && sixFloat->y == 0) {
+//                        if (sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0) {
                             Bounds bounds(x0, y0, x1, y1);
                             Path& path = scene._paths[piece->p];
                             for (SubPath& s : path._subPaths)
