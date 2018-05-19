@@ -19,8 +19,8 @@ struct Grid {
         float x, y, ix0, iy0, ix1, iy1;
     };
     struct Cell {
-        Cell() : i(0), winding(0) {}
-        int i;
+        Cell() : si(0), winding(0) {}
+        int si;
         float winding;
     };
     
@@ -80,7 +80,7 @@ struct Grid {
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++) {
 //                edge = edge || (ix != ilx && ix != iux);
-                cell->i = (int)sixFloats.size();
+                cell->si = (int)sixFloats.size();
                 if (ix == ilx)
                     cell->winding += coverage;
             }
@@ -100,7 +100,7 @@ struct Grid {
         for (iy = ily; iy <= iuy; iy++) {
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++)
-                cell->i = 0, cell->winding = 0;
+                cell->si = 0, cell->winding = 0;
         }
 
         for (SubPath& s : path._subPaths)
@@ -122,8 +122,8 @@ struct Grid {
             pathCell = & pathCells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
                 winding += cell->winding / dimension;
-                if (cell->i || std::abs(winding) > 1e-3)
-                    pathCell->writePath(ip, cell->i);
+                if (cell->si || std::abs(winding) > 1e-3)
+                    pathCell->writePath(ip, cell->si);
             }
         }
     }
