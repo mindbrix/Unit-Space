@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 constexpr int kEdgeMask = 0x80000000;
 
 struct Grid {
@@ -20,17 +20,17 @@ struct Grid {
         float x, y, ix0, iy0, ix1, iy1;
     };
     struct Cell {
-        Cell() : edge(false), winding(0) {}
-        bool edge;
+        Cell() : i(0), winding(0) {}
+        int i;
         float winding;
     };
     
     struct PathCell {
         PathCell() : count(0) {}
-        void writePath(int ip, bool edge) {
-            if (!edge)
+        void writePath(int ip, int i) {
+            if (i == 0)
                 count = 0;
-            paths[count++ % 16] = ip | (edge ? kEdgeMask : 0);
+            paths[count++ % 16] = ip | (i ? kEdgeMask : 0);
         }
         int paths[16];
         int count;
@@ -51,7 +51,7 @@ struct Grid {
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, cx0, cx1, clx, cux, coverage;
         int ilx, iux, iy, ix;
-        bool edge;
+//        bool edge;
         Cell *cell;
         
         dxdy = (x1 - x0) / (y1 - y0);
@@ -59,7 +59,7 @@ struct Grid {
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
         for (cly = ily; cly <= iuy; cly += dimension) {
-            edge = cly != ily && cly != iuy;
+//            edge = cly != ily && cly != iuy;
             cuy = cly + dimension;
             cy0 = y0 > cly ? y0 : cly;
             cy0 = cy0 < cuy ? cy0 : cuy;
@@ -77,8 +77,8 @@ struct Grid {
             
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++) {
-                edge = edge || (ix != ilx && ix != iux);
-                cell->edge = edge;
+//                edge = edge || (ix != ilx && ix != iux);
+                cell->i = 1;
                 if (ix == ilx)
                     cell->winding += coverage;
             }
@@ -107,7 +107,7 @@ struct Grid {
         for (iy = ily; iy <= iuy; iy++) {
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++)
-                cell->edge = false, cell->winding = 0;
+                cell->i = 0, cell->winding = 0;
         }
 
         for (SubPath& s : path._subPaths)
@@ -129,8 +129,8 @@ struct Grid {
             pathCell = & pathCells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
                 winding += cell->winding / dimension;
-                if (cell->edge || std::abs(winding) > 1e-3)
-                    pathCell->writePath(ip, cell->edge);
+                if (cell->i || std::abs(winding) > 1e-3)
+                    pathCell->writePath(ip, cell->i);
             }
         }
     }
