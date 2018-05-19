@@ -60,9 +60,8 @@ struct Grid {
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
-        for (cly = ily; cly <= iuy; cly += dimension) {
+        for (cly = ily, cuy = ily + dimension; cly <= iuy; cly = cuy, cuy += dimension) {
             yedge = cly != ily && cly != iuy;
-            cuy = cly + dimension;
             cy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             cy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = cy1 - cy0;
