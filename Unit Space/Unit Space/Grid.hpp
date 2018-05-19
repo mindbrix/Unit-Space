@@ -81,14 +81,14 @@ struct Grid {
                     sixFloats[cell->si] = SixFloat(0, 0, 0, 0, 0, 0);
                 else {
                     cell->si = (int)sixFloats.size();
+                    cx0 = cy0 = cx1 = cy1 = 0;
                     if (xedge || yedge) {
                         cx0 = sx0 < clx ? clx : sx0 > cux ? cux : sx0;
                         cx1 = sx1 < clx ? clx : sx1 > cux ? cux : sx1;
                         cy0 = x0 == x1 ? sy0 : (cx0 - sx0) * dydx + sy0;
                         cy1 = x0 == x1 ? sy1 : (cx1 - sx0) * dydx + sy0;
-                        sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
-                    } else
-                        sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
+                    }
+                    sixFloats.emplace_back(0, 0, cx0, cy0, cx1, cy1);
                 }
                 if (clx == ilx)
                     cell->winding += coverage;
