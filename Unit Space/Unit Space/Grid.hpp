@@ -11,10 +11,14 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 256;
+constexpr int kDivisions = 16;
 constexpr int kEdgeMask = 0x80000000;
 
 struct Grid {
+    struct SixFloat {
+        SixFloat(float x, float y, float ix0, float iy0, float ix1, float iy1) : x(x), y(y), ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1) {}
+        float x, y, ix0, iy0, ix1, iy1;
+    };
     struct Cell {
         Cell() : edge(false), winding(0) {}
         bool edge;
@@ -36,6 +40,7 @@ struct Grid {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
+        sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
         cells.resize(iw * ih);
         pathCells.resize(iw * ih);
     }
@@ -46,6 +51,7 @@ struct Grid {
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, cx0, cx1, clx, cux, coverage;
         int ilx, iux, iy, ix;
+        bool edge;
         Cell *cell;
         
         dxdy = (x1 - x0) / (y1 - y0);
@@ -53,6 +59,7 @@ struct Grid {
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
         for (cly = ily; cly <= iuy; cly += dimension) {
+            edge = cly != ily && cly != iuy;
             cuy = cly + dimension;
             cy0 = y0 > cly ? y0 : cly;
             cy0 = cy0 < cuy ? cy0 : cuy;
@@ -70,7 +77,8 @@ struct Grid {
             
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++) {
-                cell->edge = true;
+                edge = edge || (ix != ilx && ix != iux);
+                cell->edge = edge;
                 if (ix == ilx)
                     cell->winding += coverage;
             }
@@ -131,6 +139,7 @@ struct Grid {
     float width, height;
     float dimension;
     int iw, ih;
+    vector<SixFloat> sixFloats;
     vector<Cell> cells;
     vector<PathCell> pathCells;
     
