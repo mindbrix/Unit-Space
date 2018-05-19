@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 256;
 constexpr int kEdgeMask = 0x80000000;
 
 struct Grid {
@@ -64,8 +64,7 @@ struct Grid {
             clx = cx0 < cx1 ? cx0 : cx1;
             cux = cx0 > cx1 ? cx0 : cx1;
             ilx = clx / dimension;
-            iux = std::floor(cux / dimension);
-            
+            iux = cux / dimension;
             iy = cly / dimension;
             coverage = cy1 - cy0;
             
