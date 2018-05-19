@@ -142,8 +142,8 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, pi;
-        float winding, x0, y0, x1, y1;
+        int ix, iy;
+        float x0, y0, x1, y1;
         PathCell *pathCell;
         PathCell::Piece* piece;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
@@ -166,23 +166,15 @@ struct Grid {
         
         for (iy = 0; iy < grid.ih; iy++) {
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
-            winding = 0;
             for (ix = 0; ix < grid.iw; ix++) {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
                 if (pathCell->pieces.size()) {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
                     piece = & pathCell->pieces.back();
-                    if (piece->si == 0) {
-                        pi = (int)mesh._points.size();
-                        mesh._points.emplace_back(x0, y0);
-                        mesh._points.emplace_back(x1, y0);
-                        mesh._points.emplace_back(x1, y1);
-                        mesh._points.emplace_back(x0, y1);
-                        
-                        mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, piece->p);
-                        mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, piece->p);
-                    } else {
+                    if (piece->si == 0)
+                        mesh.writeRect(x0, y0, x1, y1, piece->p);
+                    else {
                         Bounds bounds(x0, y0, x1, y1);
                         Path& path = scene._paths[piece->p];
                         for (SubPath& s : path._subPaths)

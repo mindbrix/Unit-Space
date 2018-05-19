@@ -359,6 +359,11 @@ struct Mesh {
     void empty() {
         _colors.resize(0), _edges.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0);
     }
+    void writeRect(float x0, float y0, float x1, float y1, int p) {
+        int pi = (int)_points.size();
+        _points.emplace_back(x0, y0), _points.emplace_back(x1, y0), _points.emplace_back(x1, y1), _points.emplace_back(x0, y1);
+        _triangles.emplace_back(pi + 0, pi + 1, pi + 2, p), _triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
+    }
 };
 
 struct Scene {
