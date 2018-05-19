@@ -26,13 +26,21 @@ struct Grid {
     };
     
     struct PathCell {
-        PathCell() : count(0) {}
+        struct Piece {
+            Piece(int p, int i) : p(p), i(i) {}
+            int p, i;
+        };
+        PathCell() : pieces((Piece *)& storage[0]), count(0) {}
         void writePath(int ip, int i) {
             if (i == 0)
                 count = 0;
-            paths[count++ % 16] = ip | (i ? kEdgeMask : 0);
+            pieces[count] = Piece(ip, i);
+            count++;
+            if (count == 16)
+                count = 15;
         }
-        int paths[16];
+        Piece *pieces;
+        char storage[16 * sizeof(Piece)];
         int count;
     };
     
@@ -95,15 +103,6 @@ struct Grid {
         iux = std::floor((path._bounds.ux - lx) / dimension);
         iuy = std::floor((path._bounds.uy - ly) / dimension);
         
-        if (iux - ilx < 2 || iuy - ily < 2) {
-            for (iy = ily; iy <= iuy; iy++) {
-                pathCell = & pathCells[ilx + iy * iw];
-                for (ix = ilx; ix <= iux; ix++, pathCell++)
-                    pathCell->writePath(ip, true);
-            }
-            return;
-        }
-        
         for (iy = ily; iy <= iuy; iy++) {
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++)
@@ -149,9 +148,10 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, pi, p;
+        int ix, iy, pi;
         float winding, x0, y0, x1, y1;
         PathCell *pathCell;
+        PathCell::Piece* piece;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -178,20 +178,19 @@ struct Grid {
                 if (pathCell->count) {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
-                    p = pathCell->paths[pathCell->count - 1];
-                    if (~p & kEdgeMask) {
+                    piece = & pathCell->pieces[pathCell->count - 1];
+                    if (piece->i == 0) {
                         pi = (int)mesh._points.size();
                         mesh._points.emplace_back(x0, y0);
                         mesh._points.emplace_back(x1, y0);
                         mesh._points.emplace_back(x1, y1);
                         mesh._points.emplace_back(x0, y1);
                         
-                        mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
-                        mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
+                        mesh._triangles.emplace_back(pi + 0, pi + 1, pi + 2, piece->p);
+                        mesh._triangles.emplace_back(pi + 0, pi + 2, pi + 3, piece->p);
                     } else {
-                        p &= ~kEdgeMask;
                         Bounds bounds(x0, y0, x1, y1);
-                        Path& path = scene._paths[p];
+                        Path& path = scene._paths[piece->p];
                         for (SubPath& s : path._subPaths)
                             if (s._bounds.intersects(bounds)) {
                                 auto out = polygon.make((Vector *)s._points.get(), s._npoints);
@@ -203,7 +202,7 @@ struct Grid {
                                 if (out->size() > 2)
                                     tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
                             }
-                        libTess::writeTriangles(mesh, tess, p);
+                        libTess::writeTriangles(mesh, tess, piece->p);
                     }
                 }
             }
