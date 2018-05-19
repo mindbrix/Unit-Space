@@ -12,7 +12,6 @@
 #import <vector>
 
 constexpr int kDivisions = 128;
-constexpr int kEdgeMask = 0x80000000;
 
 struct Grid {
     struct SixFloat {
@@ -27,21 +26,16 @@ struct Grid {
     
     struct PathCell {
         struct Piece {
+            Piece() {}
             Piece(int p, int i) : p(p), i(i) {}
             int p, i;
         };
-        PathCell() : pieces((Piece *)& storage[0]), count(0) {}
         void writePath(int ip, int i) {
             if (i == 0)
-                count = 0;
-            pieces[count] = Piece(ip, i);
-            count++;
-            if (count == 16)
-                count = 15;
+                pieces.resize(0);
+            pieces.emplace_back(ip, i);
         }
-        Piece *pieces;
-        char storage[16 * sizeof(Piece)];
-        int count;
+        vector<Piece> pieces;
     };
     
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
@@ -86,7 +80,7 @@ struct Grid {
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++) {
 //                edge = edge || (ix != ilx && ix != iux);
-                cell->i = 1;
+                cell->i = (int)sixFloats.size();
                 if (ix == ilx)
                     cell->winding += coverage;
             }
@@ -175,10 +169,10 @@ struct Grid {
             winding = 0;
             for (ix = 0; ix < grid.iw; ix++) {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
-                if (pathCell->count) {
+                if (pathCell->pieces.size()) {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
-                    piece = & pathCell->pieces[pathCell->count - 1];
+                    piece = & pathCell->pieces.back();
                     if (piece->i == 0) {
                         pi = (int)mesh._points.size();
                         mesh._points.emplace_back(x0, y0);
