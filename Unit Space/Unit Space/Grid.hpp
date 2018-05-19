@@ -81,6 +81,7 @@ struct Grid {
             for (ix = ilx; ix <= iux; ix++, cell++) {
 //                edge = edge || (ix != ilx && ix != iux);
                 cell->si = (int)sixFloats.size();
+                sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
                 if (ix == ilx)
                     cell->winding += coverage;
             }
@@ -146,6 +147,7 @@ struct Grid {
         float x0, y0, x1, y1;
         PathCell *pathCell;
         PathCell::Piece* piece;
+        SixFloat *sixFloat;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -175,20 +177,23 @@ struct Grid {
                     if (piece->si == 0)
                         mesh.writeRect(x0, y0, x1, y1, piece->p);
                     else {
-                        Bounds bounds(x0, y0, x1, y1);
-                        Path& path = scene._paths[piece->p];
-                        for (SubPath& s : path._subPaths)
-                            if (s._bounds.intersects(bounds)) {
-                                auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                                out = _llx.clip(out, EdgeClipper::LLX, x0);
-                                out = _lly.clip(out, EdgeClipper::LLY, y0);
-                                out = _urx.clip(out, EdgeClipper::URX, x1);
-                                out = _ury.clip(out, EdgeClipper::URY, y1);
-                                
-                                if (out->size() > 2)
-                                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                            }
-                        libTess::writeTriangles(mesh, tess, piece->p);
+                        sixFloat = & grid.sixFloats[piece->si];
+                        if (sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0) {
+                            Bounds bounds(x0, y0, x1, y1);
+                            Path& path = scene._paths[piece->p];
+                            for (SubPath& s : path._subPaths)
+                                if (s._bounds.intersects(bounds)) {
+                                    auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                                    out = _llx.clip(out, EdgeClipper::LLX, x0);
+                                    out = _lly.clip(out, EdgeClipper::LLY, y0);
+                                    out = _urx.clip(out, EdgeClipper::URX, x1);
+                                    out = _ury.clip(out, EdgeClipper::URY, y1);
+                                    
+                                    if (out->size() > 2)
+                                        tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                                }
+                            libTess::writeTriangles(mesh, tess, piece->p);
+                        }
                     }
                 }
             }
