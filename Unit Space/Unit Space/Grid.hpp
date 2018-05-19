@@ -27,13 +27,13 @@ struct Grid {
     struct PathCell {
         struct Piece {
             Piece() {}
-            Piece(int p, int i) : p(p), i(i) {}
-            int p, i;
+            Piece(int p, int si) : p(p), si(si) {}
+            int p, si;
         };
-        void writePath(int ip, int i) {
-            if (i == 0)
+        void writePath(int ip, int si) {
+            if (si == 0)
                 pieces.resize(0);
-            pieces.emplace_back(ip, i);
+            pieces.emplace_back(ip, si);
         }
         vector<Piece> pieces;
     };
@@ -173,7 +173,7 @@ struct Grid {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
                     piece = & pathCell->pieces.back();
-                    if (piece->i == 0) {
+                    if (piece->si == 0) {
                         pi = (int)mesh._points.size();
                         mesh._points.emplace_back(x0, y0);
                         mesh._points.emplace_back(x1, y0);
