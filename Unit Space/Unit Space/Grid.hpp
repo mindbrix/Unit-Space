@@ -51,23 +51,23 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
-        float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, coverage, sx0, sx1, slx, sux;
+        float dxdy, dydx, ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, cx0, cx1, cy0, cy1;
         int ilx, iux, ix;
         bool xedge, yedge;
         Cell *cell;
         
-        dxdy = (x1 - x0) / (y1 - y0);
+        dxdy = (x1 - x0) / (y1 - y0), dydx = (y1 - y0) / (x1 - x0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
         for (cly = ily, cuy = ily + dimension; cly <= iuy; cly = cuy, cuy += dimension) {
             yedge = cly != ily && cly != iuy;
-            cy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
-            cy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
-            coverage = cy1 - cy0;
+            sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
+            sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
+            coverage = sy1 - sy0;
             
-            sx0 = y0 == y1 ? x0 : (cy0 - y0) * dxdy + x0;
-            sx1 = y0 == y1 ? x1 : (cy1 - y0) * dxdy + x0;
+            sx0 = y0 == y1 ? x0 : (sy0 - y0) * dxdy + x0;
+            sx1 = y0 == y1 ? x1 : (sy1 - y0) * dxdy + x0;
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
             ilx = slx / dimension, iux = sux / dimension;
@@ -80,6 +80,12 @@ struct Grid {
                 else {
                     cell->si = (int)sixFloats.size();
                     if (xedge || yedge) {
+                        clx = ix * dimension, cux = clx + dimension;
+                        cx0 = sx0 < clx ? clx : sx0 > cux ? cux : sx0;
+                        cx1 = sx1 < clx ? clx : sx1 > cux ? cux : sx1;
+                        cy0 = x0 == x1 ? sy0 : (cx0 - sx0) * dydx + sy0;
+                        cy1 = x0 == x1 ? sy1 : (cx1 - sx0) * dydx + sy0;
+                        
                         sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
                     } else
                         sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
