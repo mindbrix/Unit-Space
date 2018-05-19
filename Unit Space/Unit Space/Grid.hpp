@@ -51,9 +51,9 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
-        float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, cx0, cx1, clx, cux, coverage;
+        float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, coverage, cx0, cx1, clx, cux;
         int ilx, iux, iy, ix;
-//        bool edge;
+        bool xedge, yedge;
         Cell *cell;
         
         dxdy = (x1 - x0) / (y1 - y0);
@@ -61,12 +61,13 @@ struct Grid {
         ily = std::floor(ly / dimension) * dimension;
         iuy = std::floor(uy / dimension) * dimension;
         for (cly = ily; cly <= iuy; cly += dimension) {
-//            edge = cly != ily && cly != iuy;
+            yedge = cly != ily && cly != iuy;
             cuy = cly + dimension;
             cy0 = y0 > cly ? y0 : cly;
             cy0 = cy0 < cuy ? cy0 : cuy;
             cy1 = y1 > cly ? y1 : cly;
             cy1 = cy1 < cuy ? cy1 : cuy;
+            coverage = cy1 - cy0;
             
             cx0 = y0 == y1 ? x0 : (cy0 - y0) * dxdy + x0;
             cx1 = y0 == y1 ? x1 : (cy1 - y0) * dxdy + x0;
@@ -75,13 +76,16 @@ struct Grid {
             ilx = clx / dimension;
             iux = cux / dimension;
             iy = cly / dimension;
-            coverage = cy1 - cy0;
             
             cell = & cells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++) {
-//                edge = edge || (ix != ilx && ix != iux);
-                cell->si = (int)sixFloats.size();
-                sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
+                xedge = ix != ilx && ix != iux;
+                if (cell->si)
+                    sixFloats[cell->si] = SixFloat(0, 0, 0, 0, 0, 0);
+                else {
+                    cell->si = (int)sixFloats.size();
+                    sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
+                }
                 if (ix == ilx)
                     cell->winding += coverage;
             }
