@@ -51,7 +51,7 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
-        float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, coverage, cx0, cx1, clx, cux;
+        float dxdy, ly, uy, ily, iuy, cly, cuy, cy0, cy1, coverage, sx0, sx1, slx, sux;
         int ilx, iux, iy, ix;
         bool xedge, yedge;
         Cell *cell;
@@ -67,12 +67,12 @@ struct Grid {
             cy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = cy1 - cy0;
             
-            cx0 = y0 == y1 ? x0 : (cy0 - y0) * dxdy + x0;
-            cx1 = y0 == y1 ? x1 : (cy1 - y0) * dxdy + x0;
-            clx = cx0 < cx1 ? cx0 : cx1;
-            cux = cx0 > cx1 ? cx0 : cx1;
-            ilx = clx / dimension;
-            iux = cux / dimension;
+            sx0 = y0 == y1 ? x0 : (cy0 - y0) * dxdy + x0;
+            sx1 = y0 == y1 ? x1 : (cy1 - y0) * dxdy + x0;
+            slx = sx0 < sx1 ? sx0 : sx1;
+            sux = sx0 > sx1 ? sx0 : sx1;
+            ilx = slx / dimension;
+            iux = sux / dimension;
             iy = cly / dimension;
             
             cell = & cells[ilx + iy * iw];
@@ -82,7 +82,10 @@ struct Grid {
                     sixFloats[cell->si] = SixFloat(0, 0, 0, 0, 0, 0);
                 else {
                     cell->si = (int)sixFloats.size();
-                    sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
+                    if (xedge || yedge) {
+                        sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
+                    } else
+                        sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
                 }
                 if (ix == ilx)
                     cell->winding += coverage;
