@@ -63,10 +63,8 @@ struct Grid {
         for (cly = ily; cly <= iuy; cly += dimension) {
             yedge = cly != ily && cly != iuy;
             cuy = cly + dimension;
-            cy0 = y0 > cly ? y0 : cly;
-            cy0 = cy0 < cuy ? cy0 : cuy;
-            cy1 = y1 > cly ? y1 : cly;
-            cy1 = cy1 < cuy ? cy1 : cuy;
+            cy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
+            cy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = cy1 - cy0;
             
             cx0 = y0 == y1 ? x0 : (cy0 - y0) * dxdy + x0;
