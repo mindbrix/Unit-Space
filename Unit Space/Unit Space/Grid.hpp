@@ -152,7 +152,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy;
-        float x0, y0, x1, y1;
+        float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         PathCell *pathCell;
         PathCell::Piece* piece;
         SixFloat *sixFloat;
@@ -186,8 +186,15 @@ struct Grid {
                         mesh.writeRect(x0, y0, x1, y1, piece->p);
                     else {
                         sixFloat = & grid.sixFloats[piece->si];
-                        if (sixFloat->x == 0 && sixFloat->y == 0) {
-//                        if (sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0) {
+                        if (0 && !(sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0)) {
+                            ix0 = sixFloat->ix0 + grid.lx, iy0 = sixFloat->iy0 + grid.ly, ix1 = sixFloat->ix1 + grid.lx, iy1 = sixFloat->iy1 + grid.ly;
+                            ilx = ix0 < ix1 ? ix0 : ix1, ily = iy0 < iy1 ? iy0 : iy1;
+                            iux = ix0 > ix1 ? ix0 : ix1, iuy = iy0 > iy1 ? iy0 : iy1;
+                            if (ilx == x0 && iux == x1)
+                                mesh.writeRect(x0, ily, x1, iuy, piece->p);
+                            else if (ily == y0 && iuy == y1)
+                                mesh.writeRect(ilx, y0, iux, y1, piece->p);
+                        } else {
                             Bounds bounds(x0, y0, x1, y1);
                             Path& path = scene._paths[piece->p];
                             for (SubPath& s : path._subPaths)
