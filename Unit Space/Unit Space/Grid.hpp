@@ -59,7 +59,7 @@ struct Grid {
         vector<SixFloat> *edgeList;
         
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-        gly = std::floor(ly / dimension), guy = uy == ly ? gly + 1 : std::ceil(uy / dimension), gh = guy - gly;
+        gly = std::floor(ly / dimension), guy = std::ceil(uy / dimension), gh = guy - gly;
         ily = gly * dimension, iuy = guy * dimension;
         for (cly = ily, cuy = ily + dimension; gh--; cly = cuy, cuy += dimension) {
             yedge = cly != ily && cuy != iuy;
@@ -67,9 +67,9 @@ struct Grid {
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
             
-            t0 = y0 == y1 ? 0 : (sy0 - y0) / (y1 - y0);
+            t0 = (sy0 - y0) / (y1 - y0);
             sx0 = t0 <= 0 ? x0 : t0 >= 1 ? x1 : x0 + t0 * (x1 - x0);
-            t1 = y0 == y1 ? 1 : (sy1 - y0) / (y1 - y0);
+            t1 = (sy1 - y0) / (y1 - y0);
             sx1 = t1 <= 0 ? x0 : t1 >= 1 ? x1 : x0 + t1 * (x1 - x0);
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
