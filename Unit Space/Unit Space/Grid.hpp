@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 4;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct SixFloat {
@@ -53,15 +53,16 @@ struct Grid {
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float dxdy, dydx, ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, cx0, cy0, cx1, cy1;
-        float ilx, iux;
+        float ilx, iux, glx, gly, gux, guy, gw, gh;
         bool xedge, yedge;
         Cell *cell;
         
         dxdy = (x1 - x0) / (y1 - y0), dydx = (y1 - y0) / (x1 - x0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-        ily = std::floor(ly / dimension) * dimension;
-        iuy = ly == uy ? ily + dimension : std::ceil(uy / dimension) * dimension;
-        for (cly = ily, cuy = ily + dimension; cly < iuy; cly = cuy, cuy += dimension) {
+        
+        gly = std::floor(ly / dimension), guy = uy == ly ? gly + 1 : std::ceil(uy / dimension), gh = guy - gly;
+        ily = gly * dimension, iuy = guy * dimension;
+        for (cly = ily, cuy = ily + dimension; gh--; cly = cuy, cuy += dimension) {
             yedge = cly != ily && cuy != iuy;
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
@@ -72,10 +73,10 @@ struct Grid {
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
             
-            ilx = std::floor(slx / dimension) * dimension;
-            iux = slx == sux ? ilx + dimension : std::ceil(sux / dimension) * dimension;
+            glx = std::floor(slx / dimension), gux = slx == sux ? glx + 1 : std::ceil(sux / dimension), gw = gux - glx;
+            ilx = glx * dimension, iux = gux * dimension;
             cell = & cells[int(slx / dimension) + int(cly / dimension) * iw];
-            for (clx = ilx, cux = clx + dimension; clx < iux; clx = cux, cux += dimension, cell++) {
+            for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++) {
                 xedge = clx != ilx && cux != iux;
                 if (cell->si)
                     sixFloats[cell->si] = SixFloat(0, 0, 0, 0, 0, 0);
