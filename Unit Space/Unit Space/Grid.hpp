@@ -98,21 +98,21 @@ struct Grid {
     }
     void writePathCells(Path& path, int ip) {
         float *points, x0, y0, x1, y1, winding;
-        int ilx, ily, iux, iuy, ix, iy;
+        int glx, gly, gux, guy, gx, gy;
         Cell *cell;
         PathCell *pathCell;
         
-        ilx = std::floor((path._bounds.lx - lx) / dimension);
-        ily = std::floor((path._bounds.ly - ly) / dimension);
-        iux = std::floor((path._bounds.ux - lx) / dimension);
-        iuy = std::floor((path._bounds.uy - ly) / dimension);
+        glx = std::floor((path._bounds.lx - lx) / dimension);
+        gux = path._bounds.lx == path._bounds.ux ? glx + 1 : std::ceil((path._bounds.ux - lx) / dimension);
+        gly = std::floor((path._bounds.ly - ly) / dimension);
+        guy = path._bounds.ly == path._bounds.uy ? gly + 1 : std::ceil((path._bounds.uy - ly) / dimension);
         
-        for (iy = ily; iy <= iuy; iy++) {
-            cell = & cells[ilx + iy * iw];
-            for (ix = ilx; ix <= iux; ix++, cell++)
+        for (gy = gly; gy < guy; gy++) {
+            cell = & cells[glx + gy * iw];
+            for (gx = glx; gx < gux; gx++, cell++)
                 cell->si = 0, cell->winding = 0;
         }
-
+    
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
                 points = s._points.get();
@@ -126,11 +126,11 @@ struct Grid {
                 writeEdgeCells(x0, y0, x1, y1);
             }
         
-        for (iy = ily; iy <= iuy; iy++) {
+        for (gy = gly; gy < guy; gy++) {
             winding = 0;
-            cell = & cells[ilx + iy * iw];
-            pathCell = & pathCells[ilx + iy * iw];
-            for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
+            cell = & cells[glx + gy * iw];
+            pathCell = & pathCells[glx + gy * iw];
+            for (gx = glx; gx < gux; gx++, cell++, pathCell++) {
                 if (cell->si || std::abs(winding) > 1e-3)
                     pathCell->writePath(ip, cell->si, winding);
                 winding += cell->winding / dimension;
