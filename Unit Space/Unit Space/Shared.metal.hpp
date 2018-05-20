@@ -56,6 +56,15 @@ struct RGBA8 {
     RGBA8(RGBA rgba) : r(rgba.r * 255), g(rgba.g * 255), b(rgba.b * 255), a(rgba.a * 255) {}
     RGBA8(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
     
+    RGBA8 multiply(unsigned char alpha) {
+        return RGBA8(r, g, b, a * alpha >> 8);
+    }
+    static RGBA8 over(RGBA8 src, RGBA8 dst) {
+        return RGBA8((src.r * src.a >> 8) + (dst.r * (255 - src.a) >> 8),
+                     (src.g * src.a >> 8) + (dst.g * (255 - src.a) >> 8),
+                     (src.b * src.a >> 8) + (dst.b * (255 - src.a) >> 8),
+                     src.a + (dst.a * (255 - src.a) >> 8));
+    }
     unsigned char r, g, b, a;
 };
 

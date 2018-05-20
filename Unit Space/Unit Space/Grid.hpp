@@ -131,15 +131,11 @@ struct Grid {
             }
         
         for (gy = gly; gy < guy; gy++) {
-//            winding = 0;
             cell = & cells[glx + gy * iw];
             pathCell = & pathCells[glx + gy * iw];
-            for (gx = glx; gx < gux; gx++, cell++, pathCell++) {
-                winding = cell->winding / dimension;
-                if (cell->si)// || std::abs(winding) > 1e-3)
-                    pathCell->writePath(ip, cell->si, winding);
-                
-            }
+            for (gx = glx; gx < gux; gx++, cell++, pathCell++)
+                if (cell->si)
+                    pathCell->writePath(ip, cell->si, cell->winding / dimension);
         }
     }
     
@@ -179,12 +175,13 @@ struct Grid {
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
         mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
-        
+        mesh._colors.resize(grid.iw * grid.ih);
+        RGBA8 rgba;
         float windings[scene._paths.size()];
-        int indices[scene._paths.size()], iend, i, j;
+        int indices[scene._paths.size()], iend, i;
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, p = -1;
-            y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
+            iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
+            y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
             for (ix = 0; ix < grid.iw; ix++) {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
                 if (1) {
@@ -197,17 +194,17 @@ struct Grid {
                         windings[i] += piece.winding;
                     }
                     if (pathCell->pieces.size()) {
-                        j = iend - 1;
-                        while (j >= 0 && std::abs(windings[j]) < 1e-3)
-                            j--;
-                        p = j < 0 ? -1 : indices[j];
+                        rgba = RGBA8(0, 0, 0, 0);
+                        for (i = 0; i < iend; i++)
+                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(std::abs(windings[i]) * 255), rgba);
                     }
-
+                    mesh._colors[ix + iy * grid.iw] = rgba;
+                    
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
     
-                    if (p != -1)// || piece->si != 0)
-                        mesh.writeRect(x0, y0, x1, y1, p);
+                    if (rgba.a != 0)// || piece->si != 0)
+                        mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                     else if (0) {
                         si = grid.edgeLists[piece->si].back();
                         /*
