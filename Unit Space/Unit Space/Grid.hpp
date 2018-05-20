@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 4;
 
 struct Grid {
     struct SixFloat {
@@ -52,7 +52,7 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
-        float dxdy, dydx, ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, cx0, cx1, cy0, cy1;
+        float dxdy, dydx, ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, cx0, cy0, cx1, cy1;
         float ilx, iux;
         bool xedge, yedge;
         Cell *cell;
@@ -130,9 +130,9 @@ struct Grid {
             cell = & cells[ilx + iy * iw];
             pathCell = & pathCells[ilx + iy * iw];
             for (ix = ilx; ix <= iux; ix++, cell++, pathCell++) {
-                winding += cell->winding / dimension;
                 if (cell->si || std::abs(winding) > 1e-3)
                     pathCell->writePath(ip, cell->si, winding);
+                winding += cell->winding / dimension;
             }
         }
     }
@@ -190,10 +190,17 @@ struct Grid {
                             ix0 = sixFloat->ix0 + grid.lx, iy0 = sixFloat->iy0 + grid.ly, ix1 = sixFloat->ix1 + grid.lx, iy1 = sixFloat->iy1 + grid.ly;
                             ilx = ix0 < ix1 ? ix0 : ix1, ily = iy0 < iy1 ? iy0 : iy1;
                             iux = ix0 > ix1 ? ix0 : ix1, iuy = iy0 > iy1 ? iy0 : iy1;
-                            if (ilx == x0 && iux == x1)
-                                mesh.writeRect(x0, ily, x1, iuy, piece->p);
-                            else if (ily == y0 && iuy == y1)
-                                mesh.writeRect(ilx, y0, iux, y1, piece->p);
+                            if (ilx == x0 && iux == x1) {
+                                if (piece->winding * (ix1 - ix0) > 0)
+                                    mesh.writeQuad(x0, y0, x1, y0, x1, iy1, x0, iy0, piece->p);
+                                else
+                                    mesh.writeQuad(x0, iy0, x1, iy1, x1, y1, x0, y1, piece->p);
+                            } else if (ily == y0 && iuy == y1) {
+                                if (piece->winding == 0)
+                                    mesh.writeQuad(ix0, y0, x1, y0, x1, y1, ix1, y1, piece->p);
+                                else
+                                    mesh.writeQuad(x0, y0, ix1, y0, ix1, y1, x0, y1, piece->p);
+                            }
                         } else {
                             Bounds bounds(x0, y0, x1, y1);
                             Path& path = scene._paths[piece->p];
