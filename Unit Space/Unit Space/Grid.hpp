@@ -109,7 +109,7 @@ struct Grid {
         PathCell *pathCell;
         
         glx = std::floor((path._bounds.lx - lx) / dimension), gly = std::floor((path._bounds.ly - ly) / dimension);
-        gux = std::ceil((path._bounds.ux - lx) / dimension), guy = std::ceil((path._bounds.uy - ly) / dimension);
+        gux = std::ceil((path._bounds.ux - lx) / dimension) + 1, guy = std::ceil((path._bounds.uy - ly) / dimension);
         
         for (gy = gly; gy < guy; gy++) {
             cell = & cells[glx + gy * iw];
