@@ -131,13 +131,14 @@ struct Grid {
             }
         
         for (gy = gly; gy < guy; gy++) {
-            winding = 0;
+//            winding = 0;
             cell = & cells[glx + gy * iw];
             pathCell = & pathCells[glx + gy * iw];
             for (gx = glx; gx < gux; gx++, cell++, pathCell++) {
-                if (cell->si || std::abs(winding) > 1e-3)
+                winding = cell->winding / dimension;
+                if (cell->si)// || std::abs(winding) > 1e-3)
                     pathCell->writePath(ip, cell->si, winding);
-                winding += cell->winding / dimension;
+                
             }
         }
     }
@@ -157,7 +158,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, si;
+        int ix, iy, si, p;
         float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         PathCell *pathCell;
         PathCell::Piece* piece;
@@ -179,16 +180,34 @@ struct Grid {
             mesh._colors.emplace_back(path._color);
         mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
         
+        float windings[scene._paths.size()];
+        int indices[scene._paths.size()], iend, i, j;
         for (iy = 0; iy < grid.ih; iy++) {
+            iend = 0, p = -1;
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension+ grid.ly;
             for (ix = 0; ix < grid.iw; ix++) {
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
-                if (pathCell->pieces.size()) {
+                if (1) {
+                    for (auto& piece : pathCell->pieces) {
+                        for (i = 0; i < iend; i++)
+                            if (indices[i] == piece.p)
+                                break;
+                        if (i == iend)
+                            indices[iend++] = piece.p, windings[i] = 0;
+                        windings[i] += piece.winding;
+                    }
+                    if (pathCell->pieces.size()) {
+                        j = iend - 1;
+                        while (j >= 0 && std::abs(windings[j]) < 1e-3)
+                            j--;
+                        p = j < 0 ? -1 : indices[j];
+                    }
+
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
-                    piece = & pathCell->pieces.back();
-                    if (1 || piece->si != 0)
-                        mesh.writeRect(x0, y0, x1, y1, piece->p);
+    
+                    if (p != -1)// || piece->si != 0)
+                        mesh.writeRect(x0, y0, x1, y1, p);
                     else if (0) {
                         si = grid.edgeLists[piece->si].back();
                         /*
