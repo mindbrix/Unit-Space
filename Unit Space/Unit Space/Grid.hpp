@@ -49,9 +49,10 @@ struct Grid {
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
+        x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         if (y0 == y1 || (x0 == x1 && y0 == y1))
             return;
-        x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
+        
         float ly, uy, ily, iuy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux, cx0, cy0, cx1, cy1;
         float ilx, iux, glx, gly, gux, guy, gw, gh;
         bool xedge, yedge;
@@ -186,7 +187,7 @@ struct Grid {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
                     piece = & pathCell->pieces.back();
-                    if (piece->si != 0)
+                    if (1 || piece->si != 0)
                         mesh.writeRect(x0, y0, x1, y1, piece->p);
                     else if (0) {
                         si = grid.edgeLists[piece->si].back();
