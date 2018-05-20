@@ -52,7 +52,7 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
-        float ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, t0, t1, cx0, cy0, cx1, cy1;
+        float ly, uy, ily, iuy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux, cx0, cy0, cx1, cy1;
         float ilx, iux, glx, gly, gux, guy, gw, gh;
         bool xedge, yedge;
         Cell *cell;
