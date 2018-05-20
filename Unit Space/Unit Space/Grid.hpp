@@ -103,7 +103,7 @@ struct Grid {
         }
     }
     void writePathCells(Path& path, int ip) {
-        float *points, x0, y0, x1, y1, winding;
+        float *points, x0, y0, x1, y1;
         int glx, gly, gux, guy, gx, gy;
         Cell *cell;
         PathCell *pathCell;
@@ -178,7 +178,7 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
         float windings[scene._paths.size()];
-        int indices[scene._paths.size()], iend, i;
+        int indices[scene._paths.size()], iend, i, j;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
@@ -195,6 +195,12 @@ struct Grid {
                     }
                     if (pathCell->pieces.size()) {
                         rgba = RGBA8(0, 0, 0, 0);
+//                        j = iend - 1;
+//                        while (j >= 0 && std::abs(windings[j]) < 1e-3)
+//                            j--;
+//
+//                        if (j >= 0 && std::abs(windings[j]) == 1)
+//                            rgba = scene._paths[indices[iend - 1]]._color;
                         for (i = 0; i < iend; i++)
                             rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(std::abs(windings[i]) * 255), rgba);
                     }
