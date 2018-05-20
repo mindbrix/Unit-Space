@@ -75,7 +75,7 @@ struct Grid {
             
             glx = std::floor(slx / dimension), gux = slx == sux ? glx + 1 : std::ceil(sux / dimension), gw = gux - glx;
             ilx = glx * dimension, iux = gux * dimension;
-            cell = & cells[int(slx / dimension) + int(cly / dimension) * iw];
+            cell = & cells[glx + int(cly / dimension) * iw];
             for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++) {
                 xedge = clx != ilx && cux != iux;
                 if (cell->si)
