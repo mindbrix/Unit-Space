@@ -43,7 +43,7 @@ struct Grid {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
-        edgeLists.emplace_back(vector<SixFloat>());
+        edgeLists.emplace_back(vector<int>({ 1 }));
         cells.resize(iw * ih);
         pathCells.resize(iw * ih);
     }
@@ -56,7 +56,7 @@ struct Grid {
         float ilx, iux, glx, gly, gux, guy, gw, gh;
         bool xedge, yedge;
         Cell *cell;
-        vector<SixFloat> *edgeList;
+        vector<int> *edgeList;
         
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         gly = std::floor(ly / dimension), guy = std::ceil(uy / dimension), gh = guy - gly;
@@ -81,9 +81,9 @@ struct Grid {
                 xedge = clx != ilx && cux != iux;
                 if (cell->si == 0) {
                     cell->si = (int)edgeLists.size();
-                    edgeLists.emplace_back(vector<SixFloat>());
+                    edgeLists.emplace_back(vector<int>());
                 }
-                edgeList = & edgeLists.back();
+                edgeList = & edgeLists[cell->si];
                 
                 cx0 = cy0 = cx1 = cy1 = 0;
                 if (xedge || yedge) {
@@ -94,7 +94,8 @@ struct Grid {
                     t1 = x0 == x1 ? 1 : (cx1 - sx0) / (sx1 - sx0);
                     cy1 = t1 <= 0 ? sy0 : t1 >= 1 ? sy1 : sy0 + t1 * (sy1 - sy0);
                 }
-                edgeList->emplace_back(0, 0, cx0, cy0, cx1, cy1);
+                edgeList->emplace_back((int)sixFloats.size());
+                sixFloats.emplace_back(0, 0, cx0, cy0, cx1, cy1);
                 if (clx == ilx)
                     cell->winding += coverage;
             }
@@ -144,7 +145,8 @@ struct Grid {
     float width, height;
     float dimension;
     int iw, ih;
-    vector<vector<SixFloat>> edgeLists;
+    vector<vector<int>> edgeLists;
+    vector<SixFloat> sixFloats;
     vector<Cell> cells;
     vector<PathCell> pathCells;
     
@@ -154,11 +156,10 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy;
+        int ix, iy, si;
         float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         PathCell *pathCell;
         PathCell::Piece* piece;
-        SixFloat *sixFloat;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -188,7 +189,8 @@ struct Grid {
                     if (piece->si != 0)
                         mesh.writeRect(x0, y0, x1, y1, piece->p);
                     else if (0) {
-                        sixFloat = & grid.edgeLists[piece->si].back();
+                        si = grid.edgeLists[piece->si].back();
+                        /*
                         if (0 && !(sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0)) {
                             ix0 = sixFloat->ix0 + grid.lx, iy0 = sixFloat->iy0 + grid.ly, ix1 = sixFloat->ix1 + grid.lx, iy1 = sixFloat->iy1 + grid.ly;
                             ilx = ix0 < ix1 ? ix0 : ix1, ily = iy0 < iy1 ? iy0 : iy1;
@@ -220,6 +222,7 @@ struct Grid {
                                 }
                             libTess::writeTriangles(mesh, tess, piece->p);
                         }
+                         */
                     }
                 }
             }
