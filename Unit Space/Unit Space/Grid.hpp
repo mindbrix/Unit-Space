@@ -52,14 +52,12 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
-        float dxdy, dydx, ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, cx0, cy0, cx1, cy1;
+        float ly, uy, ily, iuy, cly, cuy, sy0, sy1, coverage, sx0, sx1, slx, sux, clx, cux, t0, t1, cx0, cy0, cx1, cy1;
         float ilx, iux, glx, gly, gux, guy, gw, gh;
         bool xedge, yedge;
         Cell *cell;
         
-        dxdy = (x1 - x0) / (y1 - y0), dydx = (y1 - y0) / (x1 - x0);
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-        
         gly = std::floor(ly / dimension), guy = uy == ly ? gly + 1 : std::ceil(uy / dimension), gh = guy - gly;
         ily = gly * dimension, iuy = guy * dimension;
         for (cly = ily, cuy = ily + dimension; gh--; cly = cuy, cuy += dimension) {
@@ -68,8 +66,8 @@ struct Grid {
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
             
-            sx0 = y0 == y1 ? x0 : (sy0 - y0) * dxdy + x0;
-            sx1 = y0 == y1 ? x1 : (sy1 - y0) * dxdy + x0;
+            sx0 = y0 == y1 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
+            sx1 = y0 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
             
@@ -85,9 +83,11 @@ struct Grid {
                     cx0 = cy0 = cx1 = cy1 = 0;
                     if (xedge || yedge) {
                         cx0 = sx0 < clx ? clx : sx0 > cux ? cux : sx0;
+                        t0 = x0 == x1 ? 0 : (cx0 - sx0) / (sx1 - sx0);
+                        cy0 = t0 <= 0 ? sy0 : t0 >= 1 ? sy1 : sy0 + t0 * (sy1 - sy0);
                         cx1 = sx1 < clx ? clx : sx1 > cux ? cux : sx1;
-                        cy0 = x0 == x1 ? sy0 : (cx0 - sx0) * dydx + sy0;
-                        cy1 = x0 == x1 ? sy1 : (cx1 - sx0) * dydx + sy0;
+                        t1 = x0 == x1 ? 1 : (cx1 - sx0) / (sx1 - sx0);
+                        cy1 = t1 <= 0 ? sy0 : t1 >= 1 ? sy1 : sy0 + t1 * (sy1 - sy0);
                     }
                     sixFloats.emplace_back(0, 0, cx0, cy0, cx1, cy1);
                 }
