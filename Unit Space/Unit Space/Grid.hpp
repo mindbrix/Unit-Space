@@ -43,19 +43,20 @@ struct Grid {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
-        sixFloats.emplace_back(0, 0, 0, 0, 0, 0);
+        edgeLists.emplace_back(vector<SixFloat>());
         cells.resize(iw * ih);
         pathCells.resize(iw * ih);
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
-        if (x0 == x1 && y0 == y1)
+        if (y0 == y1 || (x0 == x1 && y0 == y1))
             return;
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         float ly, uy, ily, iuy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux, cx0, cy0, cx1, cy1;
         float ilx, iux, glx, gly, gux, guy, gw, gh;
         bool xedge, yedge;
         Cell *cell;
+        vector<SixFloat> *edgeList;
         
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         gly = std::floor(ly / dimension), guy = uy == ly ? gly + 1 : std::ceil(uy / dimension), gh = guy - gly;
@@ -78,21 +79,22 @@ struct Grid {
             cell = & cells[glx + int(cly / dimension) * iw];
             for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++) {
                 xedge = clx != ilx && cux != iux;
-                if (cell->si)
-                    sixFloats[cell->si] = SixFloat(0, 0, 0, 0, 0, 0);
-                else {
-                    cell->si = (int)sixFloats.size();
-                    cx0 = cy0 = cx1 = cy1 = 0;
-                    if (xedge || yedge) {
-                        cx0 = sx0 < clx ? clx : sx0 > cux ? cux : sx0;
-                        t0 = x0 == x1 ? 0 : (cx0 - sx0) / (sx1 - sx0);
-                        cy0 = t0 <= 0 ? sy0 : t0 >= 1 ? sy1 : sy0 + t0 * (sy1 - sy0);
-                        cx1 = sx1 < clx ? clx : sx1 > cux ? cux : sx1;
-                        t1 = x0 == x1 ? 1 : (cx1 - sx0) / (sx1 - sx0);
-                        cy1 = t1 <= 0 ? sy0 : t1 >= 1 ? sy1 : sy0 + t1 * (sy1 - sy0);
-                    }
-                    sixFloats.emplace_back(0, 0, cx0, cy0, cx1, cy1);
+                if (cell->si == 0) {
+                    cell->si = (int)edgeLists.size();
+                    edgeLists.emplace_back(vector<SixFloat>());
                 }
+                edgeList = & edgeLists.back();
+                
+                cx0 = cy0 = cx1 = cy1 = 0;
+                if (xedge || yedge) {
+                    cx0 = sx0 < clx ? clx : sx0 > cux ? cux : sx0;
+                    t0 = x0 == x1 ? 0 : (cx0 - sx0) / (sx1 - sx0);
+                    cy0 = t0 <= 0 ? sy0 : t0 >= 1 ? sy1 : sy0 + t0 * (sy1 - sy0);
+                    cx1 = sx1 < clx ? clx : sx1 > cux ? cux : sx1;
+                    t1 = x0 == x1 ? 1 : (cx1 - sx0) / (sx1 - sx0);
+                    cy1 = t1 <= 0 ? sy0 : t1 >= 1 ? sy1 : sy0 + t1 * (sy1 - sy0);
+                }
+                edgeList->emplace_back(0, 0, cx0, cy0, cx1, cy1);
                 if (clx == ilx)
                     cell->winding += coverage;
             }
@@ -144,7 +146,7 @@ struct Grid {
     float width, height;
     float dimension;
     int iw, ih;
-    vector<SixFloat> sixFloats;
+    vector<vector<SixFloat>> edgeLists;
     vector<Cell> cells;
     vector<PathCell> pathCells;
     
@@ -185,10 +187,10 @@ struct Grid {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
                     piece = & pathCell->pieces.back();
-                    if (piece->si == 0)
+                    if (piece->si != 0)
                         mesh.writeRect(x0, y0, x1, y1, piece->p);
-                    else {
-                        sixFloat = & grid.sixFloats[piece->si];
+                    else if (0) {
+                        sixFloat = & grid.edgeLists[piece->si].back();
                         if (0 && !(sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0)) {
                             ix0 = sixFloat->ix0 + grid.lx, iy0 = sixFloat->iy0 + grid.ly, ix1 = sixFloat->ix1 + grid.lx, iy1 = sixFloat->iy1 + grid.ly;
                             ilx = ix0 < ix1 ? ix0 : ix1, ily = iy0 < iy1 ? iy0 : iy1;
