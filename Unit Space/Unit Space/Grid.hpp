@@ -28,6 +28,11 @@ struct Grid {
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
+        scale = 1, tx = lx, ty = ly;
+//        scale = float(kDivisions) / dmax, tx = lx, ty = ly;
+        iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
+        dimension = 1;
+        
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
         edgeCells.resize(iw * ih);
@@ -39,7 +44,7 @@ struct Grid {
         float ilx, iux, glx, gly, gux, guy, gw, gh;
         vector<Cell> *cell;
         
-        x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
+        x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
         if (y0 == y1 || (x0 == x1 && y0 == y1))
             return;
         
@@ -67,6 +72,7 @@ struct Grid {
     }
     
     float lx, ly, ux, uy;
+    float scale, tx, ty;
     float width, height;
     float dimension;
     int iw, ih;
@@ -96,7 +102,7 @@ struct Grid {
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : scene._paths)
-            end = path.writeEdges(end, (int) (& path - & scene._paths[0]), -bounds.lx, -bounds.ly);
+            end = path.writeEdges(end, (int) (& path - & scene._paths[0]), 0, 0);
         
         Tess::writeCurves(mesh, scene);
         
@@ -116,7 +122,7 @@ struct Grid {
         
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
-            y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
+            y0 = iy * grid.dimension + grid.ty, y1 = (iy + 1) * grid.dimension + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
@@ -154,7 +160,7 @@ struct Grid {
                     }
                     rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
-                    x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
+                    x0 = ix * grid.dimension + grid.tx, x1 = (ix + 1) * grid.dimension + grid.tx;
                     
                     if (rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
