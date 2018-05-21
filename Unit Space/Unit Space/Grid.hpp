@@ -109,8 +109,7 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
-        float nonzero, alpha;
-        int iend, i, idst, isrc, ecount;
+        int iend, i, idst, isrc, ecount, nz, eo, a;
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -144,22 +143,23 @@ struct Grid {
                     p = -1;
                     ecount = 0;
                     for (i = 0; i < iend; i++) {
-                        nonzero = std::abs(pathCells[i].winding);
-                        alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                        if (pathCells[i].edge || alpha > 1e-3) {
+                        nz = std::abs(pathCells[i].winding) * 255;
+                        eo = 255 - std::abs((nz % 510) - 255);
+                        a = scene._paths[pathCells[i].p]._evenOdd ? eo : nz & 0xFF;
+                        if (pathCells[i].edge || a > 0) {
                             p = pathCells[i].p;
-                            isEdge = pathCells[i].edge || (alpha > 1e-3 && alpha < 0.999);
-                            isInterior = alpha > 0.999;
-                            rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(alpha * 255), rgba) : rgba;
+                            isEdge = pathCells[i].edge || (a > 0 && a < 255);
+                            isInterior = a == 255;// alpha > 0.999;
+                            rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(a), rgba) : rgba;
                             ecount = isInterior ? 0 : ecount + pathCells[i].count;
                         }
                     }
 //                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
-                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : RGBA8(0, 0, 0, 0);
+                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                     
-                    if (ecount < 3 && rgba.a != 0)
+                    if (rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                     else if (0) {
                         /*
