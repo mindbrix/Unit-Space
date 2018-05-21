@@ -212,43 +212,23 @@ struct Grid {
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
     
-                    if (rgba.a != 0)// || piece->si != 0)
+                    if (rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                     else if (0) {
-                        si = grid.edgeLists[piece->si].back();
-                        /*
-                        if (0 && !(sixFloat->ix0 == 0 && sixFloat->ix1 == 0 && sixFloat->iy0 == 0 && sixFloat->iy1 == 0)) {
-                            ix0 = sixFloat->ix0 + grid.lx, iy0 = sixFloat->iy0 + grid.ly, ix1 = sixFloat->ix1 + grid.lx, iy1 = sixFloat->iy1 + grid.ly;
-                            ilx = ix0 < ix1 ? ix0 : ix1, ily = iy0 < iy1 ? iy0 : iy1;
-                            iux = ix0 > ix1 ? ix0 : ix1, iuy = iy0 > iy1 ? iy0 : iy1;
-                            if (ilx == x0 && iux == x1) {
-                                if (piece->winding * (ix1 - ix0) > 0)
-                                    mesh.writeQuad(x0, y0, x1, y0, x1, iy1, x0, iy0, piece->p);
-                                else
-                                    mesh.writeQuad(x0, iy0, x1, iy1, x1, y1, x0, y1, piece->p);
-                            } else if (ily == y0 && iuy == y1) {
-                                if (piece->winding == 0)
-                                    mesh.writeQuad(ix0, y0, x1, y0, x1, y1, ix1, y1, piece->p);
-                                else
-                                    mesh.writeQuad(x0, y0, ix1, y0, ix1, y1, x0, y1, piece->p);
+                        Bounds bounds(x0, y0, x1, y1);
+                        Path& path = scene._paths[piece->p];
+                        for (SubPath& s : path._subPaths)
+                            if (s._bounds.intersects(bounds)) {
+                                auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                                out = _llx.clip(out, EdgeClipper::LLX, x0);
+                                out = _lly.clip(out, EdgeClipper::LLY, y0);
+                                out = _urx.clip(out, EdgeClipper::URX, x1);
+                                out = _ury.clip(out, EdgeClipper::URY, y1);
+                                
+                                if (out->size() > 2)
+                                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
                             }
-                        } else {
-                            Bounds bounds(x0, y0, x1, y1);
-                            Path& path = scene._paths[piece->p];
-                            for (SubPath& s : path._subPaths)
-                                if (s._bounds.intersects(bounds)) {
-                                    auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                                    out = _llx.clip(out, EdgeClipper::LLX, x0);
-                                    out = _lly.clip(out, EdgeClipper::LLY, y0);
-                                    out = _urx.clip(out, EdgeClipper::URX, x1);
-                                    out = _ury.clip(out, EdgeClipper::URY, y1);
-                                    
-                                    if (out->size() > 2)
-                                        tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                                }
-                            libTess::writeTriangles(mesh, tess, piece->p);
-                        }
-                         */
+                        libTess::writeTriangles(mesh, tess, piece->p);
                     }
                 }
             }
