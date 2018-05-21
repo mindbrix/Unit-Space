@@ -62,7 +62,7 @@ struct Grid {
             ilx = glx * dimension, iux = gux * dimension;
             cell = & edgeCells[glx + int(cly / dimension) * iw];
             for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++)
-                cell->emplace_back(ei, clx == ilx ? coverage / dimension : 0);
+                cell->emplace_back(ei, clx == ilx ? coverage : 0);
         }
     }
     
@@ -143,7 +143,7 @@ struct Grid {
                     rgba = RGBA8(0, 0, 0, 0);
                     p = -1;
                     for (i = 0; i < iend; i++) {
-                        nonzero = std::abs(pathCells[i].winding);
+                        nonzero = std::abs(pathCells[i].winding / grid.dimension);
                         alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
                         if (pathCells[i].edge || alpha > 1e-3) {
                             p = pathCells[i].p;
