@@ -14,6 +14,12 @@
 constexpr int kDivisions = 128;
 
 struct Grid {
+    struct Edge {
+        Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
+        float x0, y0, x1, y1;
+        unsigned short int flags, p, ci, pi;
+    };
+
     struct SixFloat {
         SixFloat(float x, float y, float ix0, float iy0, float ix1, float iy1) : x(x), y(y), ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1) {}
         float x, y, ix0, iy0, ix1, iy1;
