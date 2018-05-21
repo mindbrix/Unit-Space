@@ -111,28 +111,27 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
-//                    rgba = RGBA8(0, 0, 0, 0);
-//                    if (edgeCells->size()) {
-//                        edgeCell = & edgeCells->back();
-//                        edge = begin + edgeCell->ei;
-//                        rgba = scene._paths[edge->p]._color;
-//                    }
-                    for (auto& cell :*edgeCells) {
-                        for (i = 0; i < iend; i++)
-                            if (indices[i] == begin[cell.ei].p)
-                                break;
-                        if (i == iend)
-                            indices[iend++] = begin[cell.ei].p, windings[i] = 0;
-                        windings[i] += cell.coverage;
-                    }
+                    rgba = RGBA8(0, 0, 0, 0);
                     if (edgeCells->size()) {
-                        rgba = RGBA8(0, 0, 0, 0);
-                        for (i = 0; i < iend; i++) {
-                            nonzero = std::abs(windings[i]);
-                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
-                        }
+                        auto& cell = edgeCells->back();
+                        rgba = scene._paths[begin[cell.ei].p]._color;
                     }
+//                    for (auto& cell :*edgeCells) {
+//                        for (i = 0; i < iend; i++)
+//                            if (indices[i] == begin[cell.ei].p)
+//                                break;
+//                        if (i == iend)
+//                            indices[iend++] = begin[cell.ei].p, windings[i] = 0;
+//                        windings[i] += cell.coverage;
+//                    }
+//                    if (edgeCells->size()) {
+//                        rgba = RGBA8(0, 0, 0, 0);
+//                        for (i = 0; i < iend; i++) {
+//                            nonzero = std::abs(windings[i]);
+//                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
+//                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
+//                        }
+//                    }
                     
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
