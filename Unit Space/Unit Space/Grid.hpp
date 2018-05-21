@@ -19,7 +19,12 @@ struct Grid {
         float x0, y0, x1, y1;
         unsigned short int flags, p, ci, pi;
     };
-
+    struct EdgeCell {
+        EdgeCell(int ei, float winding) : ei(ei), winding(winding) {}
+        int ei;
+        float winding;
+    };
+    
     struct SixFloat {
         SixFloat(float x, float y, float ix0, float iy0, float ix1, float iy1) : x(x), y(y), ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1) {}
         float x, y, ix0, iy0, ix1, iy1;
@@ -160,7 +165,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, si, p;
+        int ix, iy, p;
         float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         PathCell *pathCell;
         PathCell::Piece* piece;
