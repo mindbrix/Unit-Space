@@ -197,6 +197,8 @@ struct Grid {
             return;
         int ix, iy, p;
         float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
+        vector<EdgeCell> *edgeCells;
+        EdgeCell *edgeCell;
         PathCell *pathCell;
         PathCell::Piece* piece;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
@@ -236,26 +238,33 @@ struct Grid {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
             for (ix = 0; ix < grid.iw; ix++) {
+                edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 pathCell = & grid.pathCells[ix + iy * grid.iw];
                 if (1) {
-                    for (auto& piece : pathCell->pieces) {
-                        for (i = 0; i < iend; i++)
-                            if (indices[i] == piece.p)
-                                break;
-                        if (i == iend)
-                            indices[iend++] = piece.p, windings[i] = 0;
-                        windings[i] += piece.winding;
+                    rgba = RGBA8(0, 0, 0, 0);
+                    if (edgeCells->size()) {
+                        edgeCell = & edgeCells->back();
+                        edge = begin + edgeCell->ei;
+                        rgba = scene._paths[edge->p]._color;
                     }
-                    if (pathCell->pieces.size()) {
-                        rgba = RGBA8(0, 0, 0, 0);
-                        for (i = 0; i < iend; i++) {
-                            nonzero = std::abs(windings[i]);
-                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
-                        }
-                    }
-                    mesh._colors[ix + iy * grid.iw] = rgba;
+//                    for (auto& piece : pathCell->pieces) {
+//                        for (i = 0; i < iend; i++)
+//                            if (indices[i] == piece.p)
+//                                break;
+//                        if (i == iend)
+//                            indices[iend++] = piece.p, windings[i] = 0;
+//                        windings[i] += piece.winding;
+//                    }
+//                    if (pathCell->pieces.size()) {
+//                        rgba = RGBA8(0, 0, 0, 0);
+//                        for (i = 0; i < iend; i++) {
+//                            nonzero = std::abs(windings[i]);
+//                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
+//                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
+//                        }
+//                    }
                     
+                    mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
     
