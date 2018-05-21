@@ -21,10 +21,11 @@ struct Grid {
     };
     struct PathCell {
         PathCell() {}
-        PathCell(int p, float winding, bool edge) : p(p), winding(winding), edge(edge) {}
+        PathCell(int p, float winding, bool edge) : p(p), winding(winding), edge(edge), count(0) {}
         int p;
         float winding;
         bool edge;
+        int count;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
@@ -119,7 +120,7 @@ struct Grid {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
                     for (i = 0; i < iend; i++)
-                        pathCells[i].edge = false;
+                        pathCells[i].edge = false, pathCells[i].count = 0;;
                     
                     for (auto& cell :*edgeCells) {
                         for (i = 0; i < iend; i++)
@@ -135,6 +136,7 @@ struct Grid {
                         }
                         pathCells[i].winding += cell.coverage;
                         pathCells[i].edge = true;
+                        pathCells[i].count++;
                     }
                     
                     isInterior = isEdge = false;
