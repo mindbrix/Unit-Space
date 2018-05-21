@@ -55,6 +55,39 @@ struct Grid {
         edgeCells.resize(iw * ih);
     }
     
+    void writeEdgeCells(Edge *edge, int ei) {
+        float x0, y0, x1, y1;
+        float ly, uy, ily, iuy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux;
+        float ilx, iux, glx, gly, gux, guy, gw, gh;
+        vector<EdgeCell> *cell;
+        
+        x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
+        if (y0 == y1 || (x0 == x1 && y0 == y1))
+            return;
+        
+        ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
+        gly = std::floor(ly / dimension), guy = std::ceil(uy / dimension), gh = guy - gly;
+        ily = gly * dimension, iuy = guy * dimension;
+        for (cly = ily, cuy = ily + dimension; gh--; cly = cuy, cuy += dimension) {
+            sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
+            sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
+            coverage = sy1 - sy0;
+            
+            t0 = (sy0 - y0) / (y1 - y0);
+            sx0 = t0 <= 0 ? x0 : t0 >= 1 ? x1 : x0 + t0 * (x1 - x0);
+            t1 = (sy1 - y0) / (y1 - y0);
+            sx1 = t1 <= 0 ? x0 : t1 >= 1 ? x1 : x0 + t1 * (x1 - x0);
+            slx = sx0 < sx1 ? sx0 : sx1;
+            sux = sx0 > sx1 ? sx0 : sx1;
+            
+            glx = std::floor(slx / dimension), gux = slx == sux ? glx + 1 : std::ceil(sux / dimension), gw = gux - glx;
+            ilx = glx * dimension, iux = gux * dimension;
+            cell = & edgeCells[glx + int(cly / dimension) * iw];
+            for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++)
+                cell->emplace_back(ei, coverage);
+        }
+    }
+    
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
         x0 -= lx, y0 -= ly, x1 -= lx, y1 -= ly;
         if (y0 == y1 || (x0 == x1 && y0 == y1))
@@ -187,7 +220,7 @@ struct Grid {
         
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (edge = begin; edge < end; edge++)
-            ;//grid.writeEdgeCells(edge);
+            grid.writeEdgeCells(edge, (int)(edge - begin));
         
         for (Path& path : scene._paths)
             grid.writePathCells(path, (int)(& path - &scene._paths[0]));
