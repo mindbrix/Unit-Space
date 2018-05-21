@@ -138,7 +138,7 @@ struct Grid {
                     }
 //                        rgba = isInterior ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
 
-                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? RGBA8(0, 255, 0, 255) : RGBA8(0, 0, 0, 0);
+                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? scene._paths[p]._color : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
