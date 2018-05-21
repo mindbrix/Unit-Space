@@ -52,6 +52,7 @@ struct Grid {
         edgeLists.emplace_back(vector<int>({ 1 }));
         cells.resize(iw * ih);
         pathCells.resize(iw * ih);
+        edgeCells.resize(iw * ih);
     }
     
     void writeEdgeCells(float x0, float y0, float x1, float y1) {
@@ -149,6 +150,7 @@ struct Grid {
     float width, height;
     float dimension;
     int iw, ih;
+    vector<vector<EdgeCell>> edgeCells;
     vector<vector<int>> edgeLists;
     vector<SixFloat> sixFloats;
     vector<Cell> cells;
@@ -168,6 +170,10 @@ struct Grid {
         for (Path& path : scene._paths)
             path.update();
         
+        Bounds bounds = scene._paths[0]._bounds;
+        for (Path& path : scene._paths)
+            bounds.unite(path._bounds);
+        
         int count = 0;
         for (Path& path : scene._paths)
             count += path.countPoints();
@@ -175,15 +181,14 @@ struct Grid {
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : scene._paths)
-            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
+            end = path.writeEdges(end, (int) (& path - & scene._paths[0]), -bounds.lx, -bounds.ly);
         
         Tess::writeCurves(mesh, scene);
         
-        Bounds bounds = scene._paths[0]._bounds;
-        for (Path& path : scene._paths)
-            bounds.unite(path._bounds);
-        
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
+        for (edge = begin; edge < end; edge++)
+            ;//grid.writeEdgeCells(edge);
+        
         for (Path& path : scene._paths)
             grid.writePathCells(path, (int)(& path - &scene._paths[0]));
         
