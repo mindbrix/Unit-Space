@@ -15,9 +15,9 @@ constexpr int kDivisions = 128;
 
 struct Grid {
     struct EdgeCell {
-        EdgeCell(int ei, float winding) : ei(ei), winding(winding) {}
+        EdgeCell(int ei, float coverage) : ei(ei), coverage(coverage) {}
         int ei;
-        float winding;
+        float coverage;
     };
     
    Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
@@ -75,7 +75,6 @@ struct Grid {
         int ix, iy, p;
         float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         vector<EdgeCell> *edgeCells;
-        EdgeCell *edgeCell;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -112,28 +111,28 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
-                    rgba = RGBA8(0, 0, 0, 0);
-                    if (edgeCells->size()) {
-                        edgeCell = & edgeCells->back();
-                        edge = begin + edgeCell->ei;
-                        rgba = scene._paths[edge->p]._color;
-                    }
-//                    for (auto& cell :*edgeCells) {
-//                        for (i = 0; i < iend; i++)
-//                            if (indices[i] == begin[cell.ei].p)
-//                                break;
-//                        if (i == iend)
-//                            indices[iend++] = begin[cell.ei].p, windings[i] = 0;
-//                        windings[i] += cell.winding;
-//                    }
+//                    rgba = RGBA8(0, 0, 0, 0);
 //                    if (edgeCells->size()) {
-//                        rgba = RGBA8(0, 0, 0, 0);
-//                        for (i = 0; i < iend; i++) {
-//                            nonzero = std::abs(windings[i]);
-//                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-//                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
-//                        }
+//                        edgeCell = & edgeCells->back();
+//                        edge = begin + edgeCell->ei;
+//                        rgba = scene._paths[edge->p]._color;
 //                    }
+                    for (auto& cell :*edgeCells) {
+                        for (i = 0; i < iend; i++)
+                            if (indices[i] == begin[cell.ei].p)
+                                break;
+                        if (i == iend)
+                            indices[iend++] = begin[cell.ei].p, windings[i] = 0;
+                        windings[i] += cell.coverage;
+                    }
+                    if (edgeCells->size()) {
+                        rgba = RGBA8(0, 0, 0, 0);
+                        for (i = 0; i < iend; i++) {
+                            nonzero = std::abs(windings[i]);
+                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
+                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
+                        }
+                    }
                     
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
