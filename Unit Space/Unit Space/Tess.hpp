@@ -513,6 +513,7 @@ struct Tess {
         memcpy(edges1.get(), edges0.get(), edges0.size());
         memcpy(edges1.get() + count, intersectedEdges.get(), edges1.size() - edges0.size());
         begin = edges1.get(), end = begin + (intend - intbegin + count);
+        sort(begin, end);
         return edges1;
     }
     static void writeTriangles(Mesh& mesh, Scene& scene) {
@@ -520,7 +521,6 @@ struct Tess {
         
         Memory<Edge> edges = createEdgeList(scene);
         Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *le, *ue;
-        sort(begin, end);
         
         Memory<float> xDivisions(edges.count() * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
