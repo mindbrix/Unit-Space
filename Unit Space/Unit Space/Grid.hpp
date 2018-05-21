@@ -109,7 +109,7 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
-        int iend, i, idst, isrc, ecount, nz, eo, a;
+        int iend, i, idst, isrc, ecount, nz, a;
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -144,8 +144,7 @@ struct Grid {
                     ecount = 0;
                     for (i = 0; i < iend; i++) {
                         nz = std::abs(pathCells[i].winding) * 255;
-                        eo = 255 - std::abs((nz % 510) - 255);
-                        a = scene._paths[pathCells[i].p]._evenOdd ? eo : nz & 0xFF;
+                        a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
                         if (pathCells[i].edge || a > 0) {
                             p = pathCells[i].p;
                             isEdge = pathCells[i].edge || (a > 0 && a < 255);
