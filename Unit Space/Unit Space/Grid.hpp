@@ -19,8 +19,14 @@ struct Grid {
         int ei;
         float coverage;
     };
-    
-   Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
+    struct PathCell {
+        PathCell() {}
+        PathCell(int p, float winding, bool edge) : p(p), winding(winding), edge(edge) {}
+        int p;
+        float winding;
+        bool edge;
+    };
+    Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
         dimension = std::ceil(dmax / float(kDivisions));
         iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
@@ -103,9 +109,11 @@ struct Grid {
         mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
         mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
-        float windings[scene._paths.size()], nonzero, alpha;
-        int indices[scene._paths.size()], iend, i;
-        bool edgeFlags[scene._paths.size()], isInterior, isEdge;
+        PathCell pathCells[scene._paths.size()];
+        float nonzero, alpha;
+        int iend, i;
+        bool isInterior, isEdge;
+        
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
@@ -113,31 +121,30 @@ struct Grid {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
                     for (i = 0; i < iend; i++)
-                        edgeFlags[i] = false;
+                        pathCells[i].edge = false;
                     
                     for (auto& cell :*edgeCells) {
                         for (i = 0; i < iend; i++)
-                            if (indices[i] == begin[cell.ei].p)
+                            if (pathCells[i].p == begin[cell.ei].p)
                                 break;
                         if (i == iend)
-                            indices[iend++] = begin[cell.ei].p, windings[i] = 0;
-                        windings[i] += cell.coverage;
-                        edgeFlags[i] = true;
+                            pathCells[iend++] = PathCell(begin[cell.ei].p, 0, false);
+                        pathCells[i].winding += cell.coverage;
+                        pathCells[i].edge = true;
                     }
                     
                     isInterior = isEdge = false;
                     p = -1;
                     for (i = 0; i < iend; i++) {
-                        nonzero = std::abs(windings[i]);
-                        alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                        if ((edgeFlags[i] || alpha > 1e-3) && indices[i] > p) {
-                            p = indices[i];
-                            isEdge = edgeFlags[i] || (alpha > 1e-3 && alpha < 0.999);
+                        nonzero = std::abs(pathCells[i].winding);
+                        alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
+                        if ((pathCells[i].edge || alpha > 1e-3) && pathCells[i].p > p) {
+                            p = pathCells[i].p;
+                            isEdge = pathCells[i].edge || (alpha > 1e-3 && alpha < 0.999);
                             isInterior = alpha > 0.999;
                         }
                     }
-//                        rgba = isInterior ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
-
+                    
                     rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? scene._paths[p]._color : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
