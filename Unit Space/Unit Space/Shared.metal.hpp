@@ -60,7 +60,7 @@ struct RGBA8 {
         return RGBA8(r, g, b, a * alpha / 255);
     }
     static RGBA8 over(RGBA8 src, RGBA8 dst) {
-        return RGBA8((src.r * src.a >> 8) + (dst.r * (255 - src.a) / 255),
+        return src.a == 255 ? src : RGBA8((src.r * src.a >> 8) + (dst.r * (255 - src.a) / 255),
                      (src.g * src.a >> 8) + (dst.g * (255 - src.a) / 255),
                      (src.b * src.a >> 8) + (dst.b * (255 - src.a) / 255),
                      src.a + (dst.a * (255 - src.a) / 255));

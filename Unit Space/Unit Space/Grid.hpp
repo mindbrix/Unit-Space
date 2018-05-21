@@ -148,7 +148,7 @@ struct Grid {
                         if (pathCells[i].edge || a > 0) {
                             p = pathCells[i].p;
                             isEdge = pathCells[i].edge || (a > 0 && a < 255);
-                            isInterior = a == 255;// alpha > 0.999;
+                            isInterior = a == 255;
                             rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(a), rgba) : rgba;
                             ecount = isInterior ? 0 : ecount + pathCells[i].count;
                         }
