@@ -35,8 +35,8 @@ struct Grid {
     
     void writeEdgeCells(Edge *edge, int ei) {
         float x0, y0, x1, y1;
-        float ly, uy, ily, iuy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux;
-        float ilx, iux, glx, gly, gux, guy, gw, gh;
+        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux;
+        float glx, gly, gux, guy, gw, gh;
         vector<Cell> *cell;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
@@ -45,8 +45,7 @@ struct Grid {
         
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
-        ily = gly, iuy = guy;
-        for (cly = ily, cuy = ily + 1; gh--; cly = cuy, cuy += 1) {
+        for (cly = gly, cuy = gly + 1; gh--; cly = cuy, cuy += 1) {
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
@@ -59,10 +58,9 @@ struct Grid {
             sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
-            ilx = glx, iux = gux;
             cell = & edgeCells[glx + int(cly) * iw];
-            for (clx = ilx, cux = clx + 1; gw--; clx = cux, cux += 1, cell++)
-                cell->emplace_back(ei, clx == ilx ? coverage : 0);
+            for (clx = glx, cux = clx + 1; gw--; clx = cux, cux += 1, cell++)
+                cell->emplace_back(ei, clx == glx ? coverage : 0);
         }
     }
     
