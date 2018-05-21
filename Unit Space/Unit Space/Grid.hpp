@@ -14,11 +14,6 @@
 constexpr int kDivisions = 128;
 
 struct Grid {
-    struct Edge {
-        Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
-        float x0, y0, x1, y1;
-        unsigned short int flags, p, ci, pi;
-    };
     struct EdgeCell {
         EdgeCell(int ei, float winding) : ei(ei), winding(winding) {}
         int ei;
@@ -172,6 +167,15 @@ struct Grid {
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
+        
+        int count = 0;
+        for (Path& path : scene._paths)
+            count += path.countPoints();
+        
+        Memory<Edge> edges0(count);
+        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
+        for (Path& path : scene._paths)
+            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
         
         Tess::writeCurves(mesh, scene);
         
