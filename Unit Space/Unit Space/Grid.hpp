@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 256;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -124,16 +124,21 @@ struct Grid {
                         windings[i] += cell.coverage;
                         edgeFlags[i] = true;
                     }
+                    
                     isInterior = isEdge = false;
-                    rgba = RGBA8(0, 0, 0, 0);
+                    p = -1;
                     for (i = 0; i < iend; i++) {
                         nonzero = std::abs(windings[i]);
                         alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                        isInterior = edgeFlags[i] ? false : alpha > 0.999 ? true : isInterior;
-                        isEdge |= edgeFlags[i] || alpha > 1e-3;
-                        rgba = isInterior ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
+                        if ((edgeFlags[i] || alpha > 0.999) && indices[i] > p) {
+                            p = indices[i];
+                            isEdge = edgeFlags[i];
+                            isInterior = alpha > 0.999;
+                        }
                     }
-                    rgba = isInterior ? rgba : isEdge ? RGBA8(0, 0, 0, 255) : RGBA8(0, 0, 0, 0);
+//                        rgba = isInterior ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
+
+                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? RGBA8(0, 255, 0, 255) : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
