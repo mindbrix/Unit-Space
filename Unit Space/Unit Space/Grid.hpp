@@ -140,6 +140,7 @@ struct Grid {
                     }
                     
                     isInterior = isEdge = false;
+                    rgba = RGBA8(0, 0, 0, 0);
                     p = -1;
                     for (i = 0; i < iend; i++) {
                         nonzero = std::abs(pathCells[i].winding);
@@ -148,10 +149,10 @@ struct Grid {
                             p = pathCells[i].p;
                             isEdge = pathCells[i].edge || (alpha > 1e-3 && alpha < 0.999);
                             isInterior = alpha > 0.999;
+                            rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(alpha * 255), rgba) : rgba;
                         }
                     }
-                    
-                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? scene._paths[p]._color : RGBA8(0, 0, 0, 0);
+                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
