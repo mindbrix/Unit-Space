@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -144,7 +144,6 @@ struct Grid {
                     p = -1;
                     ecount = 0;
                     for (i = 0; i < iend; i++) {
-                        ecount += pathCells[i].count;
                         nonzero = std::abs(pathCells[i].winding);
                         alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
                         if (pathCells[i].edge || alpha > 1e-3) {
@@ -152,14 +151,15 @@ struct Grid {
                             isEdge = pathCells[i].edge || (alpha > 1e-3 && alpha < 0.999);
                             isInterior = alpha > 0.999;
                             rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(alpha * 255), rgba) : rgba;
+                            ecount = isInterior ? 0 : ecount + pathCells[i].count;
                         }
                     }
-                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
-//                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
+//                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
+                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                     
-                    if (rgba.a != 0)
+                    if (ecount < 3 && rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                     else if (0) {
                         /*
