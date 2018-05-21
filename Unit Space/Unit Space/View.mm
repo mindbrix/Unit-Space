@@ -438,7 +438,7 @@ using namespace std;
     
     Path p0(false, red);
     p0.addSubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
-    Path p1(false, red);
+    Path p1(true, red);
     p1.addSubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
     Path p2(false, black);
 	p2.addSubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);

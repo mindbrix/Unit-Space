@@ -124,15 +124,24 @@ struct Grid {
                         windings[i] += cell.coverage;
                         edgeFlags[i] = true;
                     }
+                    rgba = RGBA8(0, 0, 0, 0);
                     for (i = 0; i < iend; i++) {
-                        if (edgeFlags[i])
-                            rgba = RGBA8(0, 0, 0, 0);
+                        nonzero = std::abs(windings[i]);
+                        alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
+                        rgba = edgeFlags[i] ? RGBA8(255, 0, 0, 255) : alpha > 0.999 ? RGBA8(0, 255, 0, 255) : rgba;
+                        
+                        /*
+                        
+                        if (edgeFlags[i] || (nonzero > 1e-3 && nonzero < 0.999))
+                            rgba = RGBA8(255, 0, 0, 255);// scene._paths[indices[i]]._color;
                         else {
-                            nonzero = std::abs(windings[i]);
-                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                            if (alpha > 0.999)
-                                rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
+                            rgba = nonzero > 0.999 ? RGBA8(0, 255, 0, 255) : RGBA8(0, 0, 0, 0);
+//
+//
+//                            if (alpha > 0.999)
+//                                rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
                         }
+                         */
                     }
                     
                     mesh._colors[ix + iy * grid.iw] = rgba;
