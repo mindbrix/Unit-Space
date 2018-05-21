@@ -177,7 +177,7 @@ struct Grid {
         mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
         mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
-        float windings[scene._paths.size()];
+        float windings[scene._paths.size()], nonzero, alpha;
         int indices[scene._paths.size()], iend, i;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
@@ -195,8 +195,11 @@ struct Grid {
                     }
                     if (pathCell->pieces.size()) {
                         rgba = RGBA8(0, 0, 0, 0);
-                        for (i = 0; i < iend; i++)
-                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(std::abs(windings[i]) * 255), rgba);
+                        for (i = 0; i < iend; i++) {
+                            nonzero = std::abs(windings[i]);
+                            alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
+                            rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
+                        }
                     }
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     
