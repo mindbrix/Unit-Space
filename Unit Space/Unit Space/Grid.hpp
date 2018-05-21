@@ -30,7 +30,6 @@ struct Grid {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
-        dimension = 1;
         edgeCells.resize(iw * ih);
     }
     
@@ -45,9 +44,9 @@ struct Grid {
             return;
         
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-        gly = std::floor(ly / dimension), guy = std::ceil(uy / dimension), gh = guy - gly;
-        ily = gly * dimension, iuy = guy * dimension;
-        for (cly = ily, cuy = ily + dimension; gh--; cly = cuy, cuy += dimension) {
+        gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
+        ily = gly, iuy = guy;
+        for (cly = ily, cuy = ily + 1; gh--; cly = cuy, cuy += 1) {
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
@@ -59,10 +58,10 @@ struct Grid {
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
             
-            glx = std::floor(slx / dimension), gux = slx == sux ? glx + 1 : std::ceil(sux / dimension), gw = gux - glx;
-            ilx = glx * dimension, iux = gux * dimension;
-            cell = & edgeCells[glx + int(cly / dimension) * iw];
-            for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++)
+            glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
+            ilx = glx, iux = gux;
+            cell = & edgeCells[glx + int(cly) * iw];
+            for (clx = ilx, cux = clx + 1; gw--; clx = cux, cux += 1, cell++)
                 cell->emplace_back(ei, clx == ilx ? coverage : 0);
         }
     }
@@ -70,7 +69,6 @@ struct Grid {
     float lx, ly, ux, uy;
     float scale, tx, ty;
     float width, height;
-    float dimension;
     int iw, ih;
     vector<vector<Cell>> edgeCells;
     
@@ -145,7 +143,7 @@ struct Grid {
                     rgba = RGBA8(0, 0, 0, 0);
                     p = -1;
                     for (i = 0; i < iend; i++) {
-                        nonzero = std::abs(pathCells[i].winding / grid.dimension);
+                        nonzero = std::abs(pathCells[i].winding);
                         alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
                         if (pathCells[i].edge || alpha > 1e-3) {
                             p = pathCells[i].p;
