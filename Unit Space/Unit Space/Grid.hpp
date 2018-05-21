@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 256;
 
 struct Grid {
     struct Cell {
@@ -105,7 +105,7 @@ struct Grid {
         RGBA8 rgba;
         float windings[scene._paths.size()], nonzero, alpha;
         int indices[scene._paths.size()], iend, i;
-        bool edgeFlags[scene._paths.size()], isInterior;
+        bool edgeFlags[scene._paths.size()], isInterior, isEdge;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
@@ -124,16 +124,16 @@ struct Grid {
                         windings[i] += cell.coverage;
                         edgeFlags[i] = true;
                     }
-                    isInterior = false;
+                    isInterior = isEdge = false;
                     rgba = RGBA8(0, 0, 0, 0);
                     for (i = 0; i < iend; i++) {
                         nonzero = std::abs(windings[i]);
                         alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
                         isInterior = edgeFlags[i] ? false : alpha > 0.999 ? true : isInterior;
-                        
-//                        rgba = edgeFlags[i] ? RGBA8(255, 0, 0, 255) : alpha > 0.999 ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
+                        isEdge |= edgeFlags[i] || alpha > 1e-3;
+                        rgba = isInterior ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
                     }
-                    rgba = isInterior ? RGBA8(0, 255, 0, 255) : RGBA8(0, 0, 0, 0);
+                    rgba = isInterior ? rgba : isEdge ? RGBA8(0, 0, 0, 255) : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
                     
