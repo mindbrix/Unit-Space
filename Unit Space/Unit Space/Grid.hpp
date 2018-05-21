@@ -56,7 +56,7 @@ struct Grid {
             ilx = glx * dimension, iux = gux * dimension;
             cell = & edgeCells[glx + int(cly / dimension) * iw];
             for (clx = ilx, cux = clx + dimension; gw--; clx = cux, cux += dimension, cell++)
-                cell->emplace_back(ei, clx == ilx ? coverage : 0);
+                cell->emplace_back(ei, clx == ilx ? coverage / dimension : 0);
         }
     }
     
