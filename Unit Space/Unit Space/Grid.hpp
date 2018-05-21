@@ -130,9 +130,9 @@ struct Grid {
                     for (i = 0; i < iend; i++) {
                         nonzero = std::abs(windings[i]);
                         alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                        if ((edgeFlags[i] || alpha > 0.999) && indices[i] > p) {
+                        if ((edgeFlags[i] || alpha > 1e-3) && indices[i] > p) {
                             p = indices[i];
-                            isEdge = edgeFlags[i];
+                            isEdge = edgeFlags[i] || (alpha > 1e-3 && alpha < 0.999);
                             isInterior = alpha > 0.999;
                         }
                     }
