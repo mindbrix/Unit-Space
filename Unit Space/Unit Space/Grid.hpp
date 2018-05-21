@@ -14,8 +14,8 @@
 constexpr int kDivisions = 128;
 
 struct Grid {
-    struct EdgeCell {
-        EdgeCell(int ei, float coverage) : ei(ei), coverage(coverage) {}
+    struct Cell {
+        Cell(int ei, float coverage) : ei(ei), coverage(coverage) {}
         int ei;
         float coverage;
     };
@@ -31,7 +31,7 @@ struct Grid {
         float x0, y0, x1, y1;
         float ly, uy, ily, iuy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux;
         float ilx, iux, glx, gly, gux, guy, gw, gh;
-        vector<EdgeCell> *cell;
+        vector<Cell> *cell;
         
         x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
         if (y0 == y1 || (x0 == x1 && y0 == y1))
@@ -64,7 +64,7 @@ struct Grid {
     float width, height;
     float dimension;
     int iw, ih;
-    vector<vector<EdgeCell>> edgeCells;
+    vector<vector<Cell>> edgeCells;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         TESStesselator *tess = tessNewTess(NULL);
@@ -74,7 +74,7 @@ struct Grid {
             return;
         int ix, iy, p;
         float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
-        vector<EdgeCell> *edgeCells;
+        vector<Cell> *edgeCells;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
