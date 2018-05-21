@@ -28,13 +28,9 @@ struct Grid {
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
-        scale = 1, tx = lx, ty = ly;
-//        scale = float(kDivisions) / dmax, tx = lx, ty = ly;
+        scale = float(kDivisions) / dmax, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         dimension = 1;
-        
-        dimension = std::ceil(dmax / float(kDivisions));
-        iw = std::ceil(width / dimension) + 1, ih = std::ceil(height / dimension) + 1;
         edgeCells.resize(iw * ih);
     }
     
@@ -122,7 +118,7 @@ struct Grid {
         
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
-            y0 = iy * grid.dimension + grid.ty, y1 = (iy + 1) * grid.dimension + grid.ty;
+            y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
@@ -160,7 +156,7 @@ struct Grid {
                     }
                     rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
-                    x0 = ix * grid.dimension + grid.tx, x1 = (ix + 1) * grid.dimension + grid.tx;
+                    x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                     
                     if (rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
