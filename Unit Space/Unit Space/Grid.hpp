@@ -105,7 +105,7 @@ struct Grid {
         RGBA8 rgba;
         float windings[scene._paths.size()], nonzero, alpha;
         int indices[scene._paths.size()], iend, i;
-        bool edgeFlags[scene._paths.size()];
+        bool edgeFlags[scene._paths.size()], isInterior;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
             y0 = iy * grid.dimension + grid.ly, y1 = (iy + 1) * grid.dimension + grid.ly;
@@ -124,29 +124,18 @@ struct Grid {
                         windings[i] += cell.coverage;
                         edgeFlags[i] = true;
                     }
+                    isInterior = false;
                     rgba = RGBA8(0, 0, 0, 0);
                     for (i = 0; i < iend; i++) {
                         nonzero = std::abs(windings[i]);
                         alpha = !scene._paths[indices[i]]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                        rgba = edgeFlags[i] ? RGBA8(255, 0, 0, 255) : alpha > 0.999 ? RGBA8(0, 255, 0, 255) : rgba;
+                        isInterior = edgeFlags[i] ? false : alpha > 0.999 ? true : isInterior;
                         
-                        /*
-                        
-                        if (edgeFlags[i] || (nonzero > 1e-3 && nonzero < 0.999))
-                            rgba = RGBA8(255, 0, 0, 255);// scene._paths[indices[i]]._color;
-                        else {
-                            rgba = nonzero > 0.999 ? RGBA8(0, 255, 0, 255) : RGBA8(0, 0, 0, 0);
-//
-//
-//                            if (alpha > 0.999)
-//                                rgba = RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba);
-                        }
-                         */
+//                        rgba = edgeFlags[i] ? RGBA8(255, 0, 0, 255) : alpha > 0.999 ? RGBA8::over(scene._paths[indices[i]]._color.multiply(alpha * 255), rgba) : rgba;
                     }
-                    
+                    rgba = isInterior ? RGBA8(0, 255, 0, 255) : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = ix * grid.dimension + grid.lx, x1 = (ix + 1) * grid.dimension + grid.lx;
-                    
                     
                     if (rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
