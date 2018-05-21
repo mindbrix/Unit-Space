@@ -144,7 +144,7 @@ struct Grid {
                     for (i = 0; i < iend; i++) {
                         nonzero = std::abs(pathCells[i].winding);
                         alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
-                        if ((pathCells[i].edge || alpha > 1e-3) && pathCells[i].p > p) {
+                        if (pathCells[i].edge || alpha > 1e-3) {
                             p = pathCells[i].p;
                             isEdge = pathCells[i].edge || (alpha > 1e-3 && alpha < 0.999);
                             isInterior = alpha > 0.999;
