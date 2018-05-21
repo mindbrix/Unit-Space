@@ -111,7 +111,7 @@ struct Grid {
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
         float nonzero, alpha;
-        int iend, i;
+        int iend, i, idst, isrc;
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -127,8 +127,14 @@ struct Grid {
                         for (i = 0; i < iend; i++)
                             if (pathCells[i].p == begin[cell.ei].p)
                                 break;
-                        if (i == iend)
-                            pathCells[iend++] = PathCell(begin[cell.ei].p, 0, false);
+                        if (i == iend) {
+                            PathCell pathCell(begin[cell.ei].p, 0, false);
+                            idst = iend++, isrc = idst - 1;
+                            while (idst > 0 && pathCell.p < pathCells[isrc].p)
+                                pathCells[idst--] = pathCells[isrc--];
+                            pathCells[idst] = pathCell;
+                            i = idst;
+                        }
                         pathCells[i].winding += cell.coverage;
                         pathCells[i].edge = true;
                     }
