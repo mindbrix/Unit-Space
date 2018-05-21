@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -158,9 +158,10 @@ struct Grid {
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                     
-                    if (rgba.a != 0)
+                    if (isInterior)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                    else if (0) {
+                    else if (isEdge && ecount == 1) {
+                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                         /*
                         Bounds bounds(x0, y0, x1, y1);
                         Path& path = scene._paths[piece->p];
