@@ -110,7 +110,7 @@ struct Grid {
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
         float nonzero, alpha;
-        int iend, i, idst, isrc;
+        int iend, i, idst, isrc, ecount;
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -142,7 +142,9 @@ struct Grid {
                     isInterior = isEdge = false;
                     rgba = RGBA8(0, 0, 0, 0);
                     p = -1;
+                    ecount = 0;
                     for (i = 0; i < iend; i++) {
+                        ecount += pathCells[i].count;
                         nonzero = std::abs(pathCells[i].winding);
                         alpha = !scene._paths[pathCells[i].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f);
                         if (pathCells[i].edge || alpha > 1e-3) {
@@ -152,7 +154,8 @@ struct Grid {
                             rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(alpha * 255), rgba) : rgba;
                         }
                     }
-                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
+                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
+//                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                     
