@@ -21,17 +21,18 @@ struct Grid {
     };
     struct PathCell {
         PathCell() {}
-        PathCell(int p, float winding, bool edge) : p(p), winding(winding), edge(edge), ei0(INT_MAX), ei1(0) {}
+        PathCell(int p, float winding, bool edge) : p(p), winding(winding), edge(edge), ecount(0), ei0(INT_MAX), ei1(0) {}
         void addCell(Cell& cell) {
             edge = true;
             winding += cell.coverage;
+            ecount++;
             ei0 = ei0 < cell.ei ? ei0 : cell.ei;
             ei1 = ei1 > cell.ei ? ei1 : cell.ei;
         }
         int p;
         float winding;
         bool edge;
-        int ei0, ei1;
+        int ecount, ei0, ei1;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
@@ -115,7 +116,7 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, nz, a;
+        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a;
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -125,7 +126,7 @@ struct Grid {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 if (1) {
                     for (i = 0; i < iend; i++)
-                        pathCells[i].edge = false, pathCells[i].ei0 = 0, pathCells[i].ei1 = 0;
+                        pathCells[i].edge = false, pathCells[i].ecount = 0;
                     
                     for (auto& cell :*edgeCells) {
                         for (i = 0; i < iend; i++)
@@ -145,7 +146,7 @@ struct Grid {
                     isInterior = isEdge = false;
                     rgba = RGBA8(0, 0, 0, 0);
                     p = -1;
-                    ei0 = ei1 = 0;
+                    ei0 = ei1 = ecount = 0;
                     for (i = 0; i < iend; i++) {
                         nz = std::abs(pathCells[i].winding) * 255;
                         a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
@@ -155,9 +156,10 @@ struct Grid {
                             isInterior = a == 255;
                             rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(a), rgba) : rgba;
                             if (isInterior)
-                                ei0 = ei1 = 0;
+                                ei0 = ei1 = ecount = 0;
                             else
-                                ei0 = ei1 ? INT_MAX : pathCells[i].ei0, ei1 = ei1 ? INT_MAX : pathCells[i].ei1;
+                                ecount += pathCells[i].ecount;
+//                                ei0 = ei1 ? INT_MAX : pathCells[i].ei0, ei1 = ei1 ? INT_MAX : pathCells[i].ei1;
                         }
                     }
 //                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
@@ -165,9 +167,9 @@ struct Grid {
                     mesh._colors[ix + iy * grid.iw] = rgba;
                     x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                     
-                    if (rgba.a != 0)
+                    if (0 && rgba.a != 0)
                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                    else if (0 && isEdge && ei1 != INT_MAX && ei1 - ei0 == 1) {
+                    else if (isEdge && ecount < 3) {
                          mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                         /*
                         Bounds bounds(x0, y0, x1, y1);
