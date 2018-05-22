@@ -85,8 +85,8 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, p;
-        float x0, y0, x1, y1, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
+        int ix, iy;
+        float x0, y0, x1, y1;//, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         vector<Cell> *edgeCells;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -121,7 +121,7 @@ struct Grid {
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, p = -1, rgba = RGBA8(0, 0, 0, 0);
+            iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
