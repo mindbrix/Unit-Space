@@ -188,13 +188,13 @@ static int countSplitCubics(const float *src, const int npoints, const float pre
     return count + 1;
 }
 
-static void splitCubics(float *dst, float *cpdst, const float *src, const int npoints, const float prec) {
+static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, const float prec) {
+    float *dbegin = dst;
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23;
     float n012, n123;
     float n0123;
-    
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
     
     for (int i = 0; i < npoints - 1; i += 3) {
@@ -224,10 +224,15 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
             *cpdst++ = cpx, *cpdst++ = cpy;
         } while (1);
         
-        *dst++ = x0, *dst++ = y0;
-        *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
+        cpx = (3.0 * (x2 + x1) - x0 - x3) * 0.25, cpy = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
+        
+        if (cpx != x0 || cpy != y0) {
+            *dst++ = x0, *dst++ = y0;
+            *cpdst++ = cpx, *cpdst++ = cpy;
+        }
     }
     *dst++ = x3, *dst++ = y3;
+    return (int)(dst - dbegin) / 2;
 }
 // The Bentley-Ottmann Algorithm: http://geomalgorithms.com/a09-_intersect-3.html
 static void findIntersections(vector<Intersection>& intersections, IntersectionEdge *begin, IntersectionEdge *end) {
@@ -273,7 +278,7 @@ struct SubPath {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points.alloc(_npoints * 2);
             _controlPoints.alloc(_npoints * 2);
-            splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
+            _npoints = splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
