@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -148,21 +148,19 @@ struct Grid {
                     
                     isInterior = isEdge = false;
                     rgba = RGBA8(0, 0, 0, 0);
-                    p = -1;
-                    ei0 = ei1 = ecount = 0;
+                    ecount = 0;
                     for (i = 0; i < iend; i++) {
                         nz = std::abs(pathCells[i].winding) * 255;
                         a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
                         if (pathCells[i].edge || a > 0) {
-                            p = pathCells[i].p;
-                            isEdge = pathCells[i].edge || (a > 0 && a < 255);
+                             isEdge = pathCells[i].edge || (a > 0 && a < 255);
                             isInterior = a == 255;
-                            rgba = isInterior ? RGBA8::over(scene._paths[p]._color.multiply(a), rgba) : rgba;
+                            rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a), rgba) : rgba;
                             if (isInterior)
                                 ei0 = ei1 = ecount = 0;
                             else
                                 ecount += pathCells[i].ecount;
-//                                ei0 = ei1 ? INT_MAX : pathCells[i].ei0, ei1 = ei1 ? INT_MAX : pathCells[i].ei1;
+                                ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
                         }
                     }
 //                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
