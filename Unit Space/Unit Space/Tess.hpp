@@ -207,25 +207,24 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
             xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
             D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
             tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
+            if (tcubed > 0.999999)
+                break;
             
-            if (tcubed < 0.999999) {
-                t = cbrt(tcubed);
-                
-                n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
-                n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
-                n0123 = lerp(t, n012, n123);
-                cpx = (3.0 * (n012 + n01) - x0 - n0123) * 0.25;
-                x0 = n0123, x1 = n123, x2 = n23;
-                
-                n01 = lerp(t, y0, y1), n12 = lerp(t, y1, y2), n23 = lerp(t, y2, y3);
-                n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
-                n0123 = lerp(t, n012, n123);
-                cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
-                y0 = n0123, y1 = n123, y2 = n23;
-                
-                *cpdst++ = cpx, *cpdst++ = cpy;
-            }
-        } while (tcubed < 0.999999);
+            t = cbrt(tcubed);
+            n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
+            n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+            n0123 = lerp(t, n012, n123);
+            cpx = (3.0 * (n012 + n01) - x0 - n0123) * 0.25;
+            x0 = n0123, x1 = n123, x2 = n23;
+            
+            n01 = lerp(t, y0, y1), n12 = lerp(t, y1, y2), n23 = lerp(t, y2, y3);
+            n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
+            n0123 = lerp(t, n012, n123);
+            cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
+            y0 = n0123, y1 = n123, y2 = n23;
+            
+            *cpdst++ = cpx, *cpdst++ = cpy;
+        } while (1);
         
         *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
     }
