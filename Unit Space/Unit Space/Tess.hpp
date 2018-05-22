@@ -202,14 +202,13 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
         
         do {
-            *dst++ = x0, *dst++ = y0;
-            
             xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
             D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
             tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
             if (tcubed > 0.999999)
                 break;
             
+            *dst++ = x0, *dst++ = y0;
             t = cbrt(tcubed);
             n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
             n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
@@ -222,10 +221,10 @@ static void splitCubics(float *dst, float *cpdst, const float *src, const int np
             n0123 = lerp(t, n012, n123);
             cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
             y0 = n0123, y1 = n123, y2 = n23;
-            
             *cpdst++ = cpx, *cpdst++ = cpy;
         } while (1);
         
+        *dst++ = x0, *dst++ = y0;
         *cpdst++ = (3.0 * (x2 + x1) - x0 - x3) * 0.25, *cpdst++ = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
     }
     *dst++ = x3, *dst++ = y3;
