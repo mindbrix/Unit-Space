@@ -189,19 +189,16 @@ static int countSplitCubics(const float *src, const int npoints, const float pre
 }
 
 static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, const float prec) {
-    float *dbegin = dst;
-    float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
+    float *dbegin = dst, x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23;
     float n012, n123;
     float n0123;
-    float qx0, qy0, qcpx, qcpy, det, dx0, dy0, dx1, dy1, dx2, dy2;
-    
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
     
     for (int i = 0; i < npoints - 1; i += 3) {
         const float *p = src + i * 2;
-        t = 0, x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
+        x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
         
         do {
             xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
@@ -227,27 +224,8 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
         } while (1);
         
         cpx = (3.0 * (x2 + x1) - x0 - x3) * 0.25, cpy = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
-        
-        if (cpx != x0 || cpy != y0) {
-            det = 1;
-            if (D01 > 1e-5 && t == 0 && i > 0) {
-                qx0 = *(dst - 2), qy0 = *(dst - 1), qcpx = *(cpdst - 2), qcpy = *(cpdst - 1);
-                dx0 = x0 - qcpx, dy0 = y0 - qcpy, dx1 = cpx - x0, dy1 = cpy - y0, dx2 = cpx - qcpx, dy2 = cpy - qcpy;;
-                det = dx0 * dy1 - dy0 * dx1;
-                if ((dx0 != 0 || dy0 != 0) && (dx2 != 0 ||dy2 != 0) && det == 0) {
-                    t = std::sqrt((dx0 * dx0 + dy0 * dy0) / (dx2 * dx2 + dy2 * dy2));
-                    if (t > 0 && t < 1) {
-                        qcpx = x0 + (qcpx - x0) / t, qcpy = y0 + (qcpy - y0) / t;
-                        *(cpdst - 2) = qcpx, *(cpdst - 1) = qcpy;
-                    } else
-                        det = 1;
-                }
-            }
-            if (det) {
-                *dst++ = x0, *dst++ = y0;
-                *cpdst++ = cpx, *cpdst++ = cpy;
-            }
-        }
+        if (cpx != x0 || cpy != y0)
+            *dst++ = x0, *dst++ = y0, *cpdst++ = cpx, *cpdst++ = cpy;
     }
     *dst++ = x3, *dst++ = y3;
     return (int)(dst - dbegin) / 2;
