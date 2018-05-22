@@ -21,20 +21,18 @@ struct Grid {
     };
     struct PathCell {
         PathCell() {}
-        PathCell(int p, float winding, bool edge) : p(p), winding(winding), edge(edge), ecount(0), ei0(INT_MAX), ei1(0) {}
+        PathCell(int p) : p(p), winding(0), ecount(0), ei0(INT_MAX), ei1(0) {}
         void addCell(Cell& cell) {
-            edge = true;
             winding += cell.coverage;
             ecount++;
             ei0 = ei0 < cell.ei ? ei0 : cell.ei;
             ei1 = ei1 > cell.ei ? ei1 : cell.ei;
         }
         void reset() {
-            edge = false, ecount = 0, ei0 = INT_MAX, ei1 = 1;
+            ecount = 0, ei0 = INT_MAX, ei1 = 1;
         }
         int p;
         float winding;
-        bool edge;
         int ecount, ei0, ei1;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
@@ -136,7 +134,7 @@ struct Grid {
                             if (pathCells[i].p == begin[cell.ei].p)
                                 break;
                         if (i == iend) {
-                            PathCell pathCell(begin[cell.ei].p, 0, false);
+                            PathCell pathCell(begin[cell.ei].p);
                             idst = iend++, isrc = idst - 1;
                             while (idst > 0 && pathCell.p < pathCells[isrc].p)
                                 pathCells[idst--] = pathCells[isrc--];
@@ -152,8 +150,8 @@ struct Grid {
                     for (i = 0; i < iend; i++) {
                         nz = std::abs(pathCells[i].winding) * 255;
                         a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
-                        if (pathCells[i].edge || a > 0) {
-                             isEdge = pathCells[i].edge || (a > 0 && a < 255);
+                        if (pathCells[i].ecount || a > 0) {
+                            isEdge = pathCells[i].ecount || (a > 0 && a < 255);
                             isInterior = a == 255;
                             rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a), rgba) : rgba;
                             if (isInterior)
