@@ -125,68 +125,67 @@ struct Grid {
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 edgeCells = & grid.edgeCells[ix + iy * grid.iw];
-                if (1) {
+                
+                for (i = 0; i < iend; i++)
+                    pathCells[i].reset();
+                
+                for (auto& cell :*edgeCells) {
                     for (i = 0; i < iend; i++)
-                        pathCells[i].reset();
-                    
-                    for (auto& cell :*edgeCells) {
-                        for (i = 0; i < iend; i++)
-                            if (pathCells[i].p == begin[cell.ei].p)
-                                break;
-                        if (i == iend) {
-                            PathCell pathCell(begin[cell.ei].p);
-                            idst = iend++, isrc = idst - 1;
-                            while (idst > 0 && pathCell.p < pathCells[isrc].p)
-                                pathCells[idst--] = pathCells[isrc--];
-                            pathCells[idst] = pathCell;
-                            i = idst;
-                        }
-                        pathCells[i].addCell(cell);
+                        if (pathCells[i].p == begin[cell.ei].p)
+                            break;
+                    if (i == iend) {
+                        PathCell pathCell(begin[cell.ei].p);
+                        idst = iend++, isrc = idst - 1;
+                        while (idst > 0 && pathCell.p < pathCells[isrc].p)
+                            pathCells[idst--] = pathCells[isrc--];
+                        pathCells[idst] = pathCell;
+                        i = idst;
                     }
-                    
-                    isInterior = isEdge = false;
-                    rgba = RGBA8(0, 0, 0, 0);
-                    ecount = 0;
-                    for (i = 0; i < iend; i++) {
-                        nz = std::abs(pathCells[i].winding) * 255;
-                        a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
-                        if (pathCells[i].ecount || a > 0) {
-                            isEdge = pathCells[i].ecount || (a > 0 && a < 255);
-                            isInterior = a == 255;
-                            rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a), rgba) : rgba;
-                            if (isInterior)
-                                ei0 = ei1 = ecount = 0;
-                            else
-                                ecount += pathCells[i].ecount;
-                                ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
-                        }
+                    pathCells[i].addCell(cell);
+                }
+                
+                isInterior = isEdge = false;
+                rgba = RGBA8(0, 0, 0, 0);
+                ecount = 0;
+                for (i = 0; i < iend; i++) {
+                    nz = std::abs(pathCells[i].winding) * 255;
+                    a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
+                    if (pathCells[i].ecount || a > 0) {
+                        isEdge = pathCells[i].ecount || (a > 0 && a < 255);
+                        isInterior = a == 255;
+                        rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a), rgba) : rgba;
+                        if (isInterior)
+                            ei0 = ei1 = ecount = 0;
+                        else
+                            ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
                     }
-//                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
-                    rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
-                    mesh._colors[ix + iy * grid.iw] = rgba;
-                    x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
-                    
-                    if (rgba.a != 0)
-                        mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                    else if (isEdge && ecount < 3) {
-                         mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                        /*
-                        Bounds bounds(x0, y0, x1, y1);
-                        Path& path = scene._paths[piece->p];
-                        for (SubPath& s : path._subPaths)
-                            if (s._bounds.intersects(bounds)) {
-                                auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                                out = _llx.clip(out, EdgeClipper::LLX, x0);
-                                out = _lly.clip(out, EdgeClipper::LLY, y0);
-                                out = _urx.clip(out, EdgeClipper::URX, x1);
-                                out = _ury.clip(out, EdgeClipper::URY, y1);
-                                
-                                if (out->size() > 2)
-                                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                            }
-                        libTess::writeTriangles(mesh, tess, piece->p);
-                         */
-                    }
+                }
+                //                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
+                rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
+                mesh._colors[ix + iy * grid.iw] = rgba;
+                x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
+                
+                if (isEdge)
+                    mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                else if (isInterior)
+                    mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                else {
+                    /*
+                     Bounds bounds(x0, y0, x1, y1);
+                     Path& path = scene._paths[piece->p];
+                     for (SubPath& s : path._subPaths)
+                     if (s._bounds.intersects(bounds)) {
+                     auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                     out = _llx.clip(out, EdgeClipper::LLX, x0);
+                     out = _lly.clip(out, EdgeClipper::LLY, y0);
+                     out = _urx.clip(out, EdgeClipper::URX, x1);
+                     out = _ury.clip(out, EdgeClipper::URY, y1);
+                     
+                     if (out->size() > 2)
+                     tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                     }
+                     libTess::writeTriangles(mesh, tess, piece->p);
+                     */
                 }
             }
         }
