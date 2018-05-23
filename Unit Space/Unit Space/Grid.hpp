@@ -117,7 +117,6 @@ struct Grid {
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p;
-        bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
@@ -143,7 +142,6 @@ struct Grid {
                     pathCells[i].addCell(cell);
                 }
                 
-                isInterior = isEdge = false;
                 rgba = RGBA8(0, 0, 0, 0);
                 ecount = 0, p = 0;
                 for (i = 0; i < iend; i++) {
@@ -151,25 +149,23 @@ struct Grid {
                     nz = std::abs(pathCells[i].winding) * 65535;
                     a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     
-                    if (pathCells[i].ecount) {
-                        isEdge = true;
+                    if (pathCells[i].ecount)
                         ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
-                    } else if (a == 65535) {
-                        isEdge = false;
+                    else if (a == 65535) {
                         rgba = RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a >> 8), rgba);
                         ei0 = ei1 = ecount = 0;
                     }
                 }
-                rgba = isEdge ? RGBA8(0, 0, 0, 255) : rgba;
+                rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ix + iy * grid.iw] = rgba;
 //                mesh._colors[ix + iy * grid.iw] = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
                 if (rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (isInterior)
+                else if (ecount == 0)
                     ;//mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (isEdge) {
+                else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
                      Path& path = scene._paths[p];
