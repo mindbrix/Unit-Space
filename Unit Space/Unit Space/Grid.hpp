@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -44,7 +44,7 @@ struct Grid {
     
     void writeEdgeCells(Edge *edge, int ei, bool count) {
         float x0, y0, x1, y1;
-        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux;
+        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         int *counts;
         
@@ -59,10 +59,8 @@ struct Grid {
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
             
-            t0 = y0 == y1 ? 0 : (sy0 - y0) / (y1 - y0);
-            sx0 = t0 <= 0 ? x0 : t0 >= 1 ? x1 : x0 + t0 * (x1 - x0);
-            t1 = y0 == y1 ? 1 : (sy1 - y0) / (y1 - y0);
-            sx1 = t1 <= 0 ? x0 : t1 >= 1 ? x1 : x0 + t1 * (x1 - x0);
+            sx0 = y0 == y1 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
+            sx1 = y0 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
             
