@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -94,8 +94,8 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float winding, x0, y0, x1, y1, iy1, dx, dy, ix0, iy0, ix1;
-        Cell *cell, *cend;
+        float winding, singleWinding, x0, y0, x1, y1;
+        Cell *cell, *cend, *single;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -136,7 +136,7 @@ struct Grid {
         
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, rgba = RGBA8(0, 0, 0, 0);
+            winding = iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 for (i = 0; i < iend; i++)
@@ -158,19 +158,19 @@ struct Grid {
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
-                winding = ei0 = ei1 = ecount = p = 0;
+                ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
                     p = pathCells[i].p;
                     nz = std::abs(pathCells[i].winding) * 65535;
                     a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     
                     if (pathCells[i].ecount)
-                        ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
+                        ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1, single = cell - 1, singleWinding = winding;
                     else if (a == 65535) {
                         rgba = RGBA8::over(scene._paths[pathCells[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
                     }
-                    winding += pathCells[i].winding;
+                    winding = pathCells[i].winding;
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ix + iy * grid.iw] = rgba;
@@ -178,20 +178,8 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount) {
+                else if (ecount == 1) {
                     edge = begin + ei0;
-                    dx = edge->x1 - edge->x0, dy = edge->y1 - edge->y0;
-                    if (std::abs(dx) > std::abs(dy)) {
-                        ix0 = edge->x0 < x0 ? x0 : edge->x0 > x1 ? x1 : edge->x0;
-                        ix1 = edge->x1 < x0 ? x0 : edge->x1 > x1 ? x1 : edge->x1;
-                        iy0 = edge->y0 + (ix0 - edge->x0) / dx * dy;
-                        iy1 = edge->y0 + (ix1 - edge->x0) / dx * dy;
-                    } else {
-                        iy0 = edge->y0 < y0 ? y0 : edge->y0 > y1 ? y1 : edge->y0;
-                        iy1 = edge->y1 < y0 ? y0 : edge->y1 > y1 ? y1 : edge->y1;
-                        ix0 = edge->x0 + (iy0 - edge->y0) / dy * dx;
-                        ix1 = edge->x0 + (iy1 - edge->y0) / dy * dx;
-                    }
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 } else if (ecount) {
                      /*
