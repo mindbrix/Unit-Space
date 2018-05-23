@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 256;
 
 struct Grid {
     struct Cell {
@@ -68,8 +68,7 @@ struct Grid {
                 for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
                     (*counts)++;
             } else {
-                for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = glx; gx0 < gux; gx0++, counts++) {
-                    gx1 = gx0 + 1;
+                for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, counts++) {
                     tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
                     tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                     ty0 = sx0 == sx1 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
@@ -178,7 +177,7 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount == 1) {
+                else if (ecount) {
                     edge = begin + ei0;
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 } else if (ecount) {
