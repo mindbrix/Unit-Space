@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -111,13 +111,14 @@ struct Grid {
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin));
         
+        
+//        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
+        mesh._colors.resize(grid.iw * grid.ih);
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
-        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
-        mesh._colors.resize(grid.iw * grid.ih);
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a;
+        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p;
         bool isInterior, isEdge;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -146,8 +147,9 @@ struct Grid {
                 
                 isInterior = isEdge = false;
                 rgba = RGBA8(0, 0, 0, 0);
-                ecount = 0;
+                ecount = 0, p = 0;
                 for (i = 0; i < iend; i++) {
+                    p = pathCells[i].p;
                     nz = std::abs(pathCells[i].winding) * 65535;
                     a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     if (pathCells[i].ecount || a > 0) {
@@ -160,31 +162,31 @@ struct Grid {
                             ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
                     }
                 }
-                //                    rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
+                // rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
                 rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                 mesh._colors[ix + iy * grid.iw] = rgba;
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
-                if (isEdge)
+                if (isEdge && ecount < 3)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (isInterior)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else {
-                    /*
+                else if (isEdge) {
+                     /*
                      Bounds bounds(x0, y0, x1, y1);
-                     Path& path = scene._paths[piece->p];
+                     Path& path = scene._paths[p];
                      for (SubPath& s : path._subPaths)
                      if (s._bounds.intersects(bounds)) {
-                     auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                     out = _llx.clip(out, EdgeClipper::LLX, x0);
-                     out = _lly.clip(out, EdgeClipper::LLY, y0);
-                     out = _urx.clip(out, EdgeClipper::URX, x1);
-                     out = _ury.clip(out, EdgeClipper::URY, y1);
-                     
-                     if (out->size() > 2)
-                     tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                         auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                         out = _llx.clip(out, EdgeClipper::LLX, x0);
+                         out = _lly.clip(out, EdgeClipper::LLY, y0);
+                         out = _urx.clip(out, EdgeClipper::URX, x1);
+                         out = _ury.clip(out, EdgeClipper::URY, y1);
+                         
+                         if (out->size() > 2)
+                             tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
                      }
-                     libTess::writeTriangles(mesh, tess, piece->p);
+                     libTess::writeTriangles(mesh, tess, grid.iw * grid.ih + p);
                      */
                 }
             }
