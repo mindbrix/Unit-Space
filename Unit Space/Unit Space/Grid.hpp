@@ -44,7 +44,7 @@ struct Grid {
     
     void writeEdgeCells(Edge *edge, int ei, bool count) {
         float x0, y0, x1, y1;
-        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, slx, sux;
+        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         int *counts;
         
@@ -57,7 +57,6 @@ struct Grid {
         for (cly = gly, cuy = gly + 1; gh--; cly = cuy, cuy += 1) {
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
-            coverage = sy1 - sy0;
             
             sx0 = y0 == y1 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
             sx1 = y0 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
@@ -71,13 +70,11 @@ struct Grid {
             } else {
                 for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = glx; gx0 < gux; gx0++, counts++) {
                     gx1 = gx0 + 1;
-                    tx0 = gx0 < slx ? slx : gx0 > sux ? sux : gx0;
-                    tx1 = gx1 < slx ? slx : gx1 > sux ? sux : gx1;
+                    tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
+                    tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                     ty0 = sx0 == sx1 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     ty1 = sx0 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    
-//                    new (& cells[(*counts)++]) Cell(ei, ty1 - ty0);
-                    new (& cells[(*counts)++]) Cell(ei, gx0 == glx ? coverage : 0);
+                    new (& cells[(*counts)++]) Cell(ei, ty1 - ty0);
                 }
             }
         }
