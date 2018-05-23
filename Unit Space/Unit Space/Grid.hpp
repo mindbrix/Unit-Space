@@ -22,14 +22,12 @@ struct Grid {
     };
     struct PathCell {
         PathCell() {}
-        PathCell(int p) : p(p), winding(0), ecount(0), ei0(INT_MAX), ei1(0) {}
+        PathCell(int p) : p(p), winding(0), ecount(0) {}
         void addCell(Cell& cell) {
             winding += cell.coverage;
-            if (ecount == 0)
-                ei0 = INT_MAX, ei1 = 1;
+            ei0 = ecount == 0 ? cell.ei : ei0 < cell.ei ? ei0 : cell.ei;
+            ei1 = ecount == 0 ? cell.ei : ei1 > cell.ei ? ei1 : cell.ei;
             ecount++;
-            ei0 = ei0 < cell.ei ? ei0 : cell.ei;
-            ei1 = ei1 > cell.ei ? ei1 : cell.ei;
         }
         int p;
         float winding;
