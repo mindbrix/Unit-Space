@@ -91,7 +91,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1, iy1, dx, dy, ix0, iy0, ix1;
+        float winding, x0, y0, x1, y1, iy1, dx, dy, ix0, iy0, ix1;
         Cell *cell, *cend;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -155,7 +155,7 @@ struct Grid {
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
-                ei0 = ei1 = ecount = p = 0;
+                winding = ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
                     p = pathCells[i].p;
                     nz = std::abs(pathCells[i].winding) * 65535;
@@ -167,6 +167,7 @@ struct Grid {
                         rgba = RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a >> 8), rgba);
                         ei0 = ei1 = ecount = 0;
                     }
+                    winding += pathCells[i].winding;
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ix + iy * grid.iw] = rgba;
