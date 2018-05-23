@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -45,7 +45,7 @@ struct Grid {
     void writeEdgeCells(Edge *edge, int ei, bool count) {
         float x0, y0, x1, y1;
         float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux;
-        float glx, gly, gux, guy, gw, gh;
+        float glx, gly, gux, guy, gw, gh, gx;
         int *counts;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
@@ -71,8 +71,8 @@ struct Grid {
                 for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
                     (*counts)++;
             } else {
-                for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
-                    new (& cells[(*counts)++]) Cell(ei, gw == 0 ? coverage : 0);
+                for (counts = & edgeCounts[glx + int(cly) * iw], gx = 0; gx < gw; gx++, counts++)
+                    new (& cells[(*counts)++]) Cell(ei, gx == 0 ? coverage : 0);
             }
         }
     }
@@ -175,7 +175,7 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount == 1) {
+                else if (ecount) {
                     edge = begin + ei0;
                     dx = edge->x1 - edge->x0, dy = edge->y1 - edge->y0;
                     if (std::abs(dx) > std::abs(dy)) {
