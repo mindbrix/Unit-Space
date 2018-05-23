@@ -16,15 +16,15 @@ constexpr int kDivisions = 512;
 struct Grid {
     struct Cell {
         Cell() {}
-        Cell(int ei, float coverage) : ei(ei), coverage(coverage) {}
+        Cell(int ei, float x0, float y0, float x1, float y1) : ei(ei), x0(x0), y0(y0), x1(x1), y1(y1) {}
         int ei;
-        float coverage;
+        float x0, y0, x1, y1;
     };
     struct PathCell {
         PathCell() {}
         PathCell(int p) : p(p), winding(0), ecount(0) {}
         void addCell(Cell& cell) {
-            winding += cell.coverage;
+            winding += cell.y1 - cell.y0;
             ei0 = ecount == 0 ? cell.ei : ei0 < cell.ei ? ei0 : cell.ei;
             ei1 = ecount == 0 ? cell.ei : ei1 > cell.ei ? ei1 : cell.ei;
             ecount++;
@@ -74,7 +74,7 @@ struct Grid {
                     tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                     ty0 = sx0 == sx1 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     ty1 = sx0 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    new (& cells[(*counts)++]) Cell(ei, ty1 - ty0);
+                    new (& cells[(*counts)++]) Cell(ei, tx0, ty0, tx1, ty1);
                 }
             }
         }
