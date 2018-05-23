@@ -15,6 +15,7 @@ constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
+        Cell() {}
         Cell(int ei, float coverage) : ei(ei), coverage(coverage) {}
         int ei;
         float coverage;
@@ -39,7 +40,6 @@ struct Grid {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
-        edgeCells.resize(iw * ih);
         edgeCounts.resize(iw * ih + 1);
         for (auto& count : edgeCounts)
             count = 0;
@@ -49,7 +49,6 @@ struct Grid {
         float x0, y0, x1, y1;
         float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux;
         float glx, gly, gux, guy, gw, gh;
-        vector<Cell> *cell;
         int *counts;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
@@ -75,8 +74,8 @@ struct Grid {
                 for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
                     (*counts)++;
             } else {
-                for (cell = & edgeCells[glx + int(cly) * iw]; gw--; cell++)
-                    cell->emplace_back(ei, gw == 0 ? coverage : 0);
+                for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
+                    new (& cells[(*counts)++]) Cell(ei, gw == 0 ? coverage : 0);
             }
         }
     }
@@ -85,7 +84,7 @@ struct Grid {
     float scale, tx, ty;
     float width, height;
     int iw, ih;
-    vector<vector<Cell>> edgeCells;
+    vector<Cell> cells;
     vector<int> edgeCounts;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
@@ -96,7 +95,7 @@ struct Grid {
             return;
         int ix, iy, count, base;
         float x0, y0, x1, y1;//, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
-        vector<Cell> *edgeCells;
+        Cell *cell, *cend;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -119,9 +118,11 @@ struct Grid {
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin), true);
+        
         base = count = 0;
         for (auto& c : grid.edgeCounts)
             base = c, c = count, count += base;
+        grid.cells.resize(count);
         
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin), false);
@@ -133,27 +134,28 @@ struct Grid {
         PathCell pathCells[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p;
         
-        for (iy = 0; iy < grid.ih; iy++) {
+        for (base = 0, iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 for (i = 0; i < iend; i++)
                     pathCells[i].reset();
                 
-                edgeCells = & grid.edgeCells[ix + iy * grid.iw];
-                for (auto& cell :*edgeCells) {
+                cell = & grid.cells[base];
+                base = grid.edgeCounts[ix + iy * grid.iw];
+                for (cend = & grid.cells[base]; cell < cend; cell++) {
                     for (i = 0; i < iend; i++)
-                        if (pathCells[i].p == begin[cell.ei].p)
+                        if (pathCells[i].p == begin[cell->ei].p)
                             break;
                     if (i == iend) {
-                        PathCell pathCell(begin[cell.ei].p);
+                        PathCell pathCell(begin[cell->ei].p);
                         idst = iend++, isrc = idst - 1;
                         while (idst > 0 && pathCell.p < pathCells[isrc].p)
                             pathCells[idst--] = pathCells[isrc--];
                         pathCells[idst] = pathCell;
                         i = idst;
                     }
-                    pathCells[i].addCell(cell);
+                    pathCells[i].addCell(*cell);
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
