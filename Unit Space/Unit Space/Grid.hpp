@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -71,12 +71,15 @@ struct Grid {
                 for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
                     (*counts)++;
             } else {
-                for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = 0; gx0 < gw; gx0++, counts++) {
+                for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = glx; gx0 < gux; gx0++, counts++) {
                     gx1 = gx0 + 1;
-                    tx0 = gx0 > slx ? gx0 : slx, tx1 = gx1 < sux ? gx1 : sux;
-                    ty0 = sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    ty1 = sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    new (& cells[(*counts)++]) Cell(ei, gx0 == 0 ? coverage : 0);// sx0 == sx1 ? coverage : ty1 - ty0);
+                    tx0 = gx0 < slx ? slx : gx0 > sux ? sux : gx0;
+                    tx1 = gx1 < slx ? slx : gx1 > sux ? sux : gx1;
+                    ty0 = sx0 == sx1 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                    ty1 = sx0 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                    
+//                    new (& cells[(*counts)++]) Cell(ei, ty1 - ty0);
+                    new (& cells[(*counts)++]) Cell(ei, gx0 == glx ? coverage : 0);
                 }
             }
         }

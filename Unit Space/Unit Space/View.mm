@@ -445,7 +445,7 @@ using namespace std;
 	
     Scene scene(self.bounds.size.width, self.bounds.size.height);
     if (self.pathBitmask & kPathBitmaskTriangle)
-        scene.addPath(p2), scene.addPath(p0);
+        scene.addPath(p0);
     
     if (self.pathBitmask & kPathBitmaskLozenge)
         scene.addPath(p1);
