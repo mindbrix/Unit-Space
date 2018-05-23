@@ -174,8 +174,8 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount == 0)
-                    ;//mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                else if (ecount == 1)
+                    mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
