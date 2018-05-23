@@ -167,7 +167,7 @@ struct Grid {
                     if (pathCells[i].ecount)
                         ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
                     else if (a == 65535) {
-                        rgba = RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a >> 8), rgba);
+                        rgba = RGBA8::over(scene._paths[pathCells[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
                     }
                     winding += pathCells[i].winding;
