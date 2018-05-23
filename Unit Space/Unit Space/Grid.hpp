@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -25,12 +25,11 @@ struct Grid {
         PathCell(int p) : p(p), winding(0), ecount(0), ei0(INT_MAX), ei1(0) {}
         void addCell(Cell& cell) {
             winding += cell.coverage;
+            if (ecount == 0)
+                ei0 = INT_MAX, ei1 = 1;
             ecount++;
             ei0 = ei0 < cell.ei ? ei0 : cell.ei;
             ei1 = ei1 > cell.ei ? ei1 : cell.ei;
-        }
-        void reset() {
-            ecount = 0, ei0 = INT_MAX, ei1 = 1;
         }
         int p;
         float winding;
@@ -139,7 +138,7 @@ struct Grid {
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 for (i = 0; i < iend; i++)
-                    pathCells[i].reset();
+                    pathCells[i].ecount = 0;
                 
                 cell = & grid.cells[base];
                 base = grid.edgeCounts[ix + iy * grid.iw];
