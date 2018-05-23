@@ -91,7 +91,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1;//, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
+        float x0, y0, x1, y1, iy1, dx, dy, ix0, iy0, ix1;
         Cell *cell, *cend;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -155,7 +155,7 @@ struct Grid {
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
-                ecount = 0, p = 0;
+                ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
                     p = pathCells[i].p;
                     nz = std::abs(pathCells[i].winding) * 65535;
@@ -174,9 +174,22 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount == 1)
+                else if (ecount == 1) {
+                    edge = begin + ei0;
+                    dx = edge->x1 - edge->x0, dy = edge->y1 - edge->y0;
+                    if (std::abs(dx) > std::abs(dy)) {
+                        ix0 = edge->x0 < x0 ? x0 : edge->x0 > x1 ? x1 : edge->x0;
+                        ix1 = edge->x1 < x0 ? x0 : edge->x1 > x1 ? x1 : edge->x1;
+                        iy0 = edge->y0 + (ix0 - edge->x0) / dx * dy;
+                        iy1 = edge->y0 + (ix1 - edge->x0) / dx * dy;
+                    } else {
+                        iy0 = edge->y0 < y0 ? y0 : edge->y0 > y1 ? y1 : edge->y0;
+                        iy1 = edge->y1 < y0 ? y0 : edge->y1 > y1 ? y1 : edge->y1;
+                        ix0 = edge->x0 + (iy0 - edge->y0) / dy * dx;
+                        ix1 = edge->x0 + (iy1 - edge->y0) / dy * dx;
+                    }
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount) {
+                } else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
                      Path& path = scene._paths[p];
