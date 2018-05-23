@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -148,12 +148,12 @@ struct Grid {
                 rgba = RGBA8(0, 0, 0, 0);
                 ecount = 0;
                 for (i = 0; i < iend; i++) {
-                    nz = std::abs(pathCells[i].winding) * 255;
-                    a = scene._paths[pathCells[i].p]._evenOdd ? 255 - std::abs((nz % 510) - 255) : nz & 0xFF;
+                    nz = std::abs(pathCells[i].winding) * 65535;
+                    a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     if (pathCells[i].ecount || a > 0) {
-                        isEdge = pathCells[i].ecount || (a > 0 && a < 255);
-                        isInterior = a == 255;
-                        rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a), rgba) : rgba;
+                        isEdge = pathCells[i].ecount || (a > 0 && a < 65535);
+                        isInterior = a == 65535;
+                        rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a >> 8), rgba) : rgba;
                         if (isInterior)
                             ei0 = ei1 = ecount = 0;
                         else
