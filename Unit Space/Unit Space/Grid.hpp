@@ -40,7 +40,7 @@ struct Grid {
         scale = float(kDivisions) / dmax, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         edgeCells.resize(iw * ih);
-        edgeCounts.resize(iw * ih);
+        edgeCounts.resize(iw * ih + 1);
         for (auto& count : edgeCounts)
             count = 0;
     }
@@ -94,7 +94,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy;
+        int ix, iy, count, base;
         float x0, y0, x1, y1;//, ix0, iy0, ix1, iy1, ilx, ily, iux, iuy;
         vector<Cell> *edgeCells;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
@@ -105,7 +105,7 @@ struct Grid {
         for (Path& path : scene._paths)
             bounds.unite(path._bounds);
         
-        int count = 0;
+        count = 0;
         for (Path& path : scene._paths)
             count += path.countPoints();
         
@@ -119,6 +119,10 @@ struct Grid {
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin), true);
+        base = count = 0;
+        for (auto& c : grid.edgeCounts)
+            base = c, c = count, count += base;
+        
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin), false);
         
@@ -133,11 +137,10 @@ struct Grid {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
-                edgeCells = & grid.edgeCells[ix + iy * grid.iw];
-                
                 for (i = 0; i < iend; i++)
                     pathCells[i].reset();
                 
+                edgeCells = & grid.edgeCells[ix + iy * grid.iw];
                 for (auto& cell :*edgeCells) {
                     for (i = 0; i < iend; i++)
                         if (pathCells[i].p == begin[cell.ei].p)
