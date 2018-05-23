@@ -40,13 +40,17 @@ struct Grid {
         scale = float(kDivisions) / dmax, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         edgeCells.resize(iw * ih);
+        edgeCounts.resize(iw * ih);
+        for (auto& count : edgeCounts)
+            count = 0;
     }
     
-    void writeEdgeCells(Edge *edge, int ei) {
+    void writeEdgeCells(Edge *edge, int ei, bool count) {
         float x0, y0, x1, y1;
-        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux, clx, cux;
+        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, coverage, t0, t1, slx, sux;
         float glx, gly, gux, guy, gw, gh;
         vector<Cell> *cell;
+        int *counts;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
         if (x0 == x1 && y0 == y1)
@@ -67,9 +71,13 @@ struct Grid {
             sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
-            cell = & edgeCells[glx + int(cly) * iw];
-            for (clx = glx, cux = clx + 1; gw--; clx = cux, cux += 1, cell++)
-                cell->emplace_back(ei, clx == glx ? coverage : 0);
+            if (count) {
+                for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
+                    (*counts)++;
+            } else {
+                for (cell = & edgeCells[glx + int(cly) * iw]; gw--; cell++)
+                    cell->emplace_back(ei, gw == 0 ? coverage : 0);
+            }
         }
     }
     
@@ -78,6 +86,7 @@ struct Grid {
     float width, height;
     int iw, ih;
     vector<vector<Cell>> edgeCells;
+    vector<int> edgeCounts;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         TESStesselator *tess = tessNewTess(NULL);
@@ -109,7 +118,9 @@ struct Grid {
         
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, (int)(edge - begin));
+            grid.writeEdgeCells(edge, (int)(edge - begin), true);
+        for (edge = begin; edge < end; edge++)
+            grid.writeEdgeCells(edge, (int)(edge - begin), false);
         
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path& path : scene._paths)
@@ -158,7 +169,6 @@ struct Grid {
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ix + iy * grid.iw] = rgba;
-//                mesh._colors[ix + iy * grid.iw] = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
                 if (rgba.a != 0)
