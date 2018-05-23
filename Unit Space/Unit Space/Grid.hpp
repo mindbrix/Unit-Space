@@ -111,8 +111,6 @@ struct Grid {
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin));
         
-        
-//        mesh._colors.emplace_back(RGBA8(255, 0, 0, 255));
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
@@ -162,9 +160,7 @@ struct Grid {
                             ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
                     }
                 }
-                // rgba = RGBA8(ecount * 255 / 16, ecount * 255 / 16, ecount * 255 / 16, 255);
-                rgba = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
-                mesh._colors[ix + iy * grid.iw] = rgba;
+                mesh._colors[ix + iy * grid.iw] = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
                 if (isEdge && ecount < 3)
