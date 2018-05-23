@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -49,7 +49,7 @@ struct Grid {
         vector<Cell> *cell;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
-        if (y0 == y1 || (x0 == x1 && y0 == y1))
+        if (x0 == x1 && y0 == y1)
             return;
         
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
@@ -59,9 +59,9 @@ struct Grid {
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             coverage = sy1 - sy0;
             
-            t0 = (sy0 - y0) / (y1 - y0);
+            t0 = y0 == y1 ? 0 : (sy0 - y0) / (y1 - y0);
             sx0 = t0 <= 0 ? x0 : t0 >= 1 ? x1 : x0 + t0 * (x1 - x0);
-            t1 = (sy1 - y0) / (y1 - y0);
+            t1 = y0 == y1 ? 1 : (sy1 - y0) / (y1 - y0);
             sx1 = t1 <= 0 ? x0 : t1 >= 1 ? x1 : x0 + t1 * (x1 - x0);
             slx = sx0 < sx1 ? sx0 : sx1;
             sux = sx0 > sx1 ? sx0 : sx1;
@@ -150,23 +150,25 @@ struct Grid {
                     p = pathCells[i].p;
                     nz = std::abs(pathCells[i].winding) * 65535;
                     a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
-                    if (pathCells[i].ecount || a > 0) {
-                        isEdge = pathCells[i].ecount || (a > 0 && a < 65535);
-                        isInterior = a == 65535;
-                        rgba = isInterior ? RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a >> 8), rgba) : rgba;
-                        if (isInterior)
-                            ei0 = ei1 = ecount = 0;
-                        else
-                            ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
+                    
+                    if (pathCells[i].ecount) {
+                        isEdge = true;
+                        ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1;
+                    } else if (a == 65535) {
+                        isEdge = false;
+                        rgba = RGBA8::over(scene._paths[pathCells[i].p]._color.multiply(a >> 8), rgba);
+                        ei0 = ei1 = ecount = 0;
                     }
                 }
-                mesh._colors[ix + iy * grid.iw] = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
+                rgba = isEdge ? RGBA8(0, 0, 0, 255) : rgba;
+                mesh._colors[ix + iy * grid.iw] = rgba;
+//                mesh._colors[ix + iy * grid.iw] = isEdge ? RGBA8(0, 0, 0, 255) : isInterior ? rgba : RGBA8(0, 0, 0, 0);
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
-                if (isEdge && ecount < 3)
+                if (rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (isInterior)
-                    mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                    ;//mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (isEdge) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
