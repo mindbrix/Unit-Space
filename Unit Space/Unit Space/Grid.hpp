@@ -131,16 +131,15 @@ struct Grid {
         PathCell pathCells[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p;
         
-        for (base = 0, iy = 0; iy < grid.ih; iy++) {
+        cell = & grid.cells[0];
+        for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 for (i = 0; i < iend; i++)
                     pathCells[i].ecount = 0;
                 
-                cell = & grid.cells[base];
-                base = grid.edgeCounts[ix + iy * grid.iw];
-                for (cend = & grid.cells[base]; cell < cend; cell++) {
+                for (cend = & grid.cells[grid.edgeCounts[ix + iy * grid.iw]]; cell < cend; cell++) {
                     for (i = 0; i < iend; i++)
                         if (pathCells[i].p == begin[cell->ei].p)
                             break;
@@ -173,7 +172,7 @@ struct Grid {
                 mesh._colors[ix + iy * grid.iw] = rgba;
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
-                if (rgba.a != 0)
+                if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (ecount == 0)
                     ;//mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
