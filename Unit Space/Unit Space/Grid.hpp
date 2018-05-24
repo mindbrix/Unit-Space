@@ -134,7 +134,7 @@ struct Grid {
         
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
-            winding = iend = 0, rgba = RGBA8(0, 0, 0, 0);
+            iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
                 for (i = 0; i < iend; i++)
@@ -164,12 +164,11 @@ struct Grid {
                     a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     
                     if (pathCells[i].ecount)
-                        ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1, single = cell - 1, singleWinding = winding;
+                        ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1, single = cell - 1, singleWinding = pathCells[i].winding - (single->y1 - single->y0);
                     else if (a == 65535) {
                         rgba = RGBA8::over(scene._paths[pathCells[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
                     }
-                    winding = pathCells[i].winding;
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ix + iy * grid.iw] = rgba;
@@ -202,7 +201,7 @@ struct Grid {
                         }
                     } else if (std::abs(singleWinding) == 1) {
                         
-                    } { // 0 < singleWinding < 1
+                    } else { // 0 < singleWinding < 1
                         if (sx0 == x0 && sx1 == x1) {
                             if (singleWinding > 0)
                                 mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ix + iy * grid.iw);
