@@ -109,7 +109,7 @@ struct Grid {
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : scene._paths)
-            end = path.writeEdges(end, (int) (& path - & scene._paths[0]), 0, 0);
+            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
         
         Tess::writeCurves(mesh, scene);
         

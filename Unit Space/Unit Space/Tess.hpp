@@ -316,14 +316,14 @@ struct Path {
             count += s._npoints;
         return count;
     }
-    Edge *writeEdges(Edge *dst, int p, float ox, float oy) {
-        float lx, ly, ux, uy, *points;
+    Edge *writeEdges(Edge *dst, int p) {
+        float x0, y0, x1, y1, *points;
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
             for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
-                lx = points[pi * 2], ly = points[pi * 2 + 1];
-                ux = points[((pi + 1) % _subPaths[ci]._npoints) * 2], uy = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
-                new (dst++) Edge(lx + ox, ly + oy, ux + ox, uy + oy, p, ci, pi);
+                x0 = points[pi * 2], y0 = points[pi * 2 + 1];
+                x1 = points[((pi + 1) % _subPaths[ci]._npoints) * 2], y1 = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
+                new (dst++) Edge(x0, y0, x1, y1, p, ci, pi);
             }
         }
         return dst;
@@ -464,7 +464,7 @@ struct Tess {
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path& path : scene._paths)
-            end = path.writeEdges(end, (int) (& path - & scene._paths[0]), 0, 0);
+            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
         sort(begin, end);
 
         Memory<IntersectionEdge> intersectionEdges(count);
