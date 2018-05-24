@@ -179,8 +179,21 @@ struct Grid {
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (ecount == 1 && single) {
                     if (singleWinding == 0) {
-                        if (std::abs(single->y1 - single->y0) == 1)
-                            mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                        winding = single->y1 - single->y0;
+                        if (std::abs(winding) == 1) {
+                            if (winding > 0)
+                                mesh.writeQuad(single->x0 / grid.scale + grid.tx, single->y0 / grid.scale + grid.ty,
+                                               x1, y0,
+                                               x1, y1,
+                                               single->x1 / grid.scale + grid.tx, single->y1 / grid.scale + grid.ty, ix + iy * grid.iw);
+                            else
+                                mesh.writeQuad(single->x1 / grid.scale + grid.tx, single->y1 / grid.scale + grid.ty,
+                                               x1, y0,
+                                               x1, y1,
+                                               single->x0 / grid.scale + grid.tx, single->y0 / grid.scale + grid.ty, ix + iy * grid.iw);;
+                        } else {
+                            
+                        }
                     }
                 } else if (ecount) {
                      /*
