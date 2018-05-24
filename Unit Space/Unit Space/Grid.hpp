@@ -156,6 +156,7 @@ struct Grid {
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
+                single = nullptr;
                 singleWinding = ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
                     p = pathCells[i].p;
@@ -176,10 +177,10 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount == 1) {
+                else if (ecount == 1 && single) {
                     if (singleWinding == 0) {
-                        
-                        mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                        if (std::abs(single->y1 - single->y0) == 1)
+                            mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                     }
                 } else if (ecount) {
                      /*
