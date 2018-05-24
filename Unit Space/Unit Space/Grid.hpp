@@ -92,7 +92,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float winding, singleWinding, x0, y0, x1, y1;
+        float x0, y0, x1, y1, winding, singleWinding, sx0, sy0, sx1, sy1;
         Cell *cell, *cend, *single;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -180,19 +180,26 @@ struct Grid {
                 else if (ecount == 1 && single) {
                     if (singleWinding == 0) {
                         winding = single->y1 - single->y0;
+                        sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
+                        sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
+                        
                         if (std::abs(winding) == 1) {
                             if (winding > 0)
-                                mesh.writeQuad(single->x0 / grid.scale + grid.tx, single->y0 / grid.scale + grid.ty,
-                                               x1, y0,
-                                               x1, y1,
-                                               single->x1 / grid.scale + grid.tx, single->y1 / grid.scale + grid.ty, ix + iy * grid.iw);
+                                mesh.writeQuad(sx0, sy0, x1, y0, x1, y1, sx1, sy1, ix + iy * grid.iw);
                             else
-                                mesh.writeQuad(single->x1 / grid.scale + grid.tx, single->y1 / grid.scale + grid.ty,
-                                               x1, y0,
-                                               x1, y1,
-                                               single->x0 / grid.scale + grid.tx, single->y0 / grid.scale + grid.ty, ix + iy * grid.iw);;
+                                mesh.writeQuad(sx1, sy1, x1, y0, x1, y1, sx0, sy0, ix + iy * grid.iw);;
                         } else {
-                            
+                            if (winding > 0) {
+                                if (sy0 == y0)
+                                    mesh.writeTriangle(sx0, sy0, x1, y0, sx1, sy1, ix + iy * grid.iw);
+                                else
+                                    mesh.writeTriangle(sx0, sy0, x1, y1, sx1, sy1, ix + iy * grid.iw);
+                            } else {
+                                if (sy0 == y1)
+                                    mesh.writeTriangle(sx1, sy1, x1, y1, sx0, sy0, ix + iy * grid.iw);
+                                else
+                                    mesh.writeTriangle(sx1, sy1, x1, y0, sx0, sy0, ix + iy * grid.iw);
+                            }
                         }
                     }
                 } else if (ecount) {
