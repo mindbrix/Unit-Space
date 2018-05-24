@@ -60,8 +60,7 @@ struct Grid {
             
             sx0 = y0 == y1 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
             sx1 = y0 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
-            slx = sx0 < sx1 ? sx0 : sx1;
-            sux = sx0 > sx1 ? sx0 : sx1;
+            slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
             if (count) {
