@@ -130,17 +130,18 @@ struct Grid {
             mesh._colors.emplace_back(path._color);
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p;
+        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci;
         
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
             y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
             for (ix = 0; ix < grid.iw; ix++) {
+                ci = ix + iy * grid.iw;
                 for (i = 0; i < iend; i++)
                     pathCells[i].ecount = 0;
                 
-                for (cend = & grid.cells[grid.edgeCounts[ix + iy * grid.iw]]; cell < cend; cell++) {
+                for (cend = & grid.cells[grid.edgeCounts[ci]]; cell < cend; cell++) {
                     for (i = 0; i < iend; i++)
                         if (pathCells[i].p == begin[cell->ei].p)
                             break;
@@ -171,11 +172,11 @@ struct Grid {
                     }
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
-                mesh._colors[ix + iy * grid.iw] = rgba;
+                mesh._colors[ci] = rgba;
                 x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
                 
                 if (ecount == 0 && rgba.a != 0)
-                    mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                    mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && single) {
                     winding = single->y1 - single->y0;
                     sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
@@ -183,35 +184,41 @@ struct Grid {
                     if (singleWinding == 0) {
                         if (std::abs(winding) == 1) {
                             if (winding > 0)
-                                mesh.writeQuad(sx0, sy0, x1, y0, x1, y1, sx1, sy1, ix + iy * grid.iw);
+                                mesh.writeQuad(sx0, sy0, x1, y0, x1, y1, sx1, sy1, ci);
                             else
-                                mesh.writeQuad(sx1, sy1, x1, y0, x1, y1, sx0, sy0, ix + iy * grid.iw);;
+                                mesh.writeQuad(sx1, sy1, x1, y0, x1, y1, sx0, sy0, ci);
                         } else {
                             if (winding > 0) {
                                 if (sy0 == y0)
-                                    mesh.writeTriangle(sx0, sy0, x1, y0, sx1, sy1, ix + iy * grid.iw);
+                                    mesh.writeTriangle(sx0, sy0, x1, y0, sx1, sy1, ci);
                                 else
-                                    mesh.writeTriangle(sx0, sy0, x1, y1, sx1, sy1, ix + iy * grid.iw);
+                                    mesh.writeTriangle(sx0, sy0, x1, y1, sx1, sy1, ci);
                             } else {
                                 if (sy0 == y1)
-                                    mesh.writeTriangle(sx1, sy1, x1, y1, sx0, sy0, ix + iy * grid.iw);
+                                    mesh.writeTriangle(sx1, sy1, x1, y1, sx0, sy0, ci);
                                 else
-                                    mesh.writeTriangle(sx1, sy1, x1, y0, sx0, sy0, ix + iy * grid.iw);
+                                    mesh.writeTriangle(sx1, sy1, x1, y0, sx0, sy0, ci);
                             }
                         }
                     } else if (std::abs(singleWinding) == 1) {
                         
-                    } else { // 0 < singleWinding < 1
+                    } else { // 0 < abs(singleWinding) < 1
                         if (sx0 == x0 && sx1 == x1) {
                             if (singleWinding > 0)
-                                mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ix + iy * grid.iw);
+                                mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ci);
                             else
-                                mesh.writeQuad(sx0, sy0, sx1, sy1, x1, y1, x0, y1, ix + iy * grid.iw);
+                                mesh.writeQuad(sx0, sy0, sx1, sy1, x1, y1, x0, y1, ci);
                         } else if (sx1 == x0 && sx0 == x1) {
                             if (singleWinding > 0)
-                                mesh.writeQuad(sx1, sy1, sx0, sy0, x1, y1, x0, y1, ix + iy * grid.iw);
+                                mesh.writeQuad(sx1, sy1, sx0, sy0, x1, y1, x0, y1, ci);
                             else
-                                mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ix + iy * grid.iw);
+                                mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ci);
+                        } if (singleWinding > 0) {
+//                            if (sy1 == y1)
+//                                mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ci);
+//                            else if (sy1 == y0)
+//                                ;
+                            
                         }
                     }
                 } else if (ecount) {
