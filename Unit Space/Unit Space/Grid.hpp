@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 256;
+constexpr int kDivisions = 32;
 
 struct Grid {
     struct Cell {
@@ -156,7 +156,7 @@ struct Grid {
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
-                ei0 = ei1 = ecount = p = 0;
+                singleWinding = ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
                     p = pathCells[i].p;
                     nz = std::abs(pathCells[i].winding) * 65535;
@@ -176,9 +176,11 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
-                else if (ecount) {
-                    edge = begin + ei0;
-                    mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                else if (ecount == 1) {
+                    if (singleWinding == 0) {
+                        
+                        mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
+                    }
                 } else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
