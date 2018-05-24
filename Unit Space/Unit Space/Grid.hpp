@@ -178,11 +178,10 @@ struct Grid {
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ix + iy * grid.iw);
                 else if (ecount == 1 && single) {
+                    winding = single->y1 - single->y0;
+                    sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
+                    sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
                     if (singleWinding == 0) {
-                        winding = single->y1 - single->y0;
-                        sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
-                        sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
-                        
                         if (std::abs(winding) == 1) {
                             if (winding > 0)
                                 mesh.writeQuad(sx0, sy0, x1, y0, x1, y1, sx1, sy1, ix + iy * grid.iw);
@@ -200,6 +199,20 @@ struct Grid {
                                 else
                                     mesh.writeTriangle(sx1, sy1, x1, y0, sx0, sy0, ix + iy * grid.iw);
                             }
+                        }
+                    } else if (std::abs(singleWinding) == 1) {
+                        
+                    } { // 0 < singleWinding < 1
+                        if (sx0 == x0 && sx1 == x1) {
+                            if (singleWinding > 0)
+                                mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ix + iy * grid.iw);
+                            else
+                                mesh.writeQuad(sx0, sy0, sx1, sy1, x1, y1, x0, y1, ix + iy * grid.iw);
+                        } else if (sx1 == x0 && sx0 == x1) {
+                            if (singleWinding > 0)
+                                mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ix + iy * grid.iw);
+                            else
+                                mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ix + iy * grid.iw);
                         }
                     }
                 } else if (ecount) {
