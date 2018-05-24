@@ -209,7 +209,7 @@ struct Grid {
                                 mesh.writeQuad(sx0, sy0, sx1, sy1, x1, y1, x0, y1, ix + iy * grid.iw);
                         } else if (sx1 == x0 && sx0 == x1) {
                             if (singleWinding > 0)
-                                mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ix + iy * grid.iw);
+                                mesh.writeQuad(sx1, sy1, sx0, sy0, x1, y1, x0, y1, ix + iy * grid.iw);
                             else
                                 mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ix + iy * grid.iw);
                         }
