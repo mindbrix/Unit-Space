@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -35,7 +35,7 @@ struct Grid {
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
-        scale = float(kDivisions) / dmax, tx = lx, ty = ly;
+        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         edgeCounts.resize(iw * ih + 1);
         memset(& edgeCounts[0], 0, edgeCounts.size() * sizeof(edgeCounts[0]));
@@ -78,7 +78,7 @@ struct Grid {
     }
     
     float lx, ly, ux, uy;
-    float scale, tx, ty;
+    float scale, dimension, tx, ty;
     float width, height;
     int iw, ih;
     vector<Cell> cells;
@@ -134,7 +134,8 @@ struct Grid {
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
-            y0 = float(iy) / grid.scale + grid.ty, y1 = float(iy + 1) / grid.scale + grid.ty;
+            y0 = float(iy) * grid.dimension + grid.ty, y1 = float(iy + 1) * grid.dimension + grid.ty;
+            
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
                 for (i = 0; i < iend; i++)
@@ -172,15 +173,15 @@ struct Grid {
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ci] = rgba;
-                x0 = float(ix) / grid.scale + grid.tx, x1 = float(ix + 1) / grid.scale + grid.tx;
+                x0 = float(ix) * grid.dimension + grid.tx, x1 = float(ix + 1) * grid.dimension + grid.tx;
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && single) {
                     ci = begin[single->ei].p + grid.iw * grid.ih;
                     winding = single->y1 - single->y0;
-                    sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
-                    sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
+                    sx0 = single->x0 * grid.dimension + grid.tx, sy0 = single->y0 * grid.dimension + grid.ty;
+                    sx1 = single->x1 * grid.dimension + grid.tx, sy1 = single->y1 * grid.dimension + grid.ty;
                     slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
                     sly = sy0 < sy1 ? sy0 : sy1, suy = sy0 > sy1 ? sy0 : sy1;
                     up = (sx0 > sx1) == (sy0 > sy1);
