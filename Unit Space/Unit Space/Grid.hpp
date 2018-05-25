@@ -185,16 +185,6 @@ struct Grid {
                     sly = sy0 < sy1 ? sy0 : sy1, suy = sy0 > sy1 ? sy0 : sy1;
                     up = (sx0 > sx1) == (sy0 > sy1);
                     
-                    if (slx == x0 && sly == y0 && sux == x1 && suy == y1) {
-                        assert(std::abs(singleWinding) > (1 - 1e-6) || std::abs(singleWinding) < 1e-6);
-                        pi = std::abs(singleWinding) < 1e-6 ? (up ? 1 : 2) : (up ? 3 : 0);
-                        i0 = (pi + 3) % 4, i1 = pi, i2 = (pi + 1) % 4;
-                        mesh.writeTriangle(i0 == 0 || i0 == 3 ? x0 : x1, i0 < 2 ? y0 : y1,
-                                           i1 == 0 || i1 == 3 ? x0 : x1, i1 < 2 ? y0 : y1,
-                                           i2 == 0 || i2 == 3 ? x0 : x1, i2 < 2 ? y0 : y1,
-                                           ci);
-                
-                    } else
                     if (slx == x0 && sux == x1) {
                         if (singleWinding == 0) {
                             if (up)
