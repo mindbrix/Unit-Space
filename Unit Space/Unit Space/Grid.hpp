@@ -204,7 +204,7 @@ struct Grid {
                         else
                             mesh.writeQuad(x0, y0, sy0 < sy1 ? sx0 : sx1, y0, sy0 < sy1 ? sx1 : sx0, y1, x0, y1, ci);
                     } else {
-                        if (slx == x0 && sly == y0) {
+                        if (slx == x0 && sly == y0 && singleWinding != 0) {
                             if ((singleWinding < 0) == (sx1 < sx0))
                                 mesh.writeTriangle(x0, y0, sux, y0, x0, suy, ci);
                             else {
@@ -225,7 +225,7 @@ struct Grid {
                                 mesh.writeTriangle(x0, y0, x1, y0, x1, sly, ci);
                                 mesh.writeQuad(x0, y0, x1, sly, slx, y1, x0, y1, ci);
                             }
-                        } else if (slx == x0 && suy == y1) {
+                        } else if (slx == x0 && suy == y1 && singleWinding != 0) {
                             if ((singleWinding < 0) != (sx1 < sx0))
                                 mesh.writeTriangle(x0, sly, sux, y1, x0, y1, ci);
                             else {
