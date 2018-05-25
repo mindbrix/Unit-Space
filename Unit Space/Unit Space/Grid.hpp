@@ -128,7 +128,7 @@ struct Grid {
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
         RGBA8 rgba;
-        PathCell pathCells[scene._paths.size()];
+        PathCell activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci;
         bool up;
         cell = & grid.cells[0];
@@ -138,35 +138,35 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
                 for (i = 0; i < iend; i++)
-                    pathCells[i].ecount = 0;
+                    activePaths[i].ecount = 0;
                 
                 for (cend = & grid.cells[grid.edgeCounts[ci]]; cell < cend; cell++) {
                     for (i = 0; i < iend; i++)
-                        if (pathCells[i].p == begin[cell->ei].p)
+                        if (activePaths[i].p == begin[cell->ei].p)
                             break;
                     if (i == iend) {
                         PathCell pathCell(begin[cell->ei].p);
                         idst = iend++, isrc = idst - 1;
-                        while (idst > 0 && pathCell.p < pathCells[isrc].p)
-                            pathCells[idst--] = pathCells[isrc--];
-                        pathCells[idst] = pathCell;
+                        while (idst > 0 && pathCell.p < activePaths[isrc].p)
+                            activePaths[idst--] = activePaths[isrc--];
+                        activePaths[idst] = pathCell;
                         i = idst;
                     }
-                    pathCells[i].addCell(*cell);
+                    activePaths[i].addCell(*cell);
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
                 single = nullptr;
                 singleWinding = ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
-                    p = pathCells[i].p;
-                    nz = std::abs(pathCells[i].winding) * 65535;
-                    a = scene._paths[pathCells[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
+                    p = activePaths[i].p;
+                    nz = std::abs(activePaths[i].winding) * 65535;
+                    a = scene._paths[activePaths[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     
-                    if (pathCells[i].ecount)
-                        ecount += pathCells[i].ecount, ei0 = pathCells[i].ei0, ei1 = pathCells[i].ei1, single = cell - 1, singleWinding = pathCells[i].winding - (single->y1 - single->y0);
+                    if (activePaths[i].ecount)
+                        ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1, single = cell - 1, singleWinding = activePaths[i].winding - (single->y1 - single->y0);
                     else if (a == 65535) {
-                        rgba = RGBA8::over(scene._paths[pathCells[i].p]._color, rgba);
+                        rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
                     }
                 }
