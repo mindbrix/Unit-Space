@@ -177,6 +177,7 @@ struct Grid {
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && single) {
+                    ci = begin[single->ei].p + grid.iw * grid.ih;
                     winding = single->y1 - single->y0;
                     sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
                     sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
