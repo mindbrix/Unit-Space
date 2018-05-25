@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -91,7 +91,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy;
+        float x0, y0, x1, y1, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy, nonzero;
         Cell *cell, *cend, *single;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -179,6 +179,9 @@ struct Grid {
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && single) {
+                    nonzero = std::abs(singleWinding);
+                    singleWinding = copysign(!scene._paths[begin[single->ei].p]._evenOdd ? fmin(nonzero, 1.0f) : 1.f - std::abs(fmod(nonzero, 2.f) - 1.f), singleWinding);
+                    
                     ci = begin[single->ei].p + grid.iw * grid.ih;
                     sx0 = single->x0 * grid.dimension + grid.tx, sy0 = single->y0 * grid.dimension + grid.ty;
                     sx1 = single->x1 * grid.dimension + grid.tx, sy1 = single->y1 * grid.dimension + grid.ty;
