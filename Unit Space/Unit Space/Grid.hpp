@@ -92,7 +92,7 @@ struct Grid {
             return;
         int ix, iy, count, base;
         float x0, y0, x1, y1, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy;
-        Cell *cell, *cend, *single;
+        Cell *cell, *cend, *c0, *c1;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
             path.update();
@@ -157,7 +157,7 @@ struct Grid {
                 }
                 
                 rgba = RGBA8(0, 0, 0, 0);
-                single = nullptr;
+                c0 = c1 = nullptr;
                 singleWinding = ei0 = ei1 = ecount = p = 0;
                 for (i = 0; i < iend; i++) {
                     p = activePaths[i].p;
@@ -166,7 +166,7 @@ struct Grid {
                     
                     if (activePaths[i].ecount) {
                         ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1;
-                        single = cell - 1, singleWinding = activePaths[i].winding - (single->y1 - single->y0);
+                        c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
                     } else if (a == 65535) {
                         rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
@@ -178,10 +178,10 @@ struct Grid {
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ci);
-                else if (ecount == 1 && single) {
-                    ci = begin[single->ei].p + grid.iw * grid.ih;
-                    sx0 = single->x0 * grid.dimension + grid.tx, sy0 = single->y0 * grid.dimension + grid.ty;
-                    sx1 = single->x1 * grid.dimension + grid.tx, sy1 = single->y1 * grid.dimension + grid.ty;
+                else if (ecount == 1 && c0) {
+                    ci = begin[c0->ei].p + grid.iw * grid.ih;
+                    sx0 = c0->x0 * grid.dimension + grid.tx, sy0 = c0->y0 * grid.dimension + grid.ty;
+                    sx1 = c0->x1 * grid.dimension + grid.tx, sy1 = c0->y1 * grid.dimension + grid.ty;
                     slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
                     sly = sy0 < sy1 ? sy0 : sy1, suy = sy0 > sy1 ? sy0 : sy1;
                     up = (sx0 > sx1) == (sy0 > sy1);
