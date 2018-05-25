@@ -204,7 +204,17 @@ struct Grid {
                             mesh.writeQuad(x0, y0, sy0 < sy1 ? sx0 : sx1, y0, sy0 < sy1 ? sx1 : sx0, y1, x0, y1, ci);
                     } else {
                         if (slx == x0 && sly == y0) {
-                            
+                            if ((singleWinding < 0) == (sx1 < sx0))
+                                mesh.writeTriangle(x0, y0, sux, y0, x0, suy, ci);
+                        } else if (sux == x1 && sly == y0) {
+                            if (singleWinding == 0)
+                                mesh.writeTriangle(slx, y0, x1, y0, x1, suy, ci);
+                        } else if (sux == x1 && suy == y1) {
+                            if (singleWinding == 0)
+                                mesh.writeTriangle(x1, sly, x1, y1, slx, y1, ci);
+                        } else if (slx == x0 && suy == y1) {
+                            if ((singleWinding < 0) != (sx1 < sx0))
+                                mesh.writeTriangle(x0, sly, sux, y1, x0, y1, ci);
                         }
                     }
                 } else if (ecount) {
