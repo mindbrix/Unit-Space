@@ -92,7 +92,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1, winding, singleWinding, sx0, sy0, sx1, sy1;
+        float x0, y0, x1, y1, winding, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy;
         Cell *cell, *cend, *single;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -130,8 +130,8 @@ struct Grid {
             mesh._colors.emplace_back(path._color);
         RGBA8 rgba;
         PathCell pathCells[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci;
-        
+        int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci, pi, i0, i1, i2;
+        bool up;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
@@ -181,6 +181,30 @@ struct Grid {
                     winding = single->y1 - single->y0;
                     sx0 = single->x0 / grid.scale + grid.tx, sy0 = single->y0 / grid.scale + grid.ty;
                     sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
+                    slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
+                    sly = sy0 < sy1 ? sy0 : sy1, suy = sy0 > sy1 ? sy0 : sy1;
+                    
+                    if (slx == x0 && sly == y0 && sux == x1 && suy == y1) {
+                        assert(std::abs(singleWinding) > (1 - 1e-6) || std::abs(singleWinding) < 1e-6);
+                        up = (sx0 > sx1) == (sy0 > sy1);
+                        pi = std::abs(singleWinding) < 1e-6 ? (up ? 1 : 2) : (up ? 3 : 0);
+                        i0 = (pi + 3) % 4, i1 = pi, i2 = (pi + 1) % 4;
+                        mesh.writeTriangle(i0 == 0 || i0 == 3 ? x0 : x1, i0 < 2 ? y0 : y1,
+                                           i1 == 0 || i1 == 3 ? x0 : x1, i1 < 2 ? y0 : y1,
+                                           i2 == 0 || i2 == 3 ? x0 : x1, i2 < 2 ? y0 : y1,
+                                           ci);
+                
+                    } else if (slx == x0 && sux == x1) {
+                        
+                    } else if (sly == y0 && suy == y1) {
+                        
+                    } else {
+                        if (slx == x0 && sly == y0) {
+                            
+                        }
+                    }
+                    
+                    /*
                     if (singleWinding == 0) {
                         if (std::abs(winding) == 1) {
                             if (winding > 0)
@@ -213,14 +237,24 @@ struct Grid {
                                 mesh.writeQuad(sx1, sy1, sx0, sy0, x1, y1, x0, y1, ci);
                             else
                                 mesh.writeQuad(x0, y0, x1, y0, sx0, sy0, sx1, sy1, ci);
-                        } if (singleWinding > 0) {
-//                            if (sy1 == y1)
-//                                mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ci);
-//                            else if (sy1 == y0)
-//                                ;
-                            
+                        } else {
+                            if (singleWinding > 0) {
+                                if (sy1 == y1) {
+                                    mesh.writeQuad(x0, y0, x1, y0, sx1, sy1, sx0, sy0, ci);
+                                    mesh.writeTriangle(x1, y0, x1, y1, sx0, sy0, ci);
+                                } else if (sy1 == y0)
+                                    mesh.writeTriangle(sx0, sy0, x0, y0, sx1, sy1, ci);
+                            } else {
+                                if (sy0 == y0)
+                                    mesh.writeTriangle(sx1, sy1, x0, y0, sx0, sy0, ci);
+                                else {
+                                    mesh.writeQuad(sx1, sy1, x1, y0, x1, y1, sx0, sy0, ci);
+                                    mesh.writeTriangle(sx1, sy1, x0, y0, x1, y0, ci);
+                                }
+                            }
                         }
                     }
+                     */
                 } else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
