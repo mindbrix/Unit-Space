@@ -166,7 +166,10 @@ struct Grid {
                     
                     if (activePaths[i].ecount) {
                         ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1;
-                        c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
+                        if (ecount == 1)
+                            c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
+                        else if (ecount == 2)
+                            c0 = cell - 2, c1 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
                     } else if (a == 65535) {
                         rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
@@ -234,6 +237,8 @@ struct Grid {
                             }
                         }
                     }
+                } else if (ecount == 2 && c0 && c1) {
+                    c0 = c0;
                 } else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
