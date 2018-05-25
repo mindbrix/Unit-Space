@@ -183,10 +183,10 @@ struct Grid {
                     sx1 = single->x1 / grid.scale + grid.tx, sy1 = single->y1 / grid.scale + grid.ty;
                     slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
                     sly = sy0 < sy1 ? sy0 : sy1, suy = sy0 > sy1 ? sy0 : sy1;
+                    up = (sx0 > sx1) == (sy0 > sy1);
                     
                     if (slx == x0 && sly == y0 && sux == x1 && suy == y1) {
                         assert(std::abs(singleWinding) > (1 - 1e-6) || std::abs(singleWinding) < 1e-6);
-                        up = (sx0 > sx1) == (sy0 > sy1);
                         pi = std::abs(singleWinding) < 1e-6 ? (up ? 1 : 2) : (up ? 3 : 0);
                         i0 = (pi + 3) % 4, i1 = pi, i2 = (pi + 1) % 4;
                         mesh.writeTriangle(i0 == 0 || i0 == 3 ? x0 : x1, i0 < 2 ? y0 : y1,
@@ -195,9 +195,12 @@ struct Grid {
                                            ci);
                 
                     } else if (slx == x0 && sux == x1) {
-                        
+                        if ((singleWinding == 0 && up) || ((singleWinding < 0) == (sx1 < sx0)))
+                            mesh.writeQuad(x0, y0, x1, y0, x1, up ? suy : sly, x0, up ? sly : suy, ci);
+                        else
+                            mesh.writeQuad(x0, up ? sly : suy, x1, up ? suy : sly, x1, y1, x0, y1, ci);
                     } else if (sly == y0 && suy == y1) {
-                        
+
                     } else {
                         if (slx == x0 && sly == y0) {
                             
