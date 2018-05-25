@@ -164,9 +164,10 @@ struct Grid {
                     nz = std::abs(activePaths[i].winding) * 65535;
                     a = scene._paths[activePaths[i].p]._evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
                     
-                    if (activePaths[i].ecount)
-                        ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1, single = cell - 1, singleWinding = activePaths[i].winding - (single->y1 - single->y0);
-                    else if (a == 65535) {
+                    if (activePaths[i].ecount) {
+                        ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1;
+                        single = cell - 1, singleWinding = activePaths[i].winding - (single->y1 - single->y0);
+                    } else if (a == 65535) {
                         rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
                         ei0 = ei1 = ecount = 0;
                     }
