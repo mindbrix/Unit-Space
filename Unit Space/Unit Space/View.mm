@@ -392,8 +392,8 @@ using namespace std;
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                     for (int i = 0; i < path->npts; i++)
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
-                    
-                    p.addSubPath(path->pts, path->npts, SubPath::kCubic);
+                    SubPath s(path->pts, path->npts, SubPath::kCubic);
+                    p.addSubPath(s);
                 }
                 scene.addPath(p);
             }
@@ -436,12 +436,16 @@ using namespace std;
     RGBA8 black(0, 0, 0, 255);
     RGBA8 alpha(255, 0, 0, 128);
     
+    SubPath triangle((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
+    SubPath lozenge((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
+    SubPath quad((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
+    
     Path p0(false, red);
-    p0.addSubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
+    p0.addSubPath(triangle);
     Path p1(true, red);
-    p1.addSubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
+    p1.addSubPath(lozenge);
     Path p2(false, black);
-	p2.addSubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
+	p2.addSubPath(quad);
 	
     Scene scene(self.bounds.size.width, self.bounds.size.height);
     if (self.pathBitmask & kPathBitmaskTriangle)

@@ -297,15 +297,11 @@ struct Path {
     Path() {}
     Path(bool evenOdd, RGBA8 color) : _color(color), _evenOdd(evenOdd), _outerIndex(0) {}
     
-    void addSubPath(float *points, int npoints, SubPath::Type type) {
-        if (npoints > 2) {
-            _subPaths.emplace_back(points, npoints, type);
-            
-            if (_subPaths.back()._npoints < 3)
-                _subPaths.pop_back();
-        }
+    void addSubPath(SubPath& s) {
+        if (s._npoints > 2) 
+            _subPaths.emplace_back(s);
     }
-    
+        
     bool intersects(Path& path) const {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
