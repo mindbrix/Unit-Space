@@ -194,11 +194,19 @@ struct Grid {
                                            i2 == 0 || i2 == 3 ? x0 : x1, i2 < 2 ? y0 : y1,
                                            ci);
                 
-                    } else if (slx == x0 && sux == x1) {
-                        if ((singleWinding == 0 && up) || ((singleWinding < 0) == (sx1 < sx0)))
-                            mesh.writeQuad(x0, y0, x1, y0, x1, up ? suy : sly, x0, up ? sly : suy, ci);
-                        else
-                            mesh.writeQuad(x0, up ? sly : suy, x1, up ? suy : sly, x1, y1, x0, y1, ci);
+                    } else
+                    if (slx == x0 && sux == x1) {
+                        if (singleWinding == 0) {
+                            if (up)
+                                mesh.writeTriangle(x0, y0, x1, y0, x1, suy, ci);
+                            else
+                                mesh.writeTriangle(x0, y1, x1, sly, x1, y1, ci);
+                        } else {
+                            if ((singleWinding < 0) == (sx1 < sx0))
+                                mesh.writeQuad(x0, y0, x1, y0, x1, up ? suy : sly, x0, up ? sly : suy, ci);
+                            else
+                                mesh.writeQuad(x0, up ? sly : suy, x1, up ? suy : sly, x1, y1, x0, y1, ci);
+                        }
                     } else if (sly == y0 && suy == y1) {
                         if (singleWinding == 0)
                             mesh.writeQuad(up ? slx : sux, y0, x1, y0, x1, y1, up ? sux : slx, y1, ci);
