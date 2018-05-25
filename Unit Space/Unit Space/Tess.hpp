@@ -320,9 +320,9 @@ struct Path {
         float x0, y0, x1, y1, *points;
         for (int ci = 0; ci < _subPaths.size(); ci++) {
             points = _subPaths[ci]._points.get();
-            for (int pi = 0; pi < _subPaths[ci]._npoints; pi++) {
-                x0 = points[pi * 2], y0 = points[pi * 2 + 1];
-                x1 = points[((pi + 1) % _subPaths[ci]._npoints) * 2], y1 = points[((pi + 1) % _subPaths[ci]._npoints) * 2 + 1];
+            x0 = points[0], y0 = points[1];
+            for (int pi = 0, npoints = _subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
+                x1 = points[((pi + 1) % npoints) * 2], y1 = points[((pi + 1) % npoints) * 2 + 1];
                 new (dst++) Edge(x0, y0, x1, y1, p, ci, pi);
             }
         }
