@@ -91,7 +91,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1, winding, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy;
+        float x0, y0, x1, y1, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy;
         Cell *cell, *cend, *single;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -179,7 +179,6 @@ struct Grid {
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && single) {
                     ci = begin[single->ei].p + grid.iw * grid.ih;
-                    winding = single->y1 - single->y0;
                     sx0 = single->x0 * grid.dimension + grid.tx, sy0 = single->y0 * grid.dimension + grid.ty;
                     sx1 = single->x1 * grid.dimension + grid.tx, sy1 = single->y1 * grid.dimension + grid.ty;
                     slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
