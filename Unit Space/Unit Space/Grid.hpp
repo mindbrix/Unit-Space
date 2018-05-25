@@ -200,7 +200,10 @@ struct Grid {
                         else
                             mesh.writeQuad(x0, up ? sly : suy, x1, up ? suy : sly, x1, y1, x0, y1, ci);
                     } else if (sly == y0 && suy == y1) {
-
+                        if (singleWinding == 0)
+                            mesh.writeQuad(up ? slx : sux, y0, x1, y0, x1, y1, up ? sux : slx, y1, ci);
+                        else
+                            mesh.writeQuad(x0, y0, sy0 < sy1 ? sx0 : sx1, y0, sy0 < sy1 ? sx1 : sx0, y1, x0, y1, ci);
                     } else {
                         if (slx == x0 && sly == y0) {
                             
