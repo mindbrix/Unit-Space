@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 32;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -38,8 +38,7 @@ struct Grid {
         scale = float(kDivisions) / dmax, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         edgeCounts.resize(iw * ih + 1);
-        for (auto& count : edgeCounts)
-            count = 0;
+        memset(& edgeCounts[0], 0, edgeCounts.size() * sizeof(edgeCounts[0]));
     }
     
     void writeEdgeCells(Edge *edge, int ei, bool count) {
