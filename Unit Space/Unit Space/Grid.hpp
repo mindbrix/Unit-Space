@@ -20,9 +20,9 @@ struct Grid {
         int ei;
         float x0, y0, x1, y1;
     };
-    struct PathCell {
-        PathCell() {}
-        PathCell(int p) : p(p), winding(0), ecount(0) {}
+    struct ActivePath {
+        ActivePath() {}
+        ActivePath(int p) : p(p), winding(0), ecount(0) {}
         void addCell(Cell& cell) {
             winding += cell.y1 - cell.y0;
             ei0 = ecount == 0 ? cell.ei : ei0 < cell.ei ? ei0 : cell.ei;
@@ -128,7 +128,7 @@ struct Grid {
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
         RGBA8 rgba;
-        PathCell activePaths[scene._paths.size()];
+        ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci;
         bool up;
         cell = & grid.cells[0];
@@ -145,11 +145,11 @@ struct Grid {
                         if (activePaths[i].p == begin[cell->ei].p)
                             break;
                     if (i == iend) {
-                        PathCell pathCell(begin[cell->ei].p);
+                        ActivePath active(begin[cell->ei].p);
                         idst = iend++, isrc = idst - 1;
-                        while (idst > 0 && pathCell.p < activePaths[isrc].p)
+                        while (idst > 0 && active.p < activePaths[isrc].p)
                             activePaths[idst--] = activePaths[isrc--];
-                        activePaths[idst] = pathCell;
+                        activePaths[idst] = active;
                         i = idst;
                     }
                     activePaths[i].addCell(*cell);
