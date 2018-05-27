@@ -95,7 +95,6 @@ struct Grid {
             mesh._points.emplace_back((nv == 3 || nv == 0 ? gx : gx + 1) * dimension + tx, (nv < 2 ? gy : gy + 1) * dimension + ty);
         for (i = 0; i < count; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
-        assert(1);
     }
     
     float lx, ly, ux, uy;
@@ -112,7 +111,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1, singleWinding, sx0, sy0, sx1, sy1, slx, sly, sux, suy;
+        float x0, y0, x1, y1, singleWinding;
         Cell *cell, *cend, *c0, *c1;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
