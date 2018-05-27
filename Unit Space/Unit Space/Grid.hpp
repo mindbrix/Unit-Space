@@ -80,9 +80,8 @@ struct Grid {
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1;
         int pv, nv, count, pi, i;
-        x0 = c0->x0 - gx, y0 = c0->y0 - gy, x1 = c0->x1 - gx, y1 = c0->y1 - gy;
-        if (right)
-            std::swap(x0, x1), std::swap(y0, y1);
+        x0 = (right ? c0->x1 : c0->x0) - gx, y0 = (right ? c0->y1 : c0->y0) - gy;
+        x1 = (right ? c0->x0 : c0->x1) - gx, y1 = (right ? c0->y0 : c0->y1) - gy;
         pv = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
         nv = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
         count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : pv == (nv + 2) % 4 ? 3 : 0;
