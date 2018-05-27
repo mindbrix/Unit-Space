@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -79,11 +79,22 @@ struct Grid {
     
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float winding, int gx, int gy, bool left, int p) {
         float x0, y0, x1, y1;
-        int pv, nv, count;
+        int pv, nv, count, pi, i;
         x0 = c0->x0 - float(gx), y0 = c0->y0 - float(gy), x1 = c0->x1 - float(gx), y1 = c0->y1 - float(gy);
         pv = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
         nv = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
         count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : 3;
+        if (left) {
+            pi = (int)mesh._points.size();
+            mesh._points.emplace_back(c0->x0 * dimension + tx, c0->y0 * dimension + ty);
+            mesh._points.emplace_back(c0->x1 * dimension + tx, c0->y1 * dimension + ty);
+            for (i = 0; i < count; i++, nv = (nv + 1) % 4)
+                mesh._points.emplace_back((nv == 3 || nv == 0 ? float(gx) : float(gx + 1)) * dimension + tx,
+                                          (nv < 2 ? float(gy) : float(gy + 1)) * dimension + ty);
+            
+            for (i = 0; i < count; i++)
+                mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
+        }
         assert(1);
     }
     
@@ -194,7 +205,8 @@ struct Grid {
                 else if (ecount == 1 && c0) {
                     ci = begin[c0->ei].p + grid.iw * grid.ih;
                     grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, true, ci);
-                        
+                    
+                    /*
                     sx0 = c0->x0 * grid.dimension + grid.tx, sy0 = c0->y0 * grid.dimension + grid.ty;
                     sx1 = c0->x1 * grid.dimension + grid.tx, sy1 = c0->y1 * grid.dimension + grid.ty;
                     slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
@@ -248,7 +260,8 @@ struct Grid {
                                 mesh.writeQuad(x0, sly, x1, y0, x1, y1, sux, y1, ci);
                             }
                         }
-                    }
+                     
+                    }*/
                 } else if (ecount == 2 && c0 && c1) {
                     c0 = c0;
                 } else if (ecount) {
