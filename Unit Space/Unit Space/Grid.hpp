@@ -77,7 +77,7 @@ struct Grid {
         }
     }
     
-    void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float winding, float gx, float gy, bool right, int p) {
+    void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1;
         int pv, nv, count, pi, i;
         x0 = c0->x0 - gx, y0 = c0->y0 - gy, x1 = c0->x1 - gx, y1 = c0->y1 - gy;
@@ -206,7 +206,7 @@ struct Grid {
                     if (singleWinding != 0 || c0->y1 != c0->y0) {
                         ci = begin[c0->ei].p + grid.iw * grid.ih;
                         right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
-                        grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, right, ci);
+                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                     }
                 } else if (ecount == 2 && c0 && c1) {
                     c0 = c0;
