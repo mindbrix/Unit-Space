@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -115,7 +115,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, count, base;
+        int ix, iy, count, base, cx, cy;
         float singleWinding;
         Cell *cell, *cend, *c0, *c1;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
@@ -156,7 +156,7 @@ struct Grid {
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, plast, ci;
-        bool right;
+        bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
@@ -212,7 +212,13 @@ struct Grid {
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                     }
                 } else if (ecount == 2 && c0 && c1) {
-                    c0 = c0;
+                    if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
+                        std::swap(c0, c1);
+                    if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
+                        inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
+                        if (inside)
+                            mesh.writeRect(ix, iy, ix + 1, iy + 1, ci);
+                    }
                 } else if (ecount) {
                      /*
                      Bounds bounds(x0, y0, x1, y1);
