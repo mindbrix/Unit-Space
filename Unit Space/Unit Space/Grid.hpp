@@ -135,7 +135,8 @@ struct Grid {
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin), true);
-//        mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
+        mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
+        grid.dimension = 1, grid.tx = grid.ty = 0;
         
         base = count = 0;
         for (auto& c : grid.edgeCounts)

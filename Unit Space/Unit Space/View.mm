@@ -586,7 +586,7 @@ using namespace std;
             call.meshState = meshState;
             call.type = _showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
             call.state = uniforms;
-            call.state.CTM = AffineTransformConcat(call.state.CTM, _mesh._CTM);
+            call.state.CTM = AffineTransformConcat(_mesh._CTM, call.state.CTM);
         }
         
         if (_mesh._concaveCurves.size()) {
