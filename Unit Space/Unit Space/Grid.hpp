@@ -36,8 +36,8 @@ struct Grid {
         }
         int p;
         bool evenOdd;
-        float winding, a;
-        int ecount, ei0, ei1;
+        float winding;
+        int a, ecount, ei0, ei1;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
