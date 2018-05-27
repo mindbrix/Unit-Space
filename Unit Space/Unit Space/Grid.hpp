@@ -79,10 +79,11 @@ struct Grid {
     
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float winding, int gx, int gy, bool left, int p) {
         float x0, y0, x1, y1;
-        int pv0, nv1;
+        int pv, nv, count;
         x0 = c0->x0 - float(gx), y0 = c0->y0 - float(gy), x1 = c0->x1 - float(gx), y1 = c0->y1 - float(gy);
-        pv0 = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
-        nv1 = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
+        pv = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
+        nv = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
+        count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : 3;
         assert(1);
     }
     
