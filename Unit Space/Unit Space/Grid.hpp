@@ -85,7 +85,9 @@ struct Grid {
             std::swap(x0, x1), std::swap(y0, y1);
         pv = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
         nv = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
-        count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : 3;
+        count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : pv == (nv + 2) % 4 ? 3 : 0;
+        if (count == 0)
+            return;
         pi = (int)mesh._points.size();
         mesh._points.emplace_back((x0 + gx) * dimension + tx, (y0 + gy) * dimension + ty);
         mesh._points.emplace_back((x1 + gx) * dimension + tx, (y1 + gy) * dimension + ty);
