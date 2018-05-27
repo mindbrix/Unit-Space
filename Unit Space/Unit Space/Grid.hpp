@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -230,6 +230,8 @@ struct Grid {
                             ci = begin[c0->ei].p + grid.iw * grid.ih;
                             right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                            if (plast >= 0)
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                         }
                     }
                 } else if (ecount) {
