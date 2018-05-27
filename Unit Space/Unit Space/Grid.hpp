@@ -81,8 +81,9 @@ struct Grid {
         float x0, y0, x1, y1;
         int pv0, nv1;
         x0 = c0->x0 - float(gx), y0 = c0->y0 - float(gy), x1 = c0->x1 - float(gx), y1 = c0->y1 - float(gy);
-        pv0 = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 0 ? 1 : 2) : (y0 == 0 ? 2 : 3);
-        nv1 = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 1 ? 0 : 3) : (y1 == 1 ? 1 : 0);
+        pv0 = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
+        nv1 = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
+        assert(1);
     }
     
     float lx, ly, ux, uy;
@@ -191,6 +192,8 @@ struct Grid {
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && c0) {
                     ci = begin[c0->ei].p + grid.iw * grid.ih;
+                    grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, true, ci);
+                        
                     sx0 = c0->x0 * grid.dimension + grid.tx, sy0 = c0->y0 * grid.dimension + grid.ty;
                     sx1 = c0->x1 * grid.dimension + grid.tx, sy1 = c0->y1 * grid.dimension + grid.ty;
                     slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
