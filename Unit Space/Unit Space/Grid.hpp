@@ -92,8 +92,7 @@ struct Grid {
         mesh._points.emplace_back((x0 + gx) * dimension + tx, (y0 + gy) * dimension + ty);
         mesh._points.emplace_back((x1 + gx) * dimension + tx, (y1 + gy) * dimension + ty);
         for (i = 0; i < count; i++, nv = (nv + 1) % 4)
-            mesh._points.emplace_back((nv == 3 || nv == 0 ? gx : gx + 1) * dimension + tx,
-                                      (nv < 2 ? gy : gy + 1) * dimension + ty);
+            mesh._points.emplace_back((nv == 3 || nv == 0 ? gx : gx + 1) * dimension + tx, (nv < 2 ? gy : gy + 1) * dimension + ty);
         for (i = 0; i < count; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
         assert(1);
