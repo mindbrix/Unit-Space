@@ -111,7 +111,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float x0, y0, x1, y1, singleWinding;
+        float singleWinding;
         Cell *cell, *cend, *c0, *c1;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path& path : scene._paths)
@@ -155,7 +155,6 @@ struct Grid {
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
-            y0 = float(iy), y1 = float(iy + 1);
             
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
@@ -198,10 +197,9 @@ struct Grid {
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ci] = rgba;
-                x0 = float(ix), x1 = float(ix + 1);
                 
                 if (ecount == 0 && rgba.a != 0)
-                    mesh.writeRect(x0, y0, x1, y1, ci);
+                    mesh.writeRect(ix, iy, ix + 1, iy + 1, ci);
                 else if (ecount == 1 && c0) {
                     if (singleWinding != 0 || c0->y1 != c0->y0) {
                         ci = begin[c0->ei].p + grid.iw * grid.ih;
