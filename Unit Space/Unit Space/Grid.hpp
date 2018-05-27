@@ -203,66 +203,11 @@ struct Grid {
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && c0) {
-                    ci = begin[c0->ei].p + grid.iw * grid.ih;
-                    right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
-                    grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, right, ci);
-                    
-                    /*
-                    sx0 = c0->x0 * grid.dimension + grid.tx, sy0 = c0->y0 * grid.dimension + grid.ty;
-                    sx1 = c0->x1 * grid.dimension + grid.tx, sy1 = c0->y1 * grid.dimension + grid.ty;
-                    slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
-                    sly = sy0 < sy1 ? sy0 : sy1, suy = sy0 > sy1 ? sy0 : sy1;
-                    up = (sx0 > sx1) == (sy0 > sy1);
-                    
-                    if (slx == x0 && sux == x1) {
-                        if (singleWinding == 0) {
-                            if (up)
-                                mesh.writeTriangle(x0, y0, x1, y0, x1, suy, ci);
-                            else
-                                mesh.writeTriangle(x0, y1, x1, sly, x1, y1, ci);
-                        } else {
-                            if ((singleWinding < 0) == (sx1 < sx0))
-                                mesh.writeQuad(x0, y0, x1, y0, x1, up ? suy : sly, x0, up ? sly : suy, ci);
-                            else
-                                mesh.writeQuad(x0, up ? sly : suy, x1, up ? suy : sly, x1, y1, x0, y1, ci);
-                        }
-                    } else if (sly == y0 && suy == y1) {
-                        if (singleWinding == 0)
-                            mesh.writeQuad(up ? slx : sux, y0, x1, y0, x1, y1, up ? sux : slx, y1, ci);
-                        else
-                            mesh.writeQuad(x0, y0, sy0 < sy1 ? sx0 : sx1, y0, sy0 < sy1 ? sx1 : sx0, y1, x0, y1, ci);
-                    } else {
-                        if (slx == x0 && sly == y0 && singleWinding != 0) {
-                            if ((singleWinding < 0) == (sx1 < sx0))
-                                mesh.writeTriangle(x0, y0, sux, y0, x0, suy, ci);
-                            else {
-                                mesh.writeTriangle(x0, suy, x1, y1, x0, y1, ci);
-                                mesh.writeQuad(x0, suy, sux, y0, x1, y0, x1, y1, ci);
-                            }
-                        } else if (sux == x1 && sly == y0) {
-                            if (singleWinding == 0)
-                                mesh.writeTriangle(slx, y0, x1, y0, x1, suy, ci);
-                            else {
-                                mesh.writeTriangle(x1, suy, x1, y1, x0, y1, ci);
-                                mesh.writeQuad(x0, y0, slx, y0, x1, suy, x0, y1, ci);
-                            }
-                        } else if (sux == x1 && suy == y1) {
-                            if (singleWinding == 0)
-                                mesh.writeTriangle(x1, sly, x1, y1, slx, y1, ci);
-                            else {
-                                mesh.writeTriangle(x0, y0, x1, y0, x1, sly, ci);
-                                mesh.writeQuad(x0, y0, x1, sly, slx, y1, x0, y1, ci);
-                            }
-                        } else if (slx == x0 && suy == y1 && singleWinding != 0) {
-                            if ((singleWinding < 0) != (sx1 < sx0))
-                                mesh.writeTriangle(x0, sly, sux, y1, x0, y1, ci);
-                            else {
-                                mesh.writeTriangle(x0, y0, x1, y0, x0, sly, ci);
-                                mesh.writeQuad(x0, sly, x1, y0, x1, y1, sux, y1, ci);
-                            }
-                        }
-                     
-                    }*/
+                    if (singleWinding != 0 || c0->y1 != c0->y0) {
+                        ci = begin[c0->ei].p + grid.iw * grid.ih;
+                        right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
+                        grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, right, ci);
+                    }
                 } else if (ecount == 2 && c0 && c1) {
                     c0 = c0;
                 } else if (ecount) {
