@@ -115,7 +115,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, count, base, cx, cy;
+        int ix, iy, count, base;
         float singleWinding;
         Cell *cell, *cend, *c0, *c1;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
@@ -216,8 +216,11 @@ struct Grid {
                         std::swap(c0, c1);
                     if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
                         inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
-                        if (inside)
-                            mesh.writeRect(ix, iy, ix + 1, iy + 1, ci);
+                        if (inside) {
+                            ci = begin[c0->ei].p + grid.iw * grid.ih;
+                            right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
+                            grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                        }
                     }
                 } else if (ecount) {
                      /*
