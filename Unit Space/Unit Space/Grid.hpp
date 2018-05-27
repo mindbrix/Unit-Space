@@ -86,18 +86,28 @@ struct Grid {
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1;
         int pv, nv, count, pi, i;
-        x0 = (right ? c0->x1 : c0->x0) - gx, y0 = (right ? c0->y1 : c0->y0) - gy;
-        x1 = (right ? c0->x0 : c0->x1) - gx, y1 = (right ? c0->y0 : c0->y1) - gy;
+        x0 = (right ? (c1 ? c1->x1 : c0->x1) : c0->x0) - gx, y0 = (right ? (c1 ? c1->y1 : c0->y1) : c0->y0) - gy;
+        x1 = (right ? c0->x0 : (c1 ? c1->x1 : c0->x1)) - gx, y1 = (right ? c0->y0 : (c1 ? c1->y1 : c0->y1)) - gy;
         pv = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
         nv = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
         count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : pv == (nv + 2) % 4 ? 3 : 0;
         if (count == 0)
             return;
         pi = (int)mesh._points.size();
-        mesh._points.emplace_back(x0 + gx, y0 + gy);
-        mesh._points.emplace_back(x1 + gx, y1 + gy);
+        
+        if (c1) {
+            mesh._points.emplace_back(c0->x1, c0->y1);
+            mesh._points.emplace_back(x1 + gx, y1 + gy);
+        } else {
+            mesh._points.emplace_back(x0 + gx, y0 + gy);
+            mesh._points.emplace_back(x1 + gx, y1 + gy);
+        }
         for (i = 0; i < count; i++, nv = (nv + 1) % 4)
             mesh._points.emplace_back(nv == 3 || nv == 0 ? gx : gx + 1, nv < 2 ? gy : gy + 1);
+        if (c1) {
+            mesh._points.emplace_back(x0 + gx, y0 + gy);
+            count++;
+        }
         for (i = 0; i < count; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
