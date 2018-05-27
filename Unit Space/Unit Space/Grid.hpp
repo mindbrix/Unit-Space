@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -153,9 +153,9 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
-        RGBA8 rgba;
+        RGBA8 rgba, rgbaLast;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, ecount, ci;
+        int iend, i, idst, isrc, ei0, ei1, ecount, plast, ci;
         bool right;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -181,18 +181,20 @@ struct Grid {
                     activePaths[i].addCell(*cell);
                 }
                 
-                rgba = RGBA8(0, 0, 0, 0);
+                rgba = rgbaLast = RGBA8(0, 0, 0, 0);
                 c0 = c1 = nullptr;
-                singleWinding = ei0 = ei1 = ecount = 0;
+                singleWinding = ei0 = ei1 = ecount = plast = 0;
                 for (i = 0; i < iend; i++) {
                     if (activePaths[i].ecount) {
                         ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1;
+                        rgbaLast = rgba;
                         if (ecount == 1)
                             c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
                         else if (ecount == 2)
                             c0 = cell - 2, c1 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
                     } else if (activePaths[i].a == 65535) {
                         rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
+                        plast = activePaths[i].p;
                         ei0 = ei1 = ecount = 0;
                     }
                 }
@@ -206,6 +208,8 @@ struct Grid {
                         ci = begin[c0->ei].p + grid.iw * grid.ih;
                         right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
                         grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                        if (rgbaLast.a == 255)
+                            grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                     }
                 } else if (ecount == 2 && c0 && c1) {
                     c0 = c0;
