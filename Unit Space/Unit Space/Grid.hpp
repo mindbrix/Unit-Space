@@ -151,7 +151,7 @@ struct Grid {
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci;
-        bool up;
+        bool right;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
@@ -204,7 +204,8 @@ struct Grid {
                     mesh.writeRect(x0, y0, x1, y1, ci);
                 else if (ecount == 1 && c0) {
                     ci = begin[c0->ei].p + grid.iw * grid.ih;
-                    grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, false, ci);
+                    right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
+                    grid.writeCellPolygon(mesh, c0, c1, singleWinding, ix, iy, right, ci);
                     
                     /*
                     sx0 = c0->x0 * grid.dimension + grid.tx, sy0 = c0->y0 * grid.dimension + grid.ty;
