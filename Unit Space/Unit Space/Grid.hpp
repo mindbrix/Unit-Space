@@ -153,7 +153,7 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
-        RGBA8 rgba, rgbaLast;
+        RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, plast, ci;
         bool right;
@@ -181,13 +181,13 @@ struct Grid {
                     activePaths[i].addCell(*cell);
                 }
                 
-                rgba = rgbaLast = RGBA8(0, 0, 0, 0);
+                rgba = RGBA8(0, 0, 0, 0);
                 c0 = c1 = nullptr;
-                singleWinding = ei0 = ei1 = ecount = plast = 0;
+                singleWinding = ei0 = ei1 = ecount = 0;
+                plast = -1;
                 for (i = 0; i < iend; i++) {
                     if (activePaths[i].ecount) {
                         ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1;
-                        rgbaLast = rgba;
                         if (ecount == 1)
                             c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
                         else if (ecount == 2)
@@ -208,7 +208,7 @@ struct Grid {
                         ci = begin[c0->ei].p + grid.iw * grid.ih;
                         right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
                         grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                        if (rgbaLast.a == 255)
+                        if (plast >= 0)
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                     }
                 } else if (ecount == 2 && c0 && c1) {
