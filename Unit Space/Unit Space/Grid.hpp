@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -113,21 +113,21 @@ struct Grid {
         float singleWinding;
         Cell *cell, *cend, *c0, *c1;
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
-        for (Path& path : scene._paths)
-            path.update();
+        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
+            path->update();
         
         Bounds bounds = scene._paths[0]._bounds;
-        for (Path& path : scene._paths)
-            bounds.unite(path._bounds);
+        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
+            bounds.unite(path->_bounds);
         
         count = 0;
-        for (Path& path : scene._paths)
-            count += path.countPoints();
+        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
+            count += path->countPoints();
         
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
-        for (Path& path : scene._paths)
-            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
+        for (Path *path = & scene._paths[0], *pbegin = path, *pend = path + scene._paths.size(); path < pend; path++)
+            end = path->writeEdges(end, (int)(path - pbegin));
         
         Tess::writeCurves(mesh, scene);
         
@@ -145,8 +145,8 @@ struct Grid {
             grid.writeEdgeCells(edge, (int)(edge - begin), false);
         
         mesh._colors.resize(grid.iw * grid.ih);
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
+        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
+            mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ei0, ei1, ecount, nz, a, p, ci;
