@@ -89,10 +89,10 @@ struct Grid {
         if (count == 0)
             return;
         pi = (int)mesh._points.size();
-        mesh._points.emplace_back((x0 + gx) * dimension + tx, (y0 + gy) * dimension + ty);
-        mesh._points.emplace_back((x1 + gx) * dimension + tx, (y1 + gy) * dimension + ty);
+        mesh._points.emplace_back(x0 + gx, y0 + gy);
+        mesh._points.emplace_back(x1 + gx, y1 + gy);
         for (i = 0; i < count; i++, nv = (nv + 1) % 4)
-            mesh._points.emplace_back((nv == 3 || nv == 0 ? gx : gx + 1) * dimension + tx, (nv < 2 ? gy : gy + 1) * dimension + ty);
+            mesh._points.emplace_back(nv == 3 || nv == 0 ? gx : gx + 1, nv < 2 ? gy : gy + 1);
         for (i = 0; i < count; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
@@ -136,7 +136,6 @@ struct Grid {
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin), true);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
-        grid.dimension = 1, grid.tx = grid.ty = 0;
         
         base = count = 0;
         for (auto& c : grid.edgeCounts)
@@ -156,7 +155,7 @@ struct Grid {
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
-            y0 = float(iy) * grid.dimension + grid.ty, y1 = float(iy + 1) * grid.dimension + grid.ty;
+            y0 = float(iy), y1 = float(iy + 1);
             
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
@@ -199,7 +198,7 @@ struct Grid {
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ci] = rgba;
-                x0 = float(ix) * grid.dimension + grid.tx, x1 = float(ix + 1) * grid.dimension + grid.tx;
+                x0 = float(ix), x1 = float(ix + 1);
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(x0, y0, x1, y1, ci);
