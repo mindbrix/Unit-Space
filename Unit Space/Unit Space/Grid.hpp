@@ -201,7 +201,7 @@ struct Grid {
                         float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
                         Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
                         Path& path = scene._paths[activePaths[iend - 1].p];
-                        int plast = -1;// iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                        int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                         if (plast != -1) {
                             libTess::addClippedContours(tess, path, bounds, true);
                             float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
