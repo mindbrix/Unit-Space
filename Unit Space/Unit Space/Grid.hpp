@@ -215,7 +215,7 @@ struct Grid {
                         ci = begin[c0->ei].p + grid.iw * grid.ih;
                         right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
                         grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                        if (plast >= 0)
+                        if (plast != -1)
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                     }
                 } else if (ecount == 2 && c0 && c1) {
@@ -228,7 +228,7 @@ struct Grid {
 //                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
                             right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                            if (plast >= 0)
+                            if (plast != -1)
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                         }
                     }
@@ -247,10 +247,19 @@ struct Grid {
                             out = _urx.clip(out, EdgeClipper::URX, x1);
                             out = _ury.clip(out, EdgeClipper::URY, y1);
                             
-                            if (out->size() > 2)
+                            if (out->size() > 2) {
+                                if (plast != -1) {
+                                    tessSetOption(tess, TESS_REVERSE_CONTOURS, s._area > 0);
+                                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                                    float rect[8] = { x0, y0, x1, y0, x1, y1, x0, y1 };
+                                    tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+                                    tessAddContour(tess, 2, & rect[0], kPointStride, 4);
+                                    libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast);
+                                }
                                 tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                            }
                         }
-                    libTess::writeTriangles(mesh, tess, grid.iw * grid.ih + begin[c0->ei].p);
+                    libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + begin[c0->ei].p);
                 }
             }
         }

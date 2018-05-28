@@ -83,9 +83,9 @@ struct libTess {
         }
     }
     
-    static void writeTriangles(Mesh& mesh, TESStesselator *tess, int p) {
+    static void writeTriangles(Mesh& mesh, TESStesselator *tess, int windingRule, int p) {
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-        if (tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+        if (tessTesselate(tess, windingRule, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
             float *points = (float *)tessGetVertices(tess);
             int npoints = tessGetVertexCount(tess);
             const int nelems = tessGetElementCount(tess);
@@ -104,7 +104,7 @@ struct libTess {
         
         for (SubPath& s : path._subPaths)
             tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-        writeTriangles(mesh, tess, (int)mesh._colors.size() - 1);
+        writeTriangles(mesh, tess, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1);
     }
     
     static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
