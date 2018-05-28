@@ -31,14 +31,9 @@ struct EdgeClipper {
         _out.resize(0);
         _type = type;
         _limit = limit;
-        if (in->size() > 2) {
-            size_t last = in->size() - 1;
-            for (int i = 0; i < last; i++)
-                clip((*in)[i], (*in)[i + 1]);
-            
-            if (!(in->back().x == in->front().x && in->back().y == in->front().y))
-                clip(in->back(), in->front());
-        }
+        if (in->size() > 2)
+            for (int i = 0, j = (int)in->size() - 1; i < in->size(); j = i, i++)
+                clip((*in)[j], (*in)[i]);
         return &_out;
     }
     
