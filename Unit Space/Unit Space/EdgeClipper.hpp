@@ -6,13 +6,11 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
-using namespace std;
-
 // Sutherland-Hodgman polygon clipping
 // http://www.cc.gatech.edu/grads/h/Hao-wei.Hsieh/Haowei.Hsieh/code2.html
 //
 struct EdgeClipper {
-    typedef vector<Vector> Element;
+    typedef std::vector<Vector> Element;
     enum Type { LLX, LLY, URX, URY };
     
     float   _limit;
@@ -52,16 +50,7 @@ struct EdgeClipper {
     }
     
     inline bool inside(const Vector p) {
-        switch(_type) {
-            case LLX:
-                return p.x >= _limit;
-            case LLY:
-                return p.y >= _limit;
-            case URX:
-                return p.x <= _limit;
-            case URY:
-                return p.y <= _limit;
-        }
+        return _type == LLX ? p.x >= _limit : _type == LLY ? p.y >= _limit : _type == URX ? p.x <= _limit : p.y <= _limit;
     }
     
     inline Vector intersect(const Vector p0, const Vector p1) {
