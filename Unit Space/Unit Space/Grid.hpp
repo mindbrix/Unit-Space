@@ -159,7 +159,7 @@ struct Grid {
         mesh._colors.emplace_back(0, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, ecount, plast, ci;
+        int iend, i, idst, isrc, plast, ci;
         bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -197,48 +197,48 @@ struct Grid {
                 if (iend) {
                     if (activePaths[iend - 1].ecount == 0)
                         mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
-                    else if (activePaths[iend - 1].ecount == 1) {
-                        c0 = activePaths[iend - 1].c0, c1 = nullptr;
-                        singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0);
-                        if (singleWinding != 0 || c0->y1 != c0->y0) {
-                            ci = begin[c0->ei].p + grid.iw * grid.ih;
-                            right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
-                            grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                            int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
-                            if (plast != -1)
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
-                        }
-                    } else if (activePaths[iend - 1].ecount == 1) {
-                        c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
-                        singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
-                        if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
-                            std::swap(c0, c1);
-                        if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
-                            inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
-                            if (inside) {
+                    else {
+                        plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                        if (activePaths[iend - 1].ecount == 1) {
+                            c0 = activePaths[iend - 1].c0, c1 = nullptr;
+                            singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0);
+                            if (singleWinding != 0 || c0->y1 != c0->y0) {
                                 ci = begin[c0->ei].p + grid.iw * grid.ih;
-                                //                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
-                                right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
+                                right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                                int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                             }
+                        } else if (activePaths[iend - 1].ecount == 1) {
+                            c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
+                            singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
+                            if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
+                                std::swap(c0, c1);
+                            if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
+                                inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
+                                if (inside) {
+                                    ci = begin[c0->ei].p + grid.iw * grid.ih;
+                                    //                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
+                                    right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
+                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                                    if (plast != -1)
+                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                                }
+                            }
+                        } else {
+                            float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
+                            Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
+                            float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
+                            Path& path = scene._paths[activePaths[iend - 1].p];
+                            if (plast != -1) {
+                                libTess::addMaskContours(tess, path, true);
+                                tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+                                tessAddContour(tess, 2, & rect[0], kPointStride, 4);
+                                libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
+                            }
+                            libTess::addClippedContours(tess, path, bounds, false);
+                            libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
                         }
-                    } else {
-                        float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
-                        Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
-                        float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
-                        Path& path = scene._paths[activePaths[iend - 1].p];
-                        int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
-                        if (plast != -1) {
-                            libTess::addMaskContours(tess, path, true);
-                            tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
-                            tessAddContour(tess, 2, & rect[0], kPointStride, 4);
-                            libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
-                        }
-                        libTess::addClippedContours(tess, path, bounds, false);
-                        libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
                     }
                 }
             }
