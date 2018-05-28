@@ -198,9 +198,11 @@ struct Grid {
                     if (activePaths[iend - 1].ecount == 0)
                         mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
                     else {
+                        inside = false;
                         plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                         if (activePaths[iend - 1].ecount == 1) {
                             c0 = activePaths[iend - 1].c0, c1 = nullptr;
+                            inside = true;
                             singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0);
                             if (singleWinding != 0 || c0->y1 != c0->y0) {
                                 ci = begin[c0->ei].p + grid.iw * grid.ih;
@@ -209,7 +211,7 @@ struct Grid {
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                             }
-                        } else if (activePaths[iend - 1].ecount == 1) {
+                        } else if (0 && activePaths[iend - 1].ecount == 2) {
                             c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
                             singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
                             if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
@@ -225,7 +227,8 @@ struct Grid {
                                         grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                                 }
                             }
-                        } else {
+                        }
+                        if (!inside) {
                             float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
                             Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
                             float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
