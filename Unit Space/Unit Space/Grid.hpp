@@ -11,7 +11,7 @@
 #import "EdgeClipper.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -77,6 +77,8 @@ struct Grid {
                     tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                     ty0 = sx0 == sx1 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     ty1 = sx0 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+//                    ty0 = sx0 == sx1 ? sy0 : tx0 == sx1 ? sy1 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+//                    ty1 = sx0 == sx1 ? sy1 : tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     new (& cells[(*counts)++]) Cell(ei, tx0, ty0, tx1, ty1);
                 }
             }
@@ -159,7 +161,7 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, ecount, plast, ci;
+        int iend, i, idst, isrc, ei0, ei1, ecount, plast, ci, tsize;
         bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -204,6 +206,7 @@ struct Grid {
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
                 mesh._colors[ci] = rgba;
+                tsize = (int)mesh._triangles.size();
                 
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(ix, iy, ix + 1, iy + 1, ci);
@@ -222,29 +225,32 @@ struct Grid {
                         inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
                         if (inside) {
                             ci = begin[c0->ei].p + grid.iw * grid.ih;
+//                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
                             right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                             if (plast >= 0)
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                         }
                     }
-                } else if (ecount) {
-                     /*
-                     Bounds bounds(x0, y0, x1, y1);
-                     Path& path = scene._paths[p];
-                     for (SubPath& s : path._subPaths)
-                     if (s._bounds.intersects(bounds)) {
-                         auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                         out = _llx.clip(out, EdgeClipper::LLX, x0);
-                         out = _lly.clip(out, EdgeClipper::LLY, y0);
-                         out = _urx.clip(out, EdgeClipper::URX, x1);
-                         out = _ury.clip(out, EdgeClipper::URY, y1);
-                         
-                         if (out->size() > 2)
-                             tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                     }
-                     libTess::writeTriangles(mesh, tess, grid.iw * grid.ih + p);
-                     */
+                }
+                if (tsize == (int)mesh._triangles.size() && c0) {
+                    float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
+                    Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
+                    Path& path = scene._paths[begin[c0->ei].p];
+                    for (SubPath& s : path._subPaths)
+                        if (s._bounds.intersects(bounds)) {
+                            auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+                            for (Vector& v : *out)
+                                v.x = (v.x - grid.tx) * grid.scale, v.y = (v.y - grid.ty) * grid.scale;
+                            out = _llx.clip(out, EdgeClipper::LLX, x0);
+                            out = _lly.clip(out, EdgeClipper::LLY, y0);
+                            out = _urx.clip(out, EdgeClipper::URX, x1);
+                            out = _ury.clip(out, EdgeClipper::URY, y1);
+                            
+                            if (out->size() > 2)
+                                tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+                        }
+                    libTess::writeTriangles(mesh, tess, grid.iw * grid.ih + begin[c0->ei].p);
                 }
             }
         }
