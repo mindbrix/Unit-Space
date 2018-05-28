@@ -159,7 +159,7 @@ struct Grid {
         mesh._colors.emplace_back(0, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, ecount, plast, ci, tsize;
+        int iend, i, idst, isrc, ecount, plast, ci;
         bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -208,6 +208,23 @@ struct Grid {
                             if (plast != -1)
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                         }
+                    } else if (activePaths[iend - 1].ecount == 1) {
+                        c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
+                        singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
+                        if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
+                            std::swap(c0, c1);
+                        if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
+                            inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
+                            if (inside) {
+                                ci = begin[c0->ei].p + grid.iw * grid.ih;
+                                //                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
+                                right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                                int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                                if (plast != -1)
+                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                            }
+                        }
                     } else {
                         float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
                         Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
@@ -224,49 +241,6 @@ struct Grid {
                         libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
                     }
                 }
-                
-                continue;
-                rgba = RGBA8(0, 0, 0, 0);
-                c0 = c1 = nullptr;
-                singleWinding = ecount = 0;
-                plast = -1;
-                for (i = 0; i < iend; i++) {
-                    if (activePaths[i].ecount) {
-                        ecount += activePaths[i].ecount;
-                        if (ecount == 1)
-                            c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
-                        else if (ecount == 2)
-                            c0 = cell - 2, c1 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
-                    } else if (activePaths[i].a == 65535) {
-                        rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
-                        plast = activePaths[i].p;
-                        ecount = 0;
-                    }
-                }
-                rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
-                mesh._colors[ci] = rgba;
-                tsize = (int)mesh._triangles.size();
-                
-                
-                if (ecount == 0 && rgba.a != 0)
-                    mesh.writeRect(ix, iy, ix + 1, iy + 1, ci);
-                /*else if (ecount == 1 && c0) {
-                } else if (ecount == 2 && c0 && c1) {
-                    if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
-                        std::swap(c0, c1);
-                    if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
-                        inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
-                        if (inside) {
-                            ci = begin[c0->ei].p + grid.iw * grid.ih;
-//                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
-                            right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
-                            grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                            if (plast != -1)
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
-                        }
-                    }
-                }
-                 */
             }
         }
         tessDeleteTess(tess);
