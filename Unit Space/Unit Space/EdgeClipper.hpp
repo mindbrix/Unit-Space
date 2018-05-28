@@ -70,16 +70,13 @@ struct EdgeClipper {
     }
     
     inline Vector intersect(const Vector p0, const Vector p1) {
-        float dx = p1.x - p0.x, dy = p1.y - p0.y;
         switch(_type) {
             case LLX:
-            case URX: {
-                return { _limit, (_limit - p0.x) / dx * dy + p0.y };
-            }
+            case URX:
+                return { _limit, (_limit - p0.x) / (p1.x - p0.x) * (p1.y - p0.y) + p0.y };
             case LLY:
-            case URY: {
-                return { (_limit - p0.y) / dy * dx + p0.x, _limit };
-            }
+            case URY:
+                return { (_limit - p0.y) / (p1.y - p0.y) * (p1.x - p0.x) + p0.x, _limit };
         }
     }
 };
