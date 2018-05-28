@@ -58,10 +58,14 @@ struct libTess {
                 auto out = polygon.make((Vector *)s._points.get(), s._npoints);
     
                 if (!clipBounds.contains(s._bounds)) {
-                    out = _llx.clip(out, EdgeClipper::LLX, clipBounds.lx);
-                    out = _lly.clip(out, EdgeClipper::LLY, clipBounds.ly);
-                    out = _urx.clip(out, EdgeClipper::URX, clipBounds.ux);
-                    out = _ury.clip(out, EdgeClipper::URY, clipBounds.uy);
+                    if (s._bounds.lx < clipBounds.lx && s._bounds.ux > clipBounds.lx)
+                        out = _llx.clip(out, EdgeClipper::LLX, clipBounds.lx);
+                    if (s._bounds.ly < clipBounds.ly && s._bounds.uy > clipBounds.ly)
+                        out = _lly.clip(out, EdgeClipper::LLY, clipBounds.ly);
+                    if (s._bounds.lx < clipBounds.ux && s._bounds.ux > clipBounds.ux)
+                        out = _urx.clip(out, EdgeClipper::URX, clipBounds.ux);
+                    if (s._bounds.ly < clipBounds.uy && s._bounds.uy > clipBounds.uy)
+                        out = _ury.clip(out, EdgeClipper::URY, clipBounds.uy);
                 }
                 if (out->size() > 2)
                     tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
