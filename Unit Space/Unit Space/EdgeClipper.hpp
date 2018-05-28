@@ -36,8 +36,8 @@ struct EdgeClipper {
             for (int i = 0; i < last; i++)
                 clip((*in)[i], (*in)[i + 1]);
             
-            if ((*in)[last].x != (*in)[0].x || (*in)[last].y != (*in)[0].y)
-                clip((*in)[last], (*in)[0]);
+            if (!(in->back().x == in->front().x && in->back().y == in->front().y))
+                clip(in->back(), in->front());
         }
         return &_out;
     }
