@@ -220,8 +220,7 @@ struct Grid {
                                 inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
                                 if (inside) {
                                     ci = begin[c0->ei].p + grid.iw * grid.ih;
-                                    //                            right = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0;
-                                    right = singleWinding == 0 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) < 0 : singleWinding > 0;
+                                    right = singleWinding == 0 ? (c0->y1 - c0->y0) + (c1->y1 - c1->y0) > 0 : singleWinding > 0;
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                                     if (plast != -1)
                                         grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
