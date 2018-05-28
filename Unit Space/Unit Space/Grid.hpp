@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -167,6 +167,15 @@ struct Grid {
             
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
+                
+                idst = 0, isrc = 0;
+                while (isrc < iend) {
+                    if (activePaths[isrc].a != 0)
+                        activePaths[idst++] = activePaths[isrc];
+                    isrc++;
+                }
+                iend = idst;
+                
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
@@ -184,15 +193,7 @@ struct Grid {
                     }
                     activePaths[i].addCell(*cell);
                 }
-                
-                idst = 0, isrc = 0;
-                while (isrc < iend) {
-                    if (activePaths[isrc].a != 0)
-                        activePaths[idst++] = activePaths[isrc];
-                    isrc++;
-                }
-                iend = idst;
-                
+
 //                for (i = 0; i < iend; i++)
 //                    if (activePaths[i].a == 65535 || activePaths[i].ecount)
 //                        break;
