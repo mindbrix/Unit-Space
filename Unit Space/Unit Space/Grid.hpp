@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -185,12 +185,24 @@ struct Grid {
                     activePaths[i].addCell(*cell);
                 }
                 
-                for (i = 0; i < iend; i++)
-                    if (activePaths[i].a == 65535 || activePaths[i].ecount)
-                        break;
+                idst = 0, isrc = 0;
+                while (isrc < iend) {
+                    if (activePaths[isrc].a != 0)
+                        activePaths[idst++] = activePaths[isrc];
+                    isrc++;
+                }
+                iend = idst;
                 
-                if (i < iend)
-                    mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[i].p + grid.iw * grid.ih);
+//                for (i = 0; i < iend; i++)
+//                    if (activePaths[i].a == 65535 || activePaths[i].ecount)
+//                        break;
+                
+                if (iend) {
+                    mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[0].p + grid.iw * grid.ih);
+                    
+//                    if (activePaths[iend - 1].a == 65535)
+//                        mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
+                }
                 
                 continue;
                 rgba = RGBA8(0, 0, 0, 0);
