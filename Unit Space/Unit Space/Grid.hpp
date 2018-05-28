@@ -211,7 +211,7 @@ struct Grid {
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                             }
-                        } else if (0 && activePaths[iend - 1].ecount == 2) {
+                        } else if (activePaths[iend - 1].ecount == 2) {
                             c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
                             singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
                             if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
@@ -234,7 +234,7 @@ struct Grid {
                             float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
                             Path& path = scene._paths[activePaths[iend - 1].p];
                             if (plast != -1) {
-                                libTess::addMaskContours(tess, path, true);
+                                libTess::addClippedContours(tess, path, bounds, true);
                                 tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
                                 tessAddContour(tess, 2, & rect[0], kPointStride, 4);
                                 libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
