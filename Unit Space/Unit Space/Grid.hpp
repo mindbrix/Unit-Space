@@ -193,16 +193,10 @@ struct Grid {
                     }
                     activePaths[i].addCell(*cell);
                 }
-
-//                for (i = 0; i < iend; i++)
-//                    if (activePaths[i].a == 65535 || activePaths[i].ecount)
-//                        break;
                 
                 if (iend) {
-                    mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[0].p + grid.iw * grid.ih);
-                    
-//                    if (activePaths[iend - 1].a == 65535)
-//                        mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
+                   if (activePaths[iend - 1].ecount == 0)
+                        mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
                 }
                 
                 continue;
