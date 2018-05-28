@@ -185,6 +185,14 @@ struct Grid {
                     activePaths[i].addCell(*cell);
                 }
                 
+                for (i = 0; i < iend; i++)
+                    if (activePaths[i].a == 65535 || activePaths[i].ecount)
+                        break;
+                
+                if (i < iend)
+                    mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[i].p + grid.iw * grid.ih);
+                
+                continue;
                 rgba = RGBA8(0, 0, 0, 0);
                 c0 = c1 = nullptr;
                 singleWinding = ei0 = ei1 = ecount = 0;
@@ -206,9 +214,10 @@ struct Grid {
                 mesh._colors[ci] = rgba;
                 tsize = (int)mesh._triangles.size();
                 
+                
                 if (ecount == 0 && rgba.a != 0)
                     mesh.writeRect(ix, iy, ix + 1, iy + 1, ci);
-                else if (ecount == 1 && c0) {
+                /*else if (ecount == 1 && c0) {
                     if (singleWinding != 0 || c0->y1 != c0->y0) {
                         ci = begin[c0->ei].p + grid.iw * grid.ih;
                         right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
@@ -231,6 +240,7 @@ struct Grid {
                         }
                     }
                 }
+                 */
                 if (tsize == (int)mesh._triangles.size() && c0) {
                     float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
                     Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
