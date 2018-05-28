@@ -76,6 +76,9 @@ struct Bounds {
     bool contains(float px, float py) {
         return px > lx && py > ly && px < ux && py < uy;
     }
+    bool contains(Bounds other) const {
+        return lx <= other.lx && ux >= other.ux && ly <= other.ly && uy >= other.uy;
+    }
     bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }

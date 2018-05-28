@@ -242,11 +242,13 @@ struct Grid {
                             auto out = polygon.make((Vector *)s._points.get(), s._npoints);
                             for (Vector& v : *out)
                                 v.x = (v.x - grid.tx) * grid.scale, v.y = (v.y - grid.ty) * grid.scale;
-                            out = _llx.clip(out, EdgeClipper::LLX, x0);
-                            out = _lly.clip(out, EdgeClipper::LLY, y0);
-                            out = _urx.clip(out, EdgeClipper::URX, x1);
-                            out = _ury.clip(out, EdgeClipper::URY, y1);
                             
+                            if (!bounds.contains(s._bounds)) {
+                                out = _llx.clip(out, EdgeClipper::LLX, x0);
+                                out = _lly.clip(out, EdgeClipper::LLY, y0);
+                                out = _urx.clip(out, EdgeClipper::URX, x1);
+                                out = _ury.clip(out, EdgeClipper::URY, y1);
+                            }
                             if (out->size() > 2) {
                                 if (plast != -1) {
                                     tessSetOption(tess, TESS_REVERSE_CONTOURS, s._area > 0);
