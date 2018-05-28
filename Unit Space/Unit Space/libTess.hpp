@@ -59,8 +59,7 @@ struct libTess {
     
     static void addClippedContours(TESStesselator *tess, Path& path, Bounds clipBounds, bool isMask) {
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
-        bool isPositive = path._subPaths[path._outerIndex]._area > 0;
-        tessSetOption(tess, TESS_REVERSE_CONTOURS, isMask && isPositive);
+        tessSetOption(tess, TESS_REVERSE_CONTOURS, isMask && path._subPaths[path._outerIndex]._area > 0);
         for (SubPath& s : path._subPaths)
             if (s._bounds.intersects(clipBounds)) {
                 auto out = polygon.make((Vector *)s._points.get(), s._npoints);
