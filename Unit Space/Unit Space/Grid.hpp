@@ -21,22 +21,21 @@ struct Grid {
     };
     struct ActivePath {
         ActivePath() {}
-        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0) {}
-        void addCell(Cell& cell) {
+        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0), c0(nullptr), c1(nullptr) {}
+        void addCell(Cell *cell) {
             int nz;
-            
-            winding += cell.y1 - cell.y0;
+            winding += cell->y1 - cell->y0;
             nz = std::abs(winding) * 65535;
             a = evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
-            
-            ei0 = ecount == 0 ? cell.ei : ei0 < cell.ei ? ei0 : cell.ei;
-            ei1 = ecount == 0 ? cell.ei : ei1 > cell.ei ? ei1 : cell.ei;
+            c0 = ecount == 0 ? cell : c0 < cell ? c0 : cell;
+            c1 = ecount == 0 ? cell : c1 > cell ? c1 : cell;
             ecount++;
         }
         int p;
         bool evenOdd;
         float winding;
-        int a, ecount, ei0, ei1;
+        int a, ecount;
+        Cell *c0, *c1;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
@@ -157,9 +156,10 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
+        mesh._colors.emplace_back(0, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, ei0, ei1, ecount, plast, ci, tsize;
+        int iend, i, idst, isrc, ecount, plast, ci, tsize;
         bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -191,37 +191,39 @@ struct Grid {
                         activePaths[idst] = active;
                         i = idst;
                     }
-                    activePaths[i].addCell(*cell);
+                    activePaths[i].addCell(cell);
                 }
                 
                 if (iend) {
                     if (activePaths[iend - 1].ecount == 0)
                         mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
-                    else {
-                        float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
-                        Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
-                        float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
-                        Path& path = scene._paths[activePaths[iend - 1].p];
-                        int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
-                        if (plast != -1) {
-                            libTess::addMaskContours(tess, path, true);
-                            tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
-                            tessAddContour(tess, 2, & rect[0], kPointStride, 4);
-                            libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
-                        }
-                        libTess::addClippedContours(tess, path, bounds, false);
-                        libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
+                    else if (activePaths[iend - 1].ecount == 1) {
+                        
+                    } else {
+//                        float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
+//                        Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
+//                        float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
+//                        Path& path = scene._paths[activePaths[iend - 1].p];
+//                        int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+//                        if (plast != -1) {
+//                            libTess::addMaskContours(tess, path, true);
+//                            tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+//                            tessAddContour(tess, 2, & rect[0], kPointStride, 4);
+//                            libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
+//                        }
+//                        libTess::addClippedContours(tess, path, bounds, false);
+//                        libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
                     }
                 }
                 
                 continue;
                 rgba = RGBA8(0, 0, 0, 0);
                 c0 = c1 = nullptr;
-                singleWinding = ei0 = ei1 = ecount = 0;
+                singleWinding = ecount = 0;
                 plast = -1;
                 for (i = 0; i < iend; i++) {
                     if (activePaths[i].ecount) {
-                        ecount += activePaths[i].ecount, ei0 = activePaths[i].ei0, ei1 = activePaths[i].ei1;
+                        ecount += activePaths[i].ecount;
                         if (ecount == 1)
                             c0 = cell - 1, singleWinding = activePaths[i].winding - (c0->y1 - c0->y0);
                         else if (ecount == 2)
@@ -229,7 +231,7 @@ struct Grid {
                     } else if (activePaths[i].a == 65535) {
                         rgba = RGBA8::over(scene._paths[activePaths[i].p]._color, rgba);
                         plast = activePaths[i].p;
-                        ei0 = ei1 = ecount = 0;
+                        ecount = 0;
                     }
                 }
                 rgba = ecount ? RGBA8(0, 0, 0, 255) : rgba;
