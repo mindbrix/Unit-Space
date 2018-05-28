@@ -49,6 +49,14 @@ struct libTess {
             writeTessSubpaths(tess, path);
         
     }
+    static void addMaskContours(TESStesselator *tess, Path& path, bool reversed) {
+        bool isPositive = path._subPaths[path._outerIndex]._area > 0;
+        tessSetOption(tess, TESS_REVERSE_CONTOURS, reversed && isPositive);
+        for (SubPath& s : path._subPaths)
+            if (s._npoints > 2)
+                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+    }
+    
     static void addClippedContours(TESStesselator *tess, Path& path, Bounds clipBounds, bool isMask) {
         EdgeClipper polygon, _llx, _lly, _urx, _ury;
         bool isPositive = path._subPaths[path._outerIndex]._area > 0;
