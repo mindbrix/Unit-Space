@@ -74,11 +74,11 @@ struct EdgeClipper {
         switch(_type) {
             case LLX:
             case URX: {
-                return { _limit, (_limit - p0.x) * dy / dx + p0.y };
+                return { _limit, (_limit - p0.x) / dx * dy + p0.y };
             }
             case LLY:
             case URY: {
-                return { (_limit - p0.y) * dx / dy + p0.x, _limit };
+                return { (_limit - p0.y) / dy * dx + p0.x, _limit };
             }
         }
     }
