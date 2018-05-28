@@ -158,7 +158,7 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         mesh._colors.emplace_back(0, 0, 0, 255);
         RGBA8 rgba;
-        ActivePath activePaths[scene._paths.size()], *alast;
+        ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, ecount, plast, ci, tsize;
         bool right, inside;
         cell = & grid.cells[0];
@@ -195,18 +195,18 @@ struct Grid {
                 }
                 
                 if (iend) {
-                    alast = & activePaths[iend - 1];
                     if (activePaths[iend - 1].ecount == 0)
                         mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
-                    else if (alast->ecount == 1) {
-                        singleWinding = alast->winding - (alast->c0->y1 - alast->c0->y0);
-                        if (singleWinding != 0 || alast->c0->y1 != alast->c0->y0) {
-                            ci = begin[alast->c0->ei].p + grid.iw * grid.ih;
-                            right = singleWinding == 0 ? alast->c0->y1 > alast->c0->y0 : singleWinding > 0;
-                            grid.writeCellPolygon(mesh, alast->c0, alast->c1, ix, iy, right, ci);
+                    else if (activePaths[iend - 1].ecount == 1) {
+                        c0 = activePaths[iend - 1].c0, c1 = nullptr;
+                        singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0);
+                        if (singleWinding != 0 || c0->y1 != c0->y0) {
+                            ci = begin[c0->ei].p + grid.iw * grid.ih;
+                            right = singleWinding == 0 ? c0->y1 > c0->y0 : singleWinding > 0;
+                            grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                             int plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                             if (plast != -1)
-                                grid.writeCellPolygon(mesh, alast->c0, alast->c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                         }
                     } else {
                         float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
