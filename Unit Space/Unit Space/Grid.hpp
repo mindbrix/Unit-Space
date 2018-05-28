@@ -195,8 +195,23 @@ struct Grid {
                 }
                 
                 if (iend) {
-                   if (activePaths[iend - 1].ecount == 0)
+                    if (activePaths[iend - 1].ecount == 0)
                         mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
+                    else {
+                        float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
+                        Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
+                        Path& path = scene._paths[activePaths[iend - 1].p];
+                        int plast = -1;// iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                        if (plast != -1) {
+                            libTess::addClippedContours(tess, path, bounds, true);
+                            float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
+                            tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+                            tessAddContour(tess, 2, & rect[0], kPointStride, 4);
+                            libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
+                        }
+                        libTess::addClippedContours(tess, path, bounds, false);
+                        libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
+                    }
                 }
                 
                 continue;
@@ -248,20 +263,6 @@ struct Grid {
                     }
                 }
                  */
-                if (tsize == (int)mesh._triangles.size() && c0) {
-                    float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
-                    Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
-                    Path& path = scene._paths[begin[c0->ei].p];
-                    if (plast != -1) {
-                        libTess::addClippedContours(tess, path, bounds, true);
-                        float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
-                        tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
-                        tessAddContour(tess, 2, & rect[0], kPointStride, 4);
-                        libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
-                    }
-                    libTess::addClippedContours(tess, path, bounds, false);
-                    libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + begin[c0->ei].p, grid.scale, -grid.tx, -grid.ty);
-                }
             }
         }
         tessDeleteTess(tess);
