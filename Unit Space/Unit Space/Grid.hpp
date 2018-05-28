@@ -8,7 +8,6 @@
 
 #import "Tess.hpp"
 #import "libTess.hpp"
-#import "EdgeClipper.hpp"
 #import <vector>
 
 constexpr int kDivisions = 128;
@@ -124,7 +123,6 @@ struct Grid {
         int ix, iy, count, base;
         float singleWinding;
         Cell *cell, *cend, *c0, *c1;
-        EdgeClipper polygon, _llx, _lly, _urx, _ury;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             path->update();
         
@@ -237,31 +235,15 @@ struct Grid {
                     float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
                     Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
                     Path& path = scene._paths[begin[c0->ei].p];
-                    for (SubPath& s : path._subPaths)
-                        if (s._bounds.intersects(bounds)) {
-                            auto out = polygon.make((Vector *)s._points.get(), s._npoints);
-                            for (Vector& v : *out)
-                                v.x = (v.x - grid.tx) * grid.scale, v.y = (v.y - grid.ty) * grid.scale;
-                            
-                            if (!bounds.contains(s._bounds)) {
-                                out = _llx.clip(out, EdgeClipper::LLX, x0);
-                                out = _lly.clip(out, EdgeClipper::LLY, y0);
-                                out = _urx.clip(out, EdgeClipper::URX, x1);
-                                out = _ury.clip(out, EdgeClipper::URY, y1);
-                            }
-                            if (out->size() > 2) {
-                                if (plast != -1) {
-                                    tessSetOption(tess, TESS_REVERSE_CONTOURS, s._area > 0);
-                                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                                    float rect[8] = { x0, y0, x1, y0, x1, y1, x0, y1 };
-                                    tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
-                                    tessAddContour(tess, 2, & rect[0], kPointStride, 4);
-                                    libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast);
-                                }
-                                tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
-                            }
-                        }
-                    libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + begin[c0->ei].p);
+                    if (plast != -1) {
+                        libTess::addClippedContours(tess, path, bounds, true);
+                        float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
+                        tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+                        tessAddContour(tess, 2, & rect[0], kPointStride, 4);
+                        libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
+                    }
+                    libTess::addClippedContours(tess, path, bounds, false);
+                    libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + begin[c0->ei].p, grid.scale, -grid.tx, -grid.ty);
                 }
             }
         }

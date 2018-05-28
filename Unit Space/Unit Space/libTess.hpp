@@ -11,6 +11,7 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
+#import "EdgeClipper.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
@@ -48,6 +49,25 @@ struct libTess {
             writeTessSubpaths(tess, path);
         
     }
+    static void addClippedContours(TESStesselator *tess, Path& path, Bounds clipBounds, bool isMask) {
+        EdgeClipper polygon, _llx, _lly, _urx, _ury;
+        bool isPositive = path._subPaths[path._outerIndex]._area > 0;
+        tessSetOption(tess, TESS_REVERSE_CONTOURS, isMask && isPositive);
+        for (SubPath& s : path._subPaths)
+            if (s._bounds.intersects(clipBounds)) {
+                auto out = polygon.make((Vector *)s._points.get(), s._npoints);
+    
+                if (!clipBounds.contains(s._bounds)) {
+                    out = _llx.clip(out, EdgeClipper::LLX, clipBounds.lx);
+                    out = _lly.clip(out, EdgeClipper::LLY, clipBounds.ly);
+                    out = _urx.clip(out, EdgeClipper::URX, clipBounds.ux);
+                    out = _ury.clip(out, EdgeClipper::URY, clipBounds.uy);
+                }
+                if (out->size() > 2)
+                    tessAddContour(tess, 2, & (*out)[0], kPointStride, (int)out->size());
+            }
+    }
+        
     static void maskPath(TESStesselator *tess, Path& path, Path& mask) {
         bool isPositive = path._subPaths[path._outerIndex]._area > 0;
         bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
@@ -83,7 +103,7 @@ struct libTess {
         }
     }
     
-    static void writeTriangles(Mesh& mesh, TESStesselator *tess, int windingRule, int p) {
+    static void writeTriangles(Mesh& mesh, TESStesselator *tess, int windingRule, int p, float scale, float tx, float ty) {
         tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         if (tessTesselate(tess, windingRule, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
             float *points = (float *)tessGetVertices(tess);
@@ -96,7 +116,7 @@ struct libTess {
                 mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
             
             for (int i = 0; i < npoints; i++)
-                mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
+                mesh._points.emplace_back((points[i * 2] + tx) * scale, (points[i * 2 + 1] + ty) * scale);
         }
     }
     static void writePathTriangles(Mesh& mesh, TESStesselator *tess, Path& path) {
@@ -104,7 +124,7 @@ struct libTess {
         
         for (SubPath& s : path._subPaths)
             tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-        writeTriangles(mesh, tess, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1);
+        writeTriangles(mesh, tess, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
     }
     
     static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
