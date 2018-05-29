@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -89,13 +89,9 @@ struct Grid {
         pv = y0 == 0 ? (x0 == 0 ? 3 : 0) : x0 == 1 ? (y0 == 0 ? 0 : 1) : y0 == 1 ? (x0 == 1 ? 1 : 2) : (y0 == 1 ? 2 : 3);
         nv = y1 == 0 ? (x1 == 1 ? 2 : 1) : x1 == 1 ? (y1 == 1 ? 3 : 2) : y1 == 1 ? (x1 == 0 ? 0 : 3) : (y1 == 0 ? 1 : 0);
         
-        count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : pv == (nv + 2) % 4 ? 3 : 0;
-        if (c1 == nullptr && count == 0)
+        count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : pv == (nv + 2) % 4 ? 3 : 4;
+        if (c1 == nullptr && count == 4)
             return;
-        
-//        count = pv == nv ? 1 : pv == (nv + 1) % 4 ? 2 : pv == (nv + 2) % 4 ? 3 : pv == (nv + 3) % 4 ? 4 : 0;
-//        if (c1 == nullptr && count == 4)
-//            return;
         if (count == 4) {
             return;
         }
@@ -227,8 +223,8 @@ struct Grid {
                                     sw = (c0->y1 - c0->y0 + c1->y1 - c1->y0) * 65535;
                                     right = activePaths[iend - 1].w == sw ? sw > 0 : activePaths[iend - 1].w > sw;
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                                    if (plast != -1)
-                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+//                                    if (plast != -1)
+//                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                                 }
                             }
                         }
