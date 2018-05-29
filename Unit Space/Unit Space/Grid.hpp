@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -232,9 +232,11 @@ struct Grid {
                                     singleWinding = c0->y1 - c0->y0 + c1->y1 - c1->y0;
                                     singleWinding = std::abs(singleWinding) < grid.epsilon ? 0 : singleWinding;
                                     right = activePaths[iend - 1].winding == singleWinding ? singleWinding > 0 : activePaths[iend - 1].winding > singleWinding;
+//                                    right = singleWinding == 0 ? c1->x1 > c0->x0 : right;
+                                    
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                                    if (plast != -1)
-                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+//                                    if (plast != -1)
+//                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                                 }
                             }
                         }
