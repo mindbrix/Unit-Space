@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -213,7 +213,7 @@ struct Grid {
                         if (activePaths[iend - 1].ecount == 1) {
                             c0 = activePaths[iend - 1].c0, c1 = nullptr;
                             inside = true;
-                            singleWinding = std::abs(c0->y1 - c0->y0) < 1e-3 ? 0 : c0->y1 - c0->y0;
+                            singleWinding = std::abs(c0->y1 - c0->y0) < grid.epsilon ? 0 : c0->y1 - c0->y0;
                             if (!(activePaths[iend - 1].winding == 0 && singleWinding == 0)) {
                                 ci = begin[c0->ei].p + grid.iw * grid.ih;
                                 right = activePaths[iend - 1].winding == singleWinding ? singleWinding > 0 : activePaths[iend - 1].winding > singleWinding;
@@ -230,7 +230,7 @@ struct Grid {
                                 if (inside) {
                                     ci = begin[c0->ei].p + grid.iw * grid.ih;
                                     singleWinding = c0->y1 - c0->y0 + c1->y1 - c1->y0;
-                                    singleWinding = std::abs(singleWinding) < 1e-3 ? 0 : singleWinding;
+                                    singleWinding = std::abs(singleWinding) < grid.epsilon ? 0 : singleWinding;
                                     right = activePaths[iend - 1].winding == singleWinding ? singleWinding > 0 : activePaths[iend - 1].winding > singleWinding;
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                                     if (plast != -1)
@@ -238,20 +238,20 @@ struct Grid {
                                 }
                             }
                         }
-                        if (!inside) {
-                            float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
-                            Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
-                            float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
-                            Path& path = scene._paths[activePaths[iend - 1].p];
-                            if (plast != -1) {
-                                libTess::addClippedContours(tess, path, bounds, true);
-                                tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
-                                tessAddContour(tess, 2, & rect[0], kPointStride, 4);
-                                libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
-                            }
-                            libTess::addClippedContours(tess, path, bounds, false);
-                            libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
-                        }
+//                        if (!inside) {
+//                            float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
+//                            Bounds bounds(x0 * grid.dimension + grid.tx, y0 * grid.dimension + grid.ty, x1 * grid.dimension + grid.tx, y1 * grid.dimension + grid.ty);
+//                            float rect[8] = { bounds.lx, bounds.ly, bounds.ux, bounds.ly, bounds.ux, bounds.uy, bounds.lx, bounds.uy };
+//                            Path& path = scene._paths[activePaths[iend - 1].p];
+//                            if (plast != -1) {
+//                                libTess::addClippedContours(tess, path, bounds, true);
+//                                tessSetOption(tess, TESS_REVERSE_CONTOURS, 0);
+//                                tessAddContour(tess, 2, & rect[0], kPointStride, 4);
+//                                libTess::writeTriangles(mesh, tess, TESS_WINDING_POSITIVE, grid.iw * grid.ih + plast, grid.scale, -grid.tx, -grid.ty);
+//                            }
+//                            libTess::addClippedContours(tess, path, bounds, false);
+//                            libTess::writeTriangles(mesh, tess, TESS_WINDING_NONZERO, grid.iw * grid.ih + activePaths[iend - 1].p, grid.scale, -grid.tx, -grid.ty);
+//                        }
                     }
                 }
             }
