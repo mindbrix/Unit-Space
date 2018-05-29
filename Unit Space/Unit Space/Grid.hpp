@@ -22,12 +22,10 @@ struct Grid {
     struct ActivePath {
         ActivePath() {}
         ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0), c0(nullptr), c1(nullptr) {}
-        void addCell(Cell *cell, float epsilon) {
-            int nz;
+        void addCell(Cell *cell) {
             winding += cell->y1 - cell->y0;
-            winding = std::abs(winding) < epsilon ? 0 : winding;
-            nz = std::abs(winding) * 65535;
-            a = evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
+            w = winding * 65535;
+            a = evenOdd ? 65535 - std::abs(((w & 0xFFFF) % 131070) - 65535) : w & 0xFFFF;
             c0 = ecount == 0 ? cell : c0 < cell ? c0 : cell;
             c1 = ecount == 0 ? cell : c1 > cell ? c1 : cell;
             ecount++;
@@ -35,12 +33,12 @@ struct Grid {
         int p;
         bool evenOdd;
         float winding;
-        int a, ecount;
+        int w, a, ecount;
         Cell *c0, *c1;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
-        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), epsilon = 1e-6 * dimension, tx = lx, ty = ly;
+        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         edgeCounts.resize(iw * ih + 1);
         memset(& edgeCounts[0], 0, edgeCounts.size() * sizeof(edgeCounts[0]));
@@ -115,7 +113,7 @@ struct Grid {
     }
     
     float lx, ly, ux, uy;
-    float scale, dimension, epsilon, tx, ty;
+    float scale, dimension, tx, ty;
     float width, height;
     int iw, ih;
     vector<Cell> cells;
@@ -128,7 +126,6 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count, base;
-        float singleWinding;
         Cell *cell, *cend, *c0, *c1;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             path->update();
@@ -167,7 +164,7 @@ struct Grid {
         mesh._colors.emplace_back(255, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci;
+        int iend, i, idst, isrc, plast, ci, sw;
         bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -199,7 +196,7 @@ struct Grid {
                         activePaths[idst] = active;
                         i = idst;
                     }
-                    activePaths[i].addCell(cell, grid.epsilon);
+                    activePaths[i].addCell(cell);
                 }
                 
                 if (iend) {
@@ -211,10 +208,10 @@ struct Grid {
                         if (activePaths[iend - 1].ecount == 1) {
                             c0 = activePaths[iend - 1].c0, c1 = nullptr;
                             inside = true;
-                            singleWinding = std::abs(c0->y1 - c0->y0) < grid.epsilon ? 0 : c0->y1 - c0->y0;
-                            if (!(activePaths[iend - 1].winding == 0 && singleWinding == 0)) {
+                            sw = (c0->y1 - c0->y0) * 65535;
+                            if (!(activePaths[iend - 1].w == 0 && sw == 0)) {
                                 ci = begin[c0->ei].p + grid.iw * grid.ih;
-                                right = activePaths[iend - 1].winding == singleWinding ? singleWinding > 0 : activePaths[iend - 1].winding > singleWinding;
+                                right = activePaths[iend - 1].w == sw ? sw > 0 : activePaths[iend - 1].w > sw;
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
@@ -227,14 +224,11 @@ struct Grid {
                                 inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
                                 if (inside) {
                                     ci = begin[c0->ei].p + grid.iw * grid.ih;
-                                    singleWinding = c0->y1 - c0->y0 + c1->y1 - c1->y0;
-                                    singleWinding = std::abs(singleWinding) < grid.epsilon ? 0 : singleWinding;
-                                    right = activePaths[iend - 1].winding == singleWinding ? singleWinding > 0 : activePaths[iend - 1].winding > singleWinding;
-//                                    right = singleWinding == 0 ? c1->x1 > c0->x0 : right;
-                                    
+                                    sw = (c0->y1 - c0->y0 + c1->y1 - c1->y0) * 65535;
+                                    right = activePaths[iend - 1].w == sw ? sw > 0 : activePaths[iend - 1].w > sw;
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-//                                    if (plast != -1)
-//                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                                    if (plast != -1)
+                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                                 }
                             }
                         }
