@@ -221,25 +221,20 @@ struct Grid {
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                             }
-                        } else if (0 && activePaths[iend - 1].ecount == 2) {
+                        } else if (activePaths[iend - 1].ecount == 2) {
                             c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
-                            singleWinding = activePaths[iend - 1].winding - (c0->y1 - c0->y0) - (c1->y1 - c1->y0);
                             if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
                             if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
                                 inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
                                 if (inside) {
                                     ci = begin[c0->ei].p + grid.iw * grid.ih;
-                                    right = false;
-//                                    right = (c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0) < 0;
-//                                    right = singleWinding == 0 ? !right : right;
-                                    
-//                                    right = singleWinding == 0 ? (c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0) > 0 : singleWinding > 0;
+                                    singleWinding = c0->y1 - c0->y0 + c1->y1 - c1->y0;
+                                    singleWinding = std::abs(singleWinding) < 1e-3 ? 0 : singleWinding;
+                                    right = activePaths[iend - 1].winding == singleWinding ? singleWinding > 0 : activePaths[iend - 1].winding > singleWinding;
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                                     if (plast != -1)
                                         grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
-                                    
-//                                    right = singleWinding == 0 ? (c0->y1 - c0->y0) + (c1->y1 - c1->y0) > 0 : singleWinding > 0;
                                 }
                             }
                         }
