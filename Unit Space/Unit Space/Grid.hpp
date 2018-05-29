@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -62,8 +62,8 @@ struct Grid {
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
             
-            sx0 = y0 == y1 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
-            sx1 = y0 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
+            sx0 = y0 == y1 || sy0 == y0 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
+            sx1 = y0 == y1 || sy1 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
             slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
@@ -74,10 +74,8 @@ struct Grid {
                 for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, counts++) {
                     tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
                     tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
-                    ty0 = sx0 == sx1 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    ty1 = sx0 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-//                    ty0 = sx0 == sx1 ? sy0 : tx0 == sx1 ? sy1 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-//                    ty1 = sx0 == sx1 ? sy1 : tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                    ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                    ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     new (& cells[(*counts)++]) Cell(ei, tx0, ty0, tx1, ty1);
                 }
             }
