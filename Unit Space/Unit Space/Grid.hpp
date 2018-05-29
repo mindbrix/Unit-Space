@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -22,10 +22,10 @@ struct Grid {
     struct ActivePath {
         ActivePath() {}
         ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0), c0(nullptr), c1(nullptr) {}
-        void addCell(Cell *cell) {
+        void addCell(Cell *cell, float epsilon) {
             int nz;
             winding += cell->y1 - cell->y0;
-            winding = std::abs(winding) < 1e-3 ? 0 : winding;
+            winding = std::abs(winding) < epsilon ? 0 : winding;
             nz = std::abs(winding) * 65535;
             a = evenOdd ? 65535 - std::abs((nz % 131070) - 65535) : nz & 0xFFFF;
             c0 = ecount == 0 ? cell : c0 < cell ? c0 : cell;
@@ -40,7 +40,7 @@ struct Grid {
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
-        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = lx, ty = ly;
+        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), epsilon = 1e-6 * dimension, tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         edgeCounts.resize(iw * ih + 1);
         memset(& edgeCounts[0], 0, edgeCounts.size() * sizeof(edgeCounts[0]));
@@ -117,7 +117,7 @@ struct Grid {
     }
     
     float lx, ly, ux, uy;
-    float scale, dimension, tx, ty;
+    float scale, dimension, epsilon, tx, ty;
     float width, height;
     int iw, ih;
     vector<Cell> cells;
@@ -166,7 +166,7 @@ struct Grid {
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
-        mesh._colors.emplace_back(0, 0, 0, 255);
+        mesh._colors.emplace_back(255, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci;
@@ -201,7 +201,7 @@ struct Grid {
                         activePaths[idst] = active;
                         i = idst;
                     }
-                    activePaths[i].addCell(cell);
+                    activePaths[i].addCell(cell, grid.epsilon);
                 }
                 
                 if (iend) {
