@@ -179,13 +179,11 @@ struct Grid {
         int iend, i, idst, isrc, plast, ci, sw, p;
         float det;
         bool right, inside;
-        GridElement *element;
         CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
-                element = & grid.elements[ci];
                 
                 idst = 0, isrc = 0;
                 while (isrc < iend) {
@@ -198,8 +196,8 @@ struct Grid {
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
-                if (element->begin) {
-                    cellElement = & grid.cellElements[element->begin];
+                if (grid.elements[ci].begin) {
+                    cellElement = & grid.cellElements[grid.elements[ci].begin];
                     do {
                         p = begin[cellElement->cell.ei].p;
                         for (i = 0; i < iend; i++)
