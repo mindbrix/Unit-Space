@@ -223,25 +223,23 @@ struct Grid {
                     else {
                         inside = false;
                         plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                        c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
+                        ci = begin[c0->ei].p + grid.iw * grid.ih;
                         if (activePaths[iend - 1].ecount == 1) {
-                            c0 = activePaths[iend - 1].c0, c1 = nullptr;
                             inside = true;
                             sw = (c0->y1 - c0->y0) * 65535;
                             if (!(activePaths[iend - 1].w == 0 && sw == 0)) {
-                                ci = begin[c0->ei].p + grid.iw * grid.ih;
                                 right = activePaths[iend - 1].w == sw ? sw > 0 : activePaths[iend - 1].w > sw;
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                                 if (plast != -1)
-                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                                    grid.writeCellPolygon(mesh, c0, nullptr, ix, iy, !right, plast + grid.iw * grid.ih);
                             }
                         } else if (activePaths[iend - 1].ecount == 2) {
-                            c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].c1;
                             if (!(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
                             if (c0->x1 == c1->x0 && c0->y1 == c1->y0) {
                                 inside = c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1);
                                 if (inside) {
-                                    ci = begin[c0->ei].p + grid.iw * grid.ih;
                                     sw = (c0->y1 - c0->y0 + c1->y1 - c1->y0) * 65535;
                                     det = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0);
                                     right = activePaths[iend - 1].w == sw ? (sw == 0 ? det < 0 : sw > 0) : activePaths[iend - 1].w > sw;
