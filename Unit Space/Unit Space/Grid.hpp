@@ -136,7 +136,7 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         int ix, iy, count;
-        Cell *cell, *c0, *c1;
+        Cell *c0, *c1;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             path->update();
         
@@ -177,7 +177,7 @@ struct Grid {
         mesh._colors.emplace_back(255, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, sw;
+        int iend, i, idst, isrc, plast, ci, sw, p;
         float det;
         bool right, inside;
         GridElement *element;
@@ -202,22 +202,20 @@ struct Grid {
                 if (element->begin) {
                     cellElement = & grid.cellElements[element->begin];
                     do {
-                        cell = & cellElement->cell;
-                        
+                        p = begin[cellElement->cell.ei].p;
                         for (i = 0; i < iend; i++)
-                            if (activePaths[i].p == begin[cell->ei].p)
+                            if (activePaths[i].p == p)
                                 break;
                         if (i == iend) {
-                            ActivePath active(begin[cell->ei].p, scene._paths[begin[cell->ei].p]._evenOdd);
+                            ActivePath active(p, scene._paths[p]._evenOdd);
                             idst = iend++, isrc = idst - 1;
-                            while (idst > 0 && active.p < activePaths[isrc].p)
+                            while (idst > 0 && p < activePaths[isrc].p)
                                 activePaths[idst--] = activePaths[isrc--];
                             activePaths[idst] = active;
                             i = idst;
                         }
-                        activePaths[i].addCell(cell);
-                        cellElement = cellElement->next ? & grid.cellElements[cellElement->next] : nullptr;
-                    } while (cellElement);
+                        activePaths[i].addCell(& cellElement->cell);
+                    } while ((cellElement = cellElement->next ? & grid.cellElements[cellElement->next] : nullptr));
                 }
                 
                 if (iend) {
