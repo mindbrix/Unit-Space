@@ -159,6 +159,10 @@ public:
         }
         return Memory();
     }
+    void zero() {
+        if (header)
+            memset(header->memory, 0, header->size);
+    }
     size_t count() { return header ? header->size / sizeof(T) : 0; }
     size_t size() { return header ? header->size : 0; }
     T *get() const { return (T *) (header ? header->memory : nullptr); }

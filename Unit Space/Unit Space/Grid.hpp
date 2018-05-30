@@ -10,14 +10,20 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
-        Cell() {}
         Cell(int ei, float x0, float y0, float x1, float y1) : ei(ei), x0(x0), y0(y0), x1(x1), y1(y1) {}
         int ei;
         float x0, y0, x1, y1;
+    };
+    struct CellElement {
+        int next;
+        Cell cell;
+    };
+    struct GridElement {
+         int begin, end;
     };
     struct ActivePath {
         ActivePath() {}
@@ -40,15 +46,14 @@ struct Grid {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = lx, ty = ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
-        edgeCounts.resize(iw * ih + 1);
-        memset(& edgeCounts[0], 0, edgeCounts.size() * sizeof(edgeCounts[0]));
     }
     
-    void writeEdgeCells(Edge *edge, int ei, bool count) {
+    void writeEdgeCells(Edge *edge, int ei, int *total) {
         float x0, y0, x1, y1;
         float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
-        int *counts;
+        GridElement *element;
+        CellElement *cellElement;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
         if (x0 == x1 && y0 == y1)
@@ -65,16 +70,25 @@ struct Grid {
             slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
-            if (count) {
-                for (counts = & edgeCounts[glx + int(cly) * iw]; gw--; counts++)
-                    (*counts)++;
-            } else {
-                for (counts = & edgeCounts[glx + int(cly) * iw], gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, counts++) {
+            if (total)
+                *total += gw;
+            else {
+                element = & elements[int(glx) + int(cly) * iw];
+                for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, element++) {
                     tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
                     tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                     ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    new (& cells[(*counts)++]) Cell(ei, tx0, ty0, tx1, ty1);
+                    
+                    cellElement = & cellElements[cellIndex];
+                    cellElement->next = 0;
+                    new (& cellElement->cell) Cell(ei, tx0, ty0, tx1, ty1);
+                    
+                    if (element->begin == 0)
+                        element->begin = element->end = cellIndex;
+                    else
+                        cellElements[element->end].next = cellIndex, element->end = cellIndex;
+                    cellIndex++;
                 }
             }
         }
@@ -113,9 +127,9 @@ struct Grid {
     float lx, ly, ux, uy;
     float scale, dimension, tx, ty;
     float width, height;
-    int iw, ih;
-    vector<Cell> cells;
-    vector<int> edgeCounts;
+    int iw, ih, cellIndex;
+    GridElement *elements;
+    CellElement *cellElements;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         TESStesselator *tess = tessNewTess(NULL);
@@ -123,8 +137,8 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, count, base;
-        Cell *cell, *cend, *c0, *c1;
+        int ix, iy, count;
+        Cell *cell, *c0, *c1;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             path->update();
         
@@ -144,17 +158,20 @@ struct Grid {
         Tess::writeCurves(mesh, scene);
         
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
-        for (edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, (int)(edge - begin), true);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
         
-        base = count = 0;
-        for (auto& c : grid.edgeCounts)
-            base = c, c = count, count += base;
-        grid.cells.resize(count);
-        
+        count = 0;
         for (edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, (int)(edge - begin), false);
+            grid.writeEdgeCells(edge, 0, & count);
+        
+        Memory<GridElement> elements(grid.iw * grid.ih);
+        elements.zero();
+        grid.elements = elements.get();
+        Memory<CellElement> cellElements(count + 1);
+        grid.cellElements = cellElements.get();
+        grid.cellIndex = 1;
+        for (edge = begin; edge < end; edge++)
+            grid.writeEdgeCells(edge, (int)(edge - begin), nullptr);
         
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
@@ -165,12 +182,13 @@ struct Grid {
         int iend, i, idst, isrc, plast, ci, sw;
         float det;
         bool right, inside;
-        cell = & grid.cells[0];
+        GridElement *element;
+        CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
-            
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
+                element = & grid.elements[ci];
                 
                 idst = 0, isrc = 0;
                 while (isrc < iend) {
@@ -183,19 +201,25 @@ struct Grid {
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
-                for (cend = & grid.cells[grid.edgeCounts[ci]]; cell < cend; cell++) {
-                    for (i = 0; i < iend; i++)
-                        if (activePaths[i].p == begin[cell->ei].p)
-                            break;
-                    if (i == iend) {
-                        ActivePath active(begin[cell->ei].p, scene._paths[begin[cell->ei].p]._evenOdd);
-                        idst = iend++, isrc = idst - 1;
-                        while (idst > 0 && active.p < activePaths[isrc].p)
-                            activePaths[idst--] = activePaths[isrc--];
-                        activePaths[idst] = active;
-                        i = idst;
-                    }
-                    activePaths[i].addCell(cell);
+                if (element->begin) {
+                    cellElement = & grid.cellElements[element->begin];
+                    do {
+                        cell = & cellElement->cell;
+                        
+                        for (i = 0; i < iend; i++)
+                            if (activePaths[i].p == begin[cell->ei].p)
+                                break;
+                        if (i == iend) {
+                            ActivePath active(begin[cell->ei].p, scene._paths[begin[cell->ei].p]._evenOdd);
+                            idst = iend++, isrc = idst - 1;
+                            while (idst > 0 && active.p < activePaths[isrc].p)
+                                activePaths[idst--] = activePaths[isrc--];
+                            activePaths[idst] = active;
+                            i = idst;
+                        }
+                        activePaths[i].addCell(cell);
+                        cellElement = cellElement->next ? & grid.cellElements[cellElement->next] : nullptr;
+                    } while (cellElement);
                 }
                 
                 if (iend) {
