@@ -101,7 +101,7 @@ struct Grid {
         mesh._points.emplace_back(c1 ? c0->x1 : x0 + gx, c1 ? c0->y1 : y0 + gy);
         mesh._points.emplace_back(x1 + gx, y1 + gy);
         for (i = 0; i < count; i++, nv = (nv + 1) % 4)
-            mesh._points.emplace_back(nv == 3 || nv == 0 ? gx : gx + 1, nv < 2 ? gy : gy + 1);
+            mesh._points.emplace_back(gx + ((nv >> 1) ^ (nv & 1)), gy + (nv >> 1));
         if (c1) {
             mesh._points.emplace_back(x0 + gx, y0 + gy);
             count++;
