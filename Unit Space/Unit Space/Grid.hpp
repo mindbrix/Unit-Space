@@ -49,7 +49,12 @@ struct Grid {
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
     }
     
-    void writeEdgeCells(Edge *edge, int ei, int *total) {
+    int edgeCellCount(Edge *edge) {
+        float gw = std::abs(edge->x0 - edge->x1) * scale + 1, gh = std::abs(edge->y0 - edge->y1) * scale + 1;
+        return gw > gh ? gw * 2 : gh * 2;
+    }
+    
+    void writeEdgeCells(Edge *edge, int ei) {
         float x0, y0, x1, y1;
         float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
@@ -71,23 +76,19 @@ struct Grid {
             slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
-            if (total)
-                *total += gw;
-            else {
-                element = & elements[int(glx) + int(cly) * iw];
-                for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, element++) {
-                    tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
-                    tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
-                    ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                    
-                    cellElement = new (& cellElements[cellIndex])CellElement(ei, tx0, ty0, tx1, ty1);
-                    if (element->begin == 0)
-                        element->begin = element->end = cellIndex;
-                    else
-                        cellElements[element->end].next = cellIndex, element->end = cellIndex;
-                    cellIndex++;
-                }
+            element = & elements[int(glx) + int(cly) * iw];
+            for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, element++) {
+                tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
+                tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
+                ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                
+                cellElement = new (& cellElements[cellIndex])CellElement(ei, tx0, ty0, tx1, ty1);
+                if (element->begin == 0)
+                    element->begin = element->end = cellIndex;
+                else
+                    cellElements[element->end].next = cellIndex, element->end = cellIndex;
+                cellIndex++;
             }
         }
     }
@@ -158,9 +159,8 @@ struct Grid {
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
         
-        count = 0;
-        for (edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, 0, & count);
+        for (count = 0, edge = begin; edge < end; edge++)
+            count += grid.edgeCellCount(edge);
         
         Memory<GridElement> elements(grid.iw * grid.ih);
         elements.zero();
@@ -169,7 +169,7 @@ struct Grid {
         grid.cellElements = cellElements.get();
         grid.cellIndex = 1;
         for (edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, (int)(edge - begin), nullptr);
+            grid.writeEdgeCells(edge, (int)(edge - begin));
         
         mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
