@@ -380,7 +380,7 @@ using namespace std;
         printf("size: %f x %f\n", image->width, image->height);
         // Use...
         
-        Scene scene(image->width, image->height);
+        Scene scene;
         int limit = 60000;
         for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
             if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
@@ -447,7 +447,7 @@ using namespace std;
     Path p2(false, black);
 	p2.addSubPath(quad);
 	
-    Scene scene(self.bounds.size.width, self.bounds.size.height);
+    Scene scene;
     if (self.pathBitmask & kPathBitmaskTriangle)
         scene.addPath(p0);
     

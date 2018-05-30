@@ -99,10 +99,14 @@ struct libTess {
     
     
     void maskPaths(TESStesselator *tess, Scene& scene) {
-        VG::QuadTree<size_t> quadtree(0.f, 0.f, scene.w, scene.h);
-                              
         for (Path& path : scene._paths)
             resolveSelfIntersections(tess, path);
+        
+        Bounds bounds = scene._paths[0]._bounds;
+        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
+            bounds.unite(path->_bounds);
+        
+        VG::QuadTree<size_t> quadtree(0.f, 0.f, bounds.ux, bounds.uy);
         
         for (size_t i = 0; i < scene._paths.size(); i++) {
             Path& path = scene._paths[i];

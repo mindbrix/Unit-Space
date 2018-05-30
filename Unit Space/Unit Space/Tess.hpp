@@ -376,14 +376,10 @@ struct Mesh {
 };
 
 struct Scene {
-    Scene(float w, float h) : w(w), h(h) {}
-    
     void addPath(Path& path) {
         if (path._subPaths.size() != 0)
             _paths.emplace_back(path);
     }
-    
-    float w, h;
     vector<Path> _paths;
 };
 
