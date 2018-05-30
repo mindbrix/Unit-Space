@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -24,7 +24,7 @@ struct Grid {
         Cell cell;
     };
     struct GridElement {
-         int begin, end;
+         int begin, last;
     };
     struct ActivePath {
         ActivePath() {}
@@ -84,9 +84,9 @@ struct Grid {
                 
                 cellElement = new (& cellElements[cellIndex])CellElement(ei, tx0, ty0, tx1, ty1);
                 if (element->begin == 0)
-                    element->begin = element->end = cellIndex;
+                    element->begin = element->last = cellIndex;
                 else
-                    cellElements[element->end].next = cellIndex, element->end = cellIndex;
+                    cellElements[element->last].next = cellIndex, element->last = cellIndex;
                 cellIndex++;
             }
         }
