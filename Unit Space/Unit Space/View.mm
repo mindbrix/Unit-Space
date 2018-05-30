@@ -55,6 +55,7 @@ using namespace std;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
+@property(nonatomic) Scene scene;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
@@ -364,54 +365,15 @@ using namespace std;
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
-    // Load
-    NSMutableData *data = nil;
-    
     if (_svgData) {
-        data = [NSMutableData data];
-        unsigned char zeroByte = 0;
-        [data appendData:_svgData];
-        [data appendBytes:&zeroByte length:1];
-    }
-
-    struct NSVGimage* image = data ? nsvgParse((char *)data.bytes, "px", 96) : NULL;
-    
-    if (image) {
-        printf("size: %f x %f\n", image->width, image->height);
-        // Use...
-        
-        Scene scene;
-        int limit = 60000;
-        for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
-            if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
-                limit--;
-                
-                RGBA8 color = RGBA8((unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24));
-                Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
-                
-                for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
-                    for (int i = 0; i < path->npts; i++)
-                        path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
-                    SubPath s(path->pts, path->npts, SubPath::kCubic);
-                    p.addSubPath(s);
-                }
-                scene.addPath(p);
-            }
-        }
-        
-        
-        
         if (self.useDelaunay)
-            Grid::triangulate(_mesh, scene);
+            Grid::triangulate(_mesh, _scene);
 //            _fortune.triangulate(_mesh, scene);
 //            _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
         else
-            _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+            _libtess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
         
         [self.metalLayer uploadMesh:_mesh];
-        
-        // Delete
-        nsvgDelete(image);
     } else {
         _triangle = {
             { 0, 0 }, { 100, 100 }, { 0, 100 }
@@ -719,6 +681,42 @@ using namespace std;
 
 - (void)setSvgData:(NSData *)svgData {
     _svgData = svgData;
+    NSMutableData *data = nil;
+    
+    if (_svgData) {
+        data = [NSMutableData data];
+        unsigned char zeroByte = 0;
+        [data appendData:_svgData];
+        [data appendBytes:&zeroByte length:1];
+    }
+    
+    struct NSVGimage* image = data ? nsvgParse((char *)data.bytes, "px", 96) : NULL;
+    
+    if (image) {
+        printf("size: %f x %f\n", image->width, image->height);
+        // Use...
+        
+        _scene.empty();
+        int limit = 60000;
+        for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
+            if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
+                limit--;
+                
+                RGBA8 color = RGBA8((unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24));
+                Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
+                
+                for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                    for (int i = 0; i < path->npts; i++)
+                        path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
+                    SubPath s(path->pts, path->npts, SubPath::kCubic);
+                    p.addSubPath(s);
+                }
+                _scene.addPath(p);
+            }
+        }
+        // Delete
+        nsvgDelete(image);
+    }
     _flags |= 8;
     [self reset];
     [self redraw];

@@ -380,6 +380,7 @@ struct Scene {
         if (path._subPaths.size() != 0)
             _paths.emplace_back(path);
     }
+    void empty() { _paths.resize(0); }
     vector<Path> _paths;
 };
 
