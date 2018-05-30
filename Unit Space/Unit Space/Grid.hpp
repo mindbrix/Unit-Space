@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -19,6 +19,7 @@ struct Grid {
         float x0, y0, x1, y1;
     };
     struct CellElement {
+        CellElement(int ei, float x0, float y0, float x1, float y1) : next(0), cell(ei, x0, y0, x1, y1) {}
         int next;
         Cell cell;
     };
@@ -80,10 +81,7 @@ struct Grid {
                     ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                     
-                    cellElement = & cellElements[cellIndex];
-                    cellElement->next = 0;
-                    new (& cellElement->cell) Cell(ei, tx0, ty0, tx1, ty1);
-                    
+                    cellElement = new (& cellElements[cellIndex])CellElement(ei, tx0, ty0, tx1, ty1);
                     if (element->begin == 0)
                         element->begin = element->end = cellIndex;
                     else
