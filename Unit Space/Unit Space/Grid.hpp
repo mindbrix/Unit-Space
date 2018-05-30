@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -226,9 +226,9 @@ struct Grid {
                                     sw = (c0->y1 - c0->y0 + c1->y1 - c1->y0) * 65535;
                                     det = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0);
                                     right = activePaths[iend - 1].w == sw ? (sw == 0 ? det < 0 : sw > 0) : activePaths[iend - 1].w > sw;
-                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, ci);
-//                                    if (plast != -1)
-//                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                                    if (plast != -1)
+                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                                 }
                             }
                         }
