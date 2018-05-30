@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -163,6 +163,7 @@ struct Grid {
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci, sw;
+        float det;
         bool right, inside;
         cell = & grid.cells[0];
         for (iy = 0; iy < grid.ih; iy++) {
@@ -223,8 +224,9 @@ struct Grid {
                                 if (inside) {
                                     ci = begin[c0->ei].p + grid.iw * grid.ih;
                                     sw = (c0->y1 - c0->y0 + c1->y1 - c1->y0) * 65535;
-                                    right = activePaths[iend - 1].w == sw ? sw > 0 : activePaths[iend - 1].w > sw;
-                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                                    det = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0);
+                                    right = activePaths[iend - 1].w == sw ? (sw == 0 ? det < 0 : sw > 0) : activePaths[iend - 1].w > sw;
+                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, ci);
 //                                    if (plast != -1)
 //                                        grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
                                 }
