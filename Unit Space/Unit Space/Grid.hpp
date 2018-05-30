@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -50,8 +50,7 @@ struct Grid {
     }
     
     int edgeCellCount(Edge *edge) {
-        float gw = std::abs(edge->x0 - edge->x1) * scale + 1, gh = std::abs(edge->y0 - edge->y1) * scale + 1;
-        return gw > gh ? gw * 2 : gh * 2;
+        return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2;
     }
     
     void writeEdgeCells(Edge *edge, int ei) {
