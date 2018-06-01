@@ -49,15 +49,6 @@ struct Grid {
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
     }
     
-    static float coverage(float x0, float y0, float x1, float y1, float lx, float ly, float ux, float uy) {
-        float cy0, cy1;
-        cy0 = x0 < lx || x1 < lx ? y0 + (lx - x0) / (x1 - x0) * (y1 - y0) : x0 < x1 ? y0 : y1;
-        cy1 = x0 > ux || x1 > ux ? y0 + (ux - x0) / (x1 - x0) * (y1 - y0) : x0 > x1 ? y0 : y1;
-        cy0 = cy0 < ly ? ly : cy0 > uy ? uy : cy0;
-        cy1 = cy1 < ly ? ly : cy1 > uy ? uy : cy1;
-        return x0 > x1 ? cy0 - cy1 : cy1 - cy0;
-    }
-    
     int edgeCellCount(Edge *edge) {
         return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2;
     }
@@ -90,8 +81,6 @@ struct Grid {
                 tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                 ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                
-                float c = Grid::coverage(x0, y0, x1, y1, gx0, cly, gx1, cuy);
                 
                 cellElement = new (& cellElements[cellIndex])CellElement(ei, tx0, ty0, tx1, ty1);
                 if (element->begin == 0)
