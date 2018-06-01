@@ -47,6 +47,7 @@
 		E913A4FF209EEAA6003CBC77 /* libTess.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libTess.hpp; sourceTree = "<group>"; };
 		E913A50020A386CD003CBC77 /* Fortune.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Fortune.hpp; sourceTree = "<group>"; };
 		E913A50220AD8EE5003CBC77 /* Grid.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Grid.hpp; sourceTree = "<group>"; };
+		E9454FD720C1737E009FED2A /* BigMemory.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BigMemory.hpp; sourceTree = "<group>"; };
 		E95D997A20AE29BC00EC226B /* EdgeClipper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = EdgeClipper.hpp; sourceTree = "<group>"; };
 		E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VGQuadTree.hpp; sourceTree = "<group>"; };
 		E96B3465207BDECB006D74B1 /* nanosvg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
@@ -204,6 +205,7 @@
 				E913A50020A386CD003CBC77 /* Fortune.hpp */,
 				E913A50220AD8EE5003CBC77 /* Grid.hpp */,
 				E95D997A20AE29BC00EC226B /* EdgeClipper.hpp */,
+				E9454FD720C1737E009FED2A /* BigMemory.hpp */,
 			);
 			path = "Unit Space";
 			sourceTree = "<group>";
