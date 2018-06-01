@@ -25,6 +25,11 @@ struct BigMemory {
             free(header);
         }
     }
+    size_t count() { return header->end - header->begin; }
+    size_t size() { return (header->end - header->begin) * sizeof(T); }
+    T *get() const { return header->begin; }
+    T *next() const { return header->end++; }
+private:
     void assign(const BigMemory& other) {
         if (this != & other) {
             this->~BigMemory();
@@ -32,11 +37,6 @@ struct BigMemory {
             header->refCount++;
         }
     }
-    size_t count() { return header->end - header->begin; }
-    size_t size() { return (header->end - header->begin) * sizeof(T); }
-    T *get() const { return header->begin; }
-    T *next() const { return header->end++; }
-private:
     struct Header { int refCount; void *memory; T *begin, *end; };
     Header *header;
 };
