@@ -11,10 +11,6 @@ constexpr size_t kBigMemorySize = 4294967296;
 
 template<typename T>
 struct BigMemory {
-private:
-    struct Header { int refCount; void *memory; T *begin, *end; };
-    Header *header = nullptr;
-public:
     BigMemory() {
         header = (Header *)malloc(sizeof(Header));
         header->memory = mmap(NULL, kBigMemorySize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, 0, 0);
@@ -40,4 +36,7 @@ public:
     size_t size() { return (header->end - header->begin) * sizeof(T); }
     T *get() const { return header->begin; }
     T *next() const { return header->end++; }
+private:
+    struct Header { int refCount; void *memory; T *begin, *end; };
+    Header *header;
 };
