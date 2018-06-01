@@ -182,10 +182,8 @@ struct Grid {
         for (edge = begin; edge < end; edge++)
             grid.writeEdgeCells(edge, (int)(edge - begin));
         
-        mesh._colors.resize(grid.iw * grid.ih);
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
-        mesh._colors.emplace_back(255, 0, 0, 255);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci, sw, p;
@@ -229,7 +227,7 @@ struct Grid {
                 
                 if (iend) {
                     if (activePaths[iend - 1].ecount == 0)
-                        mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p + grid.iw * grid.ih);
+                        mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p);
                     else {
                         c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].ecount == 2 ? activePaths[iend - 1].c1 : nullptr;
                         if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
@@ -240,11 +238,11 @@ struct Grid {
                         inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(activePaths[iend - 1].w == 0 && sw == 0);
                         
                         if (inside && activePaths[iend - 1].ecount < 3) {
-                            ci = begin[c0->ei].p + grid.iw * grid.ih;
+                            ci = begin[c0->ei].p;
                             plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                             grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
                             if (plast != -1)
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast + grid.iw * grid.ih);
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast);
                         }
 //                        if (!inside) {
 //                            float x0 = ix, y0 = iy, x1 = ix + 1, y1 = iy + 1;
