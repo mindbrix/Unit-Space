@@ -50,20 +50,12 @@ struct Grid {
     }
     
     static float coverage(float x0, float y0, float x1, float y1, float lx, float ly, float ux, float uy) {
-        float tlx, tux, t0, t1, cy0, cy1;
-        tlx = x0 < lx || x1 < lx ? (lx - x0) / (x1 - x0) : x0 < x1 ? 0 : 1;
-        tux = x0 > ux || x1 > ux ? (ux - x0) / (x1 - x0) : x0 > x1 ? 0 : 1;
-        
-        t0 = tlx < tux ? tlx : tux;
-        t1 = tlx > tux ? tlx : tux;
-        
-        cy0 = t0 == 0 ? y0 : t0 == 1 ? y1 : y0 + t0 * (y1 - y0);
-        cy1 = t1 == 0 ? y0 : t1 == 1 ? y1 : y0 + t1 * (y1 - y0);
-            
+        float cy0, cy1;
+        cy0 = x0 < lx || x1 < lx ? y0 + (lx - x0) / (x1 - x0) * (y1 - y0) : x0 < x1 ? y0 : y1;
+        cy1 = x0 > ux || x1 > ux ? y0 + (ux - x0) / (x1 - x0) * (y1 - y0) : x0 > x1 ? y0 : y1;
         cy0 = cy0 < ly ? ly : cy0 > uy ? uy : cy0;
         cy1 = cy1 < ly ? ly : cy1 > uy ? uy : cy1;
-        
-        return cy1 - cy0;
+        return x0 > x1 ? cy0 - cy1 : cy1 - cy0;
     }
     
     int edgeCellCount(Edge *edge) {
