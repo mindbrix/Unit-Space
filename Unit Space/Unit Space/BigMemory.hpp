@@ -17,18 +17,18 @@ struct BigMemory {
         header->end = header->begin = (T *)header->memory;
         header->refCount = 1;
     }
-    BigMemory(const BigMemory& other)         { assign(other); }
-    BigMemory& operator= (BigMemory other)    { assign(other); return *this; }
     ~BigMemory() {
         if (--(header->refCount) == 0) {
             munmap(header->memory, kBigMemorySize);
             free(header);
         }
     }
-    size_t count() { return header->end - header->begin; }
-    size_t size() { return (header->end - header->begin) * sizeof(T); }
-    T *get() const { return header->begin; }
-    T *next() const { return header->end++; }
+    BigMemory(const BigMemory& other)           { assign(other); }
+    BigMemory& operator= (BigMemory other)      { assign(other); return *this; }
+    size_t count() const                        { return header->end - header->begin; }
+    size_t size() const                         { return (header->end - header->begin) * sizeof(T); }
+    T *get() const                              { return header->begin; }
+    T *next()                                   { return header->end++; }
 private:
     void assign(const BigMemory& other) {
         if (this != & other) {
