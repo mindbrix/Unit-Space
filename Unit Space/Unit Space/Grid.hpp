@@ -94,7 +94,7 @@ struct Grid {
     
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1, det;
-        int pv, nv, count, pi, i;
+        int pv, nv, count, tcount, v, pi, i;
         
         x0 = c0->x0 - gx, y0 = c0->y0 - gy, x1 = (c1 ? c1->x1 : c0->x1) - gx, y1 = (c1 ? c1->y1 : c0->y1) - gy;
         if (right)
@@ -109,16 +109,26 @@ struct Grid {
             det = (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0);
             count = (det < 0) == !right ? 4 : 0;
         }
+        tcount = c1 ? count + 1 : count;
+        
+        pi = (int)mesh.points.size();
+        new (mesh.points.next()) Vector(c1 ? c0->x1 : x0 + gx, c1 ? c0->y1 : y0 + gy);
+        new (mesh.points.next()) Vector(x1 + gx, y1 + gy);
+        for (i = 0, v = nv; i < count; i++, v = (v + 1) % 4)
+            new (mesh.points.next()) Vector(gx + ((v >> 1) ^ (v & 1)), gy + (v >> 1));
+        if (c1)
+            new (mesh.points.next()) Vector(x0 + gx, y0 + gy);
+        for (i = 0; i < tcount; i++)
+            new (mesh.triangles.next()) Triangle(pi + 0, pi + i + 1, pi + i + 2, p);
+        
         pi = (int)mesh._points.size();
         mesh._points.emplace_back(c1 ? c0->x1 : x0 + gx, c1 ? c0->y1 : y0 + gy);
         mesh._points.emplace_back(x1 + gx, y1 + gy);
         for (i = 0; i < count; i++, nv = (nv + 1) % 4)
             mesh._points.emplace_back(gx + ((nv >> 1) ^ (nv & 1)), gy + (nv >> 1));
-        if (c1) {
+        if (c1)
             mesh._points.emplace_back(x0 + gx, y0 + gy);
-            count++;
-        }
-        for (i = 0; i < count; i++)
+        for (i = 0; i < tcount; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
     
