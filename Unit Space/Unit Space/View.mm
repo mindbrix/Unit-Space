@@ -542,7 +542,7 @@ using namespace std;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
         
-        if (_mesh._triangles.size()) {
+        if ((_mesh.useBig && _mesh.triangles.size()) || (!_mesh.useBig && _mesh._triangles.size())) {
             _calls.emplace_back();
             Call& call = _calls.back();
             call.meshState = meshState;
