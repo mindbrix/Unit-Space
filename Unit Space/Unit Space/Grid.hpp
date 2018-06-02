@@ -152,7 +152,7 @@ struct Grid {
         for (Path *path = & scene._paths[0], *pbegin = path, *pend = path + scene._paths.size(); path < pend; path++)
             end = path->writeEdges(end, (int)(path - pbegin));
         
-//        Tess::writeCurves(mesh, scene);
+        Tess::writeCurves(mesh, scene);
         
         Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
