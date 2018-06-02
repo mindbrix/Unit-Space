@@ -126,22 +126,12 @@ struct libTess {
             const int nelems = tessGetElementCount(tess);
             const TESSindex *polygon = tessGetElements(tess);
             
-            int pi;
-            if (mesh.useBig) {
-                pi = (int)mesh.points.count();
-                for (int i = 0; i < nelems; i++, polygon += kPolySize)
-                    new (mesh.triangles.next()) Triangle(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
-                
-                for (int i = 0; i < npoints; i++)
-                    new (mesh.points.next()) Vector((points[i * 2] + tx) * scale, (points[i * 2 + 1] + ty) * scale);
-            } else {
-                pi = (int)mesh._points.size();
-                for (int i = 0; i < nelems; i++, polygon += kPolySize)
-                    mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
-                
-                for (int i = 0; i < npoints; i++)
-                    mesh._points.emplace_back((points[i * 2] + tx) * scale, (points[i * 2 + 1] + ty) * scale);
-            }
+            int pi = (int)mesh._points.size();
+            for (int i = 0; i < nelems; i++, polygon += kPolySize)
+                mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
+            
+            for (int i = 0; i < npoints; i++)
+                mesh._points.emplace_back((points[i * 2] + tx) * scale, (points[i * 2 + 1] + ty) * scale);
         }
     }
     static void writePathTriangles(Mesh& mesh, TESStesselator *tess, Path& path) {

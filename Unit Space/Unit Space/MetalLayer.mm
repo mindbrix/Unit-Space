@@ -278,27 +278,14 @@
     _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
                                              length:mesh._colors.size() * sizeof(RGBA8)
                                             options:MTLResourceStorageModeShared];
-    if (mesh.useBig) {
-        if (mesh.triangles.size())
-            _trianglesBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh.triangles.get()
-                                                              length:(mesh.triangles.size() + 4096) & ~0xFFF
-                                                             options:MTLResourceStorageModeShared
-                                                         deallocator:nil];
-        if (mesh.points.size())
-            _pointsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh.points.get()
-                                                           length:(mesh.points.size() + 4096) & ~0xFFF
-                                                          options:MTLResourceStorageModeShared
-                                                      deallocator:nil];
-    } else {
-        if (mesh._triangles.size())
-            _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
-                                                        length:mesh._triangles.size() * sizeof(Triangle)
-                                                       options:MTLResourceStorageModeShared];
-        if (mesh._points.size())
-            _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
-                                                     length:mesh._points.size() * sizeof(Vector)
-                                                    options:MTLResourceStorageModeShared];
-    }
+    if (mesh._triangles.size())
+        _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
+                                                    length:mesh._triangles.size() * sizeof(Triangle)
+                                                   options:MTLResourceStorageModeShared];
+    if (mesh._points.size())
+        _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
+                                                 length:mesh._points.size() * sizeof(Vector)
+                                                options:MTLResourceStorageModeShared];
     if (mesh._curves.size())
         _curvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._curves[0]
                                                  length:mesh._curves.size() * sizeof(Triangle)
