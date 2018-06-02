@@ -119,7 +119,14 @@ struct Grid {
             mesh._points.emplace_back(x0 + gx, y0 + gy);
         for (i = 0; i < tcount; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
-}
+    }
+    void writeColorGrid(Mesh& mesh, int *colorGrid) {
+        int gx, gy;
+        for (gy = 0; gy < ih; gy++)
+            for (gx = 0; gx < iw; gx++)
+                if (colorGrid[gy * iw + gx] != -1)
+                    mesh.writeRect(gx, gy, gx + 1, gy + 1, colorGrid[gy * iw + gx]);
+    }
     
     float lx, ly, ux, uy;
     float scale, dimension, tx, ty;
@@ -173,7 +180,8 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, sw, p;
+        int iend, i, idst, isrc, plast, ci, sw, p, colorGrid[grid.iw * grid.ih];
+        memset(colorGrid, -1, sizeof(colorGrid));
         float det;
         bool right, inside;
         CellElement *cellElement;
@@ -214,7 +222,7 @@ struct Grid {
                 
                 if (iend) {
                     if (activePaths[iend - 1].ecount == 0)
-                        mesh.writeRect(ix, iy, ix + 1, iy + 1, activePaths[iend - 1].p);
+                        colorGrid[ci] = activePaths[iend - 1].p;
                     else {
                         c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].ecount == 2 ? activePaths[iend - 1].c1 : nullptr;
                         if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
@@ -249,6 +257,7 @@ struct Grid {
                 }
             }
         }
+        grid.writeColorGrid(mesh, colorGrid);
         tessDeleteTess(tess);
     }
 };
