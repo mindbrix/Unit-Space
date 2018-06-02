@@ -121,11 +121,28 @@ struct Grid {
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
     void writeColorGrid(Mesh& mesh, int *colorGrid) {
-        int gx, gy;
-        for (gy = 0; gy < ih; gy++)
-            for (gx = 0; gx < iw; gx++)
-                if (colorGrid[gy * iw + gx] != -1)
-                    mesh.writeRect(gx, gy, gx + 1, gy + 1, colorGrid[gy * iw + gx]);
+        int gx, gy, g0, g1, g2, g3, p0, p1, p2, p3;
+        for (gy = 0; gy < ih; gy += 2)
+            for (gx = 0; gx < iw; gx += 2) {
+                g0 = gy * iw + gx, g1 = gx + 1 < iw ? g0 + 1 : -1;
+                g2 = gx + 1 < iw && gy + 1 < ih ? g1 + iw : -1, g3 = gy + 1 < ih ? g0 + iw : -1;
+                
+                p0 = g0 != -1 ? colorGrid[g0] : -1, p1 = g1 != -1 ? colorGrid[g1] : -1;
+                p2 = g2 != -1 ? colorGrid[g2] : -1, p3 = g3 != -1 ? colorGrid[g3] : -1;
+                
+                if (p0 != -1 && p0 == p1 && p1 == p2 && p2 == p3)
+                    mesh.writeRect(gx, gy, gx + 2, gy + 2, p0);
+                else {
+                    if (g0 != -1 && colorGrid[g0] != -1)
+                        mesh.writeRect(gx, gy, gx + 1, gy + 1, colorGrid[g0]);
+                    if (g1 != -1 && colorGrid[g1] != -1)
+                        mesh.writeRect(gx + 1, gy, gx + 2, gy + 1, colorGrid[g1]);
+                    if (g2 != -1 && colorGrid[g2] != -1)
+                        mesh.writeRect(gx + 1, gy + 1, gx + 2, gy + 2, colorGrid[g2]);
+                    if (g3 != -1 && colorGrid[g3] != -1)
+                        mesh.writeRect(gx, gy + 1, gx + 1, gy + 2, colorGrid[g3]);
+                }
+            }
     }
     
     float lx, ly, ux, uy;
