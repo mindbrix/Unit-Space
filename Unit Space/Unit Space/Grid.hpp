@@ -94,7 +94,7 @@ struct Grid {
     
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1, det;
-        int pv, nv, count, tcount, v, pi, i;
+        int pv, nv, count, tcount, pi, i;
         
         x0 = c0->x0 - gx, y0 = c0->y0 - gy, x1 = (c1 ? c1->x1 : c0->x1) - gx, y1 = (c1 ? c1->y1 : c0->y1) - gy;
         if (right)
