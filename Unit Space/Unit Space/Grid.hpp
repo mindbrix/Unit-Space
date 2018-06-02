@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -120,31 +120,6 @@ struct Grid {
         for (i = 0; i < tcount; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
-    void writeColorGrid(Mesh& mesh, int *colorGrid) {
-        int gx, gy, g0, g1, g2, g3, p0, p1, p2, p3;
-        for (gy = 0; gy < ih; gy += 2)
-            for (gx = 0; gx < iw; gx += 2) {
-                g0 = gy * iw + gx, g1 = gx + 1 < iw ? g0 + 1 : -1;
-                g2 = gx + 1 < iw && gy + 1 < ih ? g1 + iw : -1, g3 = gy + 1 < ih ? g0 + iw : -1;
-                
-                p0 = g0 != -1 ? colorGrid[g0] : -1, p1 = g1 != -1 ? colorGrid[g1] : -1;
-                p2 = g2 != -1 ? colorGrid[g2] : -1, p3 = g3 != -1 ? colorGrid[g3] : -1;
-                
-                if (p0 != -1 && p0 == p1 && p1 == p2 && p2 == p3)
-                    mesh.writeRect(gx, gy, gx + 2, gy + 2, p0);
-                else {
-                    if (g0 != -1 && colorGrid[g0] != -1)
-                        mesh.writeRect(gx, gy, gx + 1, gy + 1, colorGrid[g0]);
-                    if (g1 != -1 && colorGrid[g1] != -1)
-                        mesh.writeRect(gx + 1, gy, gx + 2, gy + 1, colorGrid[g1]);
-                    if (g2 != -1 && colorGrid[g2] != -1)
-                        mesh.writeRect(gx + 1, gy + 1, gx + 2, gy + 2, colorGrid[g2]);
-                    if (g3 != -1 && colorGrid[g3] != -1)
-                        mesh.writeRect(gx, gy + 1, gx + 1, gy + 2, colorGrid[g3]);
-                }
-            }
-    }
-    
     float lx, ly, ux, uy;
     float scale, dimension, tx, ty;
     float width, height;
@@ -197,13 +172,14 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, sw, p, colorGrid[grid.iw * grid.ih];
+        int iend, i, idst, isrc, plast, ci, sw, p, lp, lix, colorGrid[grid.iw * grid.ih];
         memset(colorGrid, -1, sizeof(colorGrid));
         float det;
         bool right, inside;
         CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
+            lp = -1, lix = 0;
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
                 
@@ -238,9 +214,20 @@ struct Grid {
                 }
                 
                 if (iend) {
-                    if (activePaths[iend - 1].ecount == 0)
-                        colorGrid[ci] = activePaths[iend - 1].p;
-                    else {
+                    if (activePaths[iend - 1].ecount == 0) {
+                        if (lp == -1)
+                            lp = activePaths[iend - 1].p, lix = ix;
+                        else {
+                            if (lp != activePaths[iend - 1].p) {
+                                mesh.writeRect(lix, iy, lix + 1, iy + 1, lp);
+                                lp = activePaths[iend - 1].p, lix = ix;
+                            }
+                        }
+                    } else {
+                        if (lp != -1) {
+                            mesh.writeRect(lix, iy, ix, iy + 1, lp);
+                            lp = -1;
+                        }
                         c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].ecount == 2 ? activePaths[iend - 1].c1 : nullptr;
                         if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                             std::swap(c0, c1);
@@ -274,7 +261,7 @@ struct Grid {
                 }
             }
         }
-        grid.writeColorGrid(mesh, colorGrid);
+//        grid.writeColorGrid(mesh, colorGrid);
         tessDeleteTess(tess);
     }
 };
