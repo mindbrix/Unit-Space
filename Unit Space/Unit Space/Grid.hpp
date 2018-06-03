@@ -189,8 +189,7 @@ struct Grid {
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
-                eli = grid.elements[ci].begin;
-                if (eli) {
+                if ((eli = grid.elements[ci].begin)) {
                     do {
                         cellElement = & grid.cellElements[eli];
                         p = begin[cellElement->cell.ei].p;
