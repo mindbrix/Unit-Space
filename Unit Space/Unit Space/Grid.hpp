@@ -126,8 +126,6 @@ struct Grid {
     CellElement *cellElements;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
-        TESStesselator *tess = tessNewTess(NULL);
-        
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
@@ -247,6 +245,5 @@ struct Grid {
                 }
             }
         }
-        tessDeleteTess(tess);
     }
 };
