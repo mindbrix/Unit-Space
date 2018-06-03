@@ -119,10 +119,6 @@ struct Quad {
 
 template<typename T>
 struct Memory {
-private:
-    struct Header { int refCount; void *memory; size_t size; };
-    Header *header = nullptr;
-public:
     Memory()                            {}
     Memory(size_t count)                { alloc(count); }
     Memory(const Memory& other)         { assign(other); }
@@ -143,13 +139,6 @@ public:
         }
         header->size = count * sizeof(T);
     }
-    void assign(const Memory& other) {
-        if (this != & other) {
-            this->~Memory();
-            if ((header = other.header))
-                header->refCount++;
-        }
-    }
     Memory clone() {
         if (header) {
             Memory c(header->size);
@@ -158,13 +147,24 @@ public:
         }
         return Memory();
     }
-    void zero() {
+    Memory& zero() {
         if (header)
             memset(header->memory, 0, header->size);
+        return *this;
     }
     size_t count() { return header ? header->size / sizeof(T) : 0; }
     size_t size() { return header ? header->size : 0; }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
+private:
+    void assign(const Memory& other) {
+        if (this != & other) {
+            this->~Memory();
+            if ((header = other.header))
+                header->refCount++;
+        }
+    }
+    struct Header { int refCount; void *memory; size_t size; };
+    Header *header = nullptr;
 };
 
 #pragma mark - Algorithms

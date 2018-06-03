@@ -139,8 +139,7 @@ struct Grid {
             count += grid.edgeCellCount(edge);
         
         Memory<GridElement> elements(grid.iw * grid.ih);
-        elements.zero();
-        grid.elements = elements.get();
+        grid.elements = elements.zero().get();
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
         grid.cellIndex = 1;
