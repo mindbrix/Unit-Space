@@ -77,10 +77,7 @@ struct Grid {
                 ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 
                 cellElement = new (& cellElements[cellIndex]) CellElement(ei, si, tx0, ty0, tx1, ty1);
-                if (element->begin == 0)
-                    element->begin = cellIndex;
-                else
-                    cellElements[element->last].next = cellIndex;
+                *(element->begin == 0 ? & element->begin : & cellElements[element->last].next) = cellIndex;
                 element->last = cellIndex++;
             }
         }
