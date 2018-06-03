@@ -177,15 +177,13 @@ struct Grid {
                 if ((eli = grid.elements[ci].begin)) {
                     do {
                         cellElement = & grid.cellElements[eli];
-                        p = begin[cellElement->cell.ei].p;
-                        for (i = 0; i < iend; i++)
+                        for ( p = begin[cellElement->cell.ei].p, i = 0; i < iend; i++)
                             if (activePaths[i].p == p)
                                 break;
                         if (i == iend) {
                             ActivePath active(p);
-                            iend++, isrc = i - 1;
-                            while (i > 0 && p < activePaths[isrc].p)
-                                activePaths[i--] = activePaths[isrc--];
+                            for (iend++, isrc = i - 1; i > 0 && p < activePaths[isrc].p; i--, isrc--)
+                                activePaths[i] = activePaths[isrc];
                             activePaths[i] = active;
                         }
                         subpathWindings[cellElement->cell.si] += cellElement->cell.y1 - cellElement->cell.y0;
