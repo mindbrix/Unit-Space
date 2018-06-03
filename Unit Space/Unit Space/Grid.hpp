@@ -43,9 +43,7 @@ struct Grid {
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
     }
     
-    int edgeCellCount(Edge *edge) {
-        return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2;
-    }
+    int edgeCellCount(Edge *edge) { return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2; }
     
     void writeEdgeCells(Edge *edge, int ei, int si) {
         float x0, y0, x1, y1;
