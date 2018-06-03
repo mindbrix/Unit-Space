@@ -152,15 +152,13 @@ struct Grid {
         
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
-        RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix;
         float det, subpathWindings[subpathIndex + 1];
         bool right, inside;
         CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, rgba = RGBA8(0, 0, 0, 0);
-            lp = -1, lix = 0;
+            iend = 0, lp = -1, lix = 0;
             memset(subpathWindings, 0, sizeof(subpathWindings));
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
