@@ -30,8 +30,7 @@ struct Grid {
         ActivePath() {}
         ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), ecount(0) {}
         void addCell(int i, float coverage) {
-            if (ecount == 0) eli = i;
-            ecount++;
+            if (ecount++ == 0) eli = i;
             winding += coverage;
         }
         int alpha() { return evenOdd ? 65535 - std::abs(((int(winding * 65535) & 0xFFFF) % 131070) - 65535) : int(winding * 65535) & 0xFFFF; }
