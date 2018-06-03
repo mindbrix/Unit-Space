@@ -14,12 +14,12 @@ constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
-        Cell(int ei, float x0, float y0, float x1, float y1) : ei(ei), x0(x0), y0(y0), x1(x1), y1(y1) {}
-        int ei;
+        Cell(int ei, int si, float x0, float y0, float x1, float y1) : ei(ei), si(si), x0(x0), y0(y0), x1(x1), y1(y1) {}
+        int ei, si;
         float x0, y0, x1, y1;
     };
     struct CellElement {
-        CellElement(int ei, float x0, float y0, float x1, float y1) : next(0), cell(ei, x0, y0, x1, y1) {}
+        CellElement(int ei, int si, float x0, float y0, float x1, float y1) : next(0), cell(ei, si, x0, y0, x1, y1) {}
         int next;
         Cell cell;
     };
@@ -51,7 +51,7 @@ struct Grid {
         return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2;
     }
     
-    void writeEdgeCells(Edge *edge, int ei) {
+    void writeEdgeCells(Edge *edge, int ei, int si) {
         float x0, y0, x1, y1;
         float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
@@ -80,7 +80,7 @@ struct Grid {
                 ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 
-                cellElement = new (& cellElements[cellIndex])CellElement(ei, tx0, ty0, tx1, ty1);
+                cellElement = new (& cellElements[cellIndex]) CellElement(ei, si, tx0, ty0, tx1, ty1);
                 if (element->begin == 0)
                     element->begin = element->last = cellIndex;
                 else
@@ -121,7 +121,7 @@ struct Grid {
     float lx, ly, ux, uy;
     float scale, dimension, tx, ty;
     float width, height;
-    int iw, ih, cellIndex;
+    int iw, ih, cellIndex, subpathIndex;
     GridElement *elements;
     CellElement *cellElements;
     
@@ -161,8 +161,12 @@ struct Grid {
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
         grid.cellIndex = 1;
-        for (edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, (int)(edge - begin));
+        grid.subpathIndex = 0;
+        for (edge = begin; edge < end; edge++) {
+            if (edge > begin && !(edge->p == (edge - 1)->p && edge->ci == (edge - 1)->ci))
+                grid.subpathIndex++;
+            grid.writeEdgeCells(edge, (int)(edge - begin), grid.subpathIndex);
+        }
         
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
