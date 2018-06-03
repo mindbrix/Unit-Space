@@ -142,8 +142,7 @@ struct Grid {
         grid.elements = elements.zero().get();
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
-        grid.cellIndex = 1;
-        for (subpathIndex = 0, edge = begin; edge < end; edge++) {
+        for (grid.cellIndex = 1, subpathIndex = 0, edge = begin; edge < end; edge++) {
             if (edge > begin && !(edge->p == (edge - 1)->p && edge->ci == (edge - 1)->ci))
                 subpathIndex++;
             grid.writeEdgeCells(edge, (int)(edge - begin), subpathIndex);
@@ -173,7 +172,7 @@ struct Grid {
                 if ((eli = grid.elements[ci].begin)) {
                     do {
                         cellElement = & grid.cellElements[eli];
-                        for ( p = begin[cellElement->cell.ei].p, i = 0; i < iend; i++)
+                        for (p = begin[cellElement->cell.ei].p, i = 0; i < iend; i++)
                             if (activePaths[i].p == p)
                                 break;
                         if (i == iend) {
