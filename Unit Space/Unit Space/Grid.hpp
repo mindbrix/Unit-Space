@@ -125,8 +125,7 @@ struct Grid {
         int ix, iy, count;
         Cell *c0, *c1;
         
-        count = scene._npoints;
-        Memory<Edge> edges0(count);
+        Memory<Edge> edges0(scene._npoints);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path *path = & scene._paths[0], *pbegin = path, *pend = path + scene._paths.size(); path < pend; path++)
             end = path->writeEdges(end, (int)(path - pbegin));
