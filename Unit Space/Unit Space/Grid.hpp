@@ -28,14 +28,13 @@ struct Grid {
     };
     struct ActivePath {
         ActivePath() {}
-        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), ecount(0) {}
+        ActivePath(int p) : p(p), winding(0), ecount(0) {}
         void addCell(int i, float coverage) {
             if (ecount++ == 0) eli = i;
             winding += coverage;
         }
-        int alpha() { return evenOdd ? 65535 - std::abs(((int(winding * 65535) & 0xFFFF) % 131070) - 65535) : int(winding * 65535) & 0xFFFF; }
+        int alpha(bool evenOdd) { return evenOdd ? 65535 - std::abs(((int(winding * 65535) & 0xFFFF) % 131070) - 65535) : int(winding * 65535) & 0xFFFF; }
         int p, ecount, eli;
-        bool evenOdd;
         float winding;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
@@ -182,7 +181,7 @@ struct Grid {
                 
                 idst = 0, isrc = 0;
                 while (isrc < iend) {
-                    if (activePaths[isrc].alpha() != 0)
+                    if (activePaths[isrc].alpha(scene._paths[activePaths[isrc].p]._evenOdd) != 0)
                         activePaths[idst++] = activePaths[isrc];
                     isrc++;
                 }
@@ -199,7 +198,7 @@ struct Grid {
                             if (activePaths[i].p == p)
                                 break;
                         if (i == iend) {
-                            ActivePath active(p, scene._paths[p]._evenOdd);
+                            ActivePath active(p);
                             iend++, isrc = i - 1;
                             while (i > 0 && p < activePaths[isrc].p)
                                 activePaths[i--] = activePaths[isrc--];
