@@ -172,7 +172,7 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, sw, p, lp, lix;
+        int iend, i, idst, isrc, plast, ci, eli, sw, p, lp, lix;
         float det;
         bool right, inside;
         CellElement *cellElement;
@@ -193,9 +193,10 @@ struct Grid {
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
-                if (grid.elements[ci].begin) {
-                    cellElement = & grid.cellElements[grid.elements[ci].begin];
+                eli = grid.elements[ci].begin;
+                if (eli) {
                     do {
+                        cellElement = & grid.cellElements[eli];
                         p = begin[cellElement->cell.ei].p;
                         for (i = 0; i < iend; i++)
                             if (activePaths[i].p == p)
@@ -209,7 +210,7 @@ struct Grid {
                             i = idst;
                         }
                         activePaths[i].addCell(& cellElement->cell);
-                    } while ((cellElement = cellElement->next ? & grid.cellElements[cellElement->next] : nullptr));
+                    } while ((eli = cellElement->next ?: 0));
                 }
                 
                 if (iend) {
