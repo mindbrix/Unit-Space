@@ -125,10 +125,7 @@ struct Grid {
         int ix, iy, count;
         Cell *c0, *c1;
         
-        count = 0;
-        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
-            count += path->countPoints();
-        
+        count = scene._npoints;
         Memory<Edge> edges0(count);
         Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
         for (Path *path = & scene._paths[0], *pbegin = path, *pend = path + scene._paths.size(); path < pend; path++)

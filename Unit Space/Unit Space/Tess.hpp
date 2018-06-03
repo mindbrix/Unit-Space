@@ -379,14 +379,16 @@ struct Scene {
         if (path._subPaths.size() != 0) {
             path.update();
             if (_paths.size() == 0)
-                _bounds = path._bounds;
+                _bounds = path._bounds, _npoints = 0;
             _bounds.unite(path._bounds);
+            _npoints += path.countPoints();
             _paths.emplace_back(path);
         }
     }
     void empty() { _paths.resize(0); }
     vector<Path>    _paths;
     Bounds          _bounds;
+    int             _npoints;
 };
 
 struct Tess {
