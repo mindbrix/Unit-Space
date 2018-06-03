@@ -173,7 +173,8 @@ struct Grid {
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci, eli, sw, p, lp, lix;
-        float det;
+        float det, subpathWindings[grid.subpathIndex + 1];
+        memset(subpathWindings, 0, sizeof(subpathWindings));
         bool right, inside;
         CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
@@ -207,6 +208,7 @@ struct Grid {
                                 activePaths[i--] = activePaths[isrc--];
                             activePaths[i] = active;
                         }
+                        subpathWindings[cellElement->cell.si] += cellElement->cell.y1 - cellElement->cell.y0;
                         activePaths[i].addCell(eli, cellElement->cell.y1 - cellElement->cell.y0);
                     } while ((eli = cellElement->next ?: 0));
                 }
