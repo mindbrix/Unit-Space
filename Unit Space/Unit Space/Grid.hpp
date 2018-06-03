@@ -228,22 +228,24 @@ struct Grid {
                             mesh.writeRect(lix, iy, ix, iy + 1, lp);
                             lp = -1;
                         }
-                        eli = activePaths[iend - 1].eli, c0 = & grid.cellElements[eli].cell;
-                        eli = grid.cellElements[eli].next ?: 0, c1 = eli ? & grid.cellElements[eli].cell : nullptr;
-
-                        if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
-                            std::swap(c0, c1);
-                        sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
-                        det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
-                        right = activePaths[iend - 1].w == sw ? (sw == 0 ? det < 0 : sw > 0) : activePaths[iend - 1].w > sw;
-                        inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(activePaths[iend - 1].w == 0 && sw == 0);
-                        
-                        if (inside && activePaths[iend - 1].ecount < 3) {
-                            ci = begin[c0->ei].p;
-                            plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
-                            grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
-                            if (plast != -1)
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast);
+                        if (activePaths[iend - 1].ecount < 3) {
+                            eli = activePaths[iend - 1].eli, c0 = & grid.cellElements[eli].cell;
+                            eli = grid.cellElements[eli].next ?: 0, c1 = eli ? & grid.cellElements[eli].cell : nullptr;
+                            
+                            if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
+                                std::swap(c0, c1);
+                            sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
+                            det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
+                            right = activePaths[iend - 1].w == sw ? (sw == 0 ? det < 0 : sw > 0) : activePaths[iend - 1].w > sw;
+                            inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(activePaths[iend - 1].w == 0 && sw == 0);
+                            
+                            if (inside) {
+                                ci = begin[c0->ei].p;
+                                plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                                if (plast != -1)
+                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast);
+                            }
                         }
                     }
                 }
