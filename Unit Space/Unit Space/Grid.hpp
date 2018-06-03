@@ -114,7 +114,7 @@ struct Grid {
     float lx, ly, ux, uy;
     float scale, dimension, tx, ty;
     float width, height;
-    int iw, ih, cellIndex, subpathIndex;
+    int iw, ih, cellIndex;
     GridElement *elements;
     CellElement *cellElements;
     
@@ -122,7 +122,7 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, count;
+        int ix, iy, count, subpathIndex;
         Cell *c0, *c1;
         
         Memory<Edge> edges0(scene._npoints);
@@ -144,11 +144,11 @@ struct Grid {
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
         grid.cellIndex = 1;
-        grid.subpathIndex = 0;
+        subpathIndex = 0;
         for (edge = begin; edge < end; edge++) {
             if (edge > begin && !(edge->p == (edge - 1)->p && edge->ci == (edge - 1)->ci))
-                grid.subpathIndex++;
-            grid.writeEdgeCells(edge, (int)(edge - begin), grid.subpathIndex);
+                subpathIndex++;
+            grid.writeEdgeCells(edge, (int)(edge - begin), subpathIndex);
         }
         
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
@@ -156,7 +156,7 @@ struct Grid {
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix;
-        float det, subpathWindings[grid.subpathIndex + 1];
+        float det, subpathWindings[subpathIndex + 1];
         bool right, inside;
         CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
