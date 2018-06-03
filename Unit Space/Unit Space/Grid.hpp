@@ -174,12 +174,12 @@ struct Grid {
         ActivePath activePaths[scene._paths.size()];
         int iend, i, idst, isrc, plast, ci, eli, sw, p, lp, lix;
         float det, subpathWindings[grid.subpathIndex + 1];
-        memset(subpathWindings, 0, sizeof(subpathWindings));
         bool right, inside;
         CellElement *cellElement;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, rgba = RGBA8(0, 0, 0, 0);
             lp = -1, lix = 0;
+            memset(subpathWindings, 0, sizeof(subpathWindings));
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
                 
