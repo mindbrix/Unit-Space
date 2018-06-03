@@ -29,8 +29,8 @@ struct Grid {
     struct ActivePath {
         ActivePath() {}
         ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0) {}
-        void addCell(int i, Cell *cell) {
-            winding += cell->y1 - cell->y0;
+        void addCell(int i, float coverage) {
+            winding += coverage;
             w = winding * 65535;
             a = evenOdd ? 65535 - std::abs(((w & 0xFFFF) % 131070) - 65535) : w & 0xFFFF;
             if (ecount == 0) eli = i;
@@ -204,7 +204,7 @@ struct Grid {
                             activePaths[idst] = active;
                             i = idst;
                         }
-                        activePaths[i].addCell(eli, & cellElement->cell);
+                        activePaths[i].addCell(eli, cellElement->cell.y1 - cellElement->cell.y0);
                     } while ((eli = cellElement->next ?: 0));
                 }
                 
