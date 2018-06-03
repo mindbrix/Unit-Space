@@ -143,8 +143,7 @@ struct Grid {
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
         grid.cellIndex = 1;
-        subpathIndex = 0;
-        for (edge = begin; edge < end; edge++) {
+        for (subpathIndex = 0, edge = begin; edge < end; edge++) {
             if (edge > begin && !(edge->p == (edge - 1)->p && edge->ci == (edge - 1)->ci))
                 subpathIndex++;
             grid.writeEdgeCells(edge, (int)(edge - begin), subpathIndex);
@@ -163,14 +162,11 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 ci = ix + iy * grid.iw;
                 
-                idst = 0, isrc = 0;
-                while (isrc < iend) {
+                for (idst = isrc = 0; isrc < iend; isrc++)
                     if (activePaths[isrc].alpha(scene._paths[activePaths[isrc].p]._evenOdd) != 0)
                         activePaths[idst++] = activePaths[isrc];
-                    isrc++;
-                }
-                iend = idst;
                 
+                iend = idst;
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
