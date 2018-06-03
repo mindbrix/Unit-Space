@@ -198,11 +198,10 @@ struct Grid {
                                 break;
                         if (i == iend) {
                             ActivePath active(p, scene._paths[p]._evenOdd);
-                            idst = iend++, isrc = idst - 1;
-                            while (idst > 0 && p < activePaths[isrc].p)
-                                activePaths[idst--] = activePaths[isrc--];
-                            activePaths[idst] = active;
-                            i = idst;
+                            iend++, isrc = i - 1;
+                            while (i > 0 && p < activePaths[isrc].p)
+                                activePaths[i--] = activePaths[isrc--];
+                            activePaths[i] = active;
                         }
                         activePaths[i].addCell(eli, cellElement->cell.y1 - cellElement->cell.y0);
                     } while ((eli = cellElement->next ?: 0));
