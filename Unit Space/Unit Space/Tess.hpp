@@ -376,8 +376,10 @@ struct Mesh {
 
 struct Scene {
     void addPath(Path& path) {
-        if (path._subPaths.size() != 0)
+        if (path._subPaths.size() != 0) {
+            path.update();
             _paths.emplace_back(path);
+        }
     }
     void empty() { _paths.resize(0); }
     vector<Path> _paths;

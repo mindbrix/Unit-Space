@@ -124,9 +124,6 @@ struct Grid {
             return;
         int ix, iy, count;
         Cell *c0, *c1;
-        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
-            path->update();
-        
         Bounds bounds = scene._paths[0]._bounds;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             bounds.unite(path->_bounds);
