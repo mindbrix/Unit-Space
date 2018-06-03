@@ -10,7 +10,7 @@
 #import "libTess.hpp"
 #import <vector>
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -28,20 +28,18 @@ struct Grid {
     };
     struct ActivePath {
         ActivePath() {}
-        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0), c0(nullptr), c1(nullptr) {}
-        void addCell(Cell *cell) {
+        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0) {}
+        void addCell(int i, Cell *cell) {
             winding += cell->y1 - cell->y0;
             w = winding * 65535;
             a = evenOdd ? 65535 - std::abs(((w & 0xFFFF) % 131070) - 65535) : w & 0xFFFF;
-            c0 = ecount == 0 ? cell : c0 < cell ? c0 : cell;
-            c1 = ecount == 0 ? cell : c1 > cell ? c1 : cell;
+            if (ecount == 0) eli = i;
             ecount++;
         }
         int p;
         bool evenOdd;
         float winding;
-        int w, a, ecount;
-        Cell *c0, *c1;
+        int w, a, ecount, eli;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
@@ -209,7 +207,7 @@ struct Grid {
                             activePaths[idst] = active;
                             i = idst;
                         }
-                        activePaths[i].addCell(& cellElement->cell);
+                        activePaths[i].addCell(eli, & cellElement->cell);
                     } while ((eli = cellElement->next ?: 0));
                 }
                 
@@ -228,7 +226,9 @@ struct Grid {
                             mesh.writeRect(lix, iy, ix, iy + 1, lp);
                             lp = -1;
                         }
-                        c0 = activePaths[iend - 1].c0, c1 = activePaths[iend - 1].ecount == 2 ? activePaths[iend - 1].c1 : nullptr;
+                        eli = activePaths[iend - 1].eli, c0 = & grid.cellElements[eli].cell;
+                        eli = grid.cellElements[eli].next ?: 0, c1 = eli ? & grid.cellElements[eli].cell : nullptr;
+
                         if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                             std::swap(c0, c1);
                         sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
