@@ -172,8 +172,7 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, sw, p, lp, lix, colorGrid[grid.iw * grid.ih];
-        memset(colorGrid, -1, sizeof(colorGrid));
+        int iend, i, idst, isrc, plast, ci, sw, p, lp, lix;
         float det;
         bool right, inside;
         CellElement *cellElement;
