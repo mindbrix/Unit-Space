@@ -378,11 +378,15 @@ struct Scene {
     void addPath(Path& path) {
         if (path._subPaths.size() != 0) {
             path.update();
+            if (_paths.size() == 0)
+                _bounds = path._bounds;
+            _bounds.unite(path._bounds);
             _paths.emplace_back(path);
         }
     }
     void empty() { _paths.resize(0); }
-    vector<Path> _paths;
+    vector<Path>    _paths;
+    Bounds          _bounds;
 };
 
 struct Tess {

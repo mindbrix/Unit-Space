@@ -124,9 +124,6 @@ struct Grid {
             return;
         int ix, iy, count;
         Cell *c0, *c1;
-        Bounds bounds = scene._paths[0]._bounds;
-        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
-            bounds.unite(path->_bounds);
         
         count = 0;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
@@ -139,7 +136,7 @@ struct Grid {
         
         Tess::writeCurves(mesh, scene);
         
-        Grid grid(bounds.lx, bounds.ly, bounds.ux, bounds.uy);
+        Grid grid(scene._bounds.lx, scene._bounds.ly, scene._bounds.ux, scene._bounds.uy);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
         
         for (count = 0, edge = begin; edge < end; edge++)
