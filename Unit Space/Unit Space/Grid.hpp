@@ -176,10 +176,9 @@ struct Grid {
                             if (activePaths[i].p == p)
                                 break;
                         if (i == iend) {
-                            ActivePath active(p);
                             for (iend++, isrc = i - 1; i > 0 && p < activePaths[isrc].p; i--, isrc--)
                                 activePaths[i] = activePaths[isrc];
-                            activePaths[i] = active;
+                            new (& activePaths[i]) ActivePath(p);
                         }
                         subpathWindings[cellElement->cell.si] += cellElement->cell.y1 - cellElement->cell.y0;
                         activePaths[i].addCell(eli, cellElement->cell.y1 - cellElement->cell.y0);
