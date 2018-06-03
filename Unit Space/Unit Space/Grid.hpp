@@ -5,10 +5,7 @@
 //  Created by Nigel Barber on 17/05/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-
 #import "Tess.hpp"
-#import "libTess.hpp"
-#import <vector>
 
 constexpr int kDivisions = 128;
 
@@ -109,9 +106,8 @@ struct Grid {
         for (i = 0; i < tcount; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
-    float lx, ly, ux, uy;
+    float lx, ly, ux, uy, width, height;
     float scale, dimension, tx, ty;
-    float width, height;
     int iw, ih, cellIndex;
     GridElement *elements;
     CellElement *cellElements;
