@@ -28,18 +28,18 @@ struct Grid {
     };
     struct ActivePath {
         ActivePath() {}
-        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), a(0), ecount(0) {}
+        ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), ecount(0) {}
         void addCell(int i, float coverage) {
             winding += coverage;
             w = winding * 65535;
-            a = evenOdd ? 65535 - std::abs(((w & 0xFFFF) % 131070) - 65535) : w & 0xFFFF;
             if (ecount == 0) eli = i;
             ecount++;
         }
+        int alpha() { return evenOdd ? 65535 - std::abs(((w & 0xFFFF) % 131070) - 65535) : w & 0xFFFF; }
         int p;
         bool evenOdd;
         float winding;
-        int w, a, ecount, eli;
+        int w, ecount, eli;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
@@ -185,7 +185,7 @@ struct Grid {
                 
                 idst = 0, isrc = 0;
                 while (isrc < iend) {
-                    if (activePaths[isrc].a != 0)
+                    if (activePaths[isrc].alpha() != 0)
                         activePaths[idst++] = activePaths[isrc];
                     isrc++;
                 }
@@ -231,6 +231,9 @@ struct Grid {
                         if (activePaths[iend - 1].ecount < 3) {
                             eli = activePaths[iend - 1].eli, c0 = & grid.cellElements[eli].cell;
                             eli = grid.cellElements[eli].next ?: 0, c1 = eli ? & grid.cellElements[eli].cell : nullptr;
+                            
+//                            if (c1 == nullptr)
+//                                activePaths[iend - 1].w = subpathWindings[c0->si] * 65535;
                             
                             if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
