@@ -30,16 +30,14 @@ struct Grid {
         ActivePath() {}
         ActivePath(int p, bool evenOdd) : p(p), evenOdd(evenOdd), winding(0), ecount(0) {}
         void addCell(int i, float coverage) {
-            winding += coverage;
-            w = winding * 65535;
             if (ecount == 0) eli = i;
             ecount++;
+            winding += coverage;
         }
-        int alpha() { return evenOdd ? 65535 - std::abs(((w & 0xFFFF) % 131070) - 65535) : w & 0xFFFF; }
-        int p;
+        int alpha() { return evenOdd ? 65535 - std::abs(((int(winding * 65535) & 0xFFFF) % 131070) - 65535) : int(winding * 65535) & 0xFFFF; }
+        int p, ecount, eli;
         bool evenOdd;
         float winding;
-        int w, ecount, eli;
     };
     Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
         float dmax = width > height ? width : height;
@@ -172,7 +170,7 @@ struct Grid {
             mesh._colors.emplace_back(path->_color);
         RGBA8 rgba;
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, eli, sw, p, lp, lix;
+        int iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix;
         float det, subpathWindings[grid.subpathIndex + 1];
         bool right, inside;
         CellElement *cellElement;
@@ -232,15 +230,13 @@ struct Grid {
                             eli = activePaths[iend - 1].eli, c0 = & grid.cellElements[eli].cell;
                             eli = grid.cellElements[eli].next ?: 0, c1 = eli ? & grid.cellElements[eli].cell : nullptr;
                             
-//                            if (c1 == nullptr)
-//                                activePaths[iend - 1].w = subpathWindings[c0->si] * 65535;
-                            
                             if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
+                            w = subpathWindings[c0->si] * 65535;
                             sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
                             det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
-                            right = activePaths[iend - 1].w == sw ? (sw == 0 ? det < 0 : sw > 0) : activePaths[iend - 1].w > sw;
-                            inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(activePaths[iend - 1].w == 0 && sw == 0);
+                            right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
+                            inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(w == 0 && sw == 0);
                             
                             if (inside) {
                                 ci = begin[c0->ei].p;
