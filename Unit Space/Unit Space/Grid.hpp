@@ -63,7 +63,7 @@ struct Grid {
             element->last = cellIndex++;
             return;
         }
-        gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
+        guy = std::ceil(uy), gh = guy - gly;
         for (cly = gly, cuy = gly + 1; gh--; cly = cuy, cuy += 1) {
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
             sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
