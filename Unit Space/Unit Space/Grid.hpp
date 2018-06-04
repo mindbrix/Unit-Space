@@ -202,8 +202,8 @@ struct Grid {
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(w == 0 && sw == 0);
                             
                             if (inside) {
-                                plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, c0->e->p);
+                                plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast);
                             }
