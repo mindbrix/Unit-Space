@@ -125,9 +125,8 @@ struct Grid {
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
-        int ix, iy, count;
-        Cell *c0, *c1;
         
+        int count;
         Memory<Edge> edgesMemory = scene.writeEdges();
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
         
@@ -149,10 +148,11 @@ struct Grid {
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix, first, step, it;
+        int ix, iy, iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
         CellElement *cellElement;
+        Cell *c0, *c1;
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, lp = -1, lix = 0;
             memset(subpathWindings, 0, sizeof(subpathWindings));
