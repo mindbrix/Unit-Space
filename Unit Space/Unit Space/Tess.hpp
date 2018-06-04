@@ -393,11 +393,12 @@ struct Scene {
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin;
         for (Path *path = & _paths[0], *pbegin = path, *pend = path + _paths.size(); path < pend; path++)
             end = path->writeEdges(end, (int)(path - pbegin));
+        _nsubpaths = (end - 1)->si + 1;
         return edgesMemory;
     }
     vector<Path>    _paths;
     Bounds          _bounds;
-    int             _npoints;
+    int             _npoints, _nsubpaths;
 };
 
 struct Tess {
