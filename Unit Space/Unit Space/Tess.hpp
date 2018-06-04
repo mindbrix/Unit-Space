@@ -317,12 +317,13 @@ struct Path {
     }
     Edge *writeEdges(Edge *dst, int p) {
         float x0, y0, x1, y1, *points;
-        for (int ci = 0; ci < _subPaths.size(); ci++) {
+        int si = p == 0 ? 0 : (dst - 1)->si + 1;
+        for (int ci = 0; ci < _subPaths.size(); ci++, si++) {
             points = _subPaths[ci]._points.get();
             x0 = points[0], y0 = points[1];
             for (int pi = 0, npoints = _subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
                 x1 = points[((pi + 1) % npoints) * 2], y1 = points[((pi + 1) % npoints) * 2 + 1];
-                new (dst++) Edge(x0, y0, x1, y1, 0, p, ci, pi);
+                new (dst++) Edge(x0, y0, x1, y1, si, p, ci, pi);
             }
         }
         return dst;
