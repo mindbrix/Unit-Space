@@ -38,10 +38,10 @@ struct Grid {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
-        int count;
+        int count = 0;
         edgesMemory = scene.writeEdges();
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
-        for (count = 0, edge = begin; edge < end; edge++)
+        for (edge = begin; edge < end; edge++)
             count += edgeCellCount(edge);
         
         listsMemory = Memory<CellList>(iw * ih);
@@ -142,12 +142,12 @@ struct Grid {
             return;
         
         Tess::writeCurves(mesh, scene);
+        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
+            mesh._colors.emplace_back(path->_color);
         
         Grid grid(scene);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
-        
-        for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
-            mesh._colors.emplace_back(path->_color);
+    
         ActivePath activePaths[scene._paths.size()];
         int ix, iy, iend, i, idst, isrc, plast, count, ci, eli, w, sw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
