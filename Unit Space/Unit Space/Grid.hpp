@@ -38,6 +38,18 @@ struct Grid {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
+        int count;
+        edgesMemory = scene.writeEdges();
+        Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
+        for (count = 0, edge = begin; edge < end; edge++)
+            count += edgeCellCount(edge);
+        
+        listsMemory = Memory<CellList>(iw * ih);
+        cellLists = listsMemory.zero().get();
+        elementsMemory = Memory<CellElement>(count + 1);
+        cellElements = elementsMemory.get();
+        for (cellIndex = 1, edge = begin; edge < end; edge++)
+            writeEdgeCells(edge);
     }
     
     int edgeCellCount(Edge *edge) { return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2; }
@@ -118,7 +130,10 @@ struct Grid {
     Bounds bounds;
     float width, height, scale, dimension, tx, ty;
     int iw, ih, cellIndex;
+    Memory<Edge> edgesMemory;
+    Memory<CellList> listsMemory;
     CellList *cellLists;
+    Memory<CellElement> elementsMemory;
     CellElement *cellElements;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
@@ -126,29 +141,15 @@ struct Grid {
         if (scene._paths.size() == 0)
             return;
         
-        int count;
-        Memory<Edge> edgesMemory = scene.writeEdges();
-        Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
-        
         Tess::writeCurves(mesh, scene);
         
         Grid grid(scene);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
         
-        for (count = 0, edge = begin; edge < end; edge++)
-            count += grid.edgeCellCount(edge);
-        
-        Memory<CellList> elements(grid.iw * grid.ih);
-        grid.cellLists = elements.zero().get();
-        Memory<CellElement> cellElements(count + 1);
-        grid.cellElements = cellElements.get();
-        for (grid.cellIndex = 1, edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge);
-        
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
         ActivePath activePaths[scene._paths.size()];
-        int ix, iy, iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix, first, step, it;
+        int ix, iy, iend, i, idst, isrc, plast, count, ci, eli, w, sw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
         CellElement *cellElement;
