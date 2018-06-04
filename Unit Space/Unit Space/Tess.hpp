@@ -15,7 +15,7 @@ constexpr float kSplitCubicPrecision = 0.1;
 #pragma mark - Data structures
 
 struct Edge {
-    Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), flags(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
+    Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), si(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
     inline float y(float x) {
         return x == x1 ? y1 : y0 + (x - x0) / (x1 - x0) * (y1 - y0);
@@ -28,7 +28,7 @@ struct Edge {
     inline bool operator< (const Edge& other) const     { return lx() < other.lx() || (lx() == other.lx() && ly() < other.ly()); }
     
     float x0, y0, x1, y1;
-    unsigned short int flags, p, ci, pi;
+    unsigned short int si, p, ci, pi;
 };
 
 struct ActiveEdge {
