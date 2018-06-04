@@ -34,9 +34,9 @@ struct Grid {
         int p, ecount, eli;
         float winding;
     };
-    Grid(float lx, float ly, float ux, float uy) : lx(lx), ly(ly), ux(ux), uy(uy), width(ux - lx), height(uy - ly) {
+    Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly) {
         float dmax = width > height ? width : height;
-        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = lx, ty = ly;
+        scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
     }
     
@@ -115,8 +115,8 @@ struct Grid {
         for (i = 0; i < tcount; i++)
             mesh._triangles.emplace_back(pi + 0, pi + i + 1, pi + i + 2, p);
     }
-    float lx, ly, ux, uy, width, height;
-    float scale, dimension, tx, ty;
+    Bounds bounds;
+    float width, height, scale, dimension, tx, ty;
     int iw, ih, cellIndex;
     CellList *cellLists;
     CellElement *cellElements;
@@ -132,7 +132,7 @@ struct Grid {
         
         Tess::writeCurves(mesh, scene);
         
-        Grid grid(scene._bounds.lx, scene._bounds.ly, scene._bounds.ux, scene._bounds.uy);
+        Grid grid(scene);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
         
         for (count = 0, edge = begin; edge < end; edge++)
