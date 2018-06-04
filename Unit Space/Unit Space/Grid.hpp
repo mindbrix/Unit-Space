@@ -11,12 +11,12 @@ constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
-        Cell(int ei, int si, float x0, float y0, float x1, float y1) : ei(ei), si(si), x0(x0), y0(y0), x1(x1), y1(y1) {}
-        int ei, si;
+        Cell(Edge *e, float x0, float y0, float x1, float y1) : e(e), x0(x0), y0(y0), x1(x1), y1(y1) {}
+        Edge *e;
         float x0, y0, x1, y1;
     };
     struct CellElement {
-        CellElement(int ei, int si, float x0, float y0, float x1, float y1) : next(0), cell(ei, si, x0, y0, x1, y1) {}
+        CellElement(Edge *e, float x0, float y0, float x1, float y1) : next(0), cell(e, x0, y0, x1, y1) {}
         int next;
         Cell cell;
     };
@@ -42,7 +42,7 @@ struct Grid {
     
     int edgeCellCount(Edge *edge) { return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2; }
     
-    void writeEdgeCells(Edge *edge, int ei) {
+    void writeEdgeCells(Edge *edge) {
         float x0, y0, x1, y1;
         float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
@@ -71,7 +71,7 @@ struct Grid {
                 ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 
-                cellElement = new (& cellElements[cellIndex]) CellElement(ei, edge->si, tx0, ty0, tx1, ty1);
+                cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0, ty0, tx1, ty1);
                 *(element->begin == 0 ? & element->begin : & cellElements[element->last].next) = cellIndex;
                 element->last = cellIndex++;
             }
@@ -135,7 +135,7 @@ struct Grid {
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
         for (grid.cellIndex = 1, edge = begin; edge < end; edge++)
-            grid.writeEdgeCells(edge, (int)(edge - begin));
+            grid.writeEdgeCells(edge);
         
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
@@ -161,7 +161,7 @@ struct Grid {
                 if ((eli = grid.elements[ci].begin)) {
                     do {
                         cellElement = & grid.cellElements[eli];
-                        for (p = begin[cellElement->cell.ei].p, i = 0; i < iend; i++)
+                        for (p = cellElement->cell.e->p, i = 0; i < iend; i++)
                             if (activePaths[i].p == p)
                                 break;
                         if (i == iend) {
@@ -169,7 +169,7 @@ struct Grid {
                                 activePaths[i] = activePaths[isrc];
                             new (& activePaths[i]) ActivePath(p);
                         }
-                        subpathWindings[cellElement->cell.si] += cellElement->cell.y1 - cellElement->cell.y0;
+                        subpathWindings[cellElement->cell.e->si] += cellElement->cell.y1 - cellElement->cell.y0;
                         activePaths[i].addCell(eli, cellElement->cell.y1 - cellElement->cell.y0);
                     } while ((eli = cellElement->next ?: 0));
                 }
@@ -195,16 +195,15 @@ struct Grid {
                             
                             if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
-                            w = subpathWindings[c0->si] * 65535;
+                            w = subpathWindings[c0->e->si] * 65535;
                             sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
                             det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
                             right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(w == 0 && sw == 0);
                             
                             if (inside) {
-                                ci = begin[c0->ei].p;
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, ci);
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, c0->e->p);
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast);
                             }
