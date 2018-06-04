@@ -57,8 +57,8 @@ struct Grid {
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
         glx = std::floor(lx), gly = std::floor(ly);
         if (ux - glx <= 1 && uy - gly <= 1) {
-            element = & elements[int(glx) + int(gly) * iw];
             cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0, y0, x1, y1);
+            element = & elements[int(glx) + int(gly) * iw];
             *(element->begin == 0 ? & element->begin : & cellElements[element->last].next) = cellIndex;
             element->last = cellIndex++;
             return;
