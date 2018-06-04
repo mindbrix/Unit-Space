@@ -15,7 +15,7 @@ constexpr float kSplitCubicPrecision = 0.1;
 #pragma mark - Data structures
 
 struct Edge {
-    Edge(float x0, float y0, float x1, float y1, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), si(0), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
+    Edge(float x0, float y0, float x1, float y1, int si, int p, int ci, int pi) : x0(x0), y0(y0), x1(x1), y1(y1), si(si), p(p), ci((unsigned short int)ci), pi((unsigned short int)pi) {}
 
     inline float y(float x) {
         return x == x1 ? y1 : y0 + (x - x0) / (x1 - x0) * (y1 - y0);
@@ -322,7 +322,7 @@ struct Path {
             x0 = points[0], y0 = points[1];
             for (int pi = 0, npoints = _subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
                 x1 = points[((pi + 1) % npoints) * 2], y1 = points[((pi + 1) % npoints) * 2 + 1];
-                new (dst++) Edge(x0, y0, x1, y1, p, ci, pi);
+                new (dst++) Edge(x0, y0, x1, y1, 0, p, ci, pi);
             }
         }
         return dst;
