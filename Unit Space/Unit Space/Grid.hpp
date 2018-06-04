@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -44,7 +44,7 @@ struct Grid {
     
     void writeEdgeCells(Edge *edge) {
         float x0, y0, x1, y1;
-        float ly, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
+        float lx, ly, ux, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         GridElement *element;
         CellElement *cellElement;
@@ -53,7 +53,16 @@ struct Grid {
         if (x0 == x1 && y0 == y1)
             return;
         
+        lx = x0 < x1 ? x0 : x1, ux = x0 > x1 ? x0 : x1;
         ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
+        glx = std::floor(lx), gly = std::floor(ly);
+        if (ux - glx <= 1 && uy - gly <= 1) {
+            element = & elements[int(glx) + int(gly) * iw];
+            cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0, y0, x1, y1);
+            *(element->begin == 0 ? & element->begin : & cellElements[element->last].next) = cellIndex;
+            element->last = cellIndex++;
+            return;
+        }
         gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
         for (cly = gly, cuy = gly + 1; gh--; cly = cuy, cuy += 1) {
             sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
