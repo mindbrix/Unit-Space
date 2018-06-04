@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -140,7 +140,7 @@ struct Grid {
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++)
             mesh._colors.emplace_back(path->_color);
         ActivePath activePaths[scene._paths.size()];
-        int iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix;
+        int iend, i, idst, isrc, plast, ci, eli, w, sw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
         CellElement *cellElement;
@@ -161,9 +161,17 @@ struct Grid {
                 if ((eli = grid.elements[ci].begin)) {
                     do {
                         cellElement = & grid.cellElements[eli];
-                        for (p = cellElement->cell.e->p, i = 0; i < iend; i++)
-                            if (activePaths[i].p == p)
-                                break;
+                        
+                        first = 0, count = iend, p = cellElement->cell.e->p;
+                        while (count > 0) {
+                            it = first, step = count / 2, it += step;
+                            if (activePaths[it].p < p)
+                                first = ++it, count -= step + 1;
+                            else
+                                count = step;
+                        }
+                        i = first != iend && activePaths[first].p == p ? first : iend;
+                        
                         if (i == iend) {
                             for (iend++, isrc = i - 1; i > 0 && p < activePaths[isrc].p; i--, isrc--)
                                 activePaths[i] = activePaths[isrc];
