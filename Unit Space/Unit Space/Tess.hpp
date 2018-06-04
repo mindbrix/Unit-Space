@@ -386,6 +386,14 @@ struct Scene {
         }
     }
     void empty() { _paths.resize(0); }
+    
+    Memory<Edge> writeEdges() {
+        Memory<Edge> edgesMemory(_npoints);
+        Edge *edges = edgesMemory.get(), *begin = edges, *end = begin;
+        for (Path *path = & _paths[0], *pbegin = path, *pend = path + _paths.size(); path < pend; path++)
+            end = path->writeEdges(end, (int)(path - pbegin));
+        return edgesMemory;
+    }
     vector<Path>    _paths;
     Bounds          _bounds;
     int             _npoints;
@@ -468,14 +476,10 @@ struct Tess {
     static Memory<Edge> createEdgeList(Scene& scene) {
         float x0, y0, x1, y1;
         
-        int count = 0;
-        for (Path& path : scene._paths)
-            count += path.countPoints();
+        int count = scene._npoints;
         
-        Memory<Edge> edges0(count);
-        Edge *edges = edges0.get(), *begin = edges, *end = begin, *edge;
-        for (Path& path : scene._paths)
-            end = path.writeEdges(end, (int) (& path - & scene._paths[0]));
+        Memory<Edge> edges0 = scene.writeEdges();
+        Edge *edges = edges0.get(), *begin = edges, *end = begin + scene._npoints, *edge;
         sort(begin, end);
 
         Memory<IntersectionEdge> intersectionEdges(count);
