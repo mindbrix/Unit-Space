@@ -20,7 +20,7 @@ struct Grid {
         int next;
         Cell cell;
     };
-    struct GridElement {
+    struct CellList {
          int begin, last;
     };
     struct ActivePath {
@@ -46,7 +46,7 @@ struct Grid {
         float x0, y0, x1, y1;
         float lx, ly, ux, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
-        GridElement *element;
+        CellList *list;
         CellElement *cellElement;
         
         x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
@@ -58,9 +58,9 @@ struct Grid {
         glx = std::floor(lx), gly = std::floor(ly);
         if (ux - glx <= 1 && uy - gly <= 1) {
             cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0, y0, x1, y1);
-            element = & elements[int(glx) + int(gly) * iw];
-            *(element->begin == 0 ? & element->begin : & cellElements[element->last].next) = cellIndex;
-            element->last = cellIndex++;
+            list = & cellLists[int(glx) + int(gly) * iw];
+            *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
+            list->last = cellIndex++;
             return;
         }
         guy = std::ceil(uy), gh = guy - gly;
@@ -73,16 +73,16 @@ struct Grid {
             slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
             
             glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
-            element = & elements[int(glx) + int(cly) * iw];
-            for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, element++) {
+            list = & cellLists[int(glx) + int(cly) * iw];
+            for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, list++) {
                 tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
                 tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                 ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                 
                 cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0, ty0, tx1, ty1);
-                *(element->begin == 0 ? & element->begin : & cellElements[element->last].next) = cellIndex;
-                element->last = cellIndex++;
+                *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
+                list->last = cellIndex++;
             }
         }
     }
@@ -118,7 +118,7 @@ struct Grid {
     float lx, ly, ux, uy, width, height;
     float scale, dimension, tx, ty;
     int iw, ih, cellIndex;
-    GridElement *elements;
+    CellList *cellLists;
     CellElement *cellElements;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
@@ -138,8 +138,8 @@ struct Grid {
         for (count = 0, edge = begin; edge < end; edge++)
             count += grid.edgeCellCount(edge);
         
-        Memory<GridElement> elements(grid.iw * grid.ih);
-        grid.elements = elements.zero().get();
+        Memory<CellList> elements(grid.iw * grid.ih);
+        grid.cellLists = elements.zero().get();
         Memory<CellElement> cellElements(count + 1);
         grid.cellElements = cellElements.get();
         for (grid.cellIndex = 1, edge = begin; edge < end; edge++)
@@ -167,7 +167,7 @@ struct Grid {
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
-                if ((eli = grid.elements[ci].begin)) {
+                if ((eli = grid.cellLists[ci].begin)) {
                     do {
                         cellElement = & grid.cellElements[eli];
                         
