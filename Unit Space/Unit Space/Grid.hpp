@@ -138,7 +138,7 @@ struct Grid {
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
     
         ActivePath activePaths[scene._paths.size()];
-        int ix, iy, iend, i, idst, isrc, plast, count, ci, eli, si, w, sw, p, lp, lix, first, step, it;
+        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
         CellElement *cellElement;
@@ -147,7 +147,7 @@ struct Grid {
             iend = 0, lp = -1, lix = 0;
             memset(subpathWindings, 0, sizeof(subpathWindings));
             for (ix = 0; ix < grid.iw; ix++) {
-                ci = ix + iy * grid.iw;
+                gi = ix + iy * grid.iw;
                 
                 for (idst = isrc = 0; isrc < iend; isrc++)
                     if (activePaths[isrc].alpha(scene._paths[activePaths[isrc].p]._evenOdd) != 0)
@@ -157,9 +157,9 @@ struct Grid {
                 for (i = 0; i < iend; i++)
                     activePaths[i].ecount = 0;
                 
-                if ((eli = grid.cellLists[ci].begin)) {
+                if ((cli = grid.cellLists[gi].begin)) {
                     do {
-                        cellElement = & grid.cellElements[eli];
+                        cellElement = & grid.cellElements[cli];
                         
                         first = 0, count = iend, p = cellElement->p;
                         while (count > 0) {
@@ -177,8 +177,8 @@ struct Grid {
                             new (& activePaths[i]) ActivePath(p);
                         }
                         subpathWindings[cellElement->si] += cellElement->cell.y1 - cellElement->cell.y0;
-                        activePaths[i].addCell(eli, cellElement->cell.y1 - cellElement->cell.y0);
-                    } while ((eli = cellElement->next ?: 0));
+                        activePaths[i].addCell(cli, cellElement->cell.y1 - cellElement->cell.y0);
+                    } while ((cli = cellElement->next ?: 0));
                 }
                 
                 if (iend) {
@@ -197,9 +197,9 @@ struct Grid {
                             lp = -1;
                         }
                         if (activePaths[iend - 1].ecount < 3) {
-                            eli = activePaths[iend - 1].eli, c0 = & grid.cellElements[eli].cell;
-                            si = grid.cellElements[eli].si, p = grid.cellElements[eli].p;
-                            eli = grid.cellElements[eli].next ?: 0, c1 = eli ? & grid.cellElements[eli].cell : nullptr;
+                            cli = activePaths[iend - 1].eli, c0 = & grid.cellElements[cli].cell;
+                            si = grid.cellElements[cli].si, p = grid.cellElements[cli].p;
+                            cli = grid.cellElements[cli].next ?: 0, c1 = cli ? & grid.cellElements[cli].cell : nullptr;
                             
                             if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
