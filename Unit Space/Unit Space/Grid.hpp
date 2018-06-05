@@ -27,11 +27,11 @@ struct Grid {
         ActivePath() {}
         ActivePath(int p) : p(p), winding(0), ecount(0) {}
         void addCell(int i, float coverage) {
-            if (ecount++ == 0) eli = i;
+            if (ecount++ == 0) cli = i;
             winding += coverage;
         }
         int alpha(bool evenOdd) { return evenOdd ? 65535 - std::abs(((int(winding * 65535) & 0xFFFF) % 131070) - 65535) : int(winding * 65535) & 0xFFFF; }
-        int p, ecount, eli;
+        int p, ecount, cli;
         float winding;
     };
     Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
@@ -197,7 +197,7 @@ struct Grid {
                             lp = -1;
                         }
                         if (activePaths[iend - 1].ecount < 3) {
-                            cli = activePaths[iend - 1].eli, c0 = & grid.cellElements[cli].cell;
+                            cli = activePaths[iend - 1].cli, c0 = & grid.cellElements[cli].cell;
                             si = grid.cellElements[cli].si, p = grid.cellElements[cli].p;
                             cli = grid.cellElements[cli].next ?: 0, c1 = cli ? & grid.cellElements[cli].cell : nullptr;
                             
