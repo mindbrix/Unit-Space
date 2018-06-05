@@ -39,10 +39,10 @@ struct Grid {
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         int count = 0;
-        edgesMemory = scene.writeEdges();
+        edgesMemory = scene.writeEdges(scale, tx, ty);
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
         for (edge = begin; edge < end; edge++)
-            count += (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2;
+            count += (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) + 2;
         
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
@@ -59,7 +59,7 @@ struct Grid {
         CellList *list;
         CellElement *cellElement;
         
-        x0 = (edge->x0 - tx) * scale, y0 = (edge->y0 - ty) * scale, x1 = (edge->x1 - tx) * scale, y1 = (edge->y1 - ty) * scale;
+        x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
         if (x0 == x1 && y0 == y1)
             return;
         
