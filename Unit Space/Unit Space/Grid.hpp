@@ -30,7 +30,7 @@ struct Grid {
             if (ecount++ == 0) cli = i;
             winding += coverage;
         }
-        int alpha(bool evenOdd) { return evenOdd ? 65535 - std::abs(((int(winding * 65535) & 0xFFFF) % 131070) - 65535) : int(winding * 65535) & 0xFFFF; }
+        bool inside(bool evenOdd) { return std::abs(winding) < 0.0000152590219 ? false : (evenOdd ? int(std::ceil(std::abs(winding))) & 1 : true); }
         int p, ecount, cli;
         float winding;
     };
@@ -150,7 +150,7 @@ struct Grid {
                 gi = ix + iy * grid.iw;
                 
                 for (idst = isrc = 0; isrc < iend; isrc++)
-                    if (activePaths[isrc].alpha(scene._paths[activePaths[isrc].p]._evenOdd) != 0)
+                    if (activePaths[isrc].inside(scene._paths[activePaths[isrc].p]._evenOdd))
                         activePaths[idst++] = activePaths[isrc];
                 
                 iend = idst;
@@ -209,8 +209,10 @@ struct Grid {
                             right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
                             
-                            rw = w == sw ? (sw > 0 ? sw : 0) : (w - sw > 0 ? w - sw: 0);
-                            lw = w == sw ? (sw < 0 ? sw : 0) : (w - sw < 0 ? w - sw: 0);
+                            rw = w == sw ? (sw > 0 ? sw : 0) : (w - sw > 0 ? w - sw: w);
+                            lw = w == sw ? (sw < 0 ? sw : 0) : (w - sw < 0 ? w - sw: w);
+//                            if (!c1 && right)
+//                                assert(lw == 0);
                             
                             if (inside) {
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, p);
