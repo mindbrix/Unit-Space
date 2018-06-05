@@ -34,18 +34,16 @@ struct Grid {
         int p, ecount, eli;
         float winding;
     };
-    Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly) {
+    Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
-        int count = 0;
-        edgesMemory = scene.writeEdges(& count, scale, tx, ty);
-        Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;        
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
-        elementsMemory = Memory<CellElement>(count + 1);
+        edgesMemory = scene.writeEdges(& cellCount, scale, tx, ty);
+        elementsMemory = Memory<CellElement>(cellCount + 1);
         cellElements = elementsMemory.get();
-        for (cellIndex = 1, edge = begin; edge < end; edge++)
+        for (Edge *edge = edgesMemory.get(), *end = edge + scene._npoints; edge < end; edge++)
             writeEdgeCells(edge);
     }
     
@@ -124,7 +122,7 @@ struct Grid {
     }
     Bounds bounds;
     float width, height, scale, dimension, tx, ty;
-    int iw, ih, cellIndex;
+    int iw, ih, cellIndex, cellCount;
     Memory<Edge> edgesMemory;
     Memory<CellList> listsMemory;
     CellList *cellLists;
