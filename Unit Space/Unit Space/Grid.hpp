@@ -209,8 +209,10 @@ struct Grid {
                             right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
                             
-                            rw = sw == 0 ? (w > 0 ? w : 0) : w - (sw > 0 ? 0 : sw);
-                            lw = sw == 0 ? (w < 0 ? w : 0) : w - (sw < 0 ? 0 : sw);
+                            rw = sw == 0 ? (w > 0 ? w : 0) : w == sw ? (sw > 0 ? sw : 0) : (w - sw > 0 ? w - sw: 0);
+                            lw = sw == 0 ? (w < 0 ? w : 0) : w == sw ? (sw < 0 ? sw : 0) : (w - sw < 0 ? w - sw: 0);
+                            if (!c1 && right)
+                                assert(rw != 0);
                             
                             if (inside) {
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, p);
