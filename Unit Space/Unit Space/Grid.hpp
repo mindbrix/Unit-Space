@@ -58,7 +58,7 @@ struct Grid {
             ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
             glx = std::floor(lx), gly = std::floor(ly);
             if (ux - glx <= 1 && uy - gly <= 1) {
-                cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0, y0, x1, y1);
+                cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
                 list = & cellLists[int(glx) + int(gly) * iw];
                 *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
                 list->last = cellIndex++;
@@ -80,7 +80,7 @@ struct Grid {
                         ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         
-                        cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0, ty0, tx1, ty1);
+                        cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0 - gx0, ty0 - cly, tx1 - gx0, ty1 - cly);
                         *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
                         list->last = cellIndex++;
                     }
@@ -92,7 +92,7 @@ struct Grid {
         float x0, y0, x1, y1, det;
         int pv, nv, count, tcount, pi, i;
         
-        x0 = c0->x0 - gx, y0 = c0->y0 - gy, x1 = (c1 ? c1->x1 : c0->x1) - gx, y1 = (c1 ? c1->y1 : c0->y1) - gy;
+        x0 = c0->x0, y0 = c0->y0, x1 = c1 ? c1->x1 : c0->x1, y1 = c1 ? c1->y1 : c0->y1;
         if (right)
             std::swap(x0, x1), std::swap(y0, y1);
         
@@ -107,7 +107,7 @@ struct Grid {
         }
         tcount = c1 ? count + 1 : count;
         pi = (int)mesh._points.size();
-        mesh._points.emplace_back(c1 ? c0->x1 : x0 + gx, c1 ? c0->y1 : y0 + gy);
+        mesh._points.emplace_back((c1 ? c0->x1 : x0) + gx, (c1 ? c0->y1 : y0) + gy);
         mesh._points.emplace_back(x1 + gx, y1 + gy);
         for (i = 0; i < count; i++, nv = (nv + 1) % 4)
             mesh._points.emplace_back(gx + ((nv >> 1) ^ (nv & 1)), gy + (nv >> 1));
@@ -207,8 +207,7 @@ struct Grid {
                             sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
                             det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
                             right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
-                            inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= ix && c0->x1 <= (ix + 1) && c0->y1 >= iy && c0->y1 <= (iy + 1)) : !(w == 0 && sw == 0);
-                            
+                            inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
                             if (inside) {
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, p);
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
