@@ -40,7 +40,7 @@ struct Grid {
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
-        edgesMemory = scene.writeEdges(& cellCount, scale, tx, ty);
+        edgesMemory = scene.writeEdges(cellCount, scale, tx, ty);
         elementsMemory = Memory<CellElement>(cellCount + 1);
         cellElements = elementsMemory.get();
         

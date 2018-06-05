@@ -315,7 +315,7 @@ struct Path {
             count += s._npoints;
         return count;
     }
-    Edge *writeEdges(Edge *dst, int *count, int p, float scale, float tx, float ty) {
+    Edge *writeEdges(Edge *dst, int& count, int p, float scale, float tx, float ty) {
         float x0, y0, x1, y1, *points;
         int si = p == 0 ? 0 : (dst - 1)->si + 1;
         for (int ci = 0; ci < _subPaths.size(); ci++, si++) {
@@ -323,8 +323,7 @@ struct Path {
             x0 = (points[0] - tx) * scale, y0 = (points[1] - ty) * scale;
             for (int pi = 0, npoints = _subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
                 x1 = (points[((pi + 1) % npoints) * 2] - tx) * scale, y1 = (points[((pi + 1) % npoints) * 2 + 1] - ty) * scale;
-                if (count)
-                    *count += std::abs(x0 - x1) + std::abs(y0 - y1) + 2;
+                count += std::abs(x0 - x1) + std::abs(y0 - y1) + 2;
                 new (dst++) Edge(x0, y0, x1, y1, si, p, ci, pi);
             }
         }
@@ -390,7 +389,7 @@ struct Scene {
     }
     void empty() { _paths.resize(0); }
     
-    Memory<Edge> writeEdges(int *count, float scale, float tx, float ty) {
+    Memory<Edge> writeEdges(int& count, float scale, float tx, float ty) {
         Memory<Edge> edgesMemory(_npoints);
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin;
         for (Path *path = & _paths[0], *pbegin = path, *pend = path + _paths.size(); path < pend; path++)
@@ -480,9 +479,9 @@ struct Tess {
     static Memory<Edge> createEdgeList(Scene& scene) {
         float x0, y0, x1, y1;
         
-        int count = scene._npoints;
+        int count = scene._npoints, dummy;
         
-        Memory<Edge> edges0 = scene.writeEdges(nullptr, 1, 0, 0);
+        Memory<Edge> edges0 = scene.writeEdges(dummy, 1, 0, 0);
         Edge *edges = edges0.get(), *begin = edges, *end = begin + scene._npoints, *edge;
         sort(begin, end);
 
