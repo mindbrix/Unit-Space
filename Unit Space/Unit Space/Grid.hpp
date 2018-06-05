@@ -39,11 +39,8 @@ struct Grid {
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
         int count = 0;
-        edgesMemory = scene.writeEdges(scale, tx, ty);
-        Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
-        for (edge = begin; edge < end; edge++)
-            count += (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) + 2;
-        
+        edgesMemory = scene.writeEdges(& count, scale, tx, ty);
+        Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;        
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
         elementsMemory = Memory<CellElement>(count + 1);
