@@ -43,55 +43,51 @@ struct Grid {
         edgesMemory = scene.writeEdges(& cellCount, scale, tx, ty);
         elementsMemory = Memory<CellElement>(cellCount + 1);
         cellElements = elementsMemory.get();
-        for (Edge *edge = edgesMemory.get(), *end = edge + scene._npoints; edge < end; edge++)
-            writeEdgeCells(edge);
-    }
-    
-    void writeEdgeCells(Edge *edge) {
+        
         float x0, y0, x1, y1;
         float lx, ly, ux, uy, cly, cuy, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         CellList *list;
         CellElement *cellElement;
-        
-        x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
-        if (x0 == x1 && y0 == y1)
-            return;
-        
-        lx = x0 < x1 ? x0 : x1, ux = x0 > x1 ? x0 : x1;
-        ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-        glx = std::floor(lx), gly = std::floor(ly);
-        if (ux - glx <= 1 && uy - gly <= 1) {
-            cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0, y0, x1, y1);
-            list = & cellLists[int(glx) + int(gly) * iw];
-            *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
-            list->last = cellIndex++;
-            return;
-        }
-        guy = std::ceil(uy), gh = guy - gly;
-        for (cly = gly, cuy = gly + 1; gh--; cly = cuy, cuy += 1) {
-            sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
-            sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
+        for (Edge *edge = edgesMemory.get(), *end = edge + scene._npoints; edge < end; edge++) {
+            x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
+            if (x0 == x1 && y0 == y1)
+                continue;
             
-            sx0 = y0 == y1 || sy0 == y0 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
-            sx1 = y0 == y1 || sy1 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
-            slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
-            
-            glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
-            list = & cellLists[int(glx) + int(cly) * iw];
-            for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, list++) {
-                tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
-                tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
-                ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                
-                cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0, ty0, tx1, ty1);
+            lx = x0 < x1 ? x0 : x1, ux = x0 > x1 ? x0 : x1;
+            ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
+            glx = std::floor(lx), gly = std::floor(ly);
+            if (ux - glx <= 1 && uy - gly <= 1) {
+                cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0, y0, x1, y1);
+                list = & cellLists[int(glx) + int(gly) * iw];
                 *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
                 list->last = cellIndex++;
+            } else {
+                guy = std::ceil(uy), gh = guy - gly;
+                for (cly = gly, cuy = gly + 1; gh--; cly = cuy, cuy += 1) {
+                    sy0 = y0 < cly ? cly : y0 > cuy ? cuy : y0;
+                    sy1 = y1 < cly ? cly : y1 > cuy ? cuy : y1;
+                    
+                    sx0 = y0 == y1 || sy0 == y0 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
+                    sx1 = y0 == y1 || sy1 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
+                    slx = sx0 < sx1 ? sx0 : sx1, sux = sx0 > sx1 ? sx0 : sx1;
+                    
+                    glx = std::floor(slx), gux = slx == sux ? glx + 1 : std::ceil(sux), gw = gux - glx;
+                    list = & cellLists[int(glx) + int(cly) * iw];
+                    for (gx0 = glx, gx1 = gx0 + 1; gx0 < gux; gx0 = gx1, gx1++, list++) {
+                        tx0 = sx0 < gx0 ? gx0 : sx0 > gx1 ? gx1 : sx0;
+                        tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
+                        ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                        ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
+                        
+                        cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0, ty0, tx1, ty1);
+                        *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
+                        list->last = cellIndex++;
+                    }
+                }
             }
         }
     }
-    
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1, det;
         int pv, nv, count, tcount, pi, i;
