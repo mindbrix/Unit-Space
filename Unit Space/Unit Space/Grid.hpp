@@ -42,7 +42,7 @@ struct Grid {
         edgesMemory = scene.writeEdges();
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin + scene._npoints, *edge;
         for (edge = begin; edge < end; edge++)
-            count += edgeCellCount(edge);
+            count += (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2;
         
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
@@ -51,8 +51,6 @@ struct Grid {
         for (cellIndex = 1, edge = begin; edge < end; edge++)
             writeEdgeCells(edge);
     }
-    
-    int edgeCellCount(Edge *edge) { return (std::abs(edge->x0 - edge->x1) + std::abs(edge->y0 - edge->y1)) * scale + 2; }
     
     void writeEdgeCells(Edge *edge) {
         float x0, y0, x1, y1;
