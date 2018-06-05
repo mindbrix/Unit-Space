@@ -138,7 +138,7 @@ struct Grid {
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
     
         ActivePath activePaths[scene._paths.size()];
-        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, p, lp, lix, first, step, it;
+        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, rw, lw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
         CellElement *cellElement;
@@ -208,6 +208,10 @@ struct Grid {
                             det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
                             right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
+                            
+                            rw = w - (sw > 0 ? 0 : sw);
+                            lw = w - (sw < 0 ? 0 : sw);
+                            
                             if (inside) {
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, p);
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
