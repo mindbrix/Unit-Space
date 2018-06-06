@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 512;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -134,7 +134,7 @@ struct Grid {
         char activeStorage[scene._paths.size() * sizeof(ActivePath)];
         ActivePath *activePaths = (ActivePath *)activeStorage;
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, rw, lw, p, lp, lix, first, step, it;
-        float det, subpathWindings[scene._nsubpaths];
+        float det, subpathWindings[scene._nsubpaths], fw, fsw, fnz;
         bool right, inside;
         Cell *cell, *c0, *c1;
         
@@ -208,10 +208,15 @@ struct Grid {
                             right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
                             
-                            rw = w == sw ? (sw > 0 ? sw : 0) : (w - sw > 0 ? w - sw: w);
-                            lw = w == sw ? (sw < 0 ? sw : 0) : (w - sw < 0 ? w - sw: w);
-//                            if (!c1 && right)
-//                                assert(lw == 0);
+                            if (!c1) {
+                                fsw = c0->y1 - c0->y0, fw = subpathWindings[si] - fsw;
+                                fnz = std::abs(fw), w = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), fw);
+                                fnz = std::abs(fsw), sw = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), fsw);
+                                rw = w == 0 ? (sw > 0 ? sw : 0) : (sw > 0 ? w + sw: w);
+                                lw = w == 0 ? (sw < 0 ? sw : 0) : (sw < 0 ? w + sw: w);
+//                                if (right)
+//                                    assert(lw == 0);
+                            }
                             
                             if (inside) {
                                 grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, p);
