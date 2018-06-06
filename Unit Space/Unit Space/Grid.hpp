@@ -212,8 +212,8 @@ struct Grid {
                                 fsw = c0->y1 - c0->y0, fw = subpathWindings[si] - fsw;
                                 fnz = std::abs(fw), w = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), fw);
                                 fnz = std::abs(fsw), sw = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), fsw);
-                                rw = w == 0 ? (sw > 0 ? sw : 0) : (sw > 0 ? w + sw: w);
-                                lw = w == 0 ? (sw < 0 ? sw : 0) : (sw < 0 ? w + sw: w);
+                                rw = sw > 0 ? w + sw: w;
+                                lw = sw < 0 ? w + sw: w;
 //                                if (right)
 //                                    assert(lw == 0);
                             }
