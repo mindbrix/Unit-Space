@@ -26,7 +26,7 @@ struct Grid {
             if (ecount++ == 0) cli = i;
             winding += coverage;
         }
-        bool inside(bool evenOdd) { return std::abs(winding) < 0.0000152590219 ? false : (evenOdd ? int(std::ceil(std::abs(winding))) & 1 : true); }
+        bool inside(bool evenOdd) { float w = std::abs(winding); return w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
         int p, ecount, cli;
         float winding;
     };
