@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 512;
 
 struct Grid {
     struct Cell {
@@ -27,7 +27,7 @@ struct Grid {
         }
         bool inside() { float w = std::abs(winding); return w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
         int p, ecount, cli;
-        bool evenOdd;
+        bool evenOdd, in;
         float winding;
     };
     Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
@@ -144,8 +144,12 @@ struct Grid {
             for (ix = 0; ix < grid.iw; ix++) {
                 gi = ix + iy * grid.iw;
                 
+                for (i = 0; i < iend; i++)
+                    if (activePaths[i].ecount)
+                        activePaths[i].in = activePaths[i].inside();
+                
                 for (idst = isrc = 0; isrc < iend; isrc++)
-                    if (activePaths[isrc].inside())
+                    if (activePaths[isrc].in)
                         activePaths[idst++] = activePaths[isrc];
                 
                 iend = idst;
