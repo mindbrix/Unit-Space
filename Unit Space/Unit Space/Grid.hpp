@@ -20,7 +20,6 @@ struct Grid {
          int begin, last;
     };
     struct ActivePath {
-        ActivePath() {}
         ActivePath(int p) : p(p), winding(0), ecount(0) {}
         void addCell(int i, float coverage) {
             if (ecount++ == 0) cli = i;
@@ -131,7 +130,8 @@ struct Grid {
         Grid grid(scene);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
     
-        ActivePath activePaths[scene._paths.size()];
+        char activeStorage[scene._paths.size() * sizeof(ActivePath)];
+        ActivePath *activePaths = (ActivePath *)activeStorage;
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, rw, lw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
