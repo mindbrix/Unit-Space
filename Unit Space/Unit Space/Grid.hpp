@@ -37,14 +37,14 @@ struct Grid {
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
         edgesMemory = scene.writeEdges(cellCount, scale, tx, ty);
-        elementsMemory = Memory<Cell>(cellCount + 1);
-        cellElements = elementsMemory.get();
+        cellsMemory = Memory<Cell>(cellCount + 1);
+        cells = cellsMemory.get();
         
         float x0, y0, x1, y1;
         float lx, ly, ux, uy, gy0, gy1, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         CellList *list;
-        Cell *cellElement;
+        Cell *cell;
         for (Edge *edge = edgesMemory.get(), *end = edge + scene._npoints; edge < end; edge++) {
             x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
             if (x0 == x1 && y0 == y1)
@@ -54,9 +54,9 @@ struct Grid {
             ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
             glx = std::floor(lx), gly = std::floor(ly);
             if (ux - glx <= 1 && uy - gly <= 1) {
-                cellElement = new (& cellElements[cellIndex]) Cell(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
+                cell = new (& cells[cellIndex]) Cell(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
                 list = & cellLists[int(glx) + int(gly) * iw];
-                *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
+                *(list->begin == 0 ? & list->begin : & cells[list->last].next) = cellIndex;
                 list->last = cellIndex++;
             } else {
                 guy = std::ceil(uy), gh = guy - gly;
@@ -76,8 +76,8 @@ struct Grid {
                         ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         
-                        cellElement = new (& cellElements[cellIndex]) Cell(edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
-                        *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
+                        cell = new (& cells[cellIndex]) Cell(edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
+                        *(list->begin == 0 ? & list->begin : & cells[list->last].next) = cellIndex;
                         list->last = cellIndex++;
                     }
                 }
@@ -118,8 +118,8 @@ struct Grid {
     Memory<Edge> edgesMemory;
     Memory<CellList> listsMemory;
     CellList *cellLists;
-    Memory<Cell> elementsMemory;
-    Cell *cellElements;
+    Memory<Cell> cellsMemory;
+    Cell *cells;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
@@ -137,7 +137,7 @@ struct Grid {
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, rw, lw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
-        Cell *cellElement, *c0, *c1;
+        Cell *cell, *c0, *c1;
         
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, lp = -1, lix = 0;
@@ -155,9 +155,9 @@ struct Grid {
                 
                 if ((cli = grid.cellLists[gi].begin)) {
                     do {
-                        cellElement = & grid.cellElements[cli];
+                        cell = & grid.cells[cli];
                         
-                        first = 0, count = iend, p = cellElement->p;
+                        first = 0, count = iend, p = cell->p;
                         while (count > 0) {
                             it = first, step = count / 2, it += step;
                             if (activePaths[it].p < p)
@@ -172,9 +172,9 @@ struct Grid {
                                 activePaths[i] = activePaths[isrc];
                             new (& activePaths[i]) ActivePath(p);
                         }
-                        subpathWindings[cellElement->si] += cellElement->y1 - cellElement->y0;
-                        activePaths[i].addCell(cli, cellElement->y1 - cellElement->y0);
-                    } while ((cli = cellElement->next ?: 0));
+                        subpathWindings[cell->si] += cell->y1 - cell->y0;
+                        activePaths[i].addCell(cli, cell->y1 - cell->y0);
+                    } while ((cli = cell->next ?: 0));
                 }
                 
                 if (iend) {
@@ -193,9 +193,9 @@ struct Grid {
                             lp = -1;
                         }
                         if (activePaths[iend - 1].ecount < 3) {
-                            cli = activePaths[iend - 1].cli, c0 = & grid.cellElements[cli];
-                            si = grid.cellElements[cli].si, p = grid.cellElements[cli].p;
-                            cli = grid.cellElements[cli].next ?: 0, c1 = cli ? & grid.cellElements[cli] : nullptr;
+                            cli = activePaths[iend - 1].cli, c0 = & grid.cells[cli];
+                            si = grid.cells[cli].si, p = grid.cells[cli].p;
+                            cli = grid.cells[cli].next ?: 0, c1 = cli ? & grid.cells[cli] : nullptr;
                             
                             if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
                                 std::swap(c0, c1);
