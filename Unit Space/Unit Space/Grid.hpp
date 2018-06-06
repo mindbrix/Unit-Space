@@ -20,13 +20,14 @@ struct Grid {
          int begin, last;
     };
     struct ActivePath {
-        ActivePath(int p) : p(p), winding(0), ecount(0) {}
+        ActivePath(int p, bool evenOdd) : p(p), ecount(0), evenOdd(evenOdd), winding(0) {}
         void addCell(int i, float coverage) {
             if (ecount++ == 0) cli = i;
             winding += coverage;
         }
-        bool inside(bool evenOdd) { float w = std::abs(winding); return w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
+        bool inside() { float w = std::abs(winding); return w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
         int p, ecount, cli;
+        bool evenOdd;
         float winding;
     };
     Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
@@ -144,7 +145,7 @@ struct Grid {
                 gi = ix + iy * grid.iw;
                 
                 for (idst = isrc = 0; isrc < iend; isrc++)
-                    if (activePaths[isrc].inside(scene._paths[activePaths[isrc].p]._evenOdd))
+                    if (activePaths[isrc].inside())
                         activePaths[idst++] = activePaths[isrc];
                 
                 iend = idst;
@@ -168,7 +169,7 @@ struct Grid {
                         if (i == iend) {
                             for (iend++, isrc = i - 1; i > 0 && p < activePaths[isrc].p; i--, isrc--)
                                 activePaths[i] = activePaths[isrc];
-                            new (& activePaths[i]) ActivePath(p);
+                            new (& activePaths[i]) ActivePath(p, scene._paths[activePaths[isrc].p]._evenOdd);
                         }
                         subpathWindings[cell->si] += cell->y1 - cell->y0;
                         activePaths[i].addCell(cli, cell->y1 - cell->y0);
