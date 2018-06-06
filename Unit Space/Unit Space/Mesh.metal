@@ -14,7 +14,7 @@ using namespace metal;
 
 #pragma mark - Library
 
-float fragmentWinding(float2 p0, float2 p1) {
+float edgeWinding(float2 p0, float2 p1) {
     float y0 = saturate(p0.y), y1 = saturate(p1.y);
     float coverage = y1 - y0;
     
@@ -204,7 +204,7 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
     t = select(t, 1.0 - saturate(vert.v / (vert.v + w * 0.5)), t < 0.5);
     float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
     
-    float winding = fragmentWinding(vert.p0, p01) + fragmentWinding(p01, p12) + fragmentWinding(p12, vert.p2) + fragmentWinding(vert.p2, vert.p0);
+    float winding = edgeWinding(vert.p0, p01) + edgeWinding(p01, p12) + edgeWinding(p12, vert.p2) + edgeWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
 }
 
@@ -218,6 +218,6 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     if (min_dist > 0.7071)
         return vert.color;
     
-    float winding = fragmentWinding(vert.p0, vert.p1) + fragmentWinding(vert.p1, vert.p2) + fragmentWinding(vert.p2, vert.p0);
+    float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
 }
