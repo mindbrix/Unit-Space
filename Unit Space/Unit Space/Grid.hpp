@@ -44,7 +44,6 @@ struct Grid {
         float lx, ly, ux, uy, gy0, gy1, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         CellList *list;
-        Cell *cell;
         for (Edge *edge = edgesMemory.get(), *end = edge + scene._npoints; edge < end; edge++) {
             x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
             if (x0 == x1 && y0 == y1)
@@ -54,7 +53,7 @@ struct Grid {
             ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
             glx = std::floor(lx), gly = std::floor(ly);
             if (ux - glx <= 1 && uy - gly <= 1) {
-                cell = new (& cells[cellIndex]) Cell(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
+                new (& cells[cellIndex]) Cell(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
                 list = & cellLists[int(glx) + int(gly) * iw];
                 *(list->begin == 0 ? & list->begin : & cells[list->last].next) = cellIndex;
                 list->last = cellIndex++;
@@ -76,7 +75,7 @@ struct Grid {
                         ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         
-                        cell = new (& cells[cellIndex]) Cell(edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
+                        new (& cells[cellIndex]) Cell(edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
                         *(list->begin == 0 ? & list->begin : & cells[list->last].next) = cellIndex;
                         list->last = cellIndex++;
                     }
