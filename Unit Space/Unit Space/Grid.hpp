@@ -10,8 +10,8 @@
 constexpr int kDivisions = 128;
 
 struct Grid {
-    struct CellElement {
-        CellElement(Edge *e, float x0, float y0, float x1, float y1) : next(0), si(e->si), p(e->p), x0(x0), y0(y0), x1(x1), y1(y1) {}
+    struct Cell {
+        Cell(Edge *e, float x0, float y0, float x1, float y1) : next(0), si(e->si), p(e->p), x0(x0), y0(y0), x1(x1), y1(y1) {}
         int next;
         unsigned short int si, p;
         float x0, y0, x1, y1;
@@ -37,14 +37,14 @@ struct Grid {
         listsMemory = Memory<CellList>(iw * ih);
         cellLists = listsMemory.zero().get();
         edgesMemory = scene.writeEdges(cellCount, scale, tx, ty);
-        elementsMemory = Memory<CellElement>(cellCount + 1);
+        elementsMemory = Memory<Cell>(cellCount + 1);
         cellElements = elementsMemory.get();
         
         float x0, y0, x1, y1;
         float lx, ly, ux, uy, gy0, gy1, sx0, sy0, sx1, sy1, slx, sux;
         float glx, gly, gux, guy, gw, gh, gx0, gx1, tx0, ty0, tx1, ty1;
         CellList *list;
-        CellElement *cellElement;
+        Cell *cellElement;
         for (Edge *edge = edgesMemory.get(), *end = edge + scene._npoints; edge < end; edge++) {
             x0 = edge->x0, y0 = edge->y0, x1 = edge->x1, y1 = edge->y1;
             if (x0 == x1 && y0 == y1)
@@ -54,7 +54,7 @@ struct Grid {
             ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
             glx = std::floor(lx), gly = std::floor(ly);
             if (ux - glx <= 1 && uy - gly <= 1) {
-                cellElement = new (& cellElements[cellIndex]) CellElement(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
+                cellElement = new (& cellElements[cellIndex]) Cell(edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
                 list = & cellLists[int(glx) + int(gly) * iw];
                 *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
                 list->last = cellIndex++;
@@ -76,7 +76,7 @@ struct Grid {
                         ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         
-                        cellElement = new (& cellElements[cellIndex]) CellElement(edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
+                        cellElement = new (& cellElements[cellIndex]) Cell(edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
                         *(list->begin == 0 ? & list->begin : & cellElements[list->last].next) = cellIndex;
                         list->last = cellIndex++;
                     }
@@ -84,7 +84,7 @@ struct Grid {
             }
         }
     }
-    void writeCellPolygon(Mesh& mesh, CellElement *c0, CellElement *c1, float gx, float gy, bool right, int p) {
+    void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1, det;
         int pv, nv, count, tcount, pi, i;
         
@@ -118,8 +118,8 @@ struct Grid {
     Memory<Edge> edgesMemory;
     Memory<CellList> listsMemory;
     CellList *cellLists;
-    Memory<CellElement> elementsMemory;
-    CellElement *cellElements;
+    Memory<Cell> elementsMemory;
+    Cell *cellElements;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
@@ -137,7 +137,7 @@ struct Grid {
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, rw, lw, p, lp, lix, first, step, it;
         float det, subpathWindings[scene._nsubpaths];
         bool right, inside;
-        CellElement *cellElement, *c0, *c1;
+        Cell *cellElement, *c0, *c1;
         
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, lp = -1, lix = 0;
