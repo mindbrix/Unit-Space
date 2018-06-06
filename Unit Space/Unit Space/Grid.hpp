@@ -25,9 +25,9 @@ struct Grid {
             if (ecount++ == 0) cli = i;
             winding += coverage;
         }
-        bool inside() { float w = std::abs(winding); return w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
+        inline void setInside() { float w = std::abs(winding); inside = w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
         int p, ecount, cli;
-        bool evenOdd, in;
+        bool evenOdd, inside;
         float winding;
     };
     Grid(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
@@ -146,10 +146,10 @@ struct Grid {
                 
                 for (i = 0; i < iend; i++)
                     if (activePaths[i].ecount)
-                        activePaths[i].in = activePaths[i].inside();
+                        activePaths[i].setInside();
                 
                 for (idst = isrc = 0; isrc < iend; isrc++)
-                    if (activePaths[isrc].in)
+                    if (activePaths[isrc].inside)
                         activePaths[idst++] = activePaths[isrc];
                 
                 iend = idst;
