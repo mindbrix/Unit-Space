@@ -133,13 +133,13 @@ struct Grid {
     
         char activeStorage[scene._paths.size() * sizeof(ActivePath) * 2];
         ActivePath *activePaths = (ActivePath *)activeStorage, *alast;
-        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, p, lp, lix, first, step, it;
-        float det, subpathWindings[scene._nsubpaths];
+        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, p, lp, lix, first, step, it, ci0, ci1, cixmin, cw, cpw, lw, rw;
+        float det, subpathWindings[scene._nsubpaths], cxmin = FLT_MAX;
         bool right, inside;
         Cell *cell, *c0, *c1;
         
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, lp = -1, lix = 0;
+            iend = 0, lp = -1, lix = 0, ci0 = ci1 = cw = cpw = cixmin = 0;
             memset(subpathWindings, 0, sizeof(subpathWindings));
             for (ix = 0; ix < grid.iw; ix++) {
                 gi = ix + iy * grid.iw;
@@ -192,11 +192,38 @@ struct Grid {
                         }
                         if (alast->ecount < 3) {
                             cli = alast->cli;
+                            if (cpw == 0)
+                                ci0 = ci1 = cixmin = 0, cxmin = FLT_MAX;
                             do {
-                                cell = & grid.cells[cli];
-
-
+                                cell = grid.cells + cli;
+                                if (cpw == 0) {
+                                    if (ci0 == 0 || (grid.cells[ci0].x0 == cell->x1 && grid.cells[ci0].y0 == cell->y1))
+                                        if (cell->x0 == 0 || cell->x0 == 1 || cell->y0 == 0 || cell->y0 == 1)
+                                            ci0 = cli;
+                                    
+                                    if (ci1 == 0 || (grid.cells[ci1].x1 == cell->x0 && grid.cells[ci1].y1 == cell->y0))
+                                        if (cell->x1 == 0 || cell->x1 == 1 || cell->y1 == 0 || cell->y1 == 1)
+                                            ci1 = cli;
+                                        
+                                    if (cell->y0 != cell->y1 && cell->x0 + cell->x1 < cxmin)
+                                        cixmin = cli, cxmin = cell->x0 + cell->x1;
+                                } else {
+                                    c0 = grid.cells + ci0, c1 = grid.cells + ci1;
+                                    if (ci0 && cell->x1 == 0 && cell->y1 == c0->y0)
+                                        ci0 = cli;
+                                    if (ci1 && cell->x0 == 0 && cell->y0 == c1->y1)
+                                        ci1 = cli;
+                                }
                             } while ((cli = cell->next));
+                            
+                            c0 = grid.cells + ci0, c1 = grid.cells + ci1;
+                            if (cpw == 0) {
+                                cpw = cw + (grid.cells[cixmin].y0 < grid.cells[cixmin].y1 ? 1 : -1);
+                                rw = cpw - cw > 0 ? cpw : cw;
+                                lw = cpw - cw < 0 ? cpw : cw;
+                            }
+                            if ((ci0 && !(c0->x0 == 1 && c0->y0 > 0 && c0->y0 < 1)) && (ci1 && !(c1->x1 == 1 && c1->y1 > 0 && c1->y1 < 1)))
+                                cw = cpw, cpw = 0, ci0 = ci1 = 0;
                             
                             cli = alast->cli, c0 = & grid.cells[cli];
                             si = grid.cells[cli].si, p = grid.cells[cli].p;
