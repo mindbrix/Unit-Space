@@ -131,11 +131,11 @@ struct Grid {
         Grid grid(scene);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
     
-        char activeStorage[scene._paths.size() * sizeof(ActivePath)];
-        ActivePath *activePaths = (ActivePath *)activeStorage;
+        char activeStorage[scene._paths.size() * sizeof(ActivePath) * 2];
+        ActivePath *activePaths = (ActivePath *)activeStorage, *alast;
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, sw, rw, lw, p, lp, lix, first, step, it;
-        float det, subpathWindings[scene._nsubpaths], fw, fsw, fnz;
-        bool right, inside;
+        float det, subpathWindings[scene._nsubpaths], fw, fsw, frw, flw, fnz;
+        bool right, inside, linside, rinside;
         Cell *cell, *c0, *c1;
         
         for (iy = 0; iy < grid.ih; iy++) {
@@ -177,17 +177,18 @@ struct Grid {
                         }
                         subpathWindings[cell->si] += cell->y1 - cell->y0;
                         activePaths[i].addCell(cli, cell->y1 - cell->y0);
-                    } while ((cli = cell->next ?: 0));
+                    } while ((cli = cell->next));
                 }
                 
                 if (iend) {
-                    if (activePaths[iend - 1].ecount == 0) {
+                    alast = activePaths + iend - 1;
+                    if (alast->ecount == 0) {
                         if (lp == -1)
-                            lp = activePaths[iend - 1].p, lix = ix;
+                            lp = alast->p, lix = ix;
                         else {
-                            if (lp != activePaths[iend - 1].p) {
+                            if (lp != alast->p) {
                                 mesh.writeRect(lix, iy, lix + 1, iy + 1, lp);
-                                lp = activePaths[iend - 1].p, lix = ix;
+                                lp = alast->p, lix = ix;
                             }
                         }
                     } else {
@@ -195,8 +196,15 @@ struct Grid {
                             mesh.writeRect(lix, iy, ix, iy + 1, lp);
                             lp = -1;
                         }
-                        if (activePaths[iend - 1].ecount < 3) {
-                            cli = activePaths[iend - 1].cli, c0 = & grid.cells[cli];
+                        if (alast->ecount < 3) {
+                            cli = alast->cli;
+                            do {
+                                cell = & grid.cells[cli];
+
+
+                            } while ((cli = cell->next));
+//
+                            cli = alast->cli, c0 = & grid.cells[cli];
                             si = grid.cells[cli].si, p = grid.cells[cli].p;
                             cli = grid.cells[cli].next ?: 0, c1 = cli ? & grid.cells[cli] : nullptr;
                             
@@ -209,13 +217,28 @@ struct Grid {
                             inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
                             
                             if (!c1) {
-                                fsw = c0->y1 - c0->y0, fw = subpathWindings[si] - fsw;
-                                fnz = std::abs(fw), w = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), fw);
-                                fnz = std::abs(fsw), sw = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), fsw);
-                                rw = sw > 0 ? w + sw: w;
-                                lw = sw < 0 ? w + sw: w;
+                                fsw = c0->y1 - c0->y0;
+                                fw = subpathWindings[si] - fsw;
+                                
+                                frw = fsw == 0 ? (fw > 0 ? fw : 0) : (fsw > 0 ? fw + fsw: fw);
+                                flw = fsw == 0 ? (fw < 0 ? fw : 0) : (fsw < 0 ? fw + fsw: fw);
+                                
+                                fnz = std::abs(frw), rw = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), frw);
+                                fnz = std::abs(flw), lw = fnz < 0.0000152590219 ? 0 : copysign(std::ceil(fnz), flw);
+
+                                
+                                rinside = rw == 0 ? false : alast->evenOdd ? rw & 1 : true;
+                                linside = lw == 0 ? false : alast->evenOdd ? lw & 1 : true;
+                                
+                                
+//                                rw = sw == 0 ? (w > 0 ? w : 0) : (sw > 0 ? w + sw: w);
+//                                lw = sw == 0 ? (w < 0 ? w : 0) : (sw < 0 ? w + sw: w);
+//                                rw = sw > 0 ? w + sw: w;
+//                                lw = sw < 0 ? w + sw: w;
+                                
+//                                right = rinside;
 //                                if (right)
-//                                    assert(lw == 0);
+//                                    assert(rinside);
                             }
                             
                             if (inside) {
