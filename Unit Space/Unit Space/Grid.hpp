@@ -185,12 +185,6 @@ struct Grid {
                     if (alast->ecount == 0) {
                         if (lp == -1)
                             lp = alast->p, lix = ix;
-                        else {
-                            if (lp != alast->p) {
-                                mesh.writeRect(lix, iy, lix + 1, iy + 1, lp);
-                                lp = alast->p, lix = ix;
-                            }
-                        }
                     } else {
                         if (lp != -1) {
                             mesh.writeRect(lix, iy, ix, iy + 1, lp);
