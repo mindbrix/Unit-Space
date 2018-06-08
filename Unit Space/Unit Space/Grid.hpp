@@ -133,13 +133,12 @@ struct Grid {
     
         char activeStorage[scene._paths.size() * sizeof(ActivePath) * 2];
         ActivePath *activePaths = (ActivePath *)activeStorage, *alast;
-        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, si, w, iw, sw, p, lp, lix, first, step, it, ciw, ci0, ci1, cw, cpw, lw, rw;
-        float det, subpathWindings[scene._nsubpaths], fw, fcw, cmaxw = -FLT_MAX, cminx = FLT_MAX;
-        bool right, inside;
+        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, iw, p, lp, lix, first, step, it, ci0, ci1,lw, rw;
+        float subpathWindings[scene._nsubpaths], fw, fcw;
         Cell *cell, *c0, *c1, *cl;
         
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, lp = -1, lix = 0, ci0 = ci1 = lw = rw = cw = cpw = 0;
+            iend = 0, lp = -1, lix = 0, ci0 = ci1 = lw = rw = 0;
             memset(subpathWindings, 0, sizeof(subpathWindings));
             for (ix = 0; ix < grid.iw; ix++) {
                 gi = ix + iy * grid.iw;
@@ -202,9 +201,10 @@ struct Grid {
                                         ci1 = cli;
                             } while ((cli = cell->next));
                             c0 = grid.cells + ci0, c1 = grid.cells + ci1;
+                            p = c0->p;
                             
                             fcw = c1->y1 - c0->y0, fw = subpathWindings[grid.cells[alast->cli].si] - fcw, iw = int(fw);
-                            if (fw - iw == 0) {
+                            if (int((fw - iw) * 65535) == 0) {
                                 if (fcw == 0) {
                                     cl = c0->x0 < c1->x1 ? c0 : c1;
                                     fcw = cl->y1 - cl->y0;
@@ -214,78 +214,12 @@ struct Grid {
                                 else
                                     lw = iw - 1, rw = iw;
                             }
-                            
-                            /*
-                            sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
-                            
-                            if (cpw == 0) {
-                                ciw = 0, cmaxw = -FLT_MAX, cminx = FLT_MAX;
-                                do {
-                                    cell = grid.cells + cli;
-                                    if (cell->y1 !=cell->y0) {
-                                        if (cell->x0 + cell->x1 < cminx) {
-                                            cminx = cell->x0 + cell->x1;
-                                            ciw = cli;
-                                        } else if (cell->x0 + cell->x1 == cminx && std::abs(cell->y1 - cell->y0) > cmaxw) {
-                                            cmaxw = std::abs(cell->y1 - cell->y0);
-                                            ciw = cli;
-                                        }
-                                    }
-                                } while ((cli = cell->next));
-                                cell = grid.cells + ciw;
-                                cpw = cw + (cell->y0 < cell->y1 ? 1 : -1);
-                                rw = cell->y0 < cell->y1 ? cpw : cw;
-                                lw = cell->y0 > cell->y1 ? cpw : cw;
-                            }
-                            ci0 = ci1 = 0, cli = alast->cli;
-                            do {
-                                cell = grid.cells + cli;
-                                if (ci0 == 0 || (grid.cells[ci0].x0 == cell->x1 && grid.cells[ci0].y0 == cell->y1))
-                                    if (cell->x0 == 0 || cell->x0 == 1 || cell->y0 == 0 || cell->y0 == 1)
-                                        ci0 = cli;
-                                if (ci1 == 0 || (grid.cells[ci1].x1 == cell->x0 && grid.cells[ci1].y1 == cell->y0))
-                                    if (cell->x1 == 0 || cell->x1 == 1 || cell->y1 == 0 || cell->y1 == 1)
-                                        ci1 = cli;
-                            } while ((cli = cell->next));
-                            assert(ci0 && ci1);
-                            c0 = grid.cells + ci0, c1 = grid.cells + ci1;
-                            */
-                            
-//                            if (cpw == 0) {
-//                                if (c0->y0 == c1->y1)
-//                                    cpw = cw + (c0->x0 < c1->x1 ? (c0->y0 < c0->y1 ? 1 : -1) : (c1->y0 < c1->y1 ? 1 : -1));
-//                                else
-//                                    cpw = cw + (c0->y0 < c1->y1 ? 1 : -1);
-//                                rw = cpw - cw > 0 ? cpw : cw;
-//                                lw = cpw - cw < 0 ? cpw : cw;
-//                            }
-//                            p = c0->p;
-                            
-                            
-//                            cli = alast->cli, c0 = & grid.cells[cli];
-//                            si = grid.cells[cli].si, p = grid.cells[cli].p;
-//                            cli = grid.cells[cli].next ?: 0, c1 = cli ? & grid.cells[cli] : nullptr;
-//
-//                            if (c1 && !(c0->x1 == c1->x0 && c0->y1 == c1->y0))
-//                                std::swap(c0, c1);
-//                            w = subpathWindings[si] * 65535;
-//                            sw = (c0->y1 - c0->y0 + (c1 ? c1->y1 - c1->y0 : 0)) * 65535;
-//                            det = c1 ? (c0->x1 - c0->x0) * (c1->y1 - c1->y0) - (c0->y1 - c0->y0) * (c1->x1 - c1->x0) : 0;
-//                            right = w == sw ? (sw == 0 ? det < 0 : sw > 0) : w > sw;
-//                            inside = c1 ? (c0->x1 == c1->x0 && c0->y1 == c1->y0) && (c0->x1 >= 0 && c0->x1 <= 1 && c0->y1 >= 0 && c0->y1 <= 1) : !(w == 0 && sw == 0);
-                            
-                            if (0 && (rw || lw)) {
-                                right = rw;
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, right, p);
+                            if (rw || lw) {
+                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, rw != 0, p);
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 if (plast != -1)
-                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, !right, plast);
+                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, lw != 0, plast);
                             }
-//                            if (!(c0->x0 == 1 && c0->y0 > 0 && c0->y0 < 1) && !(c1->x1 == 1 && c1->y1 > 0 && c1->y1 < 1)) {
-//                                std::swap(lw, rw);
-//                                cw = cpw, cpw = 0;
-//                            }
-                            
                         }
                     }
                 }
