@@ -211,7 +211,7 @@ struct Grid {
                                 }
                                 if (fcw > 0)
                                     lw = iw, rw = iw + 1;
-                                else
+                                else if (fcw < 0)
                                     lw = iw - 1, rw = iw;
                             }
                             if (rw || lw) {
