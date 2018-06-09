@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -189,9 +189,10 @@ struct Grid {
                             lp = -1;
                         }
                         if (alast->ecount < 3) {
-                            ci0 = ci1 = 0, cli = alast->cli;
+                            ci0 = ci1 = 0, cli = alast->cli, fcw = 0;
                             do {
                                 cell = grid.cells + cli;
+                                fcw += cell->y1 - cell->y0;
                                 if (ci0 == 0 || (grid.cells[ci0].x0 == cell->x1 && grid.cells[ci0].y0 == cell->y1))
                                     if (cell->x0 == 0 || cell->x0 == 1 || cell->y0 == 0 || cell->y0 == 1)
                                         ci0 = cli;
@@ -201,7 +202,6 @@ struct Grid {
                             } while ((cli = cell->next));
                             c0 = grid.cells + ci0, c1 = grid.cells + ci1;
                             
-                            fcw = c0 == c1 ? c0->y1 - c0->y0 : c0->y1 - c0->y0 + c1->y1 - c1->y0;
                             fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
                             if (fw - iw == 0) {
                                 if (fcw == 0) {
