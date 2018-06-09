@@ -116,6 +116,7 @@ struct libTess {
                 maskPath(tess, scene._paths[j], path);
             quadtree.add(i, path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy);
         }
+        scene.updateNpoints();
     }
     
     static void writeTriangles(Mesh& mesh, TESStesselator *tess, int windingRule, int p, float scale, float tx, float ty) {

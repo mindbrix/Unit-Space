@@ -389,6 +389,11 @@ struct Scene {
     }
     void empty() { _paths.resize(0); }
     
+    void updateNpoints() {
+        _npoints = 0;
+        for (Path *path = & _paths[0], *pbegin = path, *pend = path + _paths.size(); path < pend; path++)
+            _npoints += path->countPoints();
+    }
     Memory<Edge> writeEdges(int& count, float scale, float tx, float ty) {
         Memory<Edge> edgesMemory(_npoints);
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin;
