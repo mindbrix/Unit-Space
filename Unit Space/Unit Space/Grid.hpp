@@ -131,7 +131,7 @@ struct Grid {
         Grid grid(scene);
         mesh._CTM = { grid.dimension, 0, 0, grid.dimension, grid.tx, grid.ty };
     
-        char activeStorage[scene._paths.size() * sizeof(ActivePath) * 2];
+        char activeStorage[scene._paths.size() * sizeof(ActivePath)];
         ActivePath *activePaths = (ActivePath *)activeStorage, *alast;
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, iw, p, lp, lix, first, step, it, ci0, ci1,lw, rw;
         float subpathWindings[scene._nsubpaths], fw, fcw;
@@ -172,7 +172,7 @@ struct Grid {
                         if (i == iend) {
                             for (iend++, isrc = i - 1; i > 0 && p < activePaths[isrc].p; i--, isrc--)
                                 activePaths[i] = activePaths[isrc];
-                            new (& activePaths[i]) ActivePath(p, scene._paths[activePaths[isrc].p]._evenOdd);
+                            new (& activePaths[i]) ActivePath(p, scene._paths[p]._evenOdd);
                         }
                         activePaths[i].addCell(cli, cell->y1 - cell->y0);
                     } while ((cli = cell->next));
