@@ -135,7 +135,7 @@ struct Grid {
         ActivePath *activePaths = (ActivePath *)activeStorage, *alast;
         int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, iw, p, lp, lix, first, step, it, ci0, ci1, lw, rw, la, ra;
         float subpathWindings[scene._nsubpaths], fw, fcw;
-        Cell *cell, *c0, *c1, *cl;
+        Cell *cell, *c0, *c1;
         
         for (iy = 0; iy < grid.ih; iy++) {
             iend = 0, lp = -1, lix = 0, ci0 = ci1 = lw = rw = la = ra = 0;
@@ -204,10 +204,8 @@ struct Grid {
                             
                             fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
                             if (fw - iw == 0) {
-                                if (fcw == 0) {
-                                    cl = c0->x0 < c1->x1 ? c0 : c1;
-                                    fcw = cl->y1 - cl->y0;
-                                }
+                                if (fcw == 0)
+                                    fcw = c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0;
                                 if (fcw > 0)
                                     lw = iw, rw = iw + 1;
                                 else if (fcw < 0)
