@@ -215,10 +215,10 @@ struct Grid {
                                     lw = iw - 1, rw = iw;
                             }
                             if (rw || lw) {
-                                grid.writeCellPolygon(mesh, c0, c1, ix, iy, rw != 0, p);
+                                grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, rw != 0, p);
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 if (plast != -1)
-                                    grid.writeCellPolygon(mesh, c0, c1, ix, iy, lw != 0, plast);
+                                    grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, lw != 0, plast);
                             }
                         }
                         cli = alast->cli;
