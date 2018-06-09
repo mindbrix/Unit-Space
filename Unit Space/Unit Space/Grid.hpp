@@ -203,7 +203,8 @@ struct Grid {
                             c0 = grid.cells + ci0, c1 = grid.cells + ci1;
                             p = c0->p;
                             
-                            fcw = c1->y1 - c0->y0, fw = subpathWindings[grid.cells[alast->cli].si] - fcw, iw = int(fw);
+                            fcw = c0 == c1 ? c0->y1 - c0->y0 : c0->y1 - c0->y0 + c1->y1 - c1->y0;
+                            fw = subpathWindings[grid.cells[alast->cli].si] - fcw, iw = int(fw);
                             if (int((fw - iw) * 65535) == 0) {
                                 if (fcw == 0) {
                                     cl = c0->x0 < c1->x1 ? c0 : c1;
