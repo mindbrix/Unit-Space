@@ -174,7 +174,6 @@ struct Grid {
                                 activePaths[i] = activePaths[isrc];
                             new (& activePaths[i]) ActivePath(p, scene._paths[activePaths[isrc].p]._evenOdd);
                         }
-                        subpathWindings[cell->si] += cell->y1 - cell->y0;
                         activePaths[i].addCell(cli, cell->y1 - cell->y0);
                     } while ((cli = cell->next));
                 }
@@ -204,8 +203,8 @@ struct Grid {
                             p = c0->p;
                             
                             fcw = c0 == c1 ? c0->y1 - c0->y0 : c0->y1 - c0->y0 + c1->y1 - c1->y0;
-                            fw = subpathWindings[grid.cells[alast->cli].si] - fcw, iw = int(fw);
-                            if (int((fw - iw) * 65535) == 0) {
+                            fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
+                            if (fw - iw == 0) {
                                 if (fcw == 0) {
                                     cl = c0->x0 < c1->x1 ? c0 : c1;
                                     fcw = cl->y1 - cl->y0;
@@ -222,6 +221,11 @@ struct Grid {
                                     grid.writeCellPolygon(mesh, c0, c1, ix, iy, lw != 0, plast);
                             }
                         }
+                        cli = alast->cli;
+                        do {
+                            cell = grid.cells + cli;
+                            subpathWindings[cell->si] += cell->y1 - cell->y0;
+                        } while ((cli = cell->next));
                     }
                 }
             }
