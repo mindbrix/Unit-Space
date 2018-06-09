@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -189,34 +189,38 @@ struct Grid {
                             lp = -1;
                         }
                         if (alast->ecount < 3) {
-                            ci0 = ci1 = 0, cli = alast->cli, fcw = 0;
+                            ci0 = ci1 = cli = alast->cli, fcw = 0;
                             do {
                                 cell = grid.cells + cli;
                                 fcw += cell->y1 - cell->y0;
-                                if (ci0 == 0 || (grid.cells[ci0].x0 == cell->x1 && grid.cells[ci0].y0 == cell->y1))
-                                    if (cell->x0 == 0 || cell->x0 == 1 || cell->y0 == 0 || cell->y0 == 1)
-                                        ci0 = cli;
-                                if (ci1 == 0 || (grid.cells[ci1].x1 == cell->x0 && grid.cells[ci1].y1 == cell->y0))
-                                    if (cell->x1 == 0 || cell->x1 == 1 || cell->y1 == 0 || cell->y1 == 1)
-                                        ci1 = cli;
+                                if (grid.cells[ci0].x0 == cell->x1 && grid.cells[ci0].y0 == cell->y1)
+                                   ci0 = cli;
+                                else if (grid.cells[ci1].x1 == cell->x0 && grid.cells[ci1].y1 == cell->y0)
+                                    ci1 = cli;
+                                else if (cli != ci0) {
+                                    ci0 = 0;
+                                    break;
+                                }
                             } while ((cli = cell->next));
-                            c0 = grid.cells + ci0, c1 = grid.cells + ci1;
                             
-                            fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
-                            if (fw - iw == 0) {
-                                if (fcw == 0)
-                                    fcw = c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0;
-                                if (fcw > 0)
-                                    lw = iw, rw = iw + 1;
-                                else if (fcw < 0)
-                                    lw = iw - 1, rw = iw;
-                                la = alast->evenOdd ? lw & 1 : lw, ra = alast->evenOdd ? rw & 1 : rw;
-                            }
-                            if (ra || la) {
-                                grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, ra, c0->p);
-                                plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
-                                if (plast != -1)
-                                    grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, la, plast);
+                            if (ci0) {
+                                c0 = grid.cells + ci0, c1 = grid.cells + ci1;
+                                fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
+                                if (fw - iw == 0) {
+                                    if (fcw == 0)
+                                        fcw = c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0;
+                                    if (fcw > 0)
+                                        lw = iw, rw = iw + 1;
+                                    else if (fcw < 0)
+                                        lw = iw - 1, rw = iw;
+                                    la = alast->evenOdd ? lw & 1 : lw, ra = alast->evenOdd ? rw & 1 : rw;
+                                }
+                                if (ra || la) {
+                                    grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, ra, c0->p);
+                                    plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
+                                    if (plast != -1)
+                                        grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, la, plast);
+                                }
                             }
                         }
                         cli = alast->cli;
