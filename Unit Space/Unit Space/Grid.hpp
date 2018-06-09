@@ -133,12 +133,12 @@ struct Grid {
     
         char activeStorage[scene._paths.size() * sizeof(ActivePath)];
         ActivePath *activePaths = (ActivePath *)activeStorage, *alast;
-        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, iw, p, lp, lix, first, step, it, ci0, ci1, lw, rw;
+        int ix, iy, iend, i, idst, isrc, plast, count, gi, cli, iw, p, lp, lix, first, step, it, ci0, ci1, lw, rw, la, ra;
         float subpathWindings[scene._nsubpaths], fw, fcw;
         Cell *cell, *c0, *c1, *cl;
         
         for (iy = 0; iy < grid.ih; iy++) {
-            iend = 0, lp = -1, lix = 0, ci0 = ci1 = lw = rw = 0;
+            iend = 0, lp = -1, lix = 0, ci0 = ci1 = lw = rw = la = ra = 0;
             memset(subpathWindings, 0, sizeof(subpathWindings));
             for (ix = 0; ix < grid.iw; ix++) {
                 gi = ix + iy * grid.iw;
@@ -212,12 +212,13 @@ struct Grid {
                                     lw = iw, rw = iw + 1;
                                 else if (fcw < 0)
                                     lw = iw - 1, rw = iw;
+                                la = alast->evenOdd ? lw & 1 : lw, ra = alast->evenOdd ? rw & 1 : rw;
                             }
-                            if (rw || lw) {
-                                grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, rw != 0, c0->p);
+                            if (ra || la) {
+                                grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, ra, c0->p);
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 if (plast != -1)
-                                    grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, lw != 0, plast);
+                                    grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, la, plast);
                             }
                         }
                         cli = alast->cli;
