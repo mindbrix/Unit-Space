@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -200,7 +200,6 @@ struct Grid {
                                         ci1 = cli;
                             } while ((cli = cell->next));
                             c0 = grid.cells + ci0, c1 = grid.cells + ci1;
-                            p = c0->p;
                             
                             fcw = c0 == c1 ? c0->y1 - c0->y0 : c0->y1 - c0->y0 + c1->y1 - c1->y0;
                             fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
@@ -215,7 +214,7 @@ struct Grid {
                                     lw = iw - 1, rw = iw;
                             }
                             if (rw || lw) {
-                                grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, rw != 0, p);
+                                grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, rw != 0, c0->p);
                                 plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
                                 if (plast != -1)
                                     grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, lw != 0, plast);
