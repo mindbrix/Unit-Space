@@ -197,7 +197,7 @@ struct Grid {
                                    ci0 = cli;
                                 else if (grid.cells[ci1].x1 == cell->x0 && grid.cells[ci1].y1 == cell->y0)
                                     ci1 = cli;
-                                else if (cli != ci0) {
+                                else if (cli != alast->cli) {
                                     ci0 = 0;
                                     break;
                                 }
