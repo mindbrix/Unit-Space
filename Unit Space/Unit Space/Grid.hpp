@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -197,24 +197,22 @@ struct Grid {
                                    ci0 = cli;
                                 else if (grid.cells[ci1].x1 == cell->x0 && grid.cells[ci1].y1 == cell->y0)
                                     ci1 = cli;
-                                else if (cli != alast->cli) {
-                                    ci0 = 0;
-                                    break;
-                                }
+                                else if (cli != alast->cli)
+                                    ci1 = cli;
                             } while ((cli = cell->next));
                             
-                            if (ci0) {
-                                c0 = grid.cells + ci0, c1 = grid.cells + ci1;
-                                fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
-                                if (fw - iw == 0) {
-                                    if (fcw == 0)
-                                        fcw = c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0;
-                                    if (fcw > 0)
-                                        lw = iw, rw = iw + 1;
-                                    else if (fcw < 0)
-                                        lw = iw - 1, rw = iw;
-                                    la = alast->evenOdd ? lw & 1 : lw, ra = alast->evenOdd ? rw & 1 : rw;
-                                }
+                            c0 = grid.cells + ci0, c1 = grid.cells + ci1;
+                            fw = subpathWindings[grid.cells[alast->cli].si], iw = int(fw);
+                            if (fw - iw == 0) {
+                                if (fcw == 0)
+                                    fcw = c0->x0 < c1->x1 ? c0->y1 - c0->y0 : c1->y1 - c1->y0;
+                                if (fcw > 0)
+                                    lw = iw, rw = iw + 1;
+                                else if (fcw < 0)
+                                    lw = iw - 1, rw = iw;
+                                la = alast->evenOdd ? lw & 1 : lw, ra = alast->evenOdd ? rw & 1 : rw;
+                            }
+                            if (c0 == c1 || (c0->x1 == c1->x0 && c0->y1 == c1->y0)) {
                                 if (ra || la) {
                                     grid.writeCellPolygon(mesh, c0, c0 == c1 ? nullptr : c1, ix, iy, ra, c0->p);
                                     plast = iend > 1 && activePaths[iend - 2].ecount == 0 ? activePaths[iend - 2].p : -1;
