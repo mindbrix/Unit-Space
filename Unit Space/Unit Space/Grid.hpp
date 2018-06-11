@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {
@@ -25,7 +25,7 @@ struct Grid {
             if (ecount++ == 0) cli = i;
             winding += coverage;
         }
-        inline void setInside() { float w = std::abs(winding); inside = w < 0.0000152590219 ? false : evenOdd ? int(std::ceil(w)) & 1 : true; }
+        inline void setInside() { int w = std::abs(winding) * 65535; inside = w == 0 ? false : evenOdd ? w % 131070 : true; }
         int p, ecount, cli;
         bool evenOdd, inside;
         float winding;
