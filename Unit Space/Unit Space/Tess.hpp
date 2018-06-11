@@ -391,7 +391,7 @@ struct Scene {
     
     void updateNpoints() {
         _npoints = 0;
-        for (Path *path = & _paths[0], *pbegin = path, *pend = path + _paths.size(); path < pend; path++)
+        for (Path *path = & _paths[0], *pend = path + _paths.size(); path < pend; path++)
             _npoints += path->countPoints();
     }
     Memory<Edge> writeEdges(int& count, float scale, float tx, float ty) {
