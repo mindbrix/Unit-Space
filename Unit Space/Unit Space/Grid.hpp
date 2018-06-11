@@ -39,6 +39,8 @@ struct Grid {
         edgesMemory = scene.writeEdges(cellCount, scale, tx, ty);
         cellsMemory = Memory<Cell>(cellCount + 1);
         cells = cellsMemory.get();
+        rowCountsMemory = Memory<int>(ih);
+        rowCounts = rowCountsMemory.zero().get();
         
         float x0, y0, x1, y1;
         float lx, ly, ux, uy, gy0, gy1, sx0, sy0, sx1, sy1, slx, sux;
@@ -81,6 +83,7 @@ struct Grid {
         new (& cells[cellIndex]) Cell(e, x0, y0, x1, y1);
         *(list->begin == 0 ? & list->begin : & cells[list->last].next) = cellIndex;
         list->last = cellIndex++;
+        rowCounts[(list - cellLists) / iw]++;
     }
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1, det;
@@ -118,6 +121,8 @@ struct Grid {
     CellList *cellLists;
     Memory<Cell> cellsMemory;
     Cell *cells;
+    Memory<int> rowCountsMemory;
+    int *rowCounts;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
