@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 128;
+constexpr int kDivisions = 16;
 
 struct Grid {
     struct Cell {
@@ -55,9 +55,12 @@ struct Grid {
             ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
             glx = std::floor(lx), gly = std::floor(ly);
             if (ux - glx <= 1 && uy - gly <= 1)
-                writeCell(gly, & cellLists[int(glx) + int(gly) * iw], edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
+                rowCounts[int(gly)]++, writeCell(& cellLists[int(glx) + int(gly) * iw], edge, x0 - glx, y0 - gly, x1 - glx, y1 - gly);
             else {
                 guy = std::ceil(uy), gh = guy - gly;
+                for (gy0 = gly; gy0 < guy; gy0++)
+                    rowCounts[int(gy0)]++;
+                
                 for (gy0 = gly, gy1 = gy0 + 1; gh--; gy0 = gy1, gy1 += 1) {
                     sy0 = y0 < gy0 ? gy0 : y0 > gy1 ? gy1 : y0;
                     sy1 = y1 < gy0 ? gy0 : y1 > gy1 ? gy1 : y1;
@@ -73,17 +76,16 @@ struct Grid {
                         tx1 = sx1 < gx0 ? gx0 : sx1 > gx1 ? gx1 : sx1;
                         ty0 = sx0 == sx1 || tx0 == sx0 ? sy0 : sy0 + (tx0 - sx0) / (sx1 - sx0) * (sy1 - sy0);
                         ty1 = sx0 == sx1 || tx1 == sx1 ? sy1 : sy0 + (tx1 - sx0) / (sx1 - sx0) * (sy1 - sy0);
-                        writeCell(gy0, list, edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
+                        writeCell(list, edge, tx0 - gx0, ty0 - gy0, tx1 - gx0, ty1 - gy0);
                     }
                 }
             }
         }
     }
-    inline void writeCell(int gy, CellList *list, Edge *e, float x0, float y0, float x1, float y1) {
+    inline void writeCell(CellList *list, Edge *e, float x0, float y0, float x1, float y1) {
         new (& cells[cellIndex]) Cell(e, x0, y0, x1, y1);
         *(list->begin == 0 ? & list->begin : & cells[list->last].next) = cellIndex;
         list->last = cellIndex++;
-        rowCounts[gy]++;
     }
     void writeCellPolygon(Mesh& mesh, Cell *c0, Cell *c1, float gx, float gy, bool right, int p) {
         float x0, y0, x1, y1, det;
