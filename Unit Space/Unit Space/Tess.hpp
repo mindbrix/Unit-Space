@@ -594,7 +594,7 @@ struct Tess {
                 
                 y3 = a->lyt, y2 = a->uyt, ue = a->e;
                 
-                if ((winding & 1) != 0) {
+                if (scene._paths[a->e->p]._evenOdd ? winding & 1 : winding) {
                     new (qsrc) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
                     while (qdst < qend && qdst->y1 < qsrc->y0)
                         qdst++;
@@ -604,7 +604,7 @@ struct Tess {
                     else
                         qsrc++;
                 }
-                winding += a->e->x0 > a->e->x1 ? 1 : -1;
+                winding += a->e->x0 > a->e->x1 ? -1 : 1;
                 y0 = y3, y1 = y2, le = ue;
             }
 
