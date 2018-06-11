@@ -32,15 +32,15 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e, float lx, float ux) : e(e), lyt(e->y(lx)),  uyt(e->y(ux)) {}
+    ActiveEdge(Edge *e, float lx, float ux) : e(e), ylx(e->y(lx)), yux(e->y(ux)) {}
     
-    inline void update(float ux)    { lyt = uyt, uyt = e->y(ux); }
-    float ly() const                { return lyt < uyt ? lyt : uyt; }
-    float uy() const                { return lyt > uyt ? lyt : uyt; }
+    inline void update(float ux)    { ylx = yux, yux = e->y(ux); }
+    float ly() const                { return ylx < yux ? ylx : yux; }
+    float uy() const                { return ylx > yux ? ylx : yux; }
     
     inline bool operator< (const ActiveEdge& other) const     { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
     
-    float lyt, uyt;
+    float ylx, yux;
     Edge *e;
 };
 
@@ -595,10 +595,11 @@ struct Tess {
                 if (a->e->x0 == a->e->x1)
                     continue;
                 
-                y3 = a->lyt, y2 = a->uyt, ue = a->e;
+                y3 = a->ylx, y2 = a->yux, ue = a->e;
                 
-                winding = windings[a->e->p];
-                if (scene._paths[a->e->p]._evenOdd ? winding & 1 : winding) {
+//                winding = windings[a->e->p];
+                if(winding & 1) {
+//                if (scene._paths[a->e->p]._evenOdd ? winding & 1 : winding) {
                     new (qsrc) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
                     while (qdst < qend && qdst->y1 < qsrc->y0)
                         qdst++;
@@ -609,7 +610,7 @@ struct Tess {
                         qsrc++;
                 }
                 windings[a->e->p] += a->e->x0 > a->e->x1 ? -1 : 1;
-//                winding += a->e->x0 > a->e->x1 ? -1 : 1;
+                winding += a->e->x0 > a->e->x1 ? -1 : 1;
                 y0 = y3, y1 = y2, le = ue;
             }
 
