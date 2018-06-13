@@ -16,6 +16,14 @@ struct Revolution {
         int begin, last;
     };
     
+    inline int rowCount(float y0, float y1) {
+        float ry0, ry1, rly, ruy;
+        ry0 = (y0 - ty) * scale, ry1 = (y1 - ty) * scale;
+        rly = ry0 < ry1 ? ry0 : ry1;
+        ruy = ry0 > ry1 ? ry0 : ry1;
+        return std::ceil(ruy) - std::floor(rly);
+    }
+    
     Revolution(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
@@ -47,6 +55,5 @@ struct Revolution {
             mesh._colors.emplace_back(path->_color);
         
         Revolution revolution(scene);
-        mesh._CTM = { revolution.dimension, 0, 0, revolution.dimension, revolution.tx, revolution.ty };
     }
 };
