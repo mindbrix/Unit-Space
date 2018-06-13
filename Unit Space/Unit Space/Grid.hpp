@@ -7,7 +7,7 @@
 //
 #import "Tess.hpp"
 
-constexpr int kDivisions = 16;
+constexpr int kDivisions = 128;
 
 struct Grid {
     struct Cell {

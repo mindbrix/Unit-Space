@@ -5,26 +5,30 @@
 //  Created by Nigel Barber on 13/06/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-static void radixSort(float *begin, float *end) {
+static void radixSort(float *out, float *in, int n, int shift) {
     union { unsigned int ix; float x; };
-    int n = int(end - begin), counts[65536], shift;
-    float tmp[n], *out = tmp, *in = begin;
-    
-    for (shift = 0; shift < 32; shift += 16, std::swap(in, out)) {
-        memset(counts, 0, sizeof(counts));
-        for (int i = 0; i < n; i++) {
-            x = in[i];
-            counts[(ix >> shift) & 0xFFFF]++;
-        }
-        for (int i = 1; i < 65536; i++)
-            counts[i] += counts[i - 1];
-        
-        for (int i = n - 1; i >= 0; i--) {
-            x = in[i];
-            out[counts[(ix >> shift) & 0xFFFF] - 1] = x;
-            counts[(ix >> shift) & 0xFFFF]--;
-        }
+    int counts[256];
+    memset(counts, 0, sizeof(counts));
+    for (int i = 0; i < n; i++) {
+        x = in[i];
+        counts[(ix >> shift) & 0xFF]++;
     }
+    for (int i = 1; i < 256; i++)
+        counts[i] += counts[i - 1];
+    
+    for (int i = n - 1; i >= 0; i--) {
+        x = in[i];
+        out[counts[(ix >> shift) & 0xFF] - 1] = x;
+        counts[(ix >> shift) & 0xFF]--;
+    }
+}
+static void radixSort(float *begin, float *end) {
+    int n = int(end - begin);
+    float out0[n], out1[n];
+    radixSort(out0, begin, n, 0);
+    radixSort(out1, out0, n, 8);
+    radixSort(out0, out1, n, 16);
+    radixSort(begin, out0, n, 24);
 }
 
 struct Revolution {
