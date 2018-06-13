@@ -51,8 +51,8 @@ struct Revolution {
             for (int ci = 0; ci < path->_subPaths.size(); ci++) {
                 points = path->_subPaths[ci]._points.get();
                 x0 = (points[0] - tx) * scale, y0 = (points[1] - ty) * scale;
-                for (int pi = 0, npoints = path->_subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
-                    x1 = (points[((pi + 1) % npoints) * 2] - tx) * scale, y1 = (points[((pi + 1) % npoints) * 2 + 1] - ty) * scale;
+                for (int pi = 0, i = 2, npoints = path->_subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++, i = ((pi + 1) % npoints) * 2) {
+                    x1 = (points[i] - tx) * scale, y1 = (points[i + 1] - ty) * scale;
                     ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
                     gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
                     list = & edgeLists[int(gly)];
