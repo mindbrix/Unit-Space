@@ -60,7 +60,6 @@ using namespace std;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
-@property(nonatomic) Revolution;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 
