@@ -422,7 +422,7 @@ using namespace std;
     
     
     if (self.useDelaunay)
-        Revolution::triangulate(_mesh, _scene);
+        Revolution::triangulate(_mesh, scene);
 //        _fortune.triangulate(_mesh, scene);
 //        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     else

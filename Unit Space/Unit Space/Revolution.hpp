@@ -48,7 +48,7 @@ struct Revolution {
         listsMemory = Memory<EdgeList>(ih);
         edgeLists = listsMemory.zero().get();
         float x0, y0, x1, y1, *points, ly, uy, gly, guy, gh, gy0, gy1, sx0, sy0, sx1, sy1;
-        int count = 0;
+        int count = 1;
         for (Path *path = & scene._paths[0], *pend = path + scene._paths.size(); path < pend; path++) {
             for (int ci = 0; ci < path->_subPaths.size(); ci++) {
                 points = path->_subPaths[ci]._points.get();
@@ -56,7 +56,7 @@ struct Revolution {
                 for (int pi = 0, npoints = path->_subPaths[ci]._npoints; pi < npoints; y0 = y1, pi++) {
                     y1 = (points[((pi + 1) % npoints) * 2 + 1] - ty) * scale;
                     ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-                    count += std::ceil(uy) - std::floor(ly);
+                    count += int(uy) - int(ly) + 1;
                 }
             }
         }
@@ -70,7 +70,7 @@ struct Revolution {
                 for (int pi = 0, i = 2, npoints = path->_subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++, i = ((pi + 1) % npoints) * 2) {
                     x1 = (points[i] - tx) * scale, y1 = (points[i + 1] - ty) * scale;
                     ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
-                    gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
+                    gly = int(ly), guy = int(uy) + 1, gh = guy - gly;
                     list = & edgeLists[int(gly)];
                     for (gy0 = gly, gy1 = gy0 + 1; gh--; gy0 = gy1, gy1 += 1, list++) {
                         sy0 = y0 < gy0 ? gy0 : y0 > gy1 ? gy1 : y0;
