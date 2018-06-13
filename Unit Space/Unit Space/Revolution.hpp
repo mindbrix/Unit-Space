@@ -40,6 +40,7 @@ struct Revolution {
         edgesMemory = Memory<Edge>(count);
         edges = edgesMemory.get();
         EdgeList *list;
+        int *rowCount;
         for (Path *path = & scene._paths[0], *pbegin = path, *pend = path + scene._paths.size(); path < pend; path++) {
             for (int ci = 0; ci < path->_subPaths.size(); ci++) {
                 points = path->_subPaths[ci]._points.get();
@@ -49,14 +50,16 @@ struct Revolution {
                     ly = y0 < y1 ? y0 : y1, uy = y0 > y1 ? y0 : y1;
                     gly = std::floor(ly), guy = std::ceil(uy), gh = guy - gly;
                     list = & edgeLists[int(gly)];
-                    for (gy0 = gly, gy1 = gy0 + 1; gh--; gy0 = gy1, gy1 += 1, list++) {
+                    rowCount = & rowCounts[int(gly)];
+                    for (gy0 = gly, gy1 = gy0 + 1; gh--; gy0 = gy1, gy1 += 1, list++, rowCount++) {
+                        (*rowCount)++;
+                        
                         sy0 = y0 < gy0 ? gy0 : y0 > gy1 ? gy1 : y0;
                         sy1 = y1 < gy0 ? gy0 : y1 > gy1 ? gy1 : y1;
-                        
                         sx0 = y0 == y1 || sy0 == y0 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
                         sx1 = y0 == y1 || sy1 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
-                        
                         new (& edges[cellIndex]) Edge(int(path - pbegin), sx0, sy0, sx1, sy1);
+                        
                         *(list->begin == 0 ? & list->begin : & edges[list->last].next) = cellIndex;
                         list->last = cellIndex++;
                     }
@@ -85,5 +88,6 @@ struct Revolution {
             mesh._colors.emplace_back(path->_color);
         
         Revolution revolution(scene);
+        mesh._CTM = { revolution.dimension, 0, 0, revolution.dimension, revolution.tx, revolution.ty };
     }
 };
