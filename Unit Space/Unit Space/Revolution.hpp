@@ -6,6 +6,33 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
+static void radixSort(float *out, float *in, int n, int shift) {
+    int counts[256];
+    memset(counts, 0, sizeof(counts));
+    for (int i = 0; i < n; i++) {
+        union { unsigned int ix; float x; };
+        x = in[i];
+        counts[(ix >> shift) & 0xFF]++;
+    }
+    for (int i = 1; i < 256; i++)
+        counts[i] += counts[i - 1];
+    
+    for (int i = n - 1; i >= 0; i--) {
+        union { unsigned int ix; float x; };
+        x = in[i];
+        out[counts[(ix >> shift) & 0xFF] - 1] = x;
+        counts[(ix >> shift) & 0xFF]--;
+    }
+}
+
+static void radixSort(float *begin, float *end) {
+    int n = int(end - begin);
+    float out0[n], out1[n];
+    radixSort(out0, begin, n, 24);
+    radixSort(out1, out0, n, 16);
+    radixSort(out0, out1, n, 8);
+    radixSort(begin, out0, n, 0);
+}
 struct Revolution {
     struct Edge {
         Edge(int p, float x0, float y0, float x1, float y1) : next(0), p(p), x0(x0), y0(y0), x1(x1), y1(y1) {}
@@ -108,6 +135,8 @@ struct Revolution {
                 } while ((ei = edge->next));
                 sort(dbegin, dend);
                 
+                radixSort(dbegin, dend);
+            
                 for (division = dbegin; division < dend; division++) {
                     lx = *division;
                     do
