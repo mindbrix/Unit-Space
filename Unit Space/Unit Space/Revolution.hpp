@@ -108,8 +108,8 @@ struct Revolution {
                 ibegin = revolution.indicesMemory.get(), iend = ibegin;
                 do {
                     edge = revolution.edges + ei;
-                    new (iend++) EdgeIndex(edge->x0, ei);
-                    new (iend++) EdgeIndex(edge->x1, ei);
+                    new (iend++) EdgeIndex(edge->x0 < edge->x1 ? edge->x0 : edge->x1, ei);
+                    new (iend++) EdgeIndex(edge->x0 > edge->x1 ? edge->x0 : edge->x1, 0);
                 } while ((ei = edge->next));
                 
                 radixSort(ibegin, iend);
