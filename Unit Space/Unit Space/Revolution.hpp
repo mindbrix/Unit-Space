@@ -8,28 +8,26 @@
 
 static void radixSort(float *out, float *in, int n, int shift) {
     union { unsigned int ix; float x; };
-    int counts[256];
+    int counts[65536];
     memset(counts, 0, sizeof(counts));
     for (int i = 0; i < n; i++) {
         x = in[i];
-        counts[(ix >> shift) & 0xFF]++;
+        counts[(ix >> shift) & 0xFFFF]++;
     }
-    for (int i = 1; i < 256; i++)
+    for (int i = 1; i < 65536; i++)
         counts[i] += counts[i - 1];
     
     for (int i = n - 1; i >= 0; i--) {
         x = in[i];
-        out[counts[(ix >> shift) & 0xFF] - 1] = x;
-        counts[(ix >> shift) & 0xFF]--;
+        out[counts[(ix >> shift) & 0xFFFF] - 1] = x;
+        counts[(ix >> shift) & 0xFFFF]--;
     }
 }
 static void radixSort(float *begin, float *end) {
     int n = int(end - begin);
-    float out0[n], out1[n];
-    radixSort(out0, begin, n, 0);
-    radixSort(out1, out0, n, 8);
-    radixSort(out0, out1, n, 16);
-    radixSort(begin, out0, n, 24);
+    float out[n];
+    radixSort(out, begin, n, 0);
+    radixSort(begin, out, n, 16);
 }
 
 struct Revolution {
