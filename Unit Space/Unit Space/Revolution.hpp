@@ -91,6 +91,7 @@ struct Revolution {
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         int gy, ei;
+        float lx, ux;
         Edge *edge;
         EdgeEvent *ebegin, *eend, *event;
         
@@ -115,6 +116,14 @@ struct Revolution {
                     
                 } while ((ei = edge->next));
                 sort(ebegin, eend);
+                
+                for (event = ebegin; event < eend; event++) {
+                    lx = event->x;
+                    do
+                        event++;
+                    while (event < eend && lx == event->x);
+                    ux = event < eend ? event->x : lx;
+                }
             }
         }
     }
