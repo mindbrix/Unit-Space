@@ -84,7 +84,8 @@ static void radixSort(T *out, T *in, int n, int shift) {
 template<typename T>
 static void radixSort(T *begin, T *end) {
     int n = int(end - begin);
-    T out0[n], out1[n];
+    char mem0[n * sizeof(T)], mem1[n * sizeof(T)];
+    T *out0 = (T *)mem0, *out1 = (T *)mem1;
     radixSort(out0, begin, n, 0);
     radixSort(out1, out0, n, 8);
     radixSort(out0, out1, n, 16);

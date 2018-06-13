@@ -14,7 +14,11 @@ struct Revolution {
     struct EdgeList {
         int begin, last;
     };
-    
+    struct EdgeIndex {
+        EdgeIndex(float x, int i) : x(x), i(i) {}
+        float x;
+        int i;
+    };
     struct EdgeEvent {
         enum Type { kBegin, kEnd, kIntersection };
         EdgeEvent(float x, Type type, int i0, int i1) : x(x), type(type), i0(i0), i1(i1) {}
@@ -68,7 +72,7 @@ struct Revolution {
                 }
             }
         }
-        divisionsMemory = Memory<float>(edgeIndex);
+        indicesMemory = Memory<EdgeIndex>(edgeIndex);
         eventsMemory = Memory<EdgeEvent>(edgeIndex);
     }
     
@@ -79,13 +83,14 @@ struct Revolution {
     Edge *edges;
     Memory<EdgeList> listsMemory;
     EdgeList *edgeLists;
-    Memory<float> divisionsMemory;
+    Memory<EdgeIndex> indicesMemory;
     Memory<EdgeEvent> eventsMemory;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         int gy, ei;
-        float lx, ux, *dbegin, *dend, *division;
+        float lx, ux;
         Edge *edge;
+        EdgeIndex *ibegin, *iend, *index;
         
         mesh.empty();
         if (scene._paths.size() == 0)
@@ -100,20 +105,21 @@ struct Revolution {
         
         for (gy = 0; gy < revolution.ih; gy++) {
             if ((ei = revolution.edgeLists[gy].begin)) {
-                dbegin = revolution.divisionsMemory.get(), dend = dbegin;
+                ibegin = revolution.indicesMemory.get(), iend = ibegin;
                 do {
                     edge = revolution.edges + ei;
-                    *(dend++) = edge->x0, *(dend++) = edge->x1;
+                    new (iend++) EdgeIndex(edge->x0, ei);
+                    new (iend++) EdgeIndex(edge->x1, ei);
                 } while ((ei = edge->next));
                 
-                radixSort(dbegin, dend);
-            
-                for (division = dbegin; division < dend; division++) {
-                    lx = *division;
+                radixSort(ibegin, iend);
+                
+                for (index = ibegin; index < iend; index++) {
+                    lx = index->x;
                     do
-                        division++;
-                    while (division < dend && lx == *division);
-                    ux = division < dend ? *division : lx;
+                        index++;
+                    while (index < iend && lx == index->x);
+                    ux = index < iend ? index->x : lx;
                 }
             }
         }
