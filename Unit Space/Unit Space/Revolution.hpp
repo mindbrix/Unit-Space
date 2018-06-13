@@ -164,9 +164,6 @@ struct Revolution {
                     le = ue = nullptr;
                     winding = 0;
                     for (a = abegin; a < aend; a++) {
-                        if (a->e->x0 == a->e->x1)
-                            continue;
-                        
                         y3 = a->ylx, y2 = a->yux, ue = a->e;
                         
                         if(winding & 1) {
