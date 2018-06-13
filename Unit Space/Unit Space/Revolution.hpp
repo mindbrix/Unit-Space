@@ -8,6 +8,8 @@
 struct Revolution {
     struct Edge {
         Edge(int p, float x0, float y0, float x1, float y1) : next(0), p(p), x0(x0), y0(y0), x1(x1), y1(y1) {}
+        inline float ux() const { return x0 < x1 ? x1 : x0; }
+        inline float y(float x) { return x == x1 ? y1 : y0 + (x - x0) / (x1 - x0) * (y1 - y0); }
         int next, p;
         float x0, y0, x1, y1;
     };
@@ -27,7 +29,18 @@ struct Revolution {
         Type type;
         int i0, i1;
     };
-    
+    struct ActiveEdge {
+        ActiveEdge(Edge *e, float lx, float ux) : e(e), ylx(e->y(lx)), yux(e->y(ux)) {}
+        
+        inline void update(float ux)    { ylx = yux, yux = e->y(ux); }
+        float ly() const                { return ylx < yux ? ylx : yux; }
+        float uy() const                { return ylx > yux ? ylx : yux; }
+        
+        inline bool operator< (const ActiveEdge& other) const     { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
+        
+        float ylx, yux;
+        Edge *e;
+    };
     Revolution(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), edgeIndex(1), edgeCount(0) {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
@@ -72,7 +85,8 @@ struct Revolution {
                 }
             }
         }
-        indicesMemory = Memory<EdgeIndex>(edgeIndex);
+        indicesMemory = Memory<EdgeIndex>(edgeIndex * 2);
+        activeEdgesMemory = Memory<ActiveEdge>(edgeIndex);
         eventsMemory = Memory<EdgeEvent>(edgeIndex);
     }
     
@@ -84,13 +98,15 @@ struct Revolution {
     Memory<EdgeList> listsMemory;
     EdgeList *edgeLists;
     Memory<EdgeIndex> indicesMemory;
+    Memory<ActiveEdge> activeEdgesMemory;
     Memory<EdgeEvent> eventsMemory;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         int gy, ei;
         float lx, ux;
         Edge *edge;
-        EdgeIndex *ibegin, *iend, *index;
+        EdgeIndex *ibegin, *iend, *index, *ilast;
+        ActiveEdge *abegin, *aend, *a, *asrc, *adst;
         
         mesh.empty();
         if (scene._paths.size() == 0)
@@ -113,13 +129,36 @@ struct Revolution {
                 } while ((ei = edge->next));
                 
                 radixSort(ibegin, iend);
+                abegin = revolution.activeEdgesMemory.get(), aend = abegin;
                 
-                for (index = ibegin; index < iend; index++) {
-                    lx = index->x;
+                for (index = ibegin; index < iend; ) {
+                    ilast = index, lx = ilast->x;
                     do
-                        index++;
-                    while (index < iend && lx == index->x);
-                    ux = index < iend ? index->x : lx;
+                        ilast++;
+                    while (ilast < iend && lx == ilast->x);
+                    ux = ilast < iend ? ilast->x : lx;
+                    
+                    asrc = adst = abegin;
+                    for (; asrc < aend; asrc++) 
+                        if (asrc->e->ux() > lx)
+                            *adst++ = *asrc;
+                    
+                    aend = adst;
+                    for (a = abegin; a < aend; a++)
+                        a->update(ux);
+                    
+                    for (; index < ilast; index++) {
+                        if (index->i) {
+                            edge = revolution.edges + index->i;
+                            if (edge->x0 != edge->x1) {
+                                ActiveEdge anew(edge, lx, ux);
+                                adst = aend++, asrc = adst - 1;
+                                while (adst > abegin && anew < *asrc)
+                                    *adst-- = *asrc--;
+                                *adst = anew;
+                            }
+                        }
+                    }
                 }
             }
         }
