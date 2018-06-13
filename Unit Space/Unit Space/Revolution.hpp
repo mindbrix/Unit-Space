@@ -16,7 +16,7 @@ struct Revolution {
         int begin, last;
     };
     
-    Revolution(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), cellIndex(1), cellCount(0) {
+    Revolution(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), edgeIndex(1), edgeCount(0) {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
         iw = std::ceil(width * scale) + 1, ih = std::ceil(height * scale) + 1;
@@ -58,10 +58,10 @@ struct Revolution {
                         sy1 = y1 < gy0 ? gy0 : y1 > gy1 ? gy1 : y1;
                         sx0 = y0 == y1 || sy0 == y0 ? x0 : x0 + (sy0 - y0) / (y1 - y0) * (x1 - x0);
                         sx1 = y0 == y1 || sy1 == y1 ? x1 : x0 + (sy1 - y0) / (y1 - y0) * (x1 - x0);
-                        new (& edges[cellIndex]) Edge(int(path - pbegin), sx0, sy0, sx1, sy1);
+                        new (& edges[edgeIndex]) Edge(int(path - pbegin), sx0, sy0, sx1, sy1);
                         
-                        *(list->begin == 0 ? & list->begin : & edges[list->last].next) = cellIndex;
-                        list->last = cellIndex++;
+                        *(list->begin == 0 ? & list->begin : & edges[list->last].next) = edgeIndex;
+                        list->last = edgeIndex++;
                     }
                 }
             }
@@ -70,7 +70,7 @@ struct Revolution {
     
     Bounds bounds;
     float width, height, scale, dimension, tx, ty;
-    int iw, ih, cellIndex, cellCount;
+    int iw, ih, edgeIndex, edgeCount;
     Memory<Edge> edgesMemory;
     Edge *edges;
     Memory<EdgeList> listsMemory;
