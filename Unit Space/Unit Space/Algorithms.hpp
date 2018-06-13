@@ -63,26 +63,28 @@ static float pointsSignedArea(const float *begin, const float *end, size_t strid
     return sum * 0.5;
 }
 
-static void radixSort(float *out, float *in, int n, int shift) {
+template<typename T>
+static void radixSort(T *out, T *in, int n, int shift) {
     union { unsigned int ix; float x; };
     int counts[256];
     memset(counts, 0, sizeof(counts));
     for (int i = 0; i < n; i++) {
-        x = in[i];
+        x = *(float *)(in + i);
         counts[(ix >> shift) & 0xFF]++;
     }
     for (int i = 1; i < 256; i++)
         counts[i] += counts[i - 1];
     
     for (int i = n - 1; i >= 0; i--) {
-        x = in[i];
-        out[counts[(ix >> shift) & 0xFF] - 1] = x;
+        x = *(float *)(in + i);
+        out[counts[(ix >> shift) & 0xFF] - 1] = in[i];
         counts[(ix >> shift) & 0xFF]--;
     }
 }
-static void radixSort(float *begin, float *end) {
+template<typename T>
+static void radixSort(T *begin, T *end) {
     int n = int(end - begin);
-    float out0[n], out1[n];
+    T out0[n], out1[n];
     radixSort(out0, begin, n, 0);
     radixSort(out1, out0, n, 8);
     radixSort(out0, out1, n, 16);
