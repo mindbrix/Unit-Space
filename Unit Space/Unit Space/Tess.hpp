@@ -466,15 +466,15 @@ struct Tess {
                 encodeBits(& mesh._edges[base].x, 0x3, 0x1);
             }
     }
-    static void writeQuad(Mesh& mesh, Quad *q) {
+    static void writeQuad(Mesh& mesh, Quad *q, int p) {
         int pi = (int)mesh._points.size();
         if (q->x1 == q->x2 && q->y1 == q->y2)
-            mesh._triangles.emplace_back(pi, pi + 1, pi + 3, q->le->p);
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 3, p);
         else if (q->x0 == q->x3 && q->y0 == q->y3)
-            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, q->le->p);
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, p);
         else {
-            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, q->le->p);
-            mesh._triangles.emplace_back(pi, pi + 2, pi + 3, q->le->p);
+            mesh._triangles.emplace_back(pi, pi + 1, pi + 2, p);
+            mesh._triangles.emplace_back(pi, pi + 2, pi + 3, p);
         }
         mesh._points.emplace_back(q->x0, q->y0);
         mesh._points.emplace_back(q->x1, q->y1);
@@ -616,7 +616,7 @@ struct Tess {
 
             for (q = qbegin; q < qend; q++)
                 if (q->x1 < ux) {
-                    writeQuad(mesh, q);
+                    writeQuad(mesh, q, q->le->p);
                     q->y0 = q->y1 = FLT_MAX;
                 }
             sort(qbegin, qsrc);
@@ -626,7 +626,7 @@ struct Tess {
         }
         
         for (q = qbegin; q < qend; q++)
-            writeQuad(mesh, q);
+            writeQuad(mesh, q, q->le->p);
         
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);

@@ -102,9 +102,9 @@ struct Revolution {
     Memory<EdgeEvent> eventsMemory;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
-        int gy, ei;
-        float lx, ux;
-        Edge *edge;
+        int gy, ei, winding;
+        float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
+        Edge *edge, *le, *ue;
         EdgeIndex *ibegin, *iend, *index, *ilast;
         ActiveEdge *abegin, *aend, *a, *asrc, *adst;
         
@@ -158,6 +158,23 @@ struct Revolution {
                                 *adst = anew;
                             }
                         }
+                    }
+                    x0 = x3 = lx, x1 = x2 = ux;
+                    y0 = y1 = y2 = y3 = 0;
+                    le = ue = nullptr;
+                    winding = 0;
+                    for (a = abegin; a < aend; a++) {
+                        if (a->e->x0 == a->e->x1)
+                            continue;
+                        
+                        y3 = a->ylx, y2 = a->yux, ue = a->e;
+                        
+                        if(winding & 1) {
+                            Quad q(nullptr, nullptr, x0, y0, x1, y1, x2, y2, x3, y3);
+                            Tess::writeQuad(mesh, &q, a->e->p);
+                        }
+                        winding += a->e->x0 > a->e->x1 ? -1 : 1;
+                        y0 = y3, y1 = y2, le = ue;
                     }
                 }
             }
