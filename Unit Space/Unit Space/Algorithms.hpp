@@ -63,6 +63,7 @@ static float pointsSignedArea(const float *begin, const float *end, size_t strid
     return sum * 0.5;
 }
 
+// http://www.codercorner.com/RadixSortRevisited.htm
 template<typename T>
 static void radixSort(T *out, T *in, int n, int shift) {
     union { unsigned int ix; float x; };
