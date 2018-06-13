@@ -16,6 +16,15 @@ struct Revolution {
         int begin, last;
     };
     
+    struct EdgeEvent {
+        enum Type { kBegin, kEnd, kIntersection };
+        EdgeEvent(float x, Type type, int i0, int i1) : x(x), type(type), i0(i0), i1(i1) {}
+        inline bool operator< (const EdgeEvent& other) const     { return x < other.x; }
+        float x;
+        Type type;
+        int i0, i1;
+    };
+    
     Revolution(Scene &scene) : bounds(scene._bounds), width(bounds.ux - bounds.lx), height(bounds.uy - bounds.ly), edgeIndex(1), edgeCount(0) {
         float dmax = width > height ? width : height;
         scale = float(kDivisions) / dmax, dimension = dmax / float(kDivisions), tx = bounds.lx, ty = bounds.ly;
@@ -66,6 +75,7 @@ struct Revolution {
                 }
             }
         }
+        eventsMemory = Memory<EdgeEvent>(edgeIndex);
     }
     
     Bounds bounds;
@@ -77,8 +87,13 @@ struct Revolution {
     EdgeList *edgeLists;
     Memory<int> rowCountsMemory;
     int *rowCounts;
+    Memory<EdgeEvent> eventsMemory;
     
     static void triangulate(Mesh& mesh, Scene& scene) {
+        int gy, ei;
+        Edge *edge;
+        EdgeEvent *ebegin, *eend, *event;
+        
         mesh.empty();
         if (scene._paths.size() == 0)
             return;
@@ -89,5 +104,18 @@ struct Revolution {
         
         Revolution revolution(scene);
         mesh._CTM = { revolution.dimension, 0, 0, revolution.dimension, revolution.tx, revolution.ty };
+        
+        for (gy = 0; gy < revolution.ih; gy++) {
+            if ((ei = revolution.edgeLists[gy].begin)) {
+                ebegin = revolution.eventsMemory.get(), eend = ebegin;
+                do {
+                    edge = revolution.edges + ei;
+                    new (eend++) EdgeEvent(edge->x0 < edge->x1 ? edge->x0 : edge->x1, EdgeEvent::kBegin, ei, 0);
+                    new (eend++) EdgeEvent(edge->x0 > edge->x1 ? edge->x0 : edge->x1, EdgeEvent::kEnd, ei, 0);
+                    
+                } while ((ei = edge->next));
+                sort(ebegin, eend);
+            }
+        }
     }
 };
