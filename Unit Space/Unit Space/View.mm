@@ -18,6 +18,7 @@
 #import "libTess.hpp"
 #import "Fortune.hpp"
 #import "Grid.hpp"
+#import "Revolution.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -59,6 +60,7 @@ using namespace std;
 @property(nonatomic) Fortune fortune;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
+@property(nonatomic) Revolution;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 
