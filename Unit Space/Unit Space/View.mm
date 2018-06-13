@@ -16,9 +16,9 @@
 
 #import "Tess.hpp"
 #import "libTess.hpp"
-//#import "Fortune.hpp"
 #import "Grid.hpp"
 #import "Revolution.hpp"
+#import "Fortune.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -59,6 +59,7 @@ using namespace std;
 @property(nonatomic) Scene scene;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
+@property(nonatomic) Fortune fortune;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 
@@ -617,7 +618,7 @@ using namespace std;
             a = t * _f * 2 * M_PI;
             _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
         }
-//        _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
+        _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
         _mesh._colors.resize(_mesh._triangles.size());
         
         Vector v0, v1, v2, *points = & _mesh._points[0];
