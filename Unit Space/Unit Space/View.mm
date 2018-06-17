@@ -368,9 +368,9 @@ using namespace std;
     
     if (_svgData) {
         if (self.useDelaunay)
-            Revolution::triangulate(_mesh, _scene);
+//            Revolution::triangulate(_mesh, _scene);
 //            _fortune.triangulate(_mesh, scene);
-//            _tess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
+            _tess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
         else
             _libtess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
         
@@ -422,9 +422,9 @@ using namespace std;
     
     
     if (self.useDelaunay)
-        Revolution::triangulate(_mesh, scene);
+//        Revolution::triangulate(_mesh, scene);
 //        _fortune.triangulate(_mesh, scene);
-//        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     else
         _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     
