@@ -39,8 +39,16 @@ struct ActiveEdge {
     float ly() const                { return ylx < yux ? ylx : yux; }
     float uy() const                { return ylx > yux ? ylx : yux; }
     
+    inline bool fullBelow(const ActiveEdge& other) const {
+        float det0, det1;
+        det0 = (e->x1 - e->x0) * (other.e->y0 - e->y0) - (e->y1 - e->y0) * (other.e->x0 - e->x0);
+        det1 = (e->x1 - e->x0) * (other.e->y1 - e->y0) - (e->y1 - e->y0) * (other.e->x1 - e->x0);
+        det0 = e->x1 > e->x0 ? det0 : -det0;
+        det1 = e->x1 > e->x0 ? det1 : -det1;
+        return det0 ? (det0 < 0) : det1 ? (det1 < 0) : false;
+    }
     inline bool operator< (const ActiveEdge& other) const   { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
-    inline bool below(const ActiveEdge& other) const        { return ly() < other.ly(); };
+    inline bool below(const ActiveEdge& other) const        { return ly() > other.uy() ? false : uy() < other.ly() ? true : fullBelow(other); };
     float ylx, yux;
     Edge *e;
 };
