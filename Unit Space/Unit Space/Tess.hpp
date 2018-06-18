@@ -32,7 +32,7 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ylx(e->y0), yux (e->y1) {}
+    ActiveEdge(Edge *e) : e(e), ylx(e->y0), yux(e->y1), lx(e->x0 < e->x1 ? e->x0 : e->x1) {}
     ActiveEdge(Edge *e, float lx, float ux) : e(e), ylx(e->y(lx)), yux(e->y(ux)) {}
     
     inline void update(float ux)    { ylx = yux, yux = e->y(ux); }
@@ -50,6 +50,7 @@ struct ActiveEdge {
     inline bool operator< (const ActiveEdge& other) const   { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
     inline bool below(const ActiveEdge& other) const        { return ly() > other.uy() ? false : uy() < other.ly() ? true : fullBelow(other); };
     float ylx, yux;
+    float lx;
     Edge *e;
 };
 
