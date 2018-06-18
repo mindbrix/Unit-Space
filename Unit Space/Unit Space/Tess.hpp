@@ -32,13 +32,8 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ylx(e->y0), yux(e->y1), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
-    ActiveEdge(Edge *e, float lx, float ux) : e(e), ylx(e->y(lx)), yux(e->y(ux)) {}
-    
-    inline void update(float ux)    { ylx = yux, yux = e->y(ux); }
-    float ly() const                { return ylx < yux ? ylx : yux; }
-    float uy() const                { return ylx > yux ? ylx : yux; }
-    
+    ActiveEdge(Edge *e) : e(e), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
+        
     inline bool fullBelow(const ActiveEdge& other) const {
         float det0, det1;
         det0 = (other.e->x1 - other.e->x0) * (e->y0 - other.e->y0) - (other.e->y1 - other.e->y0) * (e->x0 - other.e->x0);
@@ -47,9 +42,8 @@ struct ActiveEdge {
         det1 = other.e->x1 > other.e->x0 ? det1 : -det1;
         return det0 ? (det0 < 0) : det1 ? (det1 < 0) : false;
     }
-    inline bool operator< (const ActiveEdge& other) const   { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
-    inline bool below(const ActiveEdge& other) const        { return ly() > other.uy() ? false : uy() < other.ly() ? true : fullBelow(other); };
-    float ylx, yux;
+//    inline bool operator< (const ActiveEdge& other) const   { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
+    inline bool below(const ActiveEdge& other) const        { return e->ly() > other.e->uy() ? false : e->uy() < other.e->ly() ? true : fullBelow(other); };
     float lx;
     bool triangulate;
     Edge *e;
