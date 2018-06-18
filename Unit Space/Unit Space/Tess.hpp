@@ -32,14 +32,15 @@ struct Edge {
 };
 
 struct ActiveEdge {
+    ActiveEdge(Edge *e) : e(e), ylx(e->y0), yux (e->y1) {}
     ActiveEdge(Edge *e, float lx, float ux) : e(e), ylx(e->y(lx)), yux(e->y(ux)) {}
     
     inline void update(float ux)    { ylx = yux, yux = e->y(ux); }
     float ly() const                { return ylx < yux ? ylx : yux; }
     float uy() const                { return ylx > yux ? ylx : yux; }
     
-    inline bool operator< (const ActiveEdge& other) const     { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
-    
+    inline bool operator< (const ActiveEdge& other) const   { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
+    inline bool below(const ActiveEdge& other) const        { return ly() < other.ly(); };
     float ylx, yux;
     Edge *e;
 };
@@ -567,6 +568,21 @@ struct Tess {
             while (division < dend && *division == lx);
             ux = division < dend ? *division : lx;
 
+            
+            
+            asrc = adst = abegin;
+            for (; asrc < aend; asrc++)
+                if (asrc->e->ux() >= lx)
+                    *adst++ = *asrc;
+            aend = adst;
+            
+            for (a = abegin; a < aend; a++)
+                if (a->e->ux() == lx) {
+                    lx = lx;
+                }
+            
+            
+            
             asrc = adst = abegin;
             for (; asrc < aend; asrc++)
                 if (asrc->e->ux() > lx)
