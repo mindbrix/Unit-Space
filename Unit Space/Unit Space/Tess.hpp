@@ -553,7 +553,7 @@ struct Tess {
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         
         Memory<Edge> edges = createEdgeList(scene);
-        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last, *le, *ue;
+        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last;//, *le, *ue;
         
         Memory<float> xDivisions(edges.count() * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
@@ -562,7 +562,7 @@ struct Tess {
         sort(dbegin, dend);
         
         Memory<ActiveEdge> activeEdges(edges.count());
-        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst;
+        ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst, *le, *ue;
         
         Memory<int> pathWindings(scene._paths.size());
         int *windings = pathWindings.zero().get();
@@ -604,18 +604,40 @@ struct Tess {
                 }
             edge = last;
             
-//            while (edge < end && edge->lx() == lx) {
-//                if (edge->x0 != edge->x1) {
-//                    ActiveEdge anew(edge);
-//                    adst = aend++, asrc = adst - 1;
-//                    while (adst > abegin && anew.below(*asrc))
-//                        *adst-- = *asrc--;
-//                    *adst = anew;
-//                }
-//                edge++;
-//            }
+            x1 = x2 = lx;
+            le = ue = nullptr;
+            winding = 0;
+            qdst = qbegin, qsrc = qend;
+            for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
+                winding += le->e->x0 > le->e->x1 ? -1 : 1;
+                if (winding & 1 && le->triangulate && ue->triangulate) {
+                    x0 = le->lx, y0 = le->e->y(x0);
+                    y1 = le->e->y(lx);
+                    y2 = ue->e->y(lx);
+                    x3 = ue->lx, y3 = ue->e->y(x3);
+                    
+                    Quad q(le->e, ue->e, x0, y0, x1, y1, x2, y2, x3, y3);
+                    writeQuad(mesh, & q, le->e->p);
+                    
+                    le->lx = ue->lx = lx;
+                }
+            }
+            
+            while (edge < end && edge->lx() == lx) {
+                if (edge->x0 != edge->x1) {
+                    ActiveEdge anew(edge);
+                    adst = aend++, asrc = adst - 1;
+                    while (adst > abegin && anew.below(*asrc))
+                        *adst-- = *asrc--;
+                    *adst = anew;
+                }
+                edge++;
+            }
             
             
+            
+            
+            /*
             asrc = adst = abegin;
             for (; asrc < aend; asrc++)
                 if (asrc->e->ux() > lx)
@@ -671,20 +693,20 @@ struct Tess {
             sort(qbegin, qsrc);
             while (qsrc > qbegin && (qsrc - 1)->y0 == FLT_MAX)
                 qsrc--;
-            qend = qsrc;
+            qend = qsrc;*/
         }
         
-        for (q = qbegin; q < qend; q++)
-            writeQuad(mesh, q, q->le->p);
+//        for (q = qbegin; q < qend; q++)
+//            writeQuad(mesh, q, q->le->p);
         
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
     }
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
         mesh.empty();
         writeCurves(mesh, scene);
         writeEdges(mesh, scene);
+        for (Path& path : scene._paths)
+            mesh._colors.emplace_back(path._color);
         writeTriangles(mesh, scene);
     }
 };
