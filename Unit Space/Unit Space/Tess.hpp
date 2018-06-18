@@ -588,6 +588,7 @@ struct Tess {
             
             for (a = abegin; a < aend; a++)
                 if (a->e->ux() == lx) {
+                    a->triangulate = true;
                     if (a > abegin)
                         (a - 1)->triangulate = true;
                     if (a < aend - 1)
