@@ -553,7 +553,7 @@ struct Tess {
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
-        sort(dbegin, dend);
+        radixSort(dbegin, dend);
         
         Memory<ActiveEdge> activeEdges(edges.count());
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst, *le, *ue;
