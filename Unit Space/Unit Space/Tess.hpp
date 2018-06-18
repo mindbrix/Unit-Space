@@ -589,6 +589,16 @@ struct Tess {
                     lx = lx;
                 }
             
+//            while (edge < end && edge->lx() == lx) {
+//                if (edge->x0 != edge->x1) {
+//                    ActiveEdge anew(edge);
+//                    adst = aend++, asrc = adst - 1;
+//                    while (adst > abegin && anew.below(*asrc))
+//                        *adst-- = *asrc--;
+//                    *adst = anew;
+//                }
+//                edge++;
+//            }
             
             
             asrc = adst = abegin;
