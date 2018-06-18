@@ -578,8 +578,6 @@ struct Tess {
             while (division < dend && *division == lx);
             ux = division < dend ? *division : lx;
 
-            
-            
             asrc = adst = abegin;
             for (; asrc < aend; asrc++)
                 if (asrc->e->ux() >= lx)
@@ -634,72 +632,7 @@ struct Tess {
                 }
                 edge++;
             }
-            
-            
-            
-            
-            /*
-            asrc = adst = abegin;
-            for (; asrc < aend; asrc++)
-                if (asrc->e->ux() > lx)
-                    *adst++ = *asrc;
-            aend = adst;
-            for (a = abegin; a < aend; a++)
-                a->update(ux);
-            
-            while (edge < end && edge->lx() == lx) {
-                if (edge->x0 != edge->x1) {
-                    ActiveEdge anew(edge, lx, ux);
-                    adst = aend++, asrc = adst - 1;
-                    while (adst > abegin && anew < *asrc)
-                        *adst-- = *asrc--;
-                    *adst = anew;
-                }
-                edge++;
-            }
-            
-            x0 = x3 = lx, x1 = x2 = ux;
-            y0 = y1 = y2 = y3 = 0;
-            le = ue = nullptr;
-            winding = 0;
-            qdst = qbegin, qsrc = qend;
-            for (a = abegin; a < aend; a++) {
-                if (a->e->x0 == a->e->x1)
-                    continue;
-                
-                y3 = a->ylx, y2 = a->yux, ue = a->e;
-                
-//                winding = windings[a->e->p];
-                if(winding & 1) {
-//                if (scene._paths[a->e->p]._evenOdd ? winding & 1 : winding) {
-                    new (qsrc) Quad(le, ue, x0, y0, x1, y1, x2, y2, x3, y3);
-                    while (qdst < qend && qdst->y1 < qsrc->y0)
-                        qdst++;
-                    
-                    if (qdst < qend && qdst->merge(qsrc))
-                        qdst++;
-                    else
-                        qsrc++;
-                }
-                windings[a->e->p] += a->e->x0 > a->e->x1 ? -1 : 1;
-                winding += a->e->x0 > a->e->x1 ? -1 : 1;
-                y0 = y3, y1 = y2, le = ue;
-            }
-
-            for (q = qbegin; q < qend; q++)
-                if (q->x1 < ux) {
-                    writeQuad(mesh, q, q->le->p);
-                    q->y0 = q->y1 = FLT_MAX;
-                }
-            sort(qbegin, qsrc);
-            while (qsrc > qbegin && (qsrc - 1)->y0 == FLT_MAX)
-                qsrc--;
-            qend = qsrc;*/
         }
-        
-//        for (q = qbegin; q < qend; q++)
-//            writeQuad(mesh, q, q->le->p);
-        
     }
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
