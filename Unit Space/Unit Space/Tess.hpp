@@ -32,7 +32,7 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ylx(e->y0), yux(e->y1), lx(e->x0 < e->x1 ? e->x0 : e->x1) {}
+    ActiveEdge(Edge *e) : e(e), ylx(e->y0), yux(e->y1), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
     ActiveEdge(Edge *e, float lx, float ux) : e(e), ylx(e->y(lx)), yux(e->y(ux)) {}
     
     inline void update(float ux)    { ylx = yux, yux = e->y(ux); }
@@ -51,6 +51,7 @@ struct ActiveEdge {
     inline bool below(const ActiveEdge& other) const        { return ly() > other.uy() ? false : uy() < other.ly() ? true : fullBelow(other); };
     float ylx, yux;
     float lx;
+    bool triangulate;
     Edge *e;
 };
 
@@ -552,7 +553,7 @@ struct Tess {
         float lx, ux, x0, y0, x1, y1, x2, y2, x3, y3;
         
         Memory<Edge> edges = createEdgeList(scene);
-        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *le, *ue;
+        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last, *le, *ue;
         
         Memory<float> xDivisions(edges.count() * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
@@ -582,13 +583,26 @@ struct Tess {
             asrc = adst = abegin;
             for (; asrc < aend; asrc++)
                 if (asrc->e->ux() >= lx)
-                    *adst++ = *asrc;
+                    asrc->triangulate = false, *adst++ = *asrc;
             aend = adst;
             
             for (a = abegin; a < aend; a++)
                 if (a->e->ux() == lx) {
-                    lx = lx;
+                    if (a > abegin)
+                        (a - 1)->triangulate = true;
+                    if (a < aend - 1)
+                        (a + 1)->triangulate = true;
                 }
+            for (last = edge; edge < end && edge->lx() == lx; edge++)
+                if (edge->x0 != edge->x1) {
+                    ActiveEdge anew(edge);
+                    for (a = abegin; a < aend && anew.below(*a); a++) {}
+                    if (a > abegin)
+                        (a - 1)->triangulate = true;
+                    if (a < aend)
+                        a->triangulate = true;
+                }
+            edge = last;
             
 //            while (edge < end && edge->lx() == lx) {
 //                if (edge->x0 != edge->x1) {
