@@ -32,8 +32,7 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
-    
+    ActiveEdge(Edge *e) : e(e), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
     inline bool below(const ActiveEdge& other) const {
         float det0, det1, sum;
         det0 = (other.e->x1 - other.e->x0) * (e->y0 - other.e->y0) - (other.e->y1 - other.e->y0) * (e->x0 - other.e->x0);
@@ -41,9 +40,7 @@ struct ActiveEdge {
         sum = det0 + det1;
         return sum ? (other.e->x1 > other.e->x0 ? sum < 0 : sum > 0) : false;
     }
-    inline bool operator<(const ActiveEdge& other) const    { return ly > other.uy ? false : uy < other.ly ? true : below(other); };
-    
-    float ly, uy;
+    inline bool operator<(const ActiveEdge& other) const    { return e->ly() > other.e->uy() ? false : e->uy() < other.e->ly() ? true : below(other); };
     float lx;
     bool triangulate;
     Edge *e;
