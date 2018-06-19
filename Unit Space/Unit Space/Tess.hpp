@@ -568,12 +568,6 @@ struct Tess {
                 division++;
             while (division < dend && *division == lx);
             
-            asrc = adst = abegin;
-            for (; asrc < aend; asrc++)
-                if (asrc->e->ux() >= lx)
-                    *adst++ = *asrc;
-            aend = adst;
-            
             for (a = abegin; a < aend; a++)
                 a->triangulate = false;
             
@@ -613,6 +607,11 @@ struct Tess {
                     le->lx = ue->lx = lx;
                 }
             }
+            
+            for (asrc = adst = abegin; asrc < aend; asrc++)
+                if (asrc->e->ux() > lx)
+                    *adst++ = *asrc;
+            aend = adst;
             
             while (edge < end && edge->lx() == lx) {
                 if (edge->x0 != edge->x1) {
