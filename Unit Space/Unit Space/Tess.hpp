@@ -571,8 +571,11 @@ struct Tess {
             asrc = adst = abegin;
             for (; asrc < aend; asrc++)
                 if (asrc->e->ux() >= lx)
-                    asrc->triangulate = false, *adst++ = *asrc;
+                    *adst++ = *asrc;
             aend = adst;
+            
+            for (a = abegin; a < aend; a++)
+                a->triangulate = false;
             
             for (a = abegin; a < aend; a++)
                 if (a->e->ux() == lx) {
