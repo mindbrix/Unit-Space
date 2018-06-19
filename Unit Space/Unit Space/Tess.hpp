@@ -41,6 +41,10 @@ struct ActiveEdge {
         return sum ? (other.e->x1 > other.e->x0 ? sum < 0 : sum > 0) : false;
     }
     inline bool operator<(const ActiveEdge& other) const    { return e->ly() > other.e->uy() ? false : e->uy() < other.e->ly() ? true : below(other); };
+    inline bool follows(const ActiveEdge& other) const    {
+        return e->si == other.e->si && e->lx() == other.e->ux()
+        && e->y(e->lx()) == other.e->y(other.e->ux());
+    };
     float lx;
     bool triangulate;
     Edge *e;
