@@ -588,11 +588,11 @@ struct Tess {
             for (last = edge; edge < end && edge->lx() == lx; edge++)
                 if (edge->x0 != edge->x1) {
                     ActiveEdge anew(edge);
-                    for (a = abegin; a < aend && anew < *a; a++) {}
-                    if (a > abegin)
-                        (a - 1)->triangulate = true;
+                    for (a = aend; a > abegin && anew < *(a - 1); a--) {}
                     if (a < aend)
                         a->triangulate = true;
+                    if (a > abegin)
+                        (a - 1)->triangulate = true;
                 }
             edge = last;
             
