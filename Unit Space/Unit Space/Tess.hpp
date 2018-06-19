@@ -34,10 +34,12 @@ struct Edge {
 struct ActiveEdge {
     ActiveEdge(Edge *e) : e(e), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
     inline bool below(const ActiveEdge& other) const {
-        float det0, det1, sum;
-        det0 = (other.e->x1 - other.e->x0) * (e->y0 - other.e->y0) - (other.e->y1 - other.e->y0) * (e->x0 - other.e->x0);
-        det1 = (other.e->x1 - other.e->x0) * (e->y1 - other.e->y0) - (other.e->y1 - other.e->y0) * (e->x1 - other.e->x0);
-        sum = det0 + det1;
+        float vx, vy, vx0, vy0, vx1, vy1, det0, det1, sum;
+        vx = other.e->x1 - other.e->x0, vy = other.e->y1 - other.e->y0;
+        vx0 = e->x0 - other.e->x0, vy0 = e->y0 - other.e->y0;
+        vx1 = e->x1 - other.e->x0, vy1 = e->y1 - other.e->y0;
+        det0 = vx * vy0 - vy * vx0, det1 = vx * vy1 - vy * vx1, sum = det0 + det1;
+        
         if (std::abs(det0) > 1e-3 && std::abs(det1) > 1e-3 && det0 * det1 < 0) {
             if (e->x0 >= other.e->lx() && e->x0 <= other.e->ux())
                 sum = det0;
@@ -607,19 +609,11 @@ struct Tess {
                     y2 = ue->e->y(lx);
                     x3 = ue->lx, y3 = ue->e->y(x3);
                     
-                    float det2, det3;
-                    det2 = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
-                    det3 = (x1 - x0) * (y3 - y0) - (y1 - y0) * (x3 - x0);
-                    
-                    if (det2 < 0 || det3 < 0) {
-                        bool below = *ue < *le;
-                        det2 = det2;
-                    } else {
+                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
+                    else {
                         Quad q(le->e, ue->e, x0, y0, x1, y1, x2, y2, x3, y3);
                         writeQuad(mesh, & q, le->e->p);
                     }
-                    
-                    
                     le->lx = ue->lx = lx;
                 }
             }
