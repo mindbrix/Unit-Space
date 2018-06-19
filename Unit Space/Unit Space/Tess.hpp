@@ -600,7 +600,6 @@ struct Tess {
             
             x1 = x2 = lx;
             winding = 0;
-            qdst = qbegin, qsrc = qend;
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (winding & 1 && le->triangulate && ue->triangulate) {
