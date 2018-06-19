@@ -547,13 +547,13 @@ struct Tess {
         float lx, x0, y0, x1, y1, x2, y2, x3, y3;
         
         Memory<Edge> edges = createEdgeList(scene);
-        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last;//, *le, *ue;
+        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last;
         
         Memory<float> xDivisions(edges.count() * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
-        radixSort(dbegin, dend);
+        sort(dbegin, dend);
         
         Memory<ActiveEdge> activeEdges(edges.count());
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst, *le, *ue;
