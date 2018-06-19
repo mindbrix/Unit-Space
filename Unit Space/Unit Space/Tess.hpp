@@ -38,9 +38,9 @@ struct ActiveEdge {
         float det0, det1;
         det0 = (other.e->x1 - other.e->x0) * (e->y0 - other.e->y0) - (other.e->y1 - other.e->y0) * (e->x0 - other.e->x0);
         det1 = (other.e->x1 - other.e->x0) * (e->y1 - other.e->y0) - (other.e->y1 - other.e->y0) * (e->x1 - other.e->x0);
+        det0 += det1;
         det0 = other.e->x1 > other.e->x0 ? det0 : -det0;
-        det1 = other.e->x1 > other.e->x0 ? det1 : -det1;
-        return det0 ? (det0 < 0) : det1 ? (det1 < 0) : false;
+        return det0 ? (det0 < 0) : false;
     }
     inline bool operator<(const ActiveEdge& other) const    { return e->ly() > other.e->uy() ? false : e->uy() < other.e->ly() ? true : below(other); };
     
