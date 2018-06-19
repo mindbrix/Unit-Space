@@ -32,7 +32,7 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), lx(e->x0 < e->x1 ? e->x0 : e->x1), triangulate(false) {}
+    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), lx(e->x0 < e->x1 ? e->x0 : e->x1), ended(false), triangulate(false) {}
     inline bool below(const ActiveEdge& other) const {
         float vx, vy, vx0, vy0, vx1, vy1, det0, det1, sum;
         vx = other.e->x1 - other.e->x0, vy = other.e->y1 - other.e->y0;
@@ -51,7 +51,7 @@ struct ActiveEdge {
     inline bool operator<(const ActiveEdge& other) const    { return ly > other.uy ? false : uy < other.ly ? true : below(other); };
     float ly, uy;
     float lx;
-    bool triangulate;
+    bool ended, triangulate;
     Edge *e;
 };
 
@@ -575,11 +575,11 @@ struct Tess {
             while (division < dend && *division == lx);
             
             for (a = abegin; a < aend; a++)
-                a->triangulate = false;
+                a->ended = a->triangulate = false;
             
             for (a = abegin; a < aend; a++)
                 if (a->e->ux() == lx) {
-                    a->triangulate = true;
+                    a->ended = a->triangulate = true;
                     if (a > abegin)
                         (a - 1)->triangulate = true;
                     if (a < aend - 1)
@@ -614,7 +614,7 @@ struct Tess {
             }
             
             for (asrc = adst = abegin; asrc < aend; asrc++)
-                if (asrc->e->ux() > lx)
+                if (!asrc->ended)
                     *adst++ = *asrc;
             aend = adst;
             
