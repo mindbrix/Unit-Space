@@ -72,8 +72,8 @@ struct Intersection {
 };
 
 struct Quad {
-    Quad(Edge *le, Edge *ue, float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
-    : le(le), ue(ue), x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2), x3(x3), y3(y3) {}
+    Quad(Edge *le, Edge *ue, int p, float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
+    : le(le), ue(ue), p(p), x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2), x3(x3), y3(y3) {}
     
     bool merge(Quad *rq) {
         if (y1 == y2 || rq->y0 == rq->y3)
@@ -120,11 +120,8 @@ struct Quad {
         
         return false;
     }
-    inline float ly() const { return y0 < y1 ? y0 : y1; }
-    inline float uy() const { return y2 < y3 ? y3 : y2; }
-    inline bool operator< (const Quad& other) const     { return ly() < other.ly() || (ly() == other.ly() && uy() < other.uy()); }
-    
     float x0, y0, x1, y1, x2, y2, x3, y3;
+    int p;
     Edge *le, *ue;
 };
 
@@ -610,10 +607,8 @@ struct Tess {
                     x3 = ue->lx, y3 = ue->e->y(x3);
                     
                     if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
-                    else {
-                        Quad q(le->e, ue->e, x0, y0, x1, y1, x2, y2, x3, y3);
-                        writeQuad(mesh, & q, le->e->p);
-                    }
+                    else 
+                        new (qend++) Quad(le->e, ue->e, le->e->p, x0, y0, x1, y1, x2, y2, x3, y3);
                     le->lx = ue->lx = lx;
                 }
             }
@@ -634,6 +629,8 @@ struct Tess {
                 edge++;
             }
         }
+        for (q = qbegin; q < qend; q++)
+            writeQuad(mesh, q, q->p);
     }
 
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
