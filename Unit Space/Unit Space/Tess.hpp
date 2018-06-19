@@ -550,7 +550,7 @@ struct Tess {
         float lx, x0, y0, x1, y1, x2, y2, x3, y3;
         
         Memory<Edge> edges = createEdgeList(scene);
-        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last;
+        Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last, *e;
         
         Memory<float> xDivisions(edges.count() * 2);
         float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
@@ -585,15 +585,18 @@ struct Tess {
                     if (a < aend - 1)
                         (a + 1)->triangulate = true;
                 }
-            for (last = edge; edge < end && edge->lx() == lx; edge++)
-                if (edge->x0 != edge->x1) {
-                    ActiveEdge anew(edge);
-                    for (a = aend; a > abegin && anew < *(a - 1); a--) {}
+            for (last = edge; edge < end && edge->lx() == lx; edge++) {}
+            for (a = aend, e = edge - 1; e >= last; e--) {
+                if (e->x0 != e->x1) {
+                    ActiveEdge anew(e);
+                    while (a > abegin && anew < *(a - 1))
+                        a--;
                     if (a < aend)
                         a->triangulate = true;
                     if (a > abegin)
                         (a - 1)->triangulate = true;
                 }
+            }
             edge = last;
             
             x1 = x2 = lx;
