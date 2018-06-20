@@ -620,17 +620,17 @@ struct Tess {
                         if (flags)
                             for (p = i * 64; flags >>= 1; p++) {}
                     }
-                    x0 = le->llx, y0 = le->e->y(x0);
+                    x0 = le->ulx, y0 = le->e->y(x0);
                     y1 = le->e->y(lx);
                     y2 = ue->e->y(lx);
                     x3 = ue->llx, y3 = ue->e->y(x3);
                     
-                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
-                    else
+//                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
+//                    else
                         new (qend++) Quad(le->e, ue->e, le->e->p, x0, y0, x1, y1, x2, y2, x3, y3);
-                    
-                    le->llx = ue->llx = lx;
                 }
+                if (le->triangulate && ue->triangulate)
+                    le->ulx = ue->llx = lx;
             }
             
             for (asrc = adst = abegin; asrc < aend; asrc++)
