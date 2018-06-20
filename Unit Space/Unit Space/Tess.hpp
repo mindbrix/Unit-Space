@@ -614,23 +614,18 @@ struct Tess {
                 
                 winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (le->triangulate && ue->triangulate) {
-                    for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
-                        flags = visibleFlags[i];
-                        if (flags) {
-                            for (p = i * 64; flags >>= 1; p++) {}
-                            break;
-                        }
-                    }
-                    if (p != -1)
-                        new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
-//                    if (winding) {
-//                        for (p = -1, i = 0; i < nmasks; i++) {
-//                            flags = visibleFlags[i];// & activeFlags[i];
-//                            if (flags)
-//                                for (p = i * 64; flags >>= 1; p++) {}
+//                    for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
+//                        flags = visibleFlags[i];
+//                        if (flags) {
+//                            for (p = i * 64; flags >>= 1; p++) {}
+//                            break;
 //                        }
-//                        new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
 //                    }
+//                    if (p != -1)
+//                        new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+                    if (winding) 
+                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
+                    
                     le->ulx = ue->llx = lx;
                 }
             }
