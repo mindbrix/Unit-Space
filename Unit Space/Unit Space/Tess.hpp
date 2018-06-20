@@ -558,13 +558,12 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst, *le, *ue;
         
         Memory<int> pathWindings(scene._paths.size());
-        int i, p, winding, *windings = pathWindings.zero().get();
+        int i, p, *windings = pathWindings.zero().get(); //, winding
         
-        size_t nmasks = (scene._paths.size() + 63) / 64;
-        uint64_t flags, visibleFlags[nmasks];
+        uint64_t flags, nmasks = (scene._paths.size() + 63) / 64, visibleFlags[nmasks];
         
         Memory<Quad> activeQuads(edges.count() * 10);
-        Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
+        Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q;
         
         for (edge = begin, division = dbegin; division < dend; ) {
             lx = *division;
