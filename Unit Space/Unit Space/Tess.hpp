@@ -545,13 +545,11 @@ struct Tess {
         return edges1;
     }
     static void writeTriangles(Mesh& mesh, Scene& scene, bool merge) {
-        float lx, x0, y0, x1, y1, x2, y2, x3, y3;
-        
         Memory<Edge> edges = createEdgeList(scene);
         Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last, *e;
         
         Memory<float> xDivisions(edges.count() * 2);
-        float *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
+        float lx, *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
         sort(dbegin, dend);
@@ -602,7 +600,6 @@ struct Tess {
             }
             edge = last;
             
-            x1 = x2 = lx;
 //            winding = 0;
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 p = le->e->p;
