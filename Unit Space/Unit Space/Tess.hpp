@@ -564,6 +564,9 @@ struct Tess {
         Memory<int> pathWindings(scene._paths.size());
         int *windings = pathWindings.zero().get();
         
+        uint64_t activeFlags[(scene._paths.size() + 63) / 64];
+        memset(activeFlags, 0, sizeof(activeFlags));
+        
         Memory<Quad> activeQuads(edges.count());
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
         
@@ -620,10 +623,17 @@ struct Tess {
             for (asrc = adst = abegin; asrc < aend; asrc++)
                 if (!asrc->ended)
                     *adst++ = *asrc;
+                else {
+                    if (scene._paths[asrc->e->p]._bounds.ux == lx)
+                        activeFlags[edge->p >> 6] &= ~(1 << edge->p & 0x3F);
+                }
             aend = adst;
             
             while (edge < end && edge->lx() == lx) {
                 if (edge->x0 != edge->x1) {
+                    if (scene._paths[edge->p]._bounds.lx == lx)
+                        activeFlags[edge->p >> 6] |= (1 << edge->p & 0x3F);
+                    
                     ActiveEdge anew(edge);
                     adst = aend++, asrc = adst - 1;
                     while (adst > abegin && anew < *asrc)
