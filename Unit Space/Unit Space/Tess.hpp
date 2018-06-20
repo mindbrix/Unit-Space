@@ -607,24 +607,24 @@ struct Tess {
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 p = le->e->p;
                 windings[p] += le->e->x0 > le->e->x1 ? -1 : 1;
-                if (windings[p])
-                    visibleFlags[p >> 6] |= (1 << p & 0x3F);
+                if (windings[p] & 1)
+                    visibleFlags[p >> 6] |= (1 << (p & 0x3F));
                 else
-                    visibleFlags[p >> 6] &= ~(1 << p & 0x3F);
+                    visibleFlags[p >> 6] &= ~(1 << (p & 0x3F));
                 
                 winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (le->triangulate && ue->triangulate) {
-//                    for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
-//                        flags = visibleFlags[i];
-//                        if (flags) {
-//                            for (p = i * 64; flags >>= 1; p++) {}
-//                            break;
-//                        }
-//                    }
-//                    if (p != -1)
-//                        new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
-                    if (winding) 
-                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
+                    for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
+                        flags = visibleFlags[i];
+                        if (flags) {
+                            for (p = i * 64; flags >>= 1; p++) {}
+                            break;
+                        }
+                    }
+                    if (p != -1)
+                        new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+//                    if (winding)
+//                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
                     
                     le->ulx = ue->llx = lx;
                 }
