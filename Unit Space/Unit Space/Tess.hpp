@@ -32,7 +32,7 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), lx(e->x0 < e->x1 ? e->x0 : e->x1), ended(false), triangulate(false) {}
+    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), llx(e->x0 < e->x1 ? e->x0 : e->x1), ulx(llx), ended(false), triangulate(false) {}
     inline bool below(const ActiveEdge& other) const {
         float vx, vy, vx0, vy0, vx1, vy1, det0, det1, sum;
         vx = other.e->x1 - other.e->x0, vy = other.e->y1 - other.e->y0;
@@ -50,7 +50,7 @@ struct ActiveEdge {
     }
     inline bool operator<(const ActiveEdge& other) const    { return ly > other.uy ? false : uy < other.ly ? true : below(other); };
     float ly, uy;
-    float lx;
+    float llx, ulx;
     bool ended, triangulate;
     Edge *e;
 };
@@ -569,7 +569,7 @@ struct Tess {
         memset(activeFlags, 0, sizeof(activeFlags));
         memset(visibleFlags, 0, sizeof(visibleFlags));
         
-        Memory<Quad> activeQuads(edges.count());
+        Memory<Quad> activeQuads(edges.count() * 10);
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qsrc, *qdst;
         
         for (edge = begin, division = dbegin; division < dend; ) {
@@ -620,15 +620,17 @@ struct Tess {
                         if (flags)
                             for (p = i * 64; flags >>= 1; p++) {}
                     }
-                    x0 = le->lx, y0 = le->e->y(x0);
+                    x0 = le->llx, y0 = le->e->y(x0);
                     y1 = le->e->y(lx);
                     y2 = ue->e->y(lx);
-                    x3 = ue->lx, y3 = ue->e->y(x3);
+                    x3 = ue->llx, y3 = ue->e->y(x3);
                     
-                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
-                    else 
+//                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
+//                    else
                         new (qend++) Quad(le->e, ue->e, le->e->p, x0, y0, x1, y1, x2, y2, x3, y3);
-                    le->lx = ue->lx = lx;
+                    
+                    if (le->triangulate && ue->triangulate)
+                        le->llx = ue->llx = lx;
                 }
             }
             
