@@ -575,7 +575,7 @@ struct Tess {
             while (division < dend && *division == lx);
             
             for (a = abegin; a < aend; a++)
-                a->ended = a->triangulate = false;
+                a->ended = a->triangulate = false, windings[a->e->p] = 0;
             
             for (a = abegin; a < aend; a++)
                 if (a->e->ux() == lx) {
@@ -602,6 +602,7 @@ struct Tess {
             x1 = x2 = lx;
             winding = 0;
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
+                windings[le->e->p] += le->e->x0 > le->e->x1 ? -1 : 1;
                 winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (winding & 1 && le->triangulate && ue->triangulate) {
                     x0 = le->lx, y0 = le->e->y(x0);
