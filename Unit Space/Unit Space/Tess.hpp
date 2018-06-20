@@ -544,7 +544,7 @@ struct Tess {
         sort(begin, end);
         return edges1;
     }
-    static void writeTriangles(Mesh& mesh, Scene& scene) {
+    static void writeTriangles(Mesh& mesh, Scene& scene, bool merge) {
         float lx, x0, y0, x1, y1, x2, y2, x3, y3;
         
         Memory<Edge> edges = createEdgeList(scene);
@@ -663,6 +663,6 @@ struct Tess {
         writeEdges(mesh, scene);
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
-        writeTriangles(mesh, scene);
+        writeTriangles(mesh, scene, useMasking);
     }
 };
