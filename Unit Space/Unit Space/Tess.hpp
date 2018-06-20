@@ -614,23 +614,23 @@ struct Tess {
                     visibleFlags[p >> 6] &= ~(1 << p & 0x3F);
                 
                 winding += le->e->x0 > le->e->x1 ? -1 : 1;
-                if (winding & 1 && le->triangulate && ue->triangulate) {
-                    for (p = -1, i = 0; i < nmasks; i++) {
-                        flags = visibleFlags[i] & activeFlags[i];
-                        if (flags)
-                            for (p = i * 64; flags >>= 1; p++) {}
-                    }
-                    x0 = le->ulx, y0 = le->e->y(x0);
-                    y1 = le->e->y(lx);
-                    y2 = ue->e->y(lx);
-                    x3 = ue->llx, y3 = ue->e->y(x3);
-                    
-//                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
-//                    else
+                if (le->triangulate && ue->triangulate) {
+                    if (winding) {
+                        for (p = -1, i = 0; i < nmasks; i++) {
+                            flags = visibleFlags[i] & activeFlags[i];
+                            if (flags)
+                                for (p = i * 64; flags >>= 1; p++) {}
+                        }
+                        x0 = le->ulx, y0 = le->e->y(x0);
+                        y1 = le->e->y(lx);
+                        y2 = ue->e->y(lx);
+                        x3 = ue->llx, y3 = ue->e->y(x3);
+                        //                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
+                        //                    else
                         new (qend++) Quad(le->e, ue->e, le->e->p, x0, y0, x1, y1, x2, y2, x3, y3);
-                }
-                if (le->triangulate && ue->triangulate)
+                    }
                     le->ulx = ue->llx = lx;
+                }
             }
             
             for (asrc = adst = abegin; asrc < aend; asrc++)
