@@ -603,7 +603,7 @@ struct Tess {
             edge = last;
             
             x1 = x2 = lx;
-            winding = 0;
+//            winding = 0;
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 p = le->e->p;
                 windings[p] += le->e->x0 > le->e->x1 ? -1 : 1;
@@ -612,8 +612,11 @@ struct Tess {
                 else
                     visibleFlags[p >> 6] &= ~(1 << (p & 0x3F));
                 
-                winding += le->e->x0 > le->e->x1 ? -1 : 1;
+//                winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (le->triangulate && ue->triangulate) {
+//                    if (winding)
+//                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
+
                     for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
                         flags = visibleFlags[i];
                         if (flags) {
@@ -623,8 +626,6 @@ struct Tess {
                     }
                     if (p != -1)
                         new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
-//                    if (winding)
-//                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
                     
                     le->ulx = ue->llx = lx;
                 }
