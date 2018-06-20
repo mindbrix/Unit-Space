@@ -625,12 +625,11 @@ struct Tess {
                     y2 = ue->e->y(lx);
                     x3 = ue->llx, y3 = ue->e->y(x3);
                     
-//                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
-//                    else
+                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
+                    else
                         new (qend++) Quad(le->e, ue->e, le->e->p, x0, y0, x1, y1, x2, y2, x3, y3);
                     
-                    if (le->triangulate && ue->triangulate)
-                        le->llx = ue->llx = lx;
+                    le->llx = ue->llx = lx;
                 }
             }
             
