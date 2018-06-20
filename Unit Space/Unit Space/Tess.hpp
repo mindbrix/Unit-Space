@@ -72,9 +72,10 @@ struct Intersection {
 };
 
 struct Quad {
-    Quad(Edge *le, Edge *ue, int p, float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
-    : le(le), ue(ue), p(p), x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2), x3(x3), y3(y3) {}
-    
+    Quad(Edge *le, Edge *ue, int p, float lx, float ux) : le(le), ue(ue), p(p), x0(lx), x1(ux), x2(ux), x3(lx) {
+        y0 = le->y(x0), y1 = le->y(x1);
+        y2 = ue->y(x2), y3 = ue->y(x3);
+    }
     bool merge(Quad *rq) {
         if (y1 == y2 || rq->y0 == rq->y3)
             return false;
@@ -621,13 +622,7 @@ struct Tess {
                             if (flags)
                                 for (p = i * 64; flags >>= 1; p++) {}
                         }
-                        x0 = le->ulx, y0 = le->e->y(x0);
-                        y1 = le->e->y(lx);
-                        y2 = ue->e->y(lx);
-                        x3 = ue->llx, y3 = ue->e->y(x3);
-                        //                    if (x0 != x3 || y3 - y0 < 0 || y2 - y1 < 0) {}
-                        //                    else
-                        new (qend++) Quad(le->e, ue->e, le->e->p, x0, y0, x1, y1, x2, y2, x3, y3);
+                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
                     }
                     le->ulx = ue->llx = lx;
                 }
