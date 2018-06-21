@@ -32,7 +32,7 @@ struct Edge {
 };
 
 struct ActiveEdge {
-    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), llx(e->x0 < e->x1 ? e->x0 : e->x1), ulx(llx), ended(false), triangulate(false) {}
+    ActiveEdge(Edge *e) : e(e), ly(e->ly()), uy(e->uy()), llx(e->lx()), ulx(llx), ended(false), triangulate(false) {}
     inline bool below(const ActiveEdge& other) const {
         float vx, vy, vx0, vy0, vx1, vy1, det0, det1, sum;
         vx = other.e->x1 - other.e->x0, vy = other.e->y1 - other.e->y0;
