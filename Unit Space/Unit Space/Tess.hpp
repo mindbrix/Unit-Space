@@ -558,7 +558,7 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst, *le, *ue;
         
         Memory<int> pathWindings(scene._paths.size());
-        int i, p, *windings = pathWindings.zero().get(); //, winding
+        int i, p, *windings = pathWindings.zero().get(), winding;
         
         uint64_t flags, nmasks = (scene._paths.size() + 63) / 64, visibleFlags[nmasks];
         
@@ -597,7 +597,7 @@ struct Tess {
             }
             edge = last;
             
-//            winding = 0;
+            winding = 0;
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 p = le->e->p;
                 windings[p] += le->e->x0 > le->e->x1 ? -1 : 1;
@@ -608,22 +608,18 @@ struct Tess {
                 
 //                winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (le->triangulate && ue->triangulate) {
-//                    if (winding)
-//                        new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
-
-                    for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
-                        flags = visibleFlags[i];
-                        if (flags) {
-                            for (p = i * 64; flags >>= 1; p++) {}
-                            break;
+                    if (le->ulx >= ue->e->lx()) {
+//                        if (winding)
+//                            new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
+                        for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
+                            flags = visibleFlags[i];
+                            if (flags) {
+                                for (p = i * 64; flags >>= 1; p++) {}
+                                new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+                                break;
+                            }
                         }
                     }
-                    if (p != -1) {
-                        if (le->ulx < ue->e->lx() || le->ulx > ue->e->ux()) {}
-                        else
-                            new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
-                    }
-                    
                     le->ulx = ue->llx = lx;
                 }
             }
