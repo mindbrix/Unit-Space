@@ -618,8 +618,11 @@ struct Tess {
                             break;
                         }
                     }
-                    if (p != -1)
-                        new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+                    if (p != -1) {
+                        if (le->ulx < ue->e->lx() || le->ulx > ue->e->ux()) {}
+                        else
+                            new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+                    }
                     
                     le->ulx = ue->llx = lx;
                 }
