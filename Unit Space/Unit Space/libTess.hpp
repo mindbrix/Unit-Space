@@ -11,7 +11,6 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "VGQuadTree.hpp"
-#import "EdgeClipper.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
