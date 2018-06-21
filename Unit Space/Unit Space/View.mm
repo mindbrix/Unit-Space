@@ -16,7 +16,6 @@
 
 #import "Tess.hpp"
 #import "libTess.hpp"
-#import "Fortune.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -57,7 +56,6 @@ using namespace std;
 @property(nonatomic) Scene scene;
 @property(nonatomic) libTess libtess;
 @property(nonatomic) Tess tess;
-@property(nonatomic) Fortune fortune;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 
@@ -366,8 +364,6 @@ using namespace std;
     
     if (_svgData) {
         if (self.useDelaunay)
-//            Revolution::triangulate(_mesh, _scene);
-//            _fortune.triangulate(_mesh, scene);
             _tess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
         else
             _libtess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
@@ -420,8 +416,6 @@ using namespace std;
     
     
     if (self.useDelaunay)
-//        Revolution::triangulate(_mesh, scene);
-//        _fortune.triangulate(_mesh, scene);
         _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
     else
         _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
@@ -594,51 +588,6 @@ using namespace std;
         }
     }
     if (_flags & 16) {
-        uniforms.fillColor = { 0, 0, 0, 1 };
-        
-        MeshState meshState;
-        meshState.hideCurves = !_showCurves;
-        meshState.hideTriangles = !_showTriangle;
-        meshState.showColors = _showColors;
-        meshState.showInterior = _showInterior;
-        
-        _calls.emplace_back();
-        Call& call = _calls.back();
-        call.meshState = meshState;
-        call.type = _showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
-        call.state = uniforms;
-        
-        _mesh.empty();
-        float cx = self.bounds.size.width / 2, cy = self.bounds.size.height / 2, r = cx < cy ? cx : cy, tmul = 1.0 / float(_count - 1), t;
-        float a;
-        for (int i = 0; i < _count; i++) {
-            t = float(i) * tmul;
-            a = t * _f * 2 * M_PI;
-            _mesh._points.emplace_back(cx + r * t * cosf(a), cy + r * t * sinf(a));
-        }
-        _fortune.triangulate(_mesh, & _mesh._points[0].x, (int)_mesh._points.size());
-        _mesh._colors.resize(_mesh._triangles.size());
-        
-        Vector v0, v1, v2, *points = & _mesh._points[0];
-        float l0, l1, l2, lmax;
-        for (auto& tr : _mesh._triangles) {
-            v0 = { points[tr.i0].x - cx, points[tr.i0].y - cy};
-            v1 = { points[tr.i1].x - cx, points[tr.i1].y - cy};
-            v2 = { points[tr.i2].x - cx, points[tr.i2].y - cy};
-            l0 = v0.x * v0.x + v0.y * v0.y;
-            l1 = v1.x * v1.x + v1.y * v1.y;
-            l2 = v2.x * v2.x + v2.y * v2.y;
-            lmax = l0 > l1 ? l0 : l1;
-            lmax = l2 > lmax ? l2 : lmax;
-            t = std::sqrt(lmax / (r * r));
-//            t = int(t * _f * _mesh._triangles.size()) % 2;
-            t = t * _f, t = t - std::floor(t);
-            RGBA8 color(RGBA::hsv2rgb(t, 1, 1));
-//            RGBA8 color(255 * t, 255 * t, 255 * t, 255);
-            _mesh._colors[t * _mesh._triangles.size()] = color;
-            tr.c = t * _mesh._triangles.size();
-        }
-        [self.metalLayer uploadMesh:_mesh];
     }
 }
 
