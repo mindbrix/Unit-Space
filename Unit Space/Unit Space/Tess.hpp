@@ -560,7 +560,7 @@ struct Tess {
         Memory<int> pathWindings(scene._paths.size());
         int i, p, *windings = pathWindings.zero().get(), winding;
         
-        uint64_t flags, nmasks = (scene._paths.size() + 63) / 64, visibleFlags[nmasks];
+        uint64_t flags, nmasks = scene._paths.size() / 64 + 1, visibleFlags[nmasks];
         
         Memory<Quad> activeQuads(edges.count() * 10);
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q;
