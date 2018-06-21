@@ -8,6 +8,7 @@
 #import <vector>
 #import "tesselator.h"
 #import "Algorithms.hpp"
+#import "Memory.hpp"
 
 constexpr int kPointStride = 2 * sizeof(float);
 constexpr float kSplitCubicPrecision = 0.1;
@@ -121,56 +122,6 @@ struct Quad {
     float x0, y0, x1, y1, x2, y2, x3, y3;
     int p;
     Edge *le, *ue;
-};
-
-template<typename T>
-struct Memory {
-    Memory()                            {}
-    Memory(size_t count)                { alloc(count); }
-    Memory(const Memory& other)         { assign(other); }
-    Memory& operator= (Memory other)    { assign(other); return *this; }
-    ~Memory() {
-        if (header && (--(header->refCount) == 0))
-            free(header->memory), free(header);
-    }
-    void alloc(size_t count) {
-        if (count == 0)
-            return;
-        if (header)
-            header->memory = ::realloc(header->memory, count * sizeof(T));
-        else {
-            header = (Header *)malloc(sizeof(Header));
-            header->memory = malloc(count * sizeof(T));
-            header->refCount = 1;
-        }
-        header->size = count * sizeof(T);
-    }
-    Memory clone() {
-        if (header) {
-            Memory c(header->size);
-            memcpy(c.header->memory, header->memory, header->size);
-            return c;
-        }
-        return Memory();
-    }
-    Memory& zero() {
-        if (header)
-            memset(header->memory, 0, header->size);
-        return *this;
-    }
-    size_t count() { return header ? header->size / sizeof(T) : 0; }
-    size_t size() { return header ? header->size : 0; }
-    T *get() const { return (T *) (header ? header->memory : nullptr); }
-private:
-    void assign(const Memory& other) {
-        if (this != & other) {
-            this->~Memory();
-            if ((header = other.header))
-                header->refCount++;
-        }
-    }
-    struct Header { int refCount; void *memory; size_t size; };
-    Header *header = nullptr;
 };
 
 #pragma mark - Algorithms
