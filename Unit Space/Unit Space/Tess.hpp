@@ -560,8 +560,6 @@ struct Tess {
         Memory<int> pathWindings(scene._paths.size());
         int i, p, *windings = pathWindings.zero().get(), winding;
         
-        vector<bool> visibles(scene._paths.size());
-        
         uint64_t flags, nmasks = scene._paths.size() / 64 + 1, visibleFlags[nmasks];
         
         Memory<Quad> activeQuads(edges.count() * 10);
@@ -573,10 +571,7 @@ struct Tess {
                 division++;
             while (division < dend && *division == lx);
             
-//            memset(visibleFlags, 0, sizeof(visibleFlags));
-            for (i = 0; i < visibles.size(); i++)
-                visibles[i] = false;
-            
+            memset(visibleFlags, 0, sizeof(visibleFlags));
             for (a = abegin; a < aend; a++)
                 a->triangulate = false, windings[a->e->p] = 0;
             
@@ -606,30 +601,24 @@ struct Tess {
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 p = le->e->p;
                 windings[p] += le->e->x0 > le->e->x1 ? -1 : 1;
-                visibles[p] = windings[p] & 1;
-//                if (windings[p] & 1)
-//                    visibleFlags[p >> 6] |= (1 << (p & 0x3F));
-//                else
-//                    visibleFlags[p >> 6] &= ~(1 << (p & 0x3F));
+                if (windings[p] & 1)
+                    visibleFlags[p >> 6] |= (1UL << (p & 0x3F));
+                else
+                    visibleFlags[p >> 6] &= ~(1UL << (p & 0x3F));
                 
 //                winding += le->e->x0 > le->e->x1 ? -1 : 1;
                 if (le->triangulate && ue->triangulate) {
                     if (le->ulx >= ue->e->lx()) {
 //                        if (winding)
 //                            new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
-                        for (p = (int)visibles.size() - 1; p >= 0; p--)
-                            if (visibles[p]) {
+                        for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
+                            flags = visibleFlags[i];
+                            if (flags) {
+                                for (p = i * 64; flags >>= 1; p++) {}
                                 new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
                                 break;
                             }
-//                        for (i = (int)nmasks - 1; i >= 0; i--) {
-//                            flags = visibleFlags[i];
-//                            if (flags) {
-//                                for (p = i * 64; flags >>= 1; p++) {}
-//                                new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
-//                                break;
-//                            }
-//                        }
+                        }
                     }
                     le->ulx = ue->llx = lx;
                 }
