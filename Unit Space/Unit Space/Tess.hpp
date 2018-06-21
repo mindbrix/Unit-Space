@@ -9,7 +9,7 @@
 #import "tesselator.h"
 #import "Algorithms.hpp"
 #import "Memory.hpp"
-#import "SubPath.hpp"
+#import "Path.hpp"
 
 #pragma mark - Data structures
 
@@ -154,58 +154,6 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
     }
 }
 
-struct Path {
-    Path() {}
-    Path(bool evenOdd, RGBA8 color) : _color(color), _evenOdd(evenOdd), _outerIndex(0) {}
-    
-    void addSubPath(SubPath& s) {
-        if (s._npoints > 2) 
-            _subPaths.emplace_back(s);
-    }
-        
-    bool intersects(Path& path) const {
-        return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
-    }
-    
-    int countPoints() {
-        int count = 0;
-        for (SubPath& s : _subPaths)
-            count += s._npoints;
-        return count;
-    }
-    Edge *writeEdges(Edge *dst, int& count, int p, float scale, float tx, float ty) {
-        float x0, y0, x1, y1, *points;
-        int si = p == 0 ? 0 : (dst - 1)->si + 1;
-        for (int ci = 0; ci < _subPaths.size(); ci++, si++) {
-            points = _subPaths[ci]._points.get();
-            x0 = (points[0] - tx) * scale, y0 = (points[1] - ty) * scale;
-            for (int pi = 0, npoints = _subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
-                x1 = (points[((pi + 1) % npoints) * 2] - tx) * scale, y1 = (points[((pi + 1) % npoints) * 2 + 1] - ty) * scale;
-                count += std::abs(x0 - x1) + std::abs(y0 - y1) + 2;
-                new (dst++) Edge(x0, y0, x1, y1, si, p, ci, pi);
-            }
-        }
-        return dst;
-    }
-
-    void update() {
-        float area, maxArea = 0;
-        _outerIndex = 0;
-        for (size_t i = 0; i < _subPaths.size(); i++)
-            if ((area = std::abs(_subPaths[i]._area)) > maxArea)
-                maxArea = area, _outerIndex = i;
-        
-        _bounds = _subPaths[0]._bounds;
-        for (SubPath& subPath : _subPaths)
-            _bounds.unite(subPath._bounds);
-    }
-    RGBA8                       _color;
-    bool                        _evenOdd;
-    size_t                      _outerIndex;
-    vector<SubPath>             _subPaths;
-    Bounds                      _bounds;
-};
-
 struct Mesh {
     AffineTransform                     _CTM;
     vector<RGBA8>                       _colors;
@@ -256,9 +204,24 @@ struct Scene {
         Memory<Edge> edgesMemory(_npoints);
         Edge *edges = edgesMemory.get(), *begin = edges, *end = begin;
         for (Path *path = & _paths[0], *pbegin = path, *pend = path + _paths.size(); path < pend; path++)
-            end = path->writeEdges(end, count, (int)(path - pbegin), scale, tx, ty);
+            end = writeEdges(end, path, count, (int)(path - pbegin), scale, tx, ty);
         _nsubpaths = (end - 1)->si + 1;
         return edgesMemory;
+    }
+    
+    static Edge *writeEdges(Edge *dst, Path *path, int& count, int p, float scale, float tx, float ty) {
+        float x0, y0, x1, y1, *points;
+        int si = p == 0 ? 0 : (dst - 1)->si + 1;
+        for (int ci = 0; ci < path->_subPaths.size(); ci++, si++) {
+            points = path->_subPaths[ci]._points.get();
+            x0 = (points[0] - tx) * scale, y0 = (points[1] - ty) * scale;
+            for (int pi = 0, npoints = path->_subPaths[ci]._npoints; pi < npoints; x0 = x1, y0 = y1, pi++) {
+                x1 = (points[((pi + 1) % npoints) * 2] - tx) * scale, y1 = (points[((pi + 1) % npoints) * 2 + 1] - ty) * scale;
+                count += std::abs(x0 - x1) + std::abs(y0 - y1) + 2;
+                new (dst++) Edge(x0, y0, x1, y1, si, p, ci, pi);
+            }
+        }
+        return dst;
     }
     vector<Path>    _paths;
     Bounds          _bounds;
