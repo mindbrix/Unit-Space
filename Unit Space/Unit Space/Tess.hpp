@@ -600,7 +600,7 @@ struct Tess {
             for (le = abegin, ue = le + 1; ue < aend; le = ue, ue++) {
                 p = le->e->p;
                 windings[p] += le->e->x0 > le->e->x1 ? -1 : 1;
-                if (windings[p] & 1)
+                if (scene._paths[p]._evenOdd ? windings[p] & 1 : windings[p])
                     visibleFlags[p >> 6] |= (1UL << (p & 0x3F));
                 else
                     visibleFlags[p >> 6] &= ~(1UL << (p & 0x3F));
