@@ -573,11 +573,11 @@ struct Tess {
             
             memset(visibleFlags, 0, sizeof(visibleFlags));
             for (a = abegin; a < aend; a++)
-                a->ended = a->triangulate = false, windings[a->e->p] = 0;
+                a->triangulate = false, windings[a->e->p] = 0;
             
             for (a = abegin; a < aend; a++)
-                if (a->e->ux() == lx) {
-                    a->ended = a->triangulate = true;
+                if ((a->ended = a->e->ux() == lx)) {
+                    a->triangulate = true;
                     if (a > abegin)
                         (a - 1)->triangulate = true;
                     if (a < aend - 1)
@@ -611,7 +611,7 @@ struct Tess {
                     if (le->ulx >= ue->e->lx()) {
 //                        if (winding)
 //                            new (qend++) Quad(le->e, ue->e, le->e->p, le->ulx, lx);
-                        for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
+                        for (i = (int)nmasks - 1; i >= 0; i--) {
                             flags = visibleFlags[i];
                             if (flags) {
                                 for (p = i * 64; flags >>= 1; p++) {}
