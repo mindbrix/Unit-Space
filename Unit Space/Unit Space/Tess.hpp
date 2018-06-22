@@ -71,7 +71,7 @@ struct Intersection {
 };
 
 struct Quad {
-    Quad(Edge *le, Edge *ue, int p, float lx, float ux) : le(le), ue(ue), p(p), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
+    Quad(Edge *le, Edge *ue, int p, float lx, float ux) : next(nullptr), le(le), ue(ue), p(p), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
     bool merge(Quad *rq) {
         if (y1 == y2 || rq->y0 == rq->y3)
             return false;
@@ -117,6 +117,7 @@ struct Quad {
         
         return false;
     }
+    Quad *next;
     float x0, y0, x1, y1, x2, y2, x3, y3;
     int p;
     Edge *le, *ue;
@@ -377,6 +378,9 @@ struct Tess {
         
         uint64_t flags, nmasks = scene._paths.size() / 64 + 1, visibleFlags[nmasks];
         
+        Memory<Quad *>quadBegins(scene._paths.size()), quadLasts(scene._paths.size());
+        Quad **qbegins = quadBegins.zero().get(), **qlasts = quadLasts.zero().get();
+        
         Memory<Quad> activeQuads(edges.count() * 10);
         Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q;
         
@@ -426,7 +430,13 @@ struct Tess {
                             flags = visibleFlags[i];
                             if (flags) {
                                 for (p = i * 64; flags >>= 1; p++) {}
-                                new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+                                q = new (qend++) Quad(le->e, ue->e, p, le->ulx, lx);
+                                if (qbegins[p] == nullptr) {
+                                    qbegins[p] = qlasts[p] = q;
+                                } else {
+                                    qlasts[p]->next = q;
+                                    qlasts[p] = q;
+                                }
                                 break;
                             }
                         }
