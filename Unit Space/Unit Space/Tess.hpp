@@ -449,7 +449,7 @@ struct Tess {
                 } while ((q = q->next));
     }
 
-    void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
+    void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
         mesh.empty();
         writeCurves(mesh, scene);
         writeEdges(mesh, scene);

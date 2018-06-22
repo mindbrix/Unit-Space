@@ -125,7 +125,7 @@ struct libTess {
             writePathTriangles(mesh, tess, path);
     }
     
-    void triangulate(Mesh& mesh, Scene& scene, bool useMasking, bool useDelaunay) {
+    void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
         mesh.empty();
         TESStesselator *tess = _tess.get();
         

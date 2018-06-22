@@ -364,9 +364,9 @@ using namespace std;
     
     if (_svgData) {
         if (self.useDelaunay)
-            _tess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
+            _tess.triangulate(_mesh, _scene, self.useMask);
         else
-            _libtess.triangulate(_mesh, _scene, self.useMask, self.useDelaunay);
+            _libtess.triangulate(_mesh, _scene, self.useMask);
         
         [self.metalLayer uploadMesh:_mesh];
     } else {
@@ -416,9 +416,9 @@ using namespace std;
     
     
     if (self.useDelaunay)
-        _tess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        _tess.triangulate(_mesh, scene, self.useMask);
     else
-        _libtess.triangulate(_mesh, scene, self.useMask, self.useDelaunay);
+        _libtess.triangulate(_mesh, scene, self.useMask);
     
     [self.metalLayer uploadMesh:_mesh];
 }
