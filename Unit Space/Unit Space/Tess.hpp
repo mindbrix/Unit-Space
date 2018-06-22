@@ -74,6 +74,7 @@ struct Quad {
     Quad(Edge *le, Edge *ue, float lx, float ux)
      : next(nullptr), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
    
+    inline bool follows(const Quad& other) const { return x0 == other.x1 && y0 == other.y1 && x3 == other.x2 && y3 == other.y2; }
     Quad *next;
     float x0, y0, x1, y1, x2, y2, x3, y3;
 };
@@ -391,25 +392,23 @@ struct Tess {
                                 } else {
                                     q = qbegins[p];
                                     do {
-                                        if (q->x1 == qnew->x0 && q->y1 == qnew->y0) {
-                                            if (q->x2 == qnew->x3 && q->y2 == qnew->y3) {
-                                                ledet = (q->x1 - q->x0) * (qnew->y1 - qnew->y0) - (q->y1 - q->y0) * (qnew->x1 - qnew->x0);
-                                                uedet = (q->x2 - q->x3) * (qnew->y2 - qnew->y3) - (q->y2 - q->y3) * (qnew->x2 - qnew->x3);
-                                                
-                                                if (std::abs(ledet) < 1e-3 && std::abs(uedet) < 1e-3) {
-                                                    q->x1 = qnew->x1, q->y1 = qnew->y1;
-                                                    q->x2 = qnew->x2, q->y2 = qnew->y2;
-                                                    qnew = nullptr, qend--;
-                                                    break;
-                                                } else if (std::abs(ledet) < 1e-3 && q->y0 == q->y3 && qnew->y1 == qnew->y2) {
-                                                    q->x1 = qnew->x1, q->y1 = qnew->y1;
-                                                    qnew = nullptr, qend--;
-                                                    break;
-                                                } else if (std::abs(uedet) < 1e-3 && q->y0 == q->y3 && qnew->y1 == qnew->y2) {
-                                                    q->x2 = qnew->x2, q->y2 = qnew->y2;
-                                                    qnew = nullptr, qend--;
-                                                    break;
-                                                }
+                                        if (qnew->follows(*q)) {
+                                            ledet = (q->x1 - q->x0) * (qnew->y1 - qnew->y0) - (q->y1 - q->y0) * (qnew->x1 - qnew->x0);
+                                            uedet = (q->x2 - q->x3) * (qnew->y2 - qnew->y3) - (q->y2 - q->y3) * (qnew->x2 - qnew->x3);
+                                            
+                                            if (std::abs(ledet) < 1e-3 && std::abs(uedet) < 1e-3) {
+                                                q->x1 = qnew->x1, q->y1 = qnew->y1;
+                                                q->x2 = qnew->x2, q->y2 = qnew->y2;
+                                                qnew = nullptr, qend--;
+                                                break;
+                                            } else if (std::abs(ledet) < 1e-3 && q->y0 == q->y3 && qnew->y1 == qnew->y2) {
+                                                q->x1 = qnew->x1, q->y1 = qnew->y1;
+                                                qnew = nullptr, qend--;
+                                                break;
+                                            } else if (std::abs(uedet) < 1e-3 && q->y0 == q->y3 && qnew->y1 == qnew->y2) {
+                                                q->x2 = qnew->x2, q->y2 = qnew->y2;
+                                                qnew = nullptr, qend--;
+                                                break;
                                             }
                                         }
                                     } while ((q = q->next));
