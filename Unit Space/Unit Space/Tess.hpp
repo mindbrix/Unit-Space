@@ -71,54 +71,9 @@ struct Intersection {
 };
 
 struct Quad {
-    Quad(Edge *le, Edge *ue, float lx, float ux) : next(nullptr), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
-    /*
-    bool merge(Quad *rq) {
-        if (y1 == y2 || rq->y0 == rq->y3)
-            return false;
-        if (! (y1 == rq->y0 && y2 == rq->y3))
-            return false;
-        if (le == rq->le && ue == rq->ue) {
-            x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
-            return true;
-        }
-        if (y0 == y3) {
-            if (rq->y1 == rq->y2) {
-                if (le == rq->le) {
-                    x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2, x3 = rq->x3, y3 = rq->y3;
-                    ue = rq->ue;
-                    return true;
-                } else if (ue == rq->ue) {
-                    x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
-                    le = rq->le;
-                    return true;
-                }
-            } else {
-                if (le == rq->le && (x2 - x0) * (rq->y2 - y2) - (y2 - y0) * (rq->x2 - x2) < 0) {
-                    x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2, x3 = rq->x3, y3 = rq->y3;
-                    ue = rq->ue;
-                    return true;
-                } else if (ue == rq->ue && (x1 - x0) * (rq->y1 - y1) - (y1 - y0) * (rq->x1 - x1) > 0) {
-                    x0 = x1, y0 = y1, x1 = rq->x1, y1 = rq->y1, x2 = rq->x2, y2 = rq->y2;
-                    le = rq->le;
-                    return true;
-                }
-            }
-        } else {
-            if (rq->y1 == rq->y2) {
-                if (le == rq->le) {
-                    x1 = rq->x1, y1 = rq->y1;
-                    return true;
-                } else if (ue == rq->ue && (x1 - x0) * (rq->y1 - y1) - (y1 - y0) * (rq->x1 - x1) > 0) {
-                    x2 = rq->x2, y2 = rq->y2;
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-     */
+    Quad(Edge *le, Edge *ue, float lx, float ux)
+     : next(nullptr), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
+   
     Quad *next;
     float x0, y0, x1, y1, x2, y2, x3, y3;
 };
