@@ -9,6 +9,7 @@
 
 struct Path {
     Path() {}
+    Path(bool evenOdd, RGBA8 color, vector<SubPath> subpaths) : _color(color), _evenOdd(evenOdd), _outerIndex(0), _subPaths(subpaths) {}
     Path(bool evenOdd, RGBA8 color) : _color(color), _evenOdd(evenOdd), _outerIndex(0) {}
     
     void addSubPath(SubPath& s) {

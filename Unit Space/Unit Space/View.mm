@@ -393,16 +393,9 @@ using namespace std;
     RGBA8 black(0, 0, 0, 255);
     RGBA8 alpha(255, 0, 0, 128);
     
-    SubPath triangle((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine);
-    SubPath lozenge((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
-    SubPath quad((float *)& _quad[0], (int)_quad.size(), SubPath::kLine);
-    
-    Path p0(false, red);
-    p0.addSubPath(triangle);
-    Path p1(true, red);
-    p1.addSubPath(lozenge);
-    Path p2(false, black);
-	p2.addSubPath(quad);
+    Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine) });
+    Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic) });
+    Path p2(false, black, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
 	
     Scene scene;
     if (self.pathBitmask & kPathBitmaskTriangle)
@@ -413,7 +406,6 @@ using namespace std;
     
     if (self.pathBitmask & kPathBitmaskQuad)
         scene.addPath(p2);
-    
     
     if (self.useDelaunay)
         _tess.triangulate(_mesh, scene, self.useMask);
@@ -588,6 +580,33 @@ using namespace std;
         }
     }
     if (_flags & 16) {
+        RGBA8 red(255, 0, 0, 255);
+        SubPath lozenge((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
+        Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine) });
+        Scene scene;
+        scene.addPath(p0);
+    
+        if (self.useDelaunay)
+            _tess.triangulate(_mesh, scene, self.useMask);
+        else
+            _libtess.triangulate(_mesh, scene, self.useMask);
+        
+        [self.metalLayer uploadMesh:_mesh];
+        
+        MeshState meshState;
+        meshState.hideCurves = !_showCurves;
+        meshState.hideTriangles = !_showTriangle;
+        meshState.showColors = _showColors;
+        meshState.showInterior = _showInterior;
+        
+        if (_mesh._triangles.size()) {
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            call.meshState = meshState;
+            call.type = _showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
+            call.state = uniforms;
+            call.state.CTM = AffineTransformConcat(_mesh._CTM, call.state.CTM);
+        }
     }
 }
 
