@@ -365,7 +365,7 @@ struct Tess {
         Edge *begin = edges.get(), *end = begin + edges.count(), *edge, *last, *e;
         
         Memory<float> xDivisions(edges.count() * 2);
-        float lx, *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division;
+        float lx, *divisions = xDivisions.get(), *dbegin = divisions, *dend = dbegin, *division, ledet, uedet;
         for (edge = begin; edge < end; edge++)
             *dend++ = edge->x0, *dend++ = edge->x1;
         sort(dbegin, dend);
@@ -382,7 +382,7 @@ struct Tess {
         Quad **qbegins = quadBegins.zero().get(), **qlasts = quadLasts.zero().get();
         
         Memory<Quad> activeQuads(edges.count() * 10);
-        Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q;
+        Quad *quads = activeQuads.get(), *qbegin = quads, *qend = qbegin, *q, *qnew;
         
         for (edge = begin, division = dbegin; division < dend; ) {
             lx = *division;
@@ -430,12 +430,37 @@ struct Tess {
                             flags = visibleFlags[i];
                             if (flags) {
                                 for (p = i * 64; flags >>= 1; p++) {}
-                                q = new (qend++) Quad(le->e, ue->e, le->ulx, lx);
+                                qnew = new (qend++) Quad(le->e, ue->e, le->ulx, lx);
                                 if (qbegins[p] == nullptr) {
-                                    qbegins[p] = qlasts[p] = q;
+                                    qbegins[p] = qlasts[p] = qnew;
                                 } else {
-                                    qlasts[p]->next = q;
-                                    qlasts[p] = q;
+                                    q = qbegins[p];
+                                    do {
+                                        if (q->x1 == qnew->x0 && q->y1 == qnew->y0) {
+                                            if (q->x2 == qnew->x3 && q->y2 == qnew->y3) {
+                                                ledet = (q->x1 - q->x0) * (qnew->y1 - qnew->y0) - (q->y1 - q->y0) * (qnew->x1 - qnew->x0);
+                                                uedet = (q->x2 - q->x3) * (qnew->y2 - qnew->y3) - (q->y2 - q->y3) * (qnew->x2 - qnew->x3);
+                                                
+                                                if (std::abs(ledet) < 1e-3 && std::abs(uedet) < 1e-3) {
+                                                    q->x1 = qnew->x1, q->y1 = qnew->y1;
+                                                    q->x2 = qnew->x2, q->y2 = qnew->y2;
+                                                    qnew = nullptr, qend--;
+                                                    break;
+                                                } else if (std::abs(ledet) < 1e-3 && q->y0 == q->y3 && qnew->y1 == qnew->y2) {
+                                                    q->x1 = qnew->x1, q->y1 = qnew->y1;
+                                                    qnew = nullptr, qend--;
+                                                    break;
+                                                } else if (std::abs(uedet) < 1e-3 && q->y0 == q->y3 && qnew->y1 == qnew->y2) {
+                                                    q->x2 = qnew->x2, q->y2 = qnew->y2;
+                                                    qnew = nullptr, qend--;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    } while ((q = q->next));
+                                    
+                                    if (qnew)
+                                        qlasts[p]->next = qnew, qlasts[p] = qnew;
                                 }
                                 break;
                             }
