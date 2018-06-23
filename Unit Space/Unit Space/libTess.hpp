@@ -35,6 +35,14 @@ struct libTess {
         path.update();
     }
     
+    static int countVertices(TESStesselator *src) {
+        int count = 0;
+        const int *elems = tessGetElements(src);
+        for (int nelems = tessGetElementCount(src), i = 0; i < nelems; i++)
+            count += elems[i * 2 + 1];
+        return count;
+    }
+    
     static void addContours(TESStesselator *dst, TESStesselator *src) {
         const float *verts = tessGetVertices(src);
         const int *elems = tessGetElements(src);
