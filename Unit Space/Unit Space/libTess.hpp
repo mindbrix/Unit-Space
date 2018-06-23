@@ -19,6 +19,10 @@ struct libTess {
     struct Edge {
         Edge() {}
         Edge(int base, int i, int npoints) : base((unsigned int)base), i((unsigned short int )i), npoints((unsigned short int )npoints) {}
+        inline int idx() { return base + i; }
+        inline int prev() { return base + (i + npoints - 1) % npoints; }
+        inline int next() { return base + (i + 1) % npoints; }
+        
         unsigned int base;
         unsigned short int i, npoints;
     };
@@ -176,11 +180,19 @@ struct libTess {
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
                         const int *indices = tessGetVertexIndices(dst);
+                        float x0, y0, x1, y1, x2, y2;
                         
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                             e0 = edges + indices[i0], e1 = edges + indices[i1], e2 = edges + indices[i2];
+                            
+                            x0 = points[e0->idx() * 2], y0 = points[e0->idx() * 2 + 1];
+                            x1 = points[e1->idx() * 2], y1 = points[e1->idx() * 2 + 1];
+                            x2 = points[e2->idx() * 2], y2 = points[e2->idx() * 2 + 1];
+                            
+                            x2 = points[e0->prev() * 2], y2 = points[e0->prev() * 2 + 1];
+                            x1 = points[e0->next() * 2], y1 = points[e0->next() * 2 + 1];
                             
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
                         }
