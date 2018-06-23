@@ -75,7 +75,7 @@ struct Quad {
      : next(nullptr), p(p), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
    
 //    inline bool follows(const Quad& other) const { return std::abs(x0 - other.x1) < 1e-3 && std::abs(y0 - other.y1) < 1e-3 && std::abs(x3 - other.x2) < 1e-3 && std::abs(y3 - other.y2) < 1e-3; }
-    inline bool follows(const Quad& other) const { return p == other.p && x0 == other.x1 && y0 == other.y1 && x3 == other.x2 && y3 == other.y2; }
+    inline bool follows(const Quad& other) const { return x0 == other.x1 && y0 == other.y1 && x3 == other.x2 && y3 == other.y2; }
     Quad *next;
     int p;
     float x0, y0, x1, y1, x2, y2, x3, y3;
@@ -395,7 +395,7 @@ struct Tess {
                                     if (merge) {
                                         q = qbegins[p];
                                         do {
-                                            if (qnew->follows(*q)) {
+                                            if (qnew->follows(*q) && qnew->p == q->p) {
                                                 ledet = (q->x1 - q->x0) * (qnew->y1 - qnew->y0) - (q->y1 - q->y0) * (qnew->x1 - qnew->x0);
                                                 uedet = (q->x2 - q->x3) * (qnew->y2 - qnew->y3) - (q->y2 - q->y3) * (qnew->x2 - qnew->x3);
                                                 
