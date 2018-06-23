@@ -56,12 +56,6 @@ struct libTess {
                 tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
     }
     
-    static void resolveSelfIntersections(TESStesselator *tess, TESStesselator *dst, Path& path) {
-        addContours(tess, path, false);
-        if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-            writeTessSubpaths(tess, dst, path);
-    }
-    
     static void resolveSelfIntersections(TESStesselator *tess, Path& path) {
         if (path._subPaths.size() == 1 && path._subPaths[0]._npoints == 3) {
             path.update();
@@ -143,8 +137,11 @@ struct libTess {
             maskPaths(tess, scene);
             writeTessTriangles(mesh, tess, scene);
         } else {
-            for (Path& path : scene._paths)
-                resolveSelfIntersections(tess, dst, path);
+            for (Path& path : scene._paths) {
+                addContours(tess, path, false);
+                if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+                    writeTessSubpaths(tess, dst, path);
+            }
             writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
     }
