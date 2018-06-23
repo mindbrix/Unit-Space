@@ -18,20 +18,6 @@ constexpr int kPolySize = 3;
 struct libTess {
     libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)), _dst(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
     
-    static void writeTessSubpaths(TESStesselator *tess, TESStesselator *dst, Path& path) {
-        const float *verts = tessGetVertices(tess);
-        const int *elems = tessGetElements(tess);
-        const int nelems = tessGetElementCount(tess);
-        
-        for (int i = 0; i < nelems; i++) {
-            int base = elems[i * 2], npoints = elems[i * 2 + 1];
-            const float *points = verts + base * 2;
-            
-            if (npoints > 2)
-                tessAddContour(dst, 2, points, kPointStride, npoints);
-        }
-    }
-    
     static void writeTessSubpaths(TESStesselator *tess, Path& path) {
         path._subPaths.resize(0);
         
@@ -47,6 +33,20 @@ struct libTess {
                 path._subPaths.emplace_back(points, npoints, SubPath::kLine);
         }
         path.update();
+    }
+    
+    static void addContours(TESStesselator *dst, TESStesselator *src) {
+        const float *verts = tessGetVertices(src);
+        const int *elems = tessGetElements(src);
+        const int nelems = tessGetElementCount(src);
+        
+        for (int i = 0; i < nelems; i++) {
+            int base = elems[i * 2], npoints = elems[i * 2 + 1];
+            const float *points = verts + base * 2;
+            
+            if (npoints > 2)
+                tessAddContour(dst, 2, points, kPointStride, npoints);
+        }
     }
     
     static void addContours(TESStesselator *tess, Path& path, bool reverse) {
@@ -140,7 +140,7 @@ struct libTess {
             for (Path& path : scene._paths) {
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
-                    writeTessSubpaths(tess, dst, path);
+                    addContours(dst, tess);
             }
             writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
