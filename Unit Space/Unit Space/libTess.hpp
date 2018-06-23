@@ -72,29 +72,14 @@ struct libTess {
             writeTessSubpaths(tess, path);
         
     }
-    static void addMaskContours(TESStesselator *tess, Path& path, bool reversed) {
-        bool isPositive = path._subPaths[path._outerIndex]._area > 0;
-        addContours(tess, path, reversed && isPositive);
-    }
-    
     static void maskPath(TESStesselator *tess, Path& path, Path& mask) {
         bool isPositive = path._subPaths[path._outerIndex]._area > 0;
         bool maskIsPositive = mask._subPaths[mask._outerIndex]._area > 0;
-        
-        for (SubPath& subPath : path._subPaths) {
-            tessSetOption(tess, TESS_REVERSE_CONTOURS, !isPositive);
-            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        }
-        
-        for (SubPath& subPath : mask._subPaths) {
-            tessSetOption(tess, TESS_REVERSE_CONTOURS, maskIsPositive);
-            tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        }
-        
+        addContours(tess, path, !isPositive);
+        addContours(tess, mask, maskIsPositive);
         if (tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess, path);
     }
-    
     
     void maskPaths(TESStesselator *tess, Scene& scene) {
         for (Path& path : scene._paths)
