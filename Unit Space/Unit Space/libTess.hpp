@@ -16,6 +16,13 @@ constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
 
 struct libTess {
+    struct Edge {
+        Edge() {}
+        Edge(int base, int i, int npoints) : base((unsigned int)base), i((unsigned short int )i), npoints((unsigned short int )npoints) {}
+        unsigned int base;
+        unsigned short int i, npoints;
+    };
+    
     libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)), _dst(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
     
     static void writeTessSubpaths(TESStesselator *tess, Path& path) {
@@ -42,7 +49,16 @@ struct libTess {
             count += elems[i * 2 + 1];
         return count;
     }
-    
+    static Edge *writeEdges(Edge *dst, TESStesselator *src) {
+        const int *elems = tessGetElements(src);
+        for (int nelems = tessGetElementCount(src), i = 0; i < nelems; i++) {
+            int base = elems[i * 2], npoints = elems[i * 2 + 1];
+            if (npoints > 2)
+                for (int j = 0; j < npoints; j++)
+                    new (dst++) Edge(base, j, npoints);
+        }
+        return dst;
+    }
     static void addContours(TESStesselator *dst, TESStesselator *src) {
         const float *verts = tessGetVertices(src);
         const int *elems = tessGetElements(src);
@@ -147,8 +163,13 @@ struct libTess {
         } else {
             for (Path& path : scene._paths) {
                 addContours(tess, path, false);
-                if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+                if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+                    int count = countVertices(tess);
+                    Edge edges[count];
+                    writeEdges(edges, tess);
+                    
                     addContours(dst, tess);
+                }
             }
             writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
