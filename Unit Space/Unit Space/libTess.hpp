@@ -49,14 +49,17 @@ struct libTess {
         path.update();
     }
     
+    static void addContours(TESStesselator *tess, Path& path, bool reverse) {
+        tessSetOption(tess, TESS_REVERSE_CONTOURS, reverse ? 1 : 0);
+        for (SubPath& s : path._subPaths)
+            if (s._npoints > 2)
+                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+    }
+    
     static void resolveSelfIntersections(TESStesselator *tess, TESStesselator *dst, Path& path) {
-        for (SubPath& subPath : path._subPaths)
-            if (subPath._npoints > 2)
-                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        
+        addContours(tess, path, false);
         if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess, dst, path);
-        
     }
     
     static void resolveSelfIntersections(TESStesselator *tess, Path& path) {
@@ -64,20 +67,14 @@ struct libTess {
             path.update();
             return;
         }
-        for (SubPath& subPath : path._subPaths)
-            if (subPath._npoints > 2)
-                tessAddContour(tess, 2, subPath._points.get(), kPointStride, subPath._npoints);
-        
+        addContours(tess, path, false);
         if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess, path);
         
     }
     static void addMaskContours(TESStesselator *tess, Path& path, bool reversed) {
         bool isPositive = path._subPaths[path._outerIndex]._area > 0;
-        tessSetOption(tess, TESS_REVERSE_CONTOURS, reversed && isPositive);
-        for (SubPath& s : path._subPaths)
-            if (s._npoints > 2)
-                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+        addContours(tess, path, reversed && isPositive);
     }
     
     static void maskPath(TESStesselator *tess, Path& path, Path& mask) {
@@ -158,7 +155,7 @@ struct libTess {
         
         Tess::writeCurves(mesh, scene);
         if (useMasking) {
-//            maskPaths(tess, scene);
+            maskPaths(tess, scene);
             writeTessTriangles(mesh, tess, scene);
         } else {
             for (Path& path : scene._paths)
