@@ -102,21 +102,28 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float hu = area / length(p2 - p1), hv = area / length(p0 - p2), hw = area / length(p1 - p0);
     float d = 1.0;
     float du = min(d / hu, 0.3333333333), dv = min(d / hv, 0.3333333333), dw = min(d / hw, 0.3333333333);
-    
     float u = select(du, 1.0 - dv - dw, vid == 0), v = select(dv, 1.0 - du - dw, vid == 1), w = 1.0 - u - v;
+    
+    /*
+    float2 point = select(select(p2, p1, vid == 1), p0, vid == 0);
+    float2 prevPoint = select(select(p1, p0, vid == 1), p2, vid == 0);
+    float2 nextPoint = select(select(p0, p2, vid == 1), p1, vid == 0);
+    float2 _v0n = normalize(point - prevPoint), _v1n = normalize(nextPoint - point);
+    float2 _tangent = normalize(_v0n + _v1n);
+    float2 _miter = { _tangent.y, -_tangent.x };
+    float2 _normal = { _v0n.y, -_v0n.x };
+    float miterLength = 1.0 / max(1e-3, dot(_miter, _normal));
+    point += _miter * miterLength * -10.0;
+    
+    float area = abs((p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x));
+    float u = abs((point.x - p2.x) * (p1.y - point.y) - (point.y - p2.y) * (p1.x - point.x)) / area;
+    float v = abs((point.x - p0.x) * (p2.y - point.y) - (point.y - p0.y) * (p2.x - point.x)) / area;
+//    float u = min(0.33333333, abs((point.x - p2.x) * (p1.y - point.y) - (point.y - p2.y) * (p1.x - point.x)) / area);
+//    float v = min(0.33333333, abs((point.x - p0.x) * (p2.y - point.y) - (point.y - p0.y) * (p2.x - point.x)) / area);
+    float w = 1.0 - u - v;
+    */
     float2 devicePoint = u * p0 + v * p1 + w * p2;
-    
-//    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
-//    float2 prevPoint = select(select(p1, p0, vid == 1), p2, vid == 0);
-//    float2 nextPoint = select(select(p0, p2, vid == 1), p1, vid == 0);
-//    float2 _v0n = normalize(devicePoint - prevPoint), _v1n = normalize(nextPoint - devicePoint);
-//    float2 _tangent = normalize(_v0n + _v1n);
-//    float2 _miter = { _tangent.y, -_tangent.x };
-//    float2 _normal = { _v0n.y, -_v0n.x };
-//    float miterLength = 1.0 / max(1e-3, dot(_miter, _normal));
-//    devicePoint += _miter * miterLength * -10.0;
-    
-    
+//    devicePoint = point;
 //    device Triangle &triangle = triangles[iid - biid];
 //    int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
 //    float2 devicePoint = {
