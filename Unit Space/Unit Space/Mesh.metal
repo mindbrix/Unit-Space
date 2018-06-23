@@ -77,11 +77,34 @@ struct InteriorVertex
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    device Triangle &triangle = triangles[iid - biid];
+//    device Triangle &triangle = triangles[iid - biid];
+//
+//    Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
+//
+//    constant AffineTransform& ctm = state.CTM;
+//
+//    float2 p0 = {
+//        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
+//        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
+//    };
+//
+//    float2 p1 = {
+//        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
+//        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
+//    };
+//
+//    float2 p2 = {
+//        _v2.x * ctm.a + _v2.y * ctm.c + ctm.tx,
+//        _v2.x * ctm.b + _v2.y * ctm.d + ctm.ty
+//    };
+//
+//    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
+    device Triangle &triangle = triangles[iid - biid];
+
     int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
     Vector p = points[i];
-    
+
     float2 devicePoint = {
         p.x * state.CTM.a + p.y * state.CTM.c + state.CTM.tx,
         p.x * state.CTM.b + p.y * state.CTM.d + state.CTM.ty
