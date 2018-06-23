@@ -161,17 +161,35 @@ struct libTess {
             maskPaths(tess, scene);
             writeTessTriangles(mesh, tess, scene);
         } else {
+            tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             for (Path& path : scene._paths) {
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                     int count = countVertices(tess);
-                    Edge edges[count];
+                    Edge edges[count], *e0, *e1, *e2;
                     writeEdges(edges, tess);
                     
                     addContours(dst, tess);
+                    if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                        float *points = (float *)tessGetVertices(dst);
+                        int npoints = tessGetVertexCount(dst);
+                        const int nelems = tessGetElementCount(dst);
+                        const TESSindex *polygon = tessGetElements(dst);
+                        const int *indices = tessGetVertexIndices(dst);
+                        
+                        int pi = (int)mesh._points.size(), i0, i1, i2;
+                        for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                            i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
+                            e0 = edges + indices[i0], e1 = edges + indices[i1], e2 = edges + indices[i2];
+                            
+                            mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
+                        }
+                        for (int i = 0; i < npoints; i++)
+                            mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
+                    }
                 }
             }
-            writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
+//            writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
     }
     
