@@ -77,38 +77,52 @@ struct InteriorVertex
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-//    device Triangle &triangle = triangles[iid - biid];
-//
-//    Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
-//
-//    constant AffineTransform& ctm = state.CTM;
-//
-//    float2 p0 = {
-//        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
-//        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
-//    };
-//
-//    float2 p1 = {
-//        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
-//        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
-//    };
-//
-//    float2 p2 = {
-//        _v2.x * ctm.a + _v2.y * ctm.c + ctm.tx,
-//        _v2.x * ctm.b + _v2.y * ctm.d + ctm.ty
-//    };
-//
-//    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
-    
     device Triangle &triangle = triangles[iid - biid];
 
-    int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
-    Vector p = points[i];
+    Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
 
-    float2 devicePoint = {
-        p.x * state.CTM.a + p.y * state.CTM.c + state.CTM.tx,
-        p.x * state.CTM.b + p.y * state.CTM.d + state.CTM.ty
+    constant AffineTransform& ctm = state.CTM;
+
+    float2 p0 = {
+        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
+        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
     };
+
+    float2 p1 = {
+        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
+        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
+    };
+
+    float2 p2 = {
+        _v2.x * ctm.a + _v2.y * ctm.c + ctm.tx,
+        _v2.x * ctm.b + _v2.y * ctm.d + ctm.ty
+    };
+
+    float area = abs((p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x));
+    float hu = area / length(p2 - p1), hv = area / length(p0 - p2), hw = area / length(p1 - p0);
+    float d = 1.0;
+    float du = min(d / hu, 0.3333333333), dv = min(d / hv, 0.3333333333), dw = min(d / hw, 0.3333333333);
+    
+    float u = select(du, 1.0 - dv - dw, vid == 0), v = select(dv, 1.0 - du - dw, vid == 1), w = 1.0 - u - v;
+    float2 devicePoint = u * p0 + v * p1 + w * p2;
+    
+//    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
+//    float2 prevPoint = select(select(p1, p0, vid == 1), p2, vid == 0);
+//    float2 nextPoint = select(select(p0, p2, vid == 1), p1, vid == 0);
+//    float2 _v0n = normalize(devicePoint - prevPoint), _v1n = normalize(nextPoint - devicePoint);
+//    float2 _tangent = normalize(_v0n + _v1n);
+//    float2 _miter = { _tangent.y, -_tangent.x };
+//    float2 _normal = { _v0n.y, -_v0n.x };
+//    float miterLength = 1.0 / max(1e-3, dot(_miter, _normal));
+//    devicePoint += _miter * miterLength * -10.0;
+    
+    
+//    device Triangle &triangle = triangles[iid - biid];
+//    int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
+//    float2 devicePoint = {
+//        points[i].x * state.CTM.a + points[i].y * state.CTM.c + state.CTM.tx,
+//        points[i].x * state.CTM.b + points[i].y * state.CTM.d + state.CTM.ty
+//    };
     
     InteriorVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);

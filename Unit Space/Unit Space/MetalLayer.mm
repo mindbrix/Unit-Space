@@ -258,12 +258,15 @@
                                       indexBuffer:_indexBuffer
                                 indexBufferOffset:0
                                     instanceCount:instanceCount];
-        else
+        else {
+            [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+            [commandEncoder setCullMode:MTLCullModeBack];
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
                                vertexCount:3
                              instanceCount:instanceCount
                               baseInstance:0];
+        }
     }
     
     [commandEncoder endEncoding];
