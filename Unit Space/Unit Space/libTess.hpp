@@ -46,13 +46,6 @@ struct libTess {
         path.update();
     }
     
-    static int countVertices(TESStesselator *src) {
-        int count = 0;
-        const int *elems = tessGetElements(src);
-        for (int nelems = tessGetElementCount(src), i = 0; i < nelems; i++)
-            count += elems[i * 2 + 1];
-        return count;
-    }
     static Edge *writeEdges(Edge *dst, TESStesselator *src) {
         const int *elems = tessGetElements(src);
         for (int nelems = tessGetElementCount(src), i = 0; i < nelems; i++) {
@@ -169,7 +162,8 @@ struct libTess {
             for (Path& path : scene._paths) {
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-                    int count = countVertices(tess);
+                    int count = tessGetVertexCount(tess);
+                    const float *edgePoints = tessGetVertices(tess);
                     Edge edges[count], *e0, *e1, *e2;
                     writeEdges(edges, tess);
                     
@@ -177,22 +171,30 @@ struct libTess {
                     if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                         float *points = (float *)tessGetVertices(dst);
                         int npoints = tessGetVertexCount(dst);
+                        assert(npoints <= count);
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
                         const int *indices = tessGetVertexIndices(dst);
-                        float x0, y0, x1, y1, x2, y2;
+                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny;
                         
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                             e0 = edges + indices[i0], e1 = edges + indices[i1], e2 = edges + indices[i2];
                             
-                            x0 = points[e0->idx() * 2], y0 = points[e0->idx() * 2 + 1];
-                            x1 = points[e1->idx() * 2], y1 = points[e1->idx() * 2 + 1];
-                            x2 = points[e2->idx() * 2], y2 = points[e2->idx() * 2 + 1];
+                            px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
+                            x0 = edgePoints[e0->idx() * 2], y0 = edgePoints[e0->idx() * 2 + 1];
+                            x1 = edgePoints[e1->idx() * 2], y1 = edgePoints[e1->idx() * 2 + 1];
+                            x2 = edgePoints[e2->idx() * 2], y2 = edgePoints[e2->idx() * 2 + 1];
+                            nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
                             
-                            x2 = points[e0->prev() * 2], y2 = points[e0->prev() * 2 + 1];
-                            x1 = points[e0->next() * 2], y1 = points[e0->next() * 2 + 1];
+                            px = edgePoints[e1->prev() * 2], py = edgePoints[e1->prev() * 2 + 1];
+                            nx = edgePoints[e1->next() * 2], ny = edgePoints[e1->next() * 2 + 1];
+                            
+                            px = edgePoints[e2->prev() * 2], py = edgePoints[e2->prev() * 2 + 1];
+                            nx = edgePoints[e2->next() * 2], ny = edgePoints[e2->next() * 2 + 1];
+                            
+                            
                             
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
                         }
