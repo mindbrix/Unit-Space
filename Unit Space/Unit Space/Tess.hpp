@@ -71,12 +71,13 @@ struct Intersection {
 };
 
 struct Quad {
-    Quad(Edge *le, Edge *ue, float lx, float ux)
-     : next(nullptr), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
+    Quad(Edge *le, Edge *ue, float lx, float ux, int p)
+     : next(nullptr), p(p), x0(lx), y0(le->y(x0)), x1(ux), y1(le->y(x1)), x2(ux), y2(ue->y(x2)), x3(lx), y3(ue->y(x3)) {}
    
 //    inline bool follows(const Quad& other) const { return std::abs(x0 - other.x1) < 1e-3 && std::abs(y0 - other.y1) < 1e-3 && std::abs(x3 - other.x2) < 1e-3 && std::abs(y3 - other.y2) < 1e-3; }
     inline bool follows(const Quad& other) const { return x0 == other.x1 && y0 == other.y1 && x3 == other.x2 && y3 == other.y2; }
     Quad *next;
+    int p;
     float x0, y0, x1, y1, x2, y2, x3, y3;
 };
 
@@ -387,7 +388,7 @@ struct Tess {
                             flags = visibleFlags[i];
                             if (flags) {
                                 for (p = i * 64; flags >>= 1; p++) {}
-                                qnew = new (qend++) Quad(le->e, ue->e, le->ulx, lx);
+                                qnew = new (qend++) Quad(le->e, ue->e, le->ulx, lx, p);
                                 if (qbegins[p] == nullptr) {
                                     qbegins[p] = qlasts[p] = qnew;
                                 } else {
@@ -445,7 +446,7 @@ struct Tess {
         for (p = 0; p < scene._paths.size(); p++)
             if ((q = qbegins[p]))
                 do {
-                    writeQuad(mesh, q, p);
+                    writeQuad(mesh, q, q->p);
                 } while ((q = q->next));
     }
 
