@@ -332,7 +332,7 @@ struct Tess {
         ActiveEdge *actives = activeEdges.get(), *abegin = actives, *aend = abegin, *a, *asrc, *adst, *le, *ue;
         
         Memory<int> pathWindings(scene._paths.size());
-        int i, p, *windings = pathWindings.zero().get();
+        int i, p, pv, *windings = pathWindings.zero().get();
         
         uint64_t flags, nmasks = scene._paths.size() / 64 + 1, visibleFlags[nmasks];
         
@@ -384,11 +384,11 @@ struct Tess {
                 
                 if (le->triangulate && ue->triangulate) {
                     if (le->ulx >= ue->e->lx()) {
-                        for (p = -1, i = (int)nmasks - 1; i >= 0; i--) {
+                        for (i = (int)nmasks - 1; i >= 0; i--) {
                             flags = visibleFlags[i];
                             if (flags) {
-                                for (p = i * 64; flags >>= 1; p++) {}
-                                qnew = new (qend++) Quad(le->e, ue->e, le->ulx, lx, p);
+                                for (pv = i * 64; flags >>= 1; pv++) {}
+                                qnew = new (qend++) Quad(le->e, ue->e, le->ulx, lx, pv);
                                 if (qbegins[p] == nullptr) {
                                     qbegins[p] = qlasts[p] = qnew;
                                 } else {
