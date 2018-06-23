@@ -120,8 +120,8 @@ struct libTess {
         scene.updateNpoints();
     }
     
-    static void writeTriangles(Mesh& mesh, TESStesselator *tess, int windingRule, int p, float scale, float tx, float ty) {
-        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 0);
+    static void writeTriangles(Mesh& mesh, TESStesselator *tess, int CDT, int windingRule, int p, float scale, float tx, float ty) {
+        tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, CDT);
         if (tessTesselate(tess, windingRule, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
             float *points = (float *)tessGetVertices(tess);
             int npoints = tessGetVertexCount(tess);
@@ -141,7 +141,7 @@ struct libTess {
         
         for (SubPath& s : path._subPaths)
             tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-        writeTriangles(mesh, tess, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
+        writeTriangles(mesh, tess, 1, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
     }
     
     static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
@@ -158,12 +158,12 @@ struct libTess {
         
         Tess::writeCurves(mesh, scene);
         if (useMasking) {
-            maskPaths(tess, scene);
+//            maskPaths(tess, scene);
             writeTessTriangles(mesh, tess, scene);
         } else {
             for (Path& path : scene._paths)
                 resolveSelfIntersections(tess, dst, path);
-            writeTriangles(mesh, dst, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
+            writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
     }
     
