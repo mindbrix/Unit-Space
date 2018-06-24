@@ -63,6 +63,26 @@ static float pointsSignedArea(const float *begin, const float *end, size_t strid
     return sum * 0.5;
 }
 
+static Vector miterVector(float x, float y, float px, float py, float nx, float ny) {
+    constexpr float limit = 1e-3;
+    float vx0, vy0, vx1, vy1, len0, len1;
+    float nx0, ny0, nx1, ny1;
+    float tanx, tany, tanlen;
+    float mx, my, normx, normy, dot;
+    vx0 = x - px, vy0 = y - py, vx1 = nx - x, vy1 = ny - y;
+    len0 = std::sqrt(vx0 * vx0 + vy0 * vy0), len1 = std::sqrt(vx1 * vx1 + vy1 * vy1);
+    nx0 = vx0 / len0, ny0 = vy0 / len0;
+    nx1 = vx1 / len1, ny1 = vy1 / len1;
+    tanx = nx0 + nx1, tany = ny0 + ny1;
+    tanlen = std::sqrt(tanx * tanx + tany * tany);
+    tanx /= tanlen, tany /= tanlen;
+    mx = tany, my = - tanx;
+    normx = ny0, normy = -nx0;
+    dot = mx * normx + my * normy;
+    dot = dot > limit ? dot : limit;
+    return { mx / dot, my / dot };
+}
+
 // http://www.codercorner.com/RadixSortRevisited.htm
 template<typename T>
 static void radixSort(T *out, T *in, int n, int shift) {

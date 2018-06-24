@@ -175,8 +175,8 @@ struct libTess {
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
                         const int *indices = tessGetVertexIndices(dst);
-                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny;
-                        
+                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny, x, y;
+                        bool left;
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
@@ -188,11 +188,22 @@ struct libTess {
                             x2 = edgePoints[e2->idx() * 2], y2 = edgePoints[e2->idx() * 2 + 1];
                             nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
                             
+                            if (x1 != px && y1 != py && x1 != nx && y1 != ny)
+                                x = x1, y = y1;
+                            else
+                                x = x2, y = y2;
+                            
+                            left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
+                            
+                            Vector miter = miterVector(x0, y0, px, py, nx, ny);
+                            
                             px = edgePoints[e1->prev() * 2], py = edgePoints[e1->prev() * 2 + 1];
                             nx = edgePoints[e1->next() * 2], ny = edgePoints[e1->next() * 2 + 1];
+                            miter = miterVector(x1, y1, px, py, nx, ny);
                             
                             px = edgePoints[e2->prev() * 2], py = edgePoints[e2->prev() * 2 + 1];
                             nx = edgePoints[e2->next() * 2], ny = edgePoints[e2->next() * 2 + 1];
+                            miter = miterVector(x2, y2, px, py, nx, ny);
                             
                             
                             
