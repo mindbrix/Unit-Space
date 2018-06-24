@@ -226,6 +226,10 @@ struct libTess {
                             nx = edgePoints[e2->next() * 2], ny = edgePoints[e2->next() * 2 + 1];
                             m2 = miterVector(x2, y2, px, py, nx, ny, left);
                             
+                            m0 = miterVector(x0, y0, x2, y2, x1, y1, true);
+                            m1 = miterVector(x1, y1, x0, y0, x2, y2, true);
+                            m2 = miterVector(x2, y2, x1, y1, x0, y0, true);
+                            
                             t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                             tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
@@ -233,9 +237,9 @@ struct libTess {
                             
                             area = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
                             if (std::abs(area) > 1e-1) {
-                                px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
-                                nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
-                                m0 = miterVector(x0, y0, px, py, nx, ny, left);
+//                                px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
+//                                nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
+//                                m0 = miterVector(x0, y0, px, py, nx, ny, left);
                                 t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             }
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
