@@ -288,6 +288,33 @@
 
 #pragma mark - Public
 
+- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms showEdges:(BOOL)showEdges{
+    if (mesh._triangles.size()) {
+        calls.emplace_back();
+        Call& call = calls.back();
+        call.meshState = meshState;
+        call.type = showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
+        call.state = uniforms;
+        call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
+    }
+    
+    if (mesh._concaveCurves.size()) {
+        calls.emplace_back();
+        Call& call = calls.back();
+        call.meshState = meshState;
+        call.type = kCallTypeMeshConcaveCurves;
+        call.state = uniforms;
+    }
+    
+    if (mesh._curves.size()) {
+        calls.emplace_back();
+        Call& call = calls.back();
+        call.meshState = meshState;
+        call.type = kCallTypeMeshCurves;
+        call.state = uniforms;
+    }
+}
+
 - (void)uploadMesh:(Mesh &)mesh {
     _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
                                              length:mesh._colors.size() * sizeof(RGBA8)
