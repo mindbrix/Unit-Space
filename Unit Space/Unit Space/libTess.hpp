@@ -207,9 +207,6 @@ struct libTess {
                                 }
                             }
                             px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
-                            x0 = edgePoints[e0->idx() * 2], y0 = edgePoints[e0->idx() * 2 + 1];
-                            x1 = edgePoints[e1->idx() * 2], y1 = edgePoints[e1->idx() * 2 + 1];
-                            x2 = edgePoints[e2->idx() * 2], y2 = edgePoints[e2->idx() * 2 + 1];
                             nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
                             
                             if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
