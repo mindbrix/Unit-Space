@@ -175,7 +175,9 @@ struct libTess {
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
                         const int *indices = tessGetVertexIndices(dst);
-                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny, x, y;
+                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny, x, y, t;
+                        Vector m0, m1, m2;
+                        
                         bool left;
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
@@ -195,17 +197,17 @@ struct libTess {
                             
                             left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
                             
-                            Vector miter = miterVector(x0, y0, px, py, nx, ny);
+                            m0 = miterVector(x0, y0, px, py, nx, ny, left);
                             
                             px = edgePoints[e1->prev() * 2], py = edgePoints[e1->prev() * 2 + 1];
                             nx = edgePoints[e1->next() * 2], ny = edgePoints[e1->next() * 2 + 1];
-                            miter = miterVector(x1, y1, px, py, nx, ny);
+                            m1 = miterVector(x1, y1, px, py, nx, ny, left);
                             
                             px = edgePoints[e2->prev() * 2], py = edgePoints[e2->prev() * 2 + 1];
                             nx = edgePoints[e2->next() * 2], ny = edgePoints[e2->next() * 2 + 1];
-                            miter = miterVector(x2, y2, px, py, nx, ny);
+                            m2 = miterVector(x2, y2, px, py, nx, ny, left);
                             
-                            
+                            t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
                         }
