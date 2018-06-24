@@ -22,7 +22,8 @@ struct libTess {
         inline int idx() { return base + i; }
         inline int prev() { return base + (i + npoints - 1) % npoints; }
         inline int next() { return base + (i + 1) % npoints; }
-        
+        inline bool operator< (const Edge& other) const     { return x < other.x || (x == other.x && y < other.y); }
+        float x, y;
         unsigned int base;
         unsigned short int i, npoints;
     };
@@ -46,17 +47,7 @@ struct libTess {
         path.update();
     }
     
-    static Edge *writeEdges(Edge *dst, TESStesselator *src) {
-        const int *elems = tessGetElements(src);
-        for (int nelems = tessGetElementCount(src), i = 0; i < nelems; i++) {
-            int base = elems[i * 2], npoints = elems[i * 2 + 1];
-            if (npoints > 2)
-                for (int j = 0; j < npoints; j++)
-                    new (dst++) Edge(base, j, npoints);
-        }
-        return dst;
-    }
-    static void addContours(TESStesselator *dst, TESStesselator *src) {
+    static void addContours(TESStesselator *dst, TESStesselator *src, Edge *edge) {
         const float *verts = tessGetVertices(src);
         const int *elems = tessGetElements(src);
         const int nelems = tessGetElementCount(src);
@@ -65,8 +56,12 @@ struct libTess {
             int base = elems[i * 2], npoints = elems[i * 2 + 1];
             const float *points = verts + base * 2;
             
-            if (npoints > 2)
+            if (npoints > 2) {
                 tessAddContour(dst, 2, points, kPointStride, npoints);
+                if (edge)
+                    for (int j = 0; j < npoints; j++)
+                        new (edge++) Edge(base, j, npoints);
+            }
         }
     }
     
@@ -165,9 +160,7 @@ struct libTess {
                     int count = tessGetVertexCount(tess);
                     const float *edgePoints = tessGetVertices(tess);
                     Edge edges[count], *e0, *e1, *e2;
-                    writeEdges(edges, tess);
-                    
-                    addContours(dst, tess);
+                    addContours(dst, tess, edges);
                     if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                         float *points = (float *)tessGetVertices(dst);
                         int npoints = tessGetVertexCount(dst);
@@ -175,14 +168,16 @@ struct libTess {
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
                         const int *indices = tessGetVertexIndices(dst);
-                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny, x, y, t;
+                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny, x, y, t, area;
+                        float tx0, ty0, tx1, ty1, tx2, ty2;
                         Vector m0, m1, m2;
                         
                         bool left;
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
-                            e0 = edges + indices[i0], e1 = edges + indices[i1], e2 = edges + indices[i2];
+                            e0 = edges + i0, e1 = edges + i1, e2 = edges + i2;
+//                            e0 = edges + indices[i0], e1 = edges + indices[i1], e2 = edges + indices[i2];
                             
                             px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
                             x0 = edgePoints[e0->idx() * 2], y0 = edgePoints[e0->idx() * 2 + 1];
@@ -190,7 +185,7 @@ struct libTess {
                             x2 = edgePoints[e2->idx() * 2], y2 = edgePoints[e2->idx() * 2 + 1];
                             nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
                             
-                            if (x1 != px && y1 != py && x1 != nx && y1 != ny)
+                            if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
                                 x = x1, y = y1;
                             else
                                 x = x2, y = y2;
@@ -208,7 +203,17 @@ struct libTess {
                             m2 = miterVector(x2, y2, px, py, nx, ny, left);
                             
                             t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
+                            tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
+                            tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
+                            tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
                             
+                            area = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
+                            if (std::abs(area) > 1e-1) {
+                                px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
+                                nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
+                                m0 = miterVector(x0, y0, px, py, nx, ny, left);
+                                t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
+                            }
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
                         }
                         for (int i = 0; i < npoints; i++)
