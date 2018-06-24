@@ -19,10 +19,10 @@ struct libTess {
     struct Edge {
         Edge() {}
         Edge(float x, float y, int base, int i, int npoints) : x(x), y(y), base((unsigned int)base), i((unsigned short int )i), npoints((unsigned short int )npoints) {}
-        inline int idx() { return base + i; }
-        inline int prev() { return base + (i + npoints - 1) % npoints; }
-        inline int next() { return base + (i + 1) % npoints; }
-        inline bool operator< (const Edge& other) const     { return x < other.x || (x == other.x && y < other.y); }
+        inline int idx()                                { return base + i; }
+        inline int prev()                               { return base + (i + npoints - 1) % npoints; }
+        inline int next()                               { return base + (i + 1) % npoints; }
+        inline bool operator< (const Edge& other) const { return x < other.x || (x == other.x && y < other.y); }
         float x, y;
         unsigned int base;
         unsigned short int i, npoints;
@@ -51,15 +51,16 @@ struct libTess {
         const float *verts = tessGetVertices(src);
         const int *elems = tessGetElements(src);
         const int nelems = tessGetElementCount(src);
+        int base, npoints, i, j;
         
-        for (int i = 0; i < nelems; i++) {
-            int base = elems[i * 2], npoints = elems[i * 2 + 1];
+        for (i = 0; i < nelems; i++) {
+            base = elems[i * 2], npoints = elems[i * 2 + 1];
             const float *points = verts + base * 2;
             
             if (npoints > 2) {
                 tessAddContour(dst, 2, points, kPointStride, npoints);
                 if (edge)
-                    for (int j = 0; j < npoints; j++)
+                    for (j = 0; j < npoints; j++)
                         new (edge++) Edge(points[j * 2], points[j * 2 + 1], base, j, npoints);
             }
         }
@@ -159,9 +160,9 @@ struct libTess {
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                     int count = tessGetVertexCount(tess);
                     const float *edgePoints = tessGetVertices(tess);
-                    Edge edges[count], *e0, *e1, *e2, e;
+                    Edge edges[count], *eend = edges + count, *e0, *e1, *e2, e;
                     addContours(dst, tess, edges);
-                    sort(edges, edges + count);
+                    sort(edges, eend);
                     if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                         float *points = (float *)tessGetVertices(dst);
                         int npoints = tessGetVertexCount(dst);
@@ -176,20 +177,35 @@ struct libTess {
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                             x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
+                            x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
+                            x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
                             new (&e) Edge(x0, y0, 0, 0, 0);
-                            e0 = lower_bound(edges, edges + count, e);
+                            e0 = lower_bound(edges, eend, e);
                             assert(e0->x == x0 && e0->y == y0);
                             
-                            x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
                             new (&e) Edge(x1, y1, 0, 0, 0);
-                            e1 = lower_bound(edges, edges + count, e);
+                            e1 = lower_bound(edges, eend, e);
                             assert(e1->x == x1 && e1->y == y1);
                             
-                            x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
                             new (&e) Edge(x2, y2, 0, 0, 0);
-                            e2 = lower_bound(edges, edges + count, e);
+                            e2 = lower_bound(edges, eend, e);
                             assert(e2->x == x2 && e2->y == y2);
                             
+                            if (e0->base != e1->base || e1->base != e2->base || e2->base != e0->base) {
+                                if (e0->base == e1->base) {
+                                    while (e2 < eend - 1 && (e2 + 1)->x == x2 && (e2 + 1)->y == y2)
+                                        if ((++e2)->base == e0->base)
+                                            break;
+                                } else if (e1->base == e2->base) {
+                                    while (e0 < eend - 1 && (e0 + 1)->x == x0 && (e0 + 1)->y == y0)
+                                        if ((++e0)->base == e1->base)
+                                            break;
+                                } else if (e2->base == e0->base) {
+                                    while (e1 < eend - 1 && (e1 + 1)->x == x1 && (e1 + 1)->y == y1)
+                                        if ((++e1)->base == e2->base)
+                                            break;
+                                }
+                            }
                             px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
                             x0 = edgePoints[e0->idx() * 2], y0 = edgePoints[e0->idx() * 2 + 1];
                             x1 = edgePoints[e1->idx() * 2], y1 = edgePoints[e1->idx() * 2 + 1];
