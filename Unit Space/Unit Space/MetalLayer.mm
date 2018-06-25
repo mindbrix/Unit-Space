@@ -183,7 +183,7 @@
     descriptor.depthAttachment.clearDepth = 0.5;
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
-    [commandEncoder setDepthStencilState:_depthState];
+//    [commandEncoder setDepthStencilState:_depthState];
     
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
@@ -278,15 +278,12 @@
                                       indexBuffer:_indexBuffer
                                 indexBufferOffset:0
                                     instanceCount:instanceCount];
-        else {
-            [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
-            [commandEncoder setCullMode:MTLCullModeBack];
+        else
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
                                vertexCount:3
                              instanceCount:instanceCount
                               baseInstance:0];
-        }
     }
     
     [commandEncoder endEncoding];
