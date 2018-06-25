@@ -40,6 +40,10 @@ struct Path {
             for (points = subPath._points.get(), i = 0; i < subPath._npoints; i++)
                 *hp++ = *points++ - _bounds.lx, *hp++ = *points++ - _bounds.ly;
         
+        uint32_t *ix, *iend;
+        for (ix = (uint32_t *)hashPoints.get(), iend = ix + count * 2; ix < iend; ix++)
+            *ix &= ~0xFFFF;
+        
         return MurmurHash3_x64_64(hashPoints.get(), count * kPointStride, 0);
     }
     void update() {
