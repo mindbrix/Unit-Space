@@ -289,6 +289,7 @@
 #pragma mark - Public
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
+    meshState.colorsSize = (int)mesh._colors.size();
     if (mesh._triangles.size()) {
         calls.emplace_back();
         Call& call = calls.back();
