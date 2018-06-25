@@ -115,8 +115,8 @@
     descriptor.label = @"Quadratic";
     self.quadraticPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
+//    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
+//    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
