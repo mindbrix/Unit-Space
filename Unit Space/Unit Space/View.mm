@@ -524,10 +524,11 @@ using namespace std;
         MeshState meshState;
         meshState.hideCurves = !_showCurves;
         meshState.hideTriangles = !_showTriangle;
+        meshState.showEdges = _showEdges;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
         
-        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms showEdges:_showEdges];
+        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
             uniforms.fillColor = { 1, 0, 0, 1 };

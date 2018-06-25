@@ -288,12 +288,12 @@
 
 #pragma mark - Public
 
-- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms showEdges:(BOOL)showEdges{
+- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
     if (mesh._triangles.size()) {
         calls.emplace_back();
         Call& call = calls.back();
         call.meshState = meshState;
-        call.type = showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
+        call.type = meshState.showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
         call.state = uniforms;
         call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
     }

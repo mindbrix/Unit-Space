@@ -141,6 +141,7 @@ struct Units {
 struct MeshState {
     bool                hideCurves;
     bool                hideTriangles;
+    bool                showEdges;
     bool                showColors;
     bool                showInterior;
 };

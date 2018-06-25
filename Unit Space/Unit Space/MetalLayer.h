@@ -19,7 +19,7 @@
 
 @property(weak) id <LayerDelegate> layerDelegate;
 
-- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms showEdges:(BOOL)showEdges;
+- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms;
 - (void)uploadMesh:(Mesh &)mesh;
 
 @end
