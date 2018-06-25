@@ -175,7 +175,7 @@ struct libTess {
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                     int count = tessGetVertexCount(tess);
                     const float *edgePoints = tessGetVertices(tess);
-                    Edge edges[count], *eend = edges + count, *e0, *e1, *e2, e;
+                    Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                     addContours(dst, tess, edges);
                     sort(edges, eend);
                     if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
@@ -191,20 +191,14 @@ struct libTess {
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
+                            
                             x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
                             x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
                             x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
-                            new (&e) Edge(x0, y0, 0, 0, 0);
-                            e0 = lower_bound(edges, eend, e);
-                            assert(e0->x == x0 && e0->y == y0);
                             
-                            new (&e) Edge(x1, y1, 0, 0, 0);
-                            e1 = lower_bound(edges, eend, e);
-                            assert(e1->x == x1 && e1->y == y1);
-                            
-                            new (&e) Edge(x2, y2, 0, 0, 0);
-                            e2 = lower_bound(edges, eend, e);
-                            assert(e2->x == x2 && e2->y == y2);
+                            e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
+                            e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
+                            e2 = lower_bound(edges, eend, Edge(x2, y2, 0, 0, 0));
                             
                             if (e0->base != e1->base || e1->base != e2->base || e2->base != e0->base) {
                                 if (e0->base == e1->base) {
@@ -240,10 +234,6 @@ struct libTess {
                             px = edgePoints[e2->prev() * 2], py = edgePoints[e2->prev() * 2 + 1];
                             nx = edgePoints[e2->next() * 2], ny = edgePoints[e2->next() * 2 + 1];
                             m2 = miterVector(x2, y2, px, py, nx, ny, left);
-                            
-                            m0 = miterVector(x0, y0, x2, y2, x1, y1, true);
-                            m1 = miterVector(x1, y1, x0, y0, x2, y2, true);
-                            m2 = miterVector(x2, y2, x1, y1, x0, y0, true);
                             
                             t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
