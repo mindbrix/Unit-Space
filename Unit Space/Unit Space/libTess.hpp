@@ -258,7 +258,7 @@ struct libTess {
                                 t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             }
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._triangleScales.emplace_back(t);
+                            mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t);
                         }
                         for (int i = 0; i < npoints; i++)
                             mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);

@@ -79,7 +79,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 {
     uint idx = select(iid - biid, meshState.reverseCount - 1 - iid - biid, meshState.reverseCount);
     device Triangle &triangle = triangles[idx];
-
+    float s0 = triangleScales[idx * 3], s1 = triangleScales[idx * 3 + 1], s2 = triangleScales[idx * 3 + 2];
+    
     Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
 
     constant AffineTransform& ctm = state.CTM;
@@ -101,7 +102,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
     float area = abs((p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x));
     float hu = area / length(p2 - p1), hv = area / length(p0 - p2), hw = area / length(p1 - p0);
-    float d = 1.0;
+    float d = 0.7071;
     float du = min(d / hu, 0.3333333333), dv = min(d / hv, 0.3333333333), dw = min(d / hw, 0.3333333333);
     float u = select(du, 1.0 - dv - dw, vid == 0), v = select(dv, 1.0 - du - dw, vid == 1), w = 1.0 - u - v;
     
