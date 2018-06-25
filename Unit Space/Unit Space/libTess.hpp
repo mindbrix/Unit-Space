@@ -183,7 +183,7 @@ struct libTess {
                         int npoints = tessGetVertexCount(dst);
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
-                        float x0, y0, x1, y1, x2, y2, px, py, nx, ny, x, y, t, area;
+                        float x0, y0, x1, y1, x2, y2, lx, ly, ux, uy, w, h, d, px, py, nx, ny, x, y, t, area;
                         float tx0, ty0, tx1, ty1, tx2, ty2;
                         Vector m0, m1, m2;
                         
@@ -192,14 +192,19 @@ struct libTess {
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                             
-                            x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
+                            lx = ux = x0 = points[i0 * 2], ly = uy = y0 = points[i0 * 2 + 1];
                             x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
+                            lx = lx < x1 ? lx : x1, ux = ux > x1 ? ux : x1;
+                            ly = ly < y1 ? ly : y1, uy = uy > y1 ? uy : y1;
                             x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
+                            lx = lx < x2 ? lx : x2, ux = ux > x2 ? ux : x2;
+                            ly = ly < y2 ? ly : y2, uy = uy > y2 ? uy : y2;
+                            w = ux - lx, h = uy - ly;
+                            d = w > h ? w : h;
                             
                             e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
                             e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
                             e2 = lower_bound(edges, eend, Edge(x2, y2, 0, 0, 0));
-                            
                             if (e0->base != e1->base || e1->base != e2->base || e2->base != e0->base) {
                                 if (e0->base == e1->base) {
                                     while (e2 < eend - 1 && (e2 + 1)->x == x2 && (e2 + 1)->y == y2)
@@ -247,6 +252,10 @@ struct libTess {
 //                                m0 = miterVector(x0, y0, px, py, nx, ny, left);
                                 t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             }
+//                            m0.x /= d, m0.y /= d, m1.x /= d, m1.y /= d, m2.x /= d, m2.y /= d;
+//                            assert(abs(m0.x) < 1), assert(abs(m0.y) < 1);
+//                            assert(abs(m1.x) < 1), assert(abs(m1.y) < 1);
+//                            assert(abs(m2.x) < 1), assert(abs(m2.y) < 1);
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
                             mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t);
                         }

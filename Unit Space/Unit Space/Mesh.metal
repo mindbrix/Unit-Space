@@ -102,10 +102,11 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
     float area = abs((p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x));
     float hu = area / length(p2 - p1), hv = area / length(p0 - p2), hw = area / length(p1 - p0);
-    float d = 0.7071;
-    float du = min(d / hu, 0.3333333333), dv = min(d / hv, 0.3333333333), dw = min(d / hw, 0.3333333333);
+    float d = 0.5;
+    float du = d / hu, dv = d / hv, dw = d / hw;
     float u = select(du, 1.0 - dv - dw, vid == 0), v = select(dv, 1.0 - du - dw, vid == 1), w = 1.0 - u - v;
-    
+    if (du > 0.3333333333 || dv > 0.3333333333 || dw > 0.3333333333)
+        u = v = w = 0;
     /*
     float2 point = select(select(p2, p1, vid == 1), p0, vid == 0);
     float2 prevPoint = select(select(p1, p0, vid == 1), p2, vid == 0);
