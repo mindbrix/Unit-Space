@@ -158,19 +158,18 @@ struct libTess {
         } else {
             tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             for (Path& path : scene._paths) {
-                uint64_t hash = path.hash();
-                
-                uint64_t ph = 0;
-                for (uint64_t h : hashes)
-                    if (h == hash) {
-                        ph = h;
-                        break;
-                    }
-                
-                if (ph)
-                    continue;
-                if (ph == 0)
-                    hashes.emplace_back(hash);
+//                uint64_t hash = path.hash();
+//                
+//                uint64_t ph = 0;
+//                for (uint64_t h : hashes)
+//                    if (h == hash) {
+//                        ph = h;
+//                        break;
+//                    }
+//                if (ph)
+//                    continue;
+//                else
+//                    hashes.emplace_back(hash);
                 
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
@@ -267,8 +266,6 @@ struct libTess {
             }
 //            writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
-        
-        int z = 0;
     }
     
     shared_ptr<TESStesselator> _tess, _dst;

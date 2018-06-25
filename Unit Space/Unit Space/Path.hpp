@@ -44,7 +44,7 @@ struct Path {
         for (ix = (uint32_t *)hashPoints.get(), iend = ix + count * 2; ix < iend; ix++)
             *ix &= ~0xFFFF;
         
-        return MurmurHash3_x64_64(hashPoints.get(), count * kPointStride, 0);
+        return MurmurHash3_x64_64(hashPoints.get(), count * kPointStride, count);
     }
     void update() {
         float area, maxArea = 0;
