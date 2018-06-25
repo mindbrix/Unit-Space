@@ -6,6 +6,7 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 #import "SubPath.hpp"
+#import "murmur3.h"
 
 struct Path {
     Path() {}
@@ -28,6 +29,19 @@ struct Path {
         return count;
     }
     
+    uint64_t hash() {
+        int count = 0, i;
+        for (SubPath& subPath : _subPaths)
+            count += subPath._npoints;
+        
+        Memory<float> hashPoints(count * 2);
+        float *hp = hashPoints.get(), *points;
+        for (SubPath& subPath : _subPaths)
+            for (points = subPath._points.get(), i = 0; i < subPath._npoints; i++)
+                *hp++ = *points++ - _bounds.lx, *hp++ = *points++ - _bounds.ly;
+        
+        return MurmurHash3_x64_64(hashPoints.get(), count * kPointStride, 0);
+    }
     void update() {
         float area, maxArea = 0;
         _outerIndex = 0;
