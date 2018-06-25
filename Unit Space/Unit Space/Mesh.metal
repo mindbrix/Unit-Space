@@ -101,7 +101,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
     float area = abs((p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x));
     float hu = area / length(p2 - p1), hv = area / length(p0 - p2), hw = area / length(p1 - p0);
-    float d = 0.0;
+    float d = 1.0;
     float du = min(d / hu, 0.3333333333), dv = min(d / hv, 0.3333333333), dw = min(d / hw, 0.3333333333);
     float u = select(du, 1.0 - dv - dw, vid == 0), v = select(dv, 1.0 - du - dw, vid == 1), w = 1.0 - u - v;
     
@@ -133,7 +133,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 //    };
     
     InteriorVertex vert;
-    float z = (triangle.c + 1) / float(meshState.colorsSize);
+    float z = (triangle.c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     RGBA8 color = colors[triangle.c];
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
@@ -214,7 +214,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float d1 = dot(p1 - devicePoint, n12);
     float d2 = dot(p2 - devicePoint, n20);
     
-    float z = (triangle.c + 1) / float(meshState.colorsSize);
+    float z = (triangle.c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     

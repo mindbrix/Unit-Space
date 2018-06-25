@@ -300,10 +300,20 @@
         calls.emplace_back();
         Call& call = calls.back();
         call.meshState = meshState;
-        call.meshState.reverseCount = meshState.showEdges ? (int)_trianglesBuffer.length / sizeof(Triangle) : 0;
-        call.type = meshState.showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
+        call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+        call.type = kCallTypeMeshInterior;
         call.state = uniforms;
         call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
+        
+        if (!meshState.showEdges) {
+            calls.emplace_back();
+            Call& call = calls.back();
+            call.meshState = meshState;
+            call.meshState.reverseCount = 0;
+            call.type = kCallTypeMeshTriangles;
+            call.state = uniforms;
+            call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
+        }
     }
     
     if (mesh._concaveCurves.size()) {
