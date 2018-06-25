@@ -60,7 +60,7 @@
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
     depthStencilDescriptor.depthWriteEnabled = NO;
-    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLess;
+    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionGreater;
     self.depthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
@@ -179,10 +179,11 @@
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
     descriptor.depthAttachment.texture = _depthTexture;
     descriptor.depthAttachment.loadAction = MTLLoadActionClear;
-    descriptor.depthAttachment.storeAction = MTLStoreActionStore;
+    descriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
     descriptor.depthAttachment.clearDepth = 0.5;
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
+    [commandEncoder setDepthStencilState:_depthState];
     
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
