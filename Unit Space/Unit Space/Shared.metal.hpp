@@ -145,6 +145,7 @@ struct MeshState {
     bool                showColors;
     bool                showInterior;
     int                 colorsSize;
+    int                 reverseCount;
 };
 
 struct Triangle {

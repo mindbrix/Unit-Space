@@ -59,8 +59,8 @@
     self.defaultLibrary = [self.device newDefaultLibrary];
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
-    depthStencilDescriptor.depthWriteEnabled = NO;
-    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionGreater;
+    depthStencilDescriptor.depthWriteEnabled = YES;
+    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionGreaterEqual;
     self.depthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
@@ -180,10 +180,10 @@
     descriptor.depthAttachment.texture = _depthTexture;
     descriptor.depthAttachment.loadAction = MTLLoadActionClear;
     descriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
-    descriptor.depthAttachment.clearDepth = 0.5;
+    descriptor.depthAttachment.clearDepth = 0;
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
-//    [commandEncoder setDepthStencilState:_depthState];
+    [commandEncoder setDepthStencilState:_depthState];
     
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
@@ -300,6 +300,7 @@
         calls.emplace_back();
         Call& call = calls.back();
         call.meshState = meshState;
+        call.meshState.reverseCount = meshState.showEdges ? (int)_trianglesBuffer.length / sizeof(Triangle) : 0;
         call.type = meshState.showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
         call.state = uniforms;
         call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
