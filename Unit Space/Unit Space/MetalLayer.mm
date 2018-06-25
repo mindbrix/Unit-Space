@@ -17,9 +17,9 @@
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
-//@property (nonatomic, strong) id <MTLBuffer> edgesBuffer;
-@property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> trianglesScalesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
@@ -236,6 +236,7 @@
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
+                [commandEncoder setVertexBuffer:_trianglesScalesBuffer offset:0 atIndex:5];
                 instanceCount = _trianglesBuffer.length / sizeof(Triangle);
                 drawQuads = NO;
                 break;
@@ -338,10 +339,10 @@
         _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._concaveCurves[0]
                                                         length:mesh._concaveCurves.size() * sizeof(Triangle)
                                                        options:MTLResourceStorageModeShared];
-//    if (mesh._edges.size())
-//        _edgesBuffer = [self.device newBufferWithBytes:(void *)& mesh._edges[0]
-//                                                 length:mesh._edges.size() * sizeof(Vector)
-//                                                options:MTLResourceStorageModeShared];
+    if (mesh._triangleScales.size())
+        _trianglesScalesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangleScales[0]
+                                                          length:mesh._triangleScales.size() * sizeof(float)
+                                                         options:MTLResourceStorageModeShared];
 }
 
 @end

@@ -75,7 +75,7 @@ struct InteriorVertex
     float4 color;
 };
 
-vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = select(iid - biid, meshState.reverseCount - 1 - iid - biid, meshState.reverseCount);
     device Triangle &triangle = triangles[idx];
@@ -160,7 +160,7 @@ struct TriangleVertex
 
 #pragma mark Vertex
 
-vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     device Triangle &triangle = triangles[iid - biid];
     
