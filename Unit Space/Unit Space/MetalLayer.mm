@@ -17,7 +17,7 @@
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
-@property (nonatomic, strong) id <MTLBuffer> edgesBuffer;
+//@property (nonatomic, strong) id <MTLBuffer> edgesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
@@ -27,7 +27,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshConcaveCurvePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshEdgePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
@@ -71,12 +70,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"unit_fragment_main"];
     descriptor.label = @"Unit";
     self.unitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.colorAttachments[0].blendingEnabled = NO;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"edge_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"edge_fragment_main"];
-    descriptor.label = @"Edge";
-    self.meshEdgePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
@@ -233,14 +226,6 @@
                 instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
                 drawQuads = NO;
                 break;
-            case kCallTypeMeshEdges:
-                if (_edgesBuffer.length == 0)
-                    continue;
-                [commandEncoder setRenderPipelineState:_meshEdgePipelineState];
-                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBuffer:_edgesBuffer offset:0 atIndex:2];
-                instanceCount = _edgesBuffer.length / sizeof(Vector) - 1;
-                break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
@@ -353,10 +338,10 @@
         _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._concaveCurves[0]
                                                         length:mesh._concaveCurves.size() * sizeof(Triangle)
                                                        options:MTLResourceStorageModeShared];
-    if (mesh._edges.size())
-        _edgesBuffer = [self.device newBufferWithBytes:(void *)& mesh._edges[0]
-                                                 length:mesh._edges.size() * sizeof(Vector)
-                                                options:MTLResourceStorageModeShared];
+//    if (mesh._edges.size())
+//        _edgesBuffer = [self.device newBufferWithBytes:(void *)& mesh._edges[0]
+//                                                 length:mesh._edges.size() * sizeof(Vector)
+//                                                options:MTLResourceStorageModeShared];
 }
 
 @end

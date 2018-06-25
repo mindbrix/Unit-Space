@@ -117,7 +117,6 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
 struct Mesh {
     AffineTransform                     _CTM;
     vector<RGBA8>                       _colors;
-    vector<Vector>                      _edges;
     vector<Vector>                      _points;
     vector<Triangle>                    _triangles;
     vector<Triangle>                    _curves;
@@ -125,7 +124,7 @@ struct Mesh {
     
     void empty() {
         _CTM = { 1, 0, 0, 1, 0, 0 };
-        _colors.resize(0), _points.resize(0), _triangles.resize(0), _edges.resize(0), _curves.resize(0), _concaveCurves.resize(0);
+        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0);
     }
      void writeQuad(float x0, float y0, float x1, float y1,float x2, float y2, float x3, float y3, int p) {
          int pi = (int)_points.size();
@@ -232,20 +231,6 @@ struct Tess {
                     }
                 }
         }
-    }
-    void writeEdges(Mesh& mesh, Scene& scene) {
-        for (Path& path : scene._paths)
-            for (SubPath& s : path._subPaths) {
-                float *points = s._points.get();
-                size_t base = mesh._edges.size();
-                for (int i = 0; i < s._npoints; i++)
-                    mesh._edges.emplace_back(points[i * 2], points[i * 2 + 1]);
-                if (!s._closed)
-                    mesh._edges.emplace_back(points[0], points[1]);
-                for (; base < mesh._edges.size() - 1; base++)
-                    encodeBits(& mesh._edges[base].x, 0x3, 0x0);
-                encodeBits(& mesh._edges[base].x, 0x3, 0x1);
-            }
     }
     static void writeQuad(Mesh& mesh, Quad *q, int p) {
         int pi = (int)mesh._points.size();
@@ -454,7 +439,6 @@ struct Tess {
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
         mesh.empty();
         writeCurves(mesh, scene);
-        writeEdges(mesh, scene);
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
         writeTriangles(mesh, scene, useMasking);
