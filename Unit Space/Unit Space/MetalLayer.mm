@@ -31,6 +31,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
+@property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
 
 @end
@@ -57,9 +58,15 @@
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
     
+    MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
+    depthStencilDescriptor.depthWriteEnabled = NO;
+    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLess;
+    self.depthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+    
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[0].blendingEnabled = NO;
+    descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"unit_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"unit_fragment_main"];
     descriptor.label = @"Unit";
@@ -128,13 +135,10 @@
     descriptor.label = @"Concave Curve";
     self.meshConcaveCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    
-    
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
                                                 length:sizeof(indices)
                                                options:MTLResourceOptionCPUCacheModeDefault];
-    
     return self;
 }
 
@@ -173,6 +177,10 @@
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+    descriptor.depthAttachment.texture = _depthTexture;
+    descriptor.depthAttachment.loadAction = MTLLoadActionClear;
+    descriptor.depthAttachment.storeAction = MTLStoreActionStore;
+    descriptor.depthAttachment.clearDepth = 0.5;
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     

@@ -132,7 +132,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 //    };
     
     InteriorVertex vert;
-    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), triangle.c / float(meshState.colorsSize), 1.0);
+    float z = triangle.c / float(meshState.colorsSize);
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.25, 1.0);
     RGBA8 color = colors[triangle.c];
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
