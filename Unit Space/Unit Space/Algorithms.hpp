@@ -117,18 +117,14 @@ static void radixSort(T *begin, T *end) {
 static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
     *t0 = -C / B;
     if (abs(A) > 1e-3) {
-        auto discriminant = B * B - 4.0f * A * C;  auto sqrtDiscriminant = sqrt(abs(discriminant));
-        auto denominator = 1.0f / (2.0f * A);
+        float discriminant = B * B - 4.0f * A * C, sqrtDiscriminant = sqrt(abs(discriminant));
+        float denominator = 1.0f / (2.0f * A);
         
         if (discriminant < 0.0f) {
-            auto real = -B * denominator;  auto imaginary = sqrtDiscriminant * denominator;
-            *t0 = sqrt(real * real + imaginary * imaginary);
-            *t1 = -1;
-        } else {
-            auto tPlus = (-B + sqrtDiscriminant) * denominator;  auto tMinus = (-B - sqrtDiscriminant) * denominator;
-            *t0 = min(abs(tPlus), abs(tMinus));
-            *t1 = max(abs(tPlus), abs(tMinus));
-        }
+            float real = -B * denominator, imaginary = sqrtDiscriminant * denominator;
+            *t0 = sqrt(real * real + imaginary * imaginary), *t1 = -1;
+        } else
+            *t0 = (-B + sqrtDiscriminant) * denominator, *t1 = (-B - sqrtDiscriminant) * denominator;
     }
 }
 
