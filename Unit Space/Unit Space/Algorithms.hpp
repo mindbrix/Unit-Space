@@ -115,16 +115,16 @@ static void radixSort(T *begin, T *end) {
 }
 
 static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
-    *t0 = -C / B;
+    *t0 = -C / B, *t1 = -1;
     if (abs(A) > 1e-3) {
-        float discriminant = B * B - 4.0f * A * C, sqrtDiscriminant = sqrt(abs(discriminant));
-        float denominator = 1.0f / (2.0f * A);
-        
-        if (discriminant < 0.0f) {
+        float discriminant = B * B - 4 * A * C, sqrtDiscriminant = sqrt(abs(discriminant)), denominator = 0.5 / A;
+        if (discriminant < 0) {
             float real = -B * denominator, imaginary = sqrtDiscriminant * denominator;
-            *t0 = sqrt(real * real + imaginary * imaginary), *t1 = -1;
-        } else
-            *t0 = (-B + sqrtDiscriminant) * denominator, *t1 = (-B - sqrtDiscriminant) * denominator;
+            *t0 = sqrt(real * real + imaginary * imaginary);
+        } else {
+            *t0 = B < 0 ? (-B + sqrtDiscriminant) * denominator : (-B - sqrtDiscriminant) * denominator;
+            *t1 = C / (A * *t0);
+        }
     }
 }
 
