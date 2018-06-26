@@ -197,7 +197,7 @@ struct libTess {
                         int npoints = tessGetVertexCount(dst);
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
-                        float x0, y0, x1, y1, x2, y2, t, area;
+                        float x0, y0, x1, y1, x2, y2, t, t1, a0, a1;
                         float tx0, ty0, tx1, ty1, tx2, ty2;
                         Vector m0, m1, m2;
                         
@@ -231,14 +231,21 @@ struct libTess {
                             m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
                             m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
                             
-                            t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
+                            solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
                             tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                             tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
                             tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-                            area = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
-                            if (std::abs(area) > 1e-1) {
-
-                                t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
+                            a0 = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
+                            if (std::abs(a0) > 1e-1) {
+                                if (t1 != -1) {
+                                    tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
+                                    tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
+                                    tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
+                                    a1 = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
+                                    if (std::abs(a1) > 1e-1) {
+                                        solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
+                                    }
+                                }
                             }
 
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));

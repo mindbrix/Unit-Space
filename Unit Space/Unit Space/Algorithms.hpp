@@ -114,31 +114,31 @@ static void radixSort(T *begin, T *end) {
     radixSort(begin, out0, n, 24);
 }
 
-static inline float solveQuadratic(float A, float B, float C) {
-    float t = -C / B;
-    if (A != 0.0f) {
+static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
+    *t0 = -C / B;
+    if (abs(A) > 1e-3) {
         auto discriminant = B * B - 4.0f * A * C;  auto sqrtDiscriminant = sqrt(abs(discriminant));
         auto denominator = 1.0f / (2.0f * A);
         
         if (discriminant < 0.0f) {
             auto real = -B * denominator;  auto imaginary = sqrtDiscriminant * denominator;
-            t = sqrt(real * real + imaginary * imaginary);
+            *t0 = sqrt(real * real + imaginary * imaginary);
+            *t1 = -1;
         } else {
             auto tPlus = (-B + sqrtDiscriminant) * denominator;  auto tMinus = (-B - sqrtDiscriminant) * denominator;
-            t = min(abs(tPlus), abs(tMinus));
+            *t0 = min(abs(tPlus), abs(tMinus));
+            *t1 = max(abs(tPlus), abs(tMinus));
         }
     }
-    return t;
 }
 
-static inline float solveTriangle(Vector r, Vector s, Vector u, Vector v, Vector w, Vector x) {
-    auto VyXy = v.y - x.y, XySy = x.y - s.y, SyVy = s.y - v.y;
-    auto UyWy = u.y - w.y, WyRy = w.y - r.y, RyUy = r.y - u.y;
-    auto A =    s.x * VyXy + v.x * XySy + x.x * SyVy;
-    auto B =    r.x * VyXy + u.x * XySy + w.x * SyVy +
-    s.x * UyWy + v.x * WyRy + x.x * RyUy;
-    auto C =    r.x * UyWy + u.x * WyRy + w.x * RyUy;
-    return solveQuadratic(A, B, C);
+static inline void solveTriangle(Vector r, Vector s, Vector u, Vector v, Vector w, Vector x, float *t0, float *t1) {
+    float VyXy = v.y - x.y, XySy = x.y - s.y, SyVy = s.y - v.y;
+    float UyWy = u.y - w.y, WyRy = w.y - r.y, RyUy = r.y - u.y;
+    float A =    s.x * VyXy + v.x * XySy + x.x * SyVy;
+    float B =    r.x * VyXy + u.x * XySy + w.x * SyVy + s.x * UyWy + v.x * WyRy + x.x * RyUy;
+    float C =    r.x * UyWy + u.x * WyRy + w.x * RyUy;
+    solveQuadratic(A, B, C, t0, t1);
 }
 
 static AffineTransform *writeQuadraticCTM(AffineTransform *ctm, float x0, float y0, float x1, float y1, float x2, float y2) {
