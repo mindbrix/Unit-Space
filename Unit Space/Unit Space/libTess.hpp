@@ -142,6 +142,20 @@ struct libTess {
             writePathTriangles(mesh, tess, path);
     }
     
+    Vector miter(const float *edgePoints, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
+        float px, py, nx, ny, x, y;
+        bool left;
+        
+        px = edgePoints[e->prev() * 2], py = edgePoints[e->prev() * 2 + 1];
+        nx = edgePoints[e->next() * 2], ny = edgePoints[e->next() * 2 + 1];
+        if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
+            x = x1, y = y1;
+        else
+            x = x2, y = y2;
+        left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
+        return miterVector(x0, y0, px, py, nx, ny, left);
+    }
+    
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
         vector<uint64_t> hashes;
         
@@ -183,24 +197,17 @@ struct libTess {
                         int npoints = tessGetVertexCount(dst);
                         const int nelems = tessGetElementCount(dst);
                         const TESSindex *polygon = tessGetElements(dst);
-                        float x0, y0, x1, y1, x2, y2, lx, ly, ux, uy, w, h, d, px, py, nx, ny, x, y, t, area;
+                        float x0, y0, x1, y1, x2, y2, t, area;
                         float tx0, ty0, tx1, ty1, tx2, ty2;
                         Vector m0, m1, m2;
                         
-                        bool left;
                         int pi = (int)mesh._points.size(), i0, i1, i2;
                         for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                             i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                             
-                            lx = ux = x0 = points[i0 * 2], ly = uy = y0 = points[i0 * 2 + 1];
+                            x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
                             x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
-                            lx = lx < x1 ? lx : x1, ux = ux > x1 ? ux : x1;
-                            ly = ly < y1 ? ly : y1, uy = uy > y1 ? uy : y1;
                             x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
-                            lx = lx < x2 ? lx : x2, ux = ux > x2 ? ux : x2;
-                            ly = ly < y2 ? ly : y2, uy = uy > y2 ? uy : y2;
-                            w = ux - lx, h = uy - ly;
-                            d = w > h ? w : h;
                             
                             e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
                             e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
@@ -220,42 +227,20 @@ struct libTess {
                                             break;
                                 }
                             }
-                            px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
-                            nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
-                            
-                            if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
-                                x = x1, y = y1;
-                            else
-                                x = x2, y = y2;
-                            
-                            left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
-                            
-                            m0 = miterVector(x0, y0, px, py, nx, ny, left);
-                            
-                            px = edgePoints[e1->prev() * 2], py = edgePoints[e1->prev() * 2 + 1];
-                            nx = edgePoints[e1->next() * 2], ny = edgePoints[e1->next() * 2 + 1];
-                            m1 = miterVector(x1, y1, px, py, nx, ny, left);
-                            
-                            px = edgePoints[e2->prev() * 2], py = edgePoints[e2->prev() * 2 + 1];
-                            nx = edgePoints[e2->next() * 2], ny = edgePoints[e2->next() * 2 + 1];
-                            m2 = miterVector(x2, y2, px, py, nx, ny, left);
+                            m0 = miter(edgePoints, e0, x0, y0, x1, y1, x2, y2);
+                            m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
+                            m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
                             
                             t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                             tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
                             tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-                            
                             area = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
                             if (std::abs(area) > 1e-1) {
-//                                px = edgePoints[e0->prev() * 2], py = edgePoints[e0->prev() * 2 + 1];
-//                                nx = edgePoints[e0->next() * 2], ny = edgePoints[e0->next() * 2 + 1];
-//                                m0 = miterVector(x0, y0, px, py, nx, ny, left);
+
                                 t = solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2);
                             }
-//                            m0.x /= d, m0.y /= d, m1.x /= d, m1.y /= d, m2.x /= d, m2.y /= d;
-//                            assert(abs(m0.x) < 1), assert(abs(m0.y) < 1);
-//                            assert(abs(m1.x) < 1), assert(abs(m1.y) < 1);
-//                            assert(abs(m2.x) < 1), assert(abs(m2.y) < 1);
+
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
                             mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t);
                         }
@@ -264,7 +249,6 @@ struct libTess {
                     }
                 }
             }
-//            writeTriangles(mesh, dst, 0, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1, 1, 0, 0);
         }
     }
     
