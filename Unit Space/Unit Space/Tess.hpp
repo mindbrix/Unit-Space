@@ -121,11 +121,12 @@ struct Mesh {
     vector<Triangle>                    _triangles;
     vector<Triangle>                    _curves;
     vector<Triangle>                    _concaveCurves;
-    vector<float>                       _triangleScales;
+    vector<float>                       _interiorScales;
+    vector<Vector>                      _interiorVectors;
     
     void empty() {
         _CTM = { 1, 0, 0, 1, 0, 0 };
-        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0), _triangleScales.resize(0);
+        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0), _interiorScales.resize(0), _interiorVectors.resize(0);
     }
      void writeQuad(float x0, float y0, float x1, float y1,float x2, float y2, float x3, float y3, int p) {
          int pi = (int)_points.size();

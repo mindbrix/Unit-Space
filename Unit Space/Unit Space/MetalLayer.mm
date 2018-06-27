@@ -339,9 +339,9 @@
         _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._concaveCurves[0]
                                                         length:mesh._concaveCurves.size() * sizeof(Triangle)
                                                        options:MTLResourceStorageModeShared];
-    if (mesh._triangleScales.size())
-        _trianglesScalesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangleScales[0]
-                                                          length:mesh._triangleScales.size() * sizeof(float)
+    if (mesh._interiorScales.size())
+        _trianglesScalesBuffer = [self.device newBufferWithBytes:(void *)& mesh._interiorScales[0]
+                                                          length:mesh._interiorScales.size() * sizeof(float)
                                                          options:MTLResourceStorageModeShared];
 }
 

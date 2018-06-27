@@ -249,7 +249,7 @@ struct libTess {
                             }
 
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t), mesh._triangleScales.emplace_back(t);
+                            mesh._interiorScales.emplace_back(t);
                         }
                         for (int i = 0; i < npoints; i++)
                             mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);

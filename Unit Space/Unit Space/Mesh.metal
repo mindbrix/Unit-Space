@@ -79,7 +79,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 {
     uint idx = select(iid - biid, meshState.reverseCount - 1 - iid - biid, meshState.reverseCount);
     device Triangle &triangle = triangles[idx];
-    float s0 = triangleScales[idx * 3], s1 = triangleScales[idx * 3 + 1], s2 = triangleScales[idx * 3 + 2];
+    float scale = triangleScales[idx];
     
     Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
 
