@@ -157,8 +157,6 @@ struct libTess {
     }
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
-        vector<uint64_t> hashes;
-        
         mesh.empty();
         TESStesselator *tess = _tess.get(), *dst = _dst.get();
         
@@ -172,19 +170,6 @@ struct libTess {
         } else {
             tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             for (Path& path : scene._paths) {
-//                uint64_t hash = path.hash();
-//                
-//                uint64_t ph = 0;
-//                for (uint64_t h : hashes)
-//                    if (h == hash) {
-//                        ph = h;
-//                        break;
-//                    }
-//                if (ph)
-//                    continue;
-//                else
-//                    hashes.emplace_back(hash);
-                
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                     int count = tessGetVertexCount(tess);
@@ -235,21 +220,27 @@ struct libTess {
                             tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                             tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
                             tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-                            a0 = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
-                            if (std::abs(a0) > 1e-1) {
-                                if (t1 != -1) {
-                                    tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
-                                    tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
-                                    tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
-                                    a1 = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
-                                    if (std::abs(a1) > 1e-1) {
-                                        solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
-                                    }
-                                }
+                            a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
+                            if (t1 != -1) {
+                                tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
+                                tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
+                                tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
+                                a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                             }
+//                            if (std::abs(a0) > 1e-1) {
+//                                if (t1 != -1) {
+//                                    tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
+//                                    tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
+//                                    tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
+//                                    a1 = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
+//                                    if (std::abs(a1) > 1e-1) {
+//                                        solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
+//                                    }
+//                                }
+//                            }
 
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._interiorScales.emplace_back(t);
+                            mesh._interiorScales.emplace_back(t1 > 0 && a1 < 1e-3 ? t1 : t);
                             mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                         }
                         for (int i = 0; i < npoints; i++)
