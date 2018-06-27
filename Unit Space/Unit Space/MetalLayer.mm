@@ -19,7 +19,8 @@
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> trianglesScalesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorScalesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorVectorsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
@@ -236,7 +237,8 @@
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
-                [commandEncoder setVertexBuffer:_trianglesScalesBuffer offset:0 atIndex:5];
+                [commandEncoder setVertexBuffer:_interiorScalesBuffer offset:0 atIndex:5];
+                [commandEncoder setVertexBuffer:_interiorVectorsBuffer offset:0 atIndex:6];
                 instanceCount = _trianglesBuffer.length / sizeof(Triangle);
                 drawQuads = NO;
                 break;
@@ -340,8 +342,12 @@
                                                         length:mesh._concaveCurves.size() * sizeof(Triangle)
                                                        options:MTLResourceStorageModeShared];
     if (mesh._interiorScales.size())
-        _trianglesScalesBuffer = [self.device newBufferWithBytes:(void *)& mesh._interiorScales[0]
+        _interiorScalesBuffer = [self.device newBufferWithBytes:(void *)& mesh._interiorScales[0]
                                                           length:mesh._interiorScales.size() * sizeof(float)
+                                                         options:MTLResourceStorageModeShared];
+    if (mesh._interiorVectors.size())
+        _interiorVectorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._interiorVectors[0]
+                                                          length:mesh._interiorVectors.size() * sizeof(Vector)
                                                          options:MTLResourceStorageModeShared];
 }
 
