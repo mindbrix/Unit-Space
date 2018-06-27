@@ -81,36 +81,6 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     device Triangle &triangle = triangles[idx];
     float t = triangleScales[idx];
     
-    /*
-    Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
-
-    constant AffineTransform& ctm = state.CTM;
-
-    float2 p0 = {
-        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
-        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
-    };
-
-    float2 p1 = {
-        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
-        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
-    };
-
-    float2 p2 = {
-        _v2.x * ctm.a + _v2.y * ctm.c + ctm.tx,
-        _v2.x * ctm.b + _v2.y * ctm.d + ctm.ty
-    };
-
-    float area = abs((p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x));
-    float hu = area / length(p2 - p1), hv = area / length(p0 - p2), hw = area / length(p1 - p0);
-    float d = 0.5;
-    float du = d / hu, dv = d / hv, dw = d / hw;
-    float u = select(du, 1.0 - dv - dw, vid == 0), v = select(dv, 1.0 - du - dw, vid == 1), w = 1.0 - u - v;
-    if (du > 0.3333333333 || dv > 0.3333333333 || dw > 0.3333333333)
-        u = v = w = 0;
-    float2 devicePoint = u * p0 + v * p1 + w * p2;
-     */
-    
     int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
     float2 devicePoint = {
         points[i].x * state.CTM.a + points[i].y * state.CTM.c + state.CTM.tx,
