@@ -227,20 +227,8 @@ struct libTess {
                                 tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
                                 a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                             }
-//                            if (std::abs(a0) > 1e-1) {
-//                                if (t1 != -1) {
-//                                    tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
-//                                    tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
-//                                    tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
-//                                    a1 = (tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1);
-//                                    if (std::abs(a1) > 1e-1) {
-//                                        solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
-//                                    }
-//                                }
-//                            }
-
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._interiorScales.emplace_back(t1 > 0 && a1 < 1e-3 ? t1 : t);
+                            mesh._interiorScales.emplace_back(t1 > 0 && (a1 < 1e-3 || a1 < a0) ? t1 : t);
                             mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                         }
                         for (int i = 0; i < npoints; i++)
