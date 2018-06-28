@@ -115,7 +115,6 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
 }
 
 struct Mesh {
-    AffineTransform                     _CTM;
     vector<RGBA8>                       _colors;
     vector<Vector>                      _points;
     vector<Triangle>                    _triangles;
@@ -125,7 +124,6 @@ struct Mesh {
     vector<Vector>                      _interiorVectors;
     
     void empty() {
-        _CTM = { 1, 0, 0, 1, 0, 0 };
         _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0), _interiorScales.resize(0), _interiorVectors.resize(0);
     }
      void writeQuad(float x0, float y0, float x1, float y1,float x2, float y2, float x3, float y3, int p) {

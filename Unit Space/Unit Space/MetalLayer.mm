@@ -291,7 +291,6 @@
         call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
         call.type = kCallTypeMeshInterior;
         call.state = uniforms;
-        call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
         
         if (!meshState.showEdges) {
             calls.emplace_back();
@@ -300,7 +299,6 @@
             call.meshState.reverseCount = 0;
             call.type = kCallTypeMeshTriangles;
             call.state = uniforms;
-            call.state.CTM = AffineTransformConcat(mesh._CTM, call.state.CTM);
         }
     }
     
