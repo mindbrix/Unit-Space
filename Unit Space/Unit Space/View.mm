@@ -577,13 +577,7 @@ using namespace std;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
         
-        if (_mesh._triangles.size()) {
-            _calls.emplace_back();
-            Call& call = _calls.back();
-            call.meshState = meshState;
-            call.type = _showEdges ? kCallTypeMeshInterior : kCallTypeMeshTriangles;
-            call.state = uniforms;
-        }
+        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
     }
 }
 
