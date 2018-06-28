@@ -153,7 +153,8 @@ struct libTess {
         else
             x = x2, y = y2;
         left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
-        return miterVector(x0, y0, px, py, nx, ny, left);
+        Vector m = miterVector(x0, y0, px, py, nx, ny, left);
+        return m;
     }
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {

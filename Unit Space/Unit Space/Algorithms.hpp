@@ -64,7 +64,7 @@ static float pointsSignedArea(const float *begin, const float *end, size_t strid
 }
 
 static Vector miterVector(float x, float y, float px, float py, float nx, float ny, bool left) {
-    constexpr float limit = 1e-3;
+    constexpr float limit = 5e-1;
     float vx0, vy0, vx1, vy1, len0, len1;
     float nx0, ny0, nx1, ny1;
     float tanx, tany, tanlen;
