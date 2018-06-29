@@ -528,6 +528,10 @@ using namespace std;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
         
+        if (_svgData)
+            for (int i = 0; i < _mesh._pathCTMs.size(); i++)
+                _mesh._pathCTMs[i].tx = i;
+            
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
@@ -539,9 +543,7 @@ using namespace std;
             Circles& circles = call.circles;
             
             int i = 0;
-            if (_svgData) {
-                
-            } else {
+            if (_svgData == nullptr) {
                 if (self.pathBitmask & kPathBitmaskTriangle)
                     for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
                         circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };

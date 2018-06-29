@@ -319,6 +319,7 @@
         call.type = kCallTypeMeshCurves;
         call.state = uniforms;
     }
+    memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
     [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
 }
 
