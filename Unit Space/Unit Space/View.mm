@@ -528,9 +528,9 @@ using namespace std;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
         
-        if (_svgData)
-            for (int i = 0; i < _mesh._pathCTMs.size(); i++)
-                _mesh._pathCTMs[i].tx = i;
+//        if (_svgData)
+//            for (int i = 0; i < _mesh._pathCTMs.size(); i++)
+//                _mesh._pathCTMs[i].tx = i;
             
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
