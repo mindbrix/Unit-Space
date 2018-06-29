@@ -319,6 +319,7 @@
         call.type = kCallTypeMeshCurves;
         call.state = uniforms;
     }
+    [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
@@ -352,7 +353,7 @@
     if (mesh._pathCTMs.size())
         _pathCTMsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pathCTMs[0]
                                                           length:mesh._pathCTMs.size() * sizeof(AffineTransform)
-                                                         options:MTLResourceStorageModeShared];
+                                                         options:MTLResourceStorageModeManaged];
 }
 
 @end
