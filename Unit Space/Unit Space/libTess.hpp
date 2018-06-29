@@ -232,7 +232,7 @@ struct libTess {
                                 a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                             }
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._interiorScales.emplace_back(t1 > 0 && (a1 < 1e-3 || a1 < a0) ? t1 : t);
+                            mesh._interiorScales.emplace_back(t1 > 0 && (a1 < 1 || a1 < a0) ? t1 : t);
                             mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                         }
                         for (int i = 0; i < npoints; i++)
