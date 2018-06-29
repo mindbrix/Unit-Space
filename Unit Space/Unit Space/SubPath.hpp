@@ -75,6 +75,18 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     return (int)(dst - dbegin) / 2;
 }
 
+static int countSplitQuadratics(float *points, float *controlPoints, int npoints, float unit) {
+    int i, count;
+    float x0, y0, x1, y1, x2, y2, area;
+    for (x0 = points[0], y0 = points[1], count = i = 0; i < npoints - 1; i++, x0 = x2, y0 = y2) {
+        x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
+        x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
+        area = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1));
+        count += std::ceil(std::max(0.f, log2f(area / unit)));
+    }
+    return count;
+}
+
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose,
@@ -84,12 +96,15 @@ struct SubPath {
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type) {
         _closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
-        
+        _area = pointsSignedArea(points, points + _npoints * 2, kPointStride);
+        boundsLimits(& _bounds.lx, points, points + _npoints * 2, kPointStride);
+
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points.alloc(_npoints * 2);
             _controlPoints.alloc(_npoints * 2);
             _npoints = splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
+            int count = countSplitQuadratics(_points.get(), _controlPoints.get(), _npoints, (_bounds.ux - _bounds.lx) * (_bounds.uy - _bounds.ly) * 1e-3);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -97,8 +112,6 @@ struct SubPath {
             if (_closed)
                 _npoints--;
         }
-        _area = pointsSignedArea(_points.get(), _points.get() + _npoints * 2, kPointStride);
-        boundsLimits(& _bounds.lx, _points.get(), _points.get() + _npoints * 2, kPointStride);
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
