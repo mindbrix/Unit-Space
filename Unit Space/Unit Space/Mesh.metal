@@ -81,18 +81,19 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     device Triangle &triangle = triangles[idx];
     float t = triangleScales[idx];
     AffineTransform CTM = pathCTMs[triangle.c];
+    CTM = AffineTransformConcat(CTM, state.CTM);
     
     int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
     float2 devicePoint = {
-        points[i].x * state.CTM.a + points[i].y * state.CTM.c + state.CTM.tx,
-        points[i].x * state.CTM.b + points[i].y * state.CTM.d + state.CTM.ty
+        points[i].x * CTM.a + points[i].y * CTM.c + CTM.tx,
+        points[i].x * CTM.b + points[i].y * CTM.d + CTM.ty
     };
     
-    float scale = sqrt(abs(state.CTM.d * state.CTM.a - state.CTM.b * state.CTM.c));
+    float scale = sqrt(abs(CTM.d * CTM.a - CTM.b * CTM.c));
     Vector interiorVector = interiorVectors[idx * 3 + vid];
     float2 iv = {
-        interiorVector.x * state.CTM.a + interiorVector.y * state.CTM.c,
-        interiorVector.x * state.CTM.b + interiorVector.y * state.CTM.d
+        interiorVector.x * CTM.a + interiorVector.y * CTM.c,
+        interiorVector.x * CTM.b + interiorVector.y * CTM.d
     };
     devicePoint += iv / scale;
     devicePoint = select(devicePoint, 0, 1.0 / scale > abs(t));
@@ -130,22 +131,21 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     RGBA8 color = colors[triangle.c];
     Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
     AffineTransform CTM = pathCTMs[triangle.c];
-    
-    constant AffineTransform& ctm = state.CTM;
+    CTM = AffineTransformConcat(CTM, state.CTM);
     
     float2 p0 = {
-        _v0.x * ctm.a + _v0.y * ctm.c + ctm.tx,
-        _v0.x * ctm.b + _v0.y * ctm.d + ctm.ty
+        _v0.x * CTM.a + _v0.y * CTM.c + CTM.tx,
+        _v0.x * CTM.b + _v0.y * CTM.d + CTM.ty
     };
     
     float2 p1 = {
-        _v1.x * ctm.a + _v1.y * ctm.c + ctm.tx,
-        _v1.x * ctm.b + _v1.y * ctm.d + ctm.ty
+        _v1.x * CTM.a + _v1.y * CTM.c + CTM.tx,
+        _v1.x * CTM.b + _v1.y * CTM.d + CTM.ty
     };
     
     float2 p2 = {
-        _v2.x * ctm.a + _v2.y * ctm.c + ctm.tx,
-        _v2.x * ctm.b + _v2.y * ctm.d + ctm.ty
+        _v2.x * CTM.a + _v2.y * CTM.c + CTM.tx,
+        _v2.x * CTM.b + _v2.y * CTM.d + CTM.ty
     };
     
     float2 v01 = p1 - p0;
