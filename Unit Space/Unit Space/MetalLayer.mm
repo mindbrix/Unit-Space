@@ -287,13 +287,14 @@
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
     meshState.colorsSize = (int)mesh._colors.size();
     if (mesh._triangles.size()) {
-        calls.emplace_back();
-        Call& call = calls.back();
-        call.meshState = meshState;
-        call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
-        call.type = kCallTypeMeshInterior;
-        call.state = uniforms;
-        
+        if (meshState.showInterior) {
+            calls.emplace_back();
+            Call& call = calls.back();
+            call.meshState = meshState;
+            call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+            call.type = kCallTypeMeshInterior;
+            call.state = uniforms;
+        }
         if (!meshState.showEdges) {
             calls.emplace_back();
             Call& call = calls.back();
