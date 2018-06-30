@@ -10,10 +10,6 @@
 #import "MetalLayer.h"
 #import "VGAffineTransform.h"
 #import "Algorithms.hpp"
-
-#define NANOSVG_IMPLEMENTATION    // Expands implementation
-#import "nanosvg.h"
-
 #import "Tess.hpp"
 #import "libTess.hpp"
 
@@ -621,41 +617,10 @@ using namespace std;
 
 - (void)setSvgData:(NSData *)svgData {
     _svgData = svgData;
-    NSMutableData *data = nil;
     
     if (_svgData) {
-        data = [NSMutableData data];
-        unsigned char zeroByte = 0;
-        [data appendData:_svgData];
-        [data appendBytes:&zeroByte length:1];
-    }
-    
-    struct NSVGimage* image = data ? nsvgParse((char *)data.bytes, "px", 96) : NULL;
-    
-    if (image) {
-        printf("size: %f x %f\n", image->width, image->height);
-        // Use...
-        
         _scene.empty();
-        int limit = 60000;
-        for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next) {
-            if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
-                limit--;
-                
-                RGBA8 color = RGBA8((unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24));
-                Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
-                
-                for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
-                    for (int i = 0; i < path->npts; i++)
-                        path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
-                    SubPath s(path->pts, path->npts, SubPath::kCubic);
-                    p.addSubPath(s);
-                }
-                _scene.addPath(p);
-            }
-        }
-        // Delete
-        nsvgDelete(image);
+        _scene.addSVG(_svgData.bytes, _svgData.length);
     }
     _flags |= 8;
     [self reset];

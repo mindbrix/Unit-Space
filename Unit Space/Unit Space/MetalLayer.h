@@ -8,7 +8,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import "Shared.metal.hpp"
-#import "Tess.hpp"
+#import "Mesh.hpp"
 
 @protocol LayerDelegate <NSObject>
 - (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer;

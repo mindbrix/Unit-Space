@@ -56,6 +56,7 @@
 		E9DF4DC22075877400DF2668 /* hawaii.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = hawaii.svg; sourceTree = "<group>"; };
 		E9DF4DC32075877400DF2668 /* paris-30k.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "paris-30k.svg"; sourceTree = "<group>"; };
 		E9DFC48D2093190A00AFDAC7 /* Mesh.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
+		E9EBC19920E7B5A80045D338 /* Mesh.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Mesh.hpp; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
 		E9EE5F7B20851100005823F7 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
 		E9EE5F7C20851100005823F7 /* bucketalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bucketalloc.h; sourceTree = "<group>"; };
@@ -217,6 +218,7 @@
 				E92BB38F20DC422300AF2EF3 /* Memory.hpp */,
 				E92BB39020DC442F00AF2EF3 /* SubPath.hpp */,
 				E92BB39120DC44FA00AF2EF3 /* Path.hpp */,
+				E9EBC19920E7B5A80045D338 /* Mesh.hpp */,
 			);
 			path = "Unit Space";
 			sourceTree = "<group>";

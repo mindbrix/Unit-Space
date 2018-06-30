@@ -10,6 +10,9 @@
 #import "Algorithms.hpp"
 #import "Memory.hpp"
 #import "Path.hpp"
+#import "Mesh.hpp"
+#define NANOSVG_IMPLEMENTATION    // Expands implementation
+#import "nanosvg.h"
 
 #pragma mark - Data structures
 
@@ -114,34 +117,6 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
     }
 }
 
-struct Mesh {
-    vector<RGBA8>                       _colors;
-    vector<Vector>                      _points;
-    vector<Triangle>                    _triangles;
-    vector<Triangle>                    _curves;
-    vector<Triangle>                    _concaveCurves;
-    vector<float>                       _interiorScales;
-    vector<Vector>                      _interiorVectors;
-    vector<AffineTransform>             _pathCTMs;
-    
-    void empty() {
-        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0), _interiorScales.resize(0), _interiorVectors.resize(0), _pathCTMs.resize(0);
-    }
-     void writeQuad(float x0, float y0, float x1, float y1,float x2, float y2, float x3, float y3, int p) {
-         int pi = (int)_points.size();
-         _points.emplace_back(x0, y0), _points.emplace_back(x1, y1), _points.emplace_back(x2, y2), _points.emplace_back(x3, y3);
-         _triangles.emplace_back(pi + 0, pi + 1, pi + 2, p), _triangles.emplace_back(pi + 0, pi + 2, pi + 3, p);
-    }
-    void writeRect(float x0, float y0, float x1, float y1, int p) {
-        writeQuad(x0, y0, x1, y0, x1, y1, x0, y1, p);
-    }
-    void writeTriangle(float x0, float y0, float x1, float y1,float x2, float y2, int p) {
-        int pi = (int)_points.size();
-        _points.emplace_back(x0, y0), _points.emplace_back(x1, y1), _points.emplace_back(x2, y2);
-        _triangles.emplace_back(pi + 0, pi + 1, pi + 2, p);
-    }
-};
-
 struct Scene {
     void addPath(Path& path) {
         if (path._subPaths.size() != 0) {
@@ -152,6 +127,34 @@ struct Scene {
             _npoints += path.countPoints();
             _paths.emplace_back(path);
         }
+    }
+    void addSVG(const void *bytes, size_t size) {
+        char *data = (char *)malloc(size + 1);
+        memcpy(data, bytes, size);
+        data[size] = 0;
+        struct NSVGimage* image = data ? nsvgParse(data, "px", 96) : NULL;
+        
+        if (image) {
+            printf("size: %f x %f\n", image->width, image->height);            
+            int limit = 60000;
+            for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next, limit--) {
+                if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
+                    RGBA8 color = RGBA8((unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24));
+                    Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
+                    
+                    for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                        for (int i = 0; i < path->npts; i++)
+                            path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
+                        SubPath s(path->pts, path->npts, SubPath::kCubic);
+                        p.addSubPath(s);
+                    }
+                    addPath(p);
+                }
+            }
+            // Delete
+            nsvgDelete(image);
+        }
+        free(data);
     }
     void empty() { _paths.resize(0); }
     
