@@ -100,8 +100,8 @@ struct SubPath {
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type) {
         _closed = (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
-        _area = pointsSignedArea(points, points + _npoints * 2, kPointStride);
-        boundsLimits(& _bounds.lx, points, points + _npoints * 2, kPointStride);
+        _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
+        boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
 
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
