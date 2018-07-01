@@ -413,7 +413,7 @@ using namespace std;
     [self.metalLayer uploadMesh:_mesh];
 }
 
-- (void)update {
+- (void)writeDrawCalls {
     AffineTransform CTM = self.viewCTM;
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
@@ -582,7 +582,7 @@ using namespace std;
 }
 
 - (void)redraw {
-    [self update];
+    [self writeDrawCalls];
     [self.metalLayer setNeedsDisplay];
 }
 
