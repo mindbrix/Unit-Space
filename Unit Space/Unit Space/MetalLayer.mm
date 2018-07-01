@@ -320,6 +320,8 @@
         call.type = kCallTypeMeshCurves;
         call.state = uniforms;
     }
+    memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
+    [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
     [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
 }
@@ -327,7 +329,7 @@
 - (void)uploadMesh:(Mesh &)mesh {
     _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
                                              length:mesh._colors.size() * sizeof(RGBA8)
-                                            options:MTLResourceStorageModeShared];
+                                            options:MTLResourceStorageModeManaged];
     if (mesh._triangles.size())
         _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
                                                     length:mesh._triangles.size() * sizeof(Triangle)
