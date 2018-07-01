@@ -27,6 +27,7 @@ using namespace std;
 
 @property(nonatomic) MetalLayer *metalLayer;
 @property(nonatomic) VGAffineTransform *transform;
+@property(nonatomic) CGPoint mouseLocation;
 @property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) uint64_t pathBitmask;
@@ -71,6 +72,7 @@ using namespace std;
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
+    self.mouseLocation = { 0, 0 };
     self.showColors = YES;
     self.showInterior = YES;
     self.showTriangle = YES;
@@ -98,7 +100,7 @@ using namespace std;
 
 - (void)magnifyWithEvent:(NSEvent *)event {
     [self.transform scaleBy:1.0f + event.magnification bounds:self.bounds];
-    [self redrawWithMouseLocation:event.locationInWindow];
+    [self redraw];
 }
 
 - (void)mouseDown:(NSEvent *)event {
@@ -194,12 +196,13 @@ using namespace std;
 }
 
 - (void)mouseMoved:(NSEvent *)event {
-    [self redrawWithMouseLocation:event.locationInWindow];
+    self.mouseLocation = event.locationInWindow;
+    [self redraw];
 }
 
 - (void)rotateWithEvent:(NSEvent *)event {
     [self.transform rotateBy:event.rotation / 10.f bounds:self.bounds];
-    [self redrawWithMouseLocation:event.locationInWindow];
+    [self redraw];
 }
 
 - (void)scrollWheel:(NSEvent *)event {
@@ -214,7 +217,7 @@ using namespace std;
     } else
         [self.transform translateByX:event.deltaX * inversion andY:-event.deltaY * inversion];
     
-    [self redrawWithMouseLocation:event.locationInWindow];
+    [self redraw];
 }
 
 #pragma mark - IBAction
@@ -324,14 +327,6 @@ using namespace std;
 
 #pragma mark -
 
-- (void)redrawWithMouseLocation:(CGPoint)location {
-    CGPoint user = CGPointApplyAffineTransform(location, CGAffineTransformInvert(self.transform.affineTransform));
-    
-//    BOOL inside = [self isPoint:location inUnitEllipse:_calls[0].units.units[0].unitCTM];
-//    _calls[0].state.fillColor.r = inside ? 1 : 0;
-    [self redraw];
-}
-
 - (void)reset {
     _unitCTM = { 100, 0, 0, 100, 0, 0 };
     
@@ -415,6 +410,7 @@ using namespace std;
 
 - (void)writeDrawCalls {
     AffineTransform CTM = self.viewCTM;
+    CGPoint user = CGPointApplyAffineTransform(self.mouseLocation, CGAffineTransformInvert(self.transform.affineTransform));
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float largeRadius = kLargePointDeviceRadius / scale;
