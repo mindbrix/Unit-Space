@@ -325,6 +325,8 @@ using namespace std;
 #pragma mark -
 
 - (void)redrawWithMouseLocation:(CGPoint)location {
+    CGPoint user = CGPointApplyAffineTransform(location, CGAffineTransformInvert(self.transform.affineTransform));
+    
 //    BOOL inside = [self isPoint:location inUnitEllipse:_calls[0].units.units[0].unitCTM];
 //    _calls[0].state.fillColor.r = inside ? 1 : 0;
     [self redraw];
