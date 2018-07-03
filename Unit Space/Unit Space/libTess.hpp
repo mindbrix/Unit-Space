@@ -81,7 +81,6 @@ struct libTess {
         addContours(tess, path, false);
         if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
             writeTessSubpaths(tess, path);
-        
     }
     static void maskPath(TESStesselator *tess, Path& path, Path& mask) {
         bool isPositive = path._subPaths[path._outerIndex]._area > 0;
