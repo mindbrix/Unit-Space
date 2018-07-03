@@ -214,6 +214,7 @@
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
+                [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
                 instanceCount = _curvesBuffer.length / sizeof(Triangle);
                 drawQuads = NO;
                 break;
@@ -225,6 +226,7 @@
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
+                [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
                 instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
                 drawQuads = NO;
                 break;
