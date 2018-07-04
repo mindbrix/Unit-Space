@@ -522,12 +522,13 @@ using namespace std;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
         
-        for (int i = 0; i < _scene._paths.size(); i++) {
+        int p = -1;
+        for (int i = 0; i < _scene._paths.size(); i++)
             if (_scene._paths[i].contains(float(user.x), float(user.y)))
-                _mesh._colors[i] = RGBA8(255, 0, 0, 255);
-            else
-                _mesh._colors[i] = _scene._paths[i]._color;
-        }
+                p = i;
+        for (int i = 0; i < _scene._paths.size(); i++)
+            _mesh._colors[i] = i == p ? RGBA8(255, 0, 0, 255) : _scene._paths[i]._color;
+        
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
