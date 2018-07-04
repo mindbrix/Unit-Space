@@ -523,7 +523,7 @@ using namespace std;
         meshState.showInterior = _showInterior;
         
         for (int i = 0; i < _scene._paths.size(); i++) {
-            if (_scene._paths[i]._bounds.contains(float(user.x), float(user.y)))
+            if (_scene._paths[i].contains(float(user.x), float(user.y)))
                 _mesh._colors[i] = RGBA8(255, 0, 0, 255);
             else
                 _mesh._colors[i] = _scene._paths[i]._color;

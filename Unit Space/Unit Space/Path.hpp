@@ -18,6 +18,9 @@ struct Path {
             _subPaths.emplace_back(s);
     }
     
+    bool contains(float x, float y) {
+        return _bounds.contains(x, y);
+    }
     bool intersects(Path& path) const {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
