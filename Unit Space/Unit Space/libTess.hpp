@@ -67,10 +67,32 @@ struct libTess {
     }
     
     static void addContours(TESStesselator *tess, Path& path, bool reverse) {
+        vector<Vector> contour;
+        float *points, *controlPoints, x0, y0, x1, y1, x2, y2, dt, t, a, b;
+        int i, j, divisions;
+        
         tessSetOption(tess, TESS_REVERSE_CONTOURS, reverse ? 1 : 0);
         for (SubPath& s : path._subPaths)
-            if (s._npoints > 2)
-                tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+            if (s._npoints > 2) {
+                points = s._points.get(), controlPoints = s._controlPoints.get();
+                if (controlPoints) {
+                    contour.resize(0);
+                    for (x0 = points[0], y0 = points[1], i = 0; i < s._npoints - 1; i++, x0 = x2, y0 = y2) {
+                        x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
+                        x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
+                        contour.emplace_back(x0, y0);
+                        divisions = quadraticDivisions(x0, y0, x1, y1, x2, y2);
+                        dt = 1.0 / float(divisions + 1), t = dt;
+                        for (j = 0; j < divisions; j++, t += dt) {
+                            a = 1.0 - t, b = t;
+                            contour.emplace_back(a * a * x0 + 2.0 * a * b * x1 + b * b * x2, a * a * y0 + 2.0 * a * b * y1 + b * b * y2);
+                        }
+                    }
+                    contour.emplace_back(x2, y2);
+                    tessAddContour(tess, 2, & contour[0], kPointStride, (int)contour.size());
+                } else
+                    tessAddContour(tess, 2, points, kPointStride, s._npoints);
+            }
     }
     
     static void resolveSelfIntersections(TESStesselator *tess, Path& path) {
