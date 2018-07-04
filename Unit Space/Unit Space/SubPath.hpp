@@ -75,23 +75,28 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     return (int)(dst - dbegin) / 2;
 }
 
-static int countSplitQuadratics(float *points, float *controlPoints, int npoints, float unit) {
+static int quadraticDivisions(float x0, float y0, float x1, float y1, float x2, float y2) {
     constexpr float kHeight = 0.2;
+    float bvx, bvy, cpx, cpy, area, unit;
+    bool left, in0, in1;
+    bvx = x2 - x0, bvy = y2 - y0;
+    left = bvx * (y1 - y0) - bvy * (x1 - x0) > 0;
+    cpx = (x0 + x2) * 0.5 + kHeight * bvy * (left ? -1 : 1);
+    cpy = (y0 + y2) * 0.5 + kHeight * bvx * (left ? 1 : -1);
+    in0 = ((cpx - x0) * (y1 - y0) - (cpy - y0) * (x1 - x0)) * (left ? -1 : 1) > 0;
+    in1 = ((x2 - cpx) * (y1 - cpy) - (y2 - cpy) * (x1 - cpx)) * (left ? -1 : 1) > 0;
+    area = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
+    unit = bvx * (cpy - y0) - bvy * (cpx - x0);
+    return in0 && in1 ? 0 : std::ceil(std::max(0.f, log2f(std::abs(area / unit))));
+}
+
+static int countSplitQuadratics(float *points, float *controlPoints, int npoints) {
     int i, divisions, count;
-    bool left, inside;
-    float x0, y0, x1, y1, x2, y2, bvx, bvy, cpx, cpy, area;
+    float x0, y0, x1, y1, x2, y2;
     for (x0 = points[0], y0 = points[1], count = i = 0; i < npoints - 1; i++, x0 = x2, y0 = y2) {
         x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
         x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
-        bvx = x2 - x0, bvy = y2 - y0;
-        left = bvx * (y1 - y0) - bvy * (x1 - x0) > 0;
-        cpx = (x0 + x2) * 0.5 + kHeight * bvy * (left ? -1 : 1);
-        cpy = (y0 + y2) * 0.5 + kHeight * bvx * (left ? 1 : -1);
-        inside = ((cpx - x0) * (y1 - y0) - (cpy - y0) * (x1 - x0)) * (left ? -1 : 1) > 0;
-        inside = inside && ((x2 - cpx) * (y1 - cpy) - (y2 - cpy) * (x1 - cpx)) * (left ? -1 : 1) > 0;
-        area = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1));
-        unit = std::abs(bvx * (cpy - y0) - bvy * (cpx - x0));
-        divisions = std::ceil(std::max(0.f, log2f(area / unit)));
+        divisions = quadraticDivisions(x0, y0, x1, y1, x2, y2);
         count += divisions;
         if (divisions) {
             float t = 0, dt = 1.0 / float(divisions + 1);
@@ -117,7 +122,7 @@ struct SubPath {
             _points.alloc(_npoints * 2);
             _controlPoints.alloc(_npoints * 2);
             _npoints = splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
-            int count = countSplitQuadratics(_points.get(), _controlPoints.get(), _npoints, (_bounds.ux - _bounds.lx) * (_bounds.uy - _bounds.ly) * 1e-3);
+            int count = countSplitQuadratics(_points.get(), _controlPoints.get(), _npoints);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
