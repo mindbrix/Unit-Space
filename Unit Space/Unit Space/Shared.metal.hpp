@@ -11,6 +11,8 @@
 #define PI 3.1415926536
 #define TWO_PI 6.2831853072
 
+#pragma clang diagnostic ignored "-Wcomma"
+
 struct Arc { float x, y, r, t0, t1; };
 
 struct Circle { float x, y, r; };
