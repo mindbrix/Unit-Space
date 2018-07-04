@@ -184,6 +184,7 @@ enum CallType : unsigned int {
 struct Call {
     Call() {}
     CallType    type;
+    int         instanceCount, baseInstance;
     State       state;
     union {
         Arcs        arcs;

@@ -182,7 +182,7 @@
     
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
-        size_t instanceCount = 1;
+        size_t instanceCount = 1, baseInstance = 0;
         BOOL drawQuads = YES;
         switch (call->type) {
             case kCallTypeArcs:
@@ -215,7 +215,7 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
-                instanceCount = _curvesBuffer.length / sizeof(Triangle);
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
             case kCallTypeMeshConcaveCurves:
@@ -227,7 +227,7 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
-                instanceCount = _concaveCurvesBuffer.length / sizeof(Triangle);
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
             case kCallTypeMeshInterior:
@@ -243,7 +243,7 @@
                 [commandEncoder setVertexBuffer:_interiorScalesBuffer offset:0 atIndex:5];
                 [commandEncoder setVertexBuffer:_interiorVectorsBuffer offset:0 atIndex:6];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
-                instanceCount = _trianglesBuffer.length / sizeof(Triangle);
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
             case kCallTypeQuadratics:
@@ -275,7 +275,7 @@
                                vertexStart:0
                                vertexCount:3
                              instanceCount:instanceCount
-                              baseInstance:0];
+                              baseInstance:baseInstance];
     }
     
     [commandEncoder endEncoding];
@@ -295,6 +295,8 @@
             call.meshState = meshState;
             call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
             call.type = kCallTypeMeshInterior;
+            call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+            call.baseInstance = 0;
             call.state = uniforms;
         }
         if (!meshState.showEdges) {
@@ -303,6 +305,8 @@
             call.meshState = meshState;
             call.meshState.reverseCount = 0;
             call.type = kCallTypeMeshTriangles;
+            call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+            call.baseInstance = 0;
             call.state = uniforms;
         }
     }
@@ -312,6 +316,8 @@
         Call& call = calls.back();
         call.meshState = meshState;
         call.type = kCallTypeMeshConcaveCurves;
+        call.instanceCount = (int)_concaveCurvesBuffer.length / sizeof(Triangle);
+        call.baseInstance = 0;
         call.state = uniforms;
     }
     
@@ -320,6 +326,8 @@
         Call& call = calls.back();
         call.meshState = meshState;
         call.type = kCallTypeMeshCurves;
+        call.instanceCount = (int)_curvesBuffer.length / sizeof(Triangle);
+        call.baseInstance = 0;
         call.state = uniforms;
     }
     memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
