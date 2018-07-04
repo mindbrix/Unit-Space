@@ -175,7 +175,7 @@ vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], cons
     float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
     StrokeVertex vert;
-    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     return vert;
 }
