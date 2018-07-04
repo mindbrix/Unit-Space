@@ -19,8 +19,14 @@ struct Path {
     }
     
     bool contains(float x, float y) {
-        return _bounds.contains(x, y);
+        if (!_bounds.contains(x, y))
+            return false;
+        int wn = 0;
+        for (SubPath& subPath : _subPaths)
+            wn += subPath.pointWinding(x, y);
+        return _evenOdd ? wn & 1 : wn;
     }
+    
     bool intersects(Path& path) const {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }

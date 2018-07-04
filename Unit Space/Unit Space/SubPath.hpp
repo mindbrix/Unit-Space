@@ -75,6 +75,26 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     return (int)(dst - dbegin) / 2;
 }
 
+static inline float isLeft(const float *P0, const float *P1, const float *P2) {
+    return (P1[0] - P0[0]) * (P2[1] - P0[1]) - (P2[0] -  P0[0]) * (P1[1] - P0[1]);
+}
+
+// http://geomalgorithms.com/a03-_inclusion.html
+//
+static size_t pointInPolygon(const float *p, const float *polygon, size_t n, size_t stride) {
+    size_t wn = 0; auto mul = stride / sizeof(float);
+    for (auto i = 0; i < n; i++) {
+        auto p0 = polygon + i * mul; auto p1 = polygon + ((i + 1) % n) * mul;
+        if (p0[1] <= p[1]) {
+            if (p1[1] > p[1] && isLeft(p0, p1, p) > 0.0f)  ++wn;
+        } else {
+            if (p1[1] <= p[1] && isLeft(p0, p1, p) < 0.0f)  --wn;
+        }
+    }
+    return wn;
+}
+
+
 static int quadraticDivisions(float x0, float y0, float x1, float y1, float x2, float y2) {
     constexpr float kHeight = 0.2;
     float bvx, bvy, cpx, cpy, area, unit;
@@ -115,6 +135,12 @@ struct SubPath {
                 _npoints--;
         }
     }
+    
+    int pointWinding(float x, float y) {
+        float p[2] = { x, y };
+        return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
+    }
+    
     Memory<float>               _points;
     Memory<float>               _controlPoints;
     bool                        _closed;
