@@ -90,21 +90,6 @@ static int quadraticDivisions(float x0, float y0, float x1, float y1, float x2, 
     return in0 && in1 ? 0 : std::ceil(std::max(0.f, log2f(std::abs(area / unit))));
 }
 
-static int countSplitQuadratics(float *points, float *controlPoints, int npoints) {
-    int i, divisions, count;
-    float x0, y0, x1, y1, x2, y2;
-    for (x0 = points[0], y0 = points[1], count = i = 0; i < npoints - 1; i++, x0 = x2, y0 = y2) {
-        x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
-        x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
-        divisions = quadraticDivisions(x0, y0, x1, y1, x2, y2);
-        count += divisions;
-        if (divisions) {
-            float t = 0, dt = 1.0 / float(divisions + 1);
-        }
-    }
-    return count;
-}
-
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose,
@@ -122,7 +107,6 @@ struct SubPath {
             _points.alloc(_npoints * 2);
             _controlPoints.alloc(_npoints * 2);
             _npoints = splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
-            int count = countSplitQuadratics(_points.get(), _controlPoints.get(), _npoints);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
