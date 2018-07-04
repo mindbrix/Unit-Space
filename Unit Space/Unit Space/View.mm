@@ -523,12 +523,11 @@ using namespace std;
         meshState.showInterior = _showInterior;
         
         int p = -1;
-        for (int i = 0; i < _scene._paths.size(); i++)
+        for (int i = 0; _showPoints && i < _scene._paths.size(); i++)
             if (_scene._paths[i].contains(float(user.x), float(user.y)))
                 p = i;
         for (int i = 0; i < _scene._paths.size(); i++)
-            _mesh._colors[i] = i == p ? RGBA8(255, 0, 0, 255) : _scene._paths[i]._color;
-        
+            _mesh._colors[i] = i == p ? RGBA8(64, 64, 64, 255) : _scene._paths[i]._color;
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
@@ -552,6 +551,12 @@ using namespace std;
                 if (self.pathBitmask & kPathBitmaskQuad)
                     for (int j = 0; j < _quad.size() && j < kCirclesSize / 3; j++)
                         circles.circles[i++] = { _quad[j].x, _quad[j].y, radius };
+            } else if (p != -1) {
+                for (SubPath& s : _scene._paths[p]._subPaths) {
+                    float *points = s._points.get();
+                    for (int j = 0; j < s._npoints && i < kCirclesSize; j++)
+                        circles.circles[i++] = { points[j * 2], points[j * 2 + 1], radius };
+                }
             }
             circles.count = i;
         }
