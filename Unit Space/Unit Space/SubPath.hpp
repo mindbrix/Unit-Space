@@ -38,6 +38,7 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     float n01, n12, n23;
     float n012, n123;
     float n0123;
+    float dx, dy;
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
     
     for (int i = 0; i < npoints - 1; i += 3) {
@@ -71,7 +72,11 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
         if (cpx != x0 || cpy != y0)
             *dst++ = x0, *dst++ = y0, *cpdst++ = cpx, *cpdst++ = cpy;
     }
-    *dst++ = x3, *dst++ = y3;
+    dx = src[0] - src[npoints * 2 - 2], dy = src[1] - src[npoints * 2 - 1];
+    if (dx * dx + dy * dy < 1e-6)
+        *dst++ = src[0], *dst++ = src[1];
+    else
+        *dst++ = x3, *dst++ = y3;
     return (int)(dst - dbegin) / 2;
 }
 
