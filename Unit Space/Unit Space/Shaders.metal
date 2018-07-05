@@ -182,7 +182,7 @@ vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = ellipseDistance(vert.unitPoint);
+    float alpha = saturate(ellipseDistance(vert.unitPoint));
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
 
