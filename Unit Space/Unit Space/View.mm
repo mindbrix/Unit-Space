@@ -531,7 +531,7 @@ using namespace std;
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
-            uniforms.fillColor = { 1, 0, 0, 1 };
+            uniforms.fillColor = { 1, 0, 0, 0.5 };
             _calls.emplace_back();
             Call& call = _calls.back();
             call.type = kCallTypeCircles;
