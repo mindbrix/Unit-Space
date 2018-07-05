@@ -555,7 +555,7 @@ using namespace std;
                 for (SubPath& s : _scene._paths[p]._subPaths) {
                     float *points = s._points.get();
                     for (int j = 0; j < s._npoints && i < kCirclesSize; j++)
-                        circles.circles[i++] = { points[j * 2], points[j * 2 + 1], radius };
+                        circles.circles[i++] = { points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : radius };
                 }
             }
             circles.count = i;
