@@ -531,7 +531,7 @@ using namespace std;
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
-            uniforms.fillColor = { 1, 0, 0, 0.5 };
+            uniforms.fillColor = { 1, 0, 0, 1 };
             _calls.emplace_back();
             Call& call = _calls.back();
             call.type = kCallTypeCircles;
@@ -555,7 +555,7 @@ using namespace std;
                 for (SubPath& s : _scene._paths[p]._subPaths) {
                     float *points = s._points.get();
                     for (int j = 0; j < s._npoints && i < kCirclesSize; j++)
-                        circles.circles[i++] = { points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : radius };
+                        circles.circles[i++] = { points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius };
                 }
             }
             circles.count = i;
