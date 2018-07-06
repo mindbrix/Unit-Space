@@ -153,8 +153,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
     vert.distance = { d0, d1, d2 };
     vert.showInterior = meshState.showInterior;
-    vert.color = select(float4(0, 0, 0, 0.666), float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), meshState.showColors);
-    
+    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
 

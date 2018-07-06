@@ -527,7 +527,7 @@ using namespace std;
             if (_scene._paths[i].contains(float(user.x), float(user.y)))
                 p = i;
         for (int i = 0; i < _scene._paths.size(); i++)
-            _mesh._colors[i] = i == p ? RGBA8(64, 64, 64, 255) : _scene._paths[i]._color;
+            _mesh._colors[i] = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
         
         if (_showPoints) {
