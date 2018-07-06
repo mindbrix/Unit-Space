@@ -10,6 +10,7 @@
 
 @interface Document ()
 
+@property( nonatomic, strong ) NSData *pngData;
 @property( nonatomic, strong ) NSData *svgData;
 
 @end
@@ -37,7 +38,7 @@
 
 - (void)windowControllerDidLoadNib:(NSWindowController *)aController {
     [super windowControllerDidLoadNib:aController];
-    
+    self.view.pngData = self.pngData;
     self.view.svgData = self.svgData;
 }
 
@@ -55,6 +56,8 @@
     // If you override either of these, you should also override -isEntireFileLoaded to return NO if the contents are lazily loaded.
     if ([typeName isEqualToString:@"SVG"])
         self.svgData = data;
+    else if ([typeName isEqualToString:@"PNG"])
+        self.pngData = data;
     return YES;
 }
 

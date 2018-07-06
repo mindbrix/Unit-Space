@@ -621,6 +621,9 @@ using namespace std;
     return (MetalLayer *)self.layer;
 }
 
+- (void)setPngData:(NSData *)pngData {
+    _pngData = pngData;
+}
 - (void)setSvgData:(NSData *)svgData {
     _svgData = svgData;
     
