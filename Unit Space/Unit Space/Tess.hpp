@@ -132,14 +132,22 @@ struct Scene {
     }
     void addPNG(const void *bytes, size_t size) {
         int x, y, channels_in_file;
-        stbi_uc *image = stbi_load_from_memory((stbi_uc const *)bytes, (int) size, & x, & y, & channels_in_file, 0);
+        stbi_uc *image = stbi_load_from_memory((stbi_uc const *)bytes, (int)size, & x, & y, & channels_in_file, 0);
         if (image) {
-            x = x;
-            
+            if (channels_in_file == 4) {
+                size_t sortSize = x * y * channels_in_file;
+                void *sortBuffer = malloc(sortSize);
+                unsigned int *sortImage = (unsigned int *)sortBuffer, *sortImageEnd = sortImage + x * y;
+                radixSort(sortImage, sortImageEnd);
+                
+                int count = 1;
+                unsigned int color = sortImage[0];
+                for (unsigned int *pixel = sortImage; pixel < sortImageEnd; pixel++)
+                    if (*pixel != color)
+                        color = *pixel, count++;
+                free(sortBuffer);
+            }
             stbi_image_free(image);
-        } else {
-            const char *reason = stbi_failure_reason();
-            x = x;
         }
     }
     void addSVG(const void *bytes, size_t size) {
