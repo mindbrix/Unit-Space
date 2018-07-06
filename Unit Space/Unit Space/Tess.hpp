@@ -13,6 +13,8 @@
 #import "Mesh.hpp"
 #define NANOSVG_IMPLEMENTATION    // Expands implementation
 #import "nanosvg.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #pragma mark - Data structures
 
@@ -129,6 +131,16 @@ struct Scene {
         }
     }
     void addPNG(const void *bytes, size_t size) {
+        int x, y, channels_in_file;
+        stbi_uc *image = stbi_load_from_memory((stbi_uc const *)bytes, (int) size, & x, & y, & channels_in_file, 0);
+        if (image) {
+            x = x;
+            
+            stbi_image_free(image);
+        } else {
+            const char *reason = stbi_failure_reason();
+            x = x;
+        }
     }
     void addSVG(const void *bytes, size_t size) {
         char *data = (char *)malloc(size + 1);
