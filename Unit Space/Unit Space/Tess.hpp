@@ -128,6 +128,8 @@ struct Scene {
             _paths.emplace_back(path);
         }
     }
+    void addPNG(const void *bytes, size_t size) {
+    }
     void addSVG(const void *bytes, size_t size) {
         char *data = (char *)malloc(size + 1);
         memcpy(data, bytes, size);

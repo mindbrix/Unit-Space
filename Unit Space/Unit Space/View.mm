@@ -623,6 +623,14 @@ using namespace std;
 
 - (void)setPngData:(NSData *)pngData {
     _pngData = pngData;
+    
+    if (_pngData) {
+        _scene.empty();
+        _scene.addPNG(_pngData.bytes, _pngData.length);
+    }
+    _flags |= 8;
+    [self reset];
+    [self redraw];
 }
 - (void)setSvgData:(NSData *)svgData {
     _svgData = svgData;
