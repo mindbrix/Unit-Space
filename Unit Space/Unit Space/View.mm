@@ -322,7 +322,7 @@ using namespace std;
 }
 
 - (void)updateFromState {
-    self.metalLayer.backgroundColor = CGColorGetConstantColor(_showInterior ? kCGColorClear : _showColors ? kCGColorBlack : kCGColorWhite);
+    self.metalLayer.backgroundColor = CGColorGetConstantColor(_showColors ? kCGColorClear : kCGColorWhite);
 }
 
 #pragma mark -

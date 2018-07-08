@@ -38,6 +38,7 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
+    bool showInterior;
     float4 color;
 };
 
@@ -68,6 +69,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
     vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
+    vert.showInterior = meshState.showInterior;
     RGBA8 color = colors[triangle.c];
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
@@ -79,8 +81,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
     float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
     float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    
-    return vert.color;// * max(eu, max(ev, ew));
+    return select(vert.color * max(eu, max(ev, ew)), vert.color, vert.showInterior);
 }
 
 #pragma mark - Triangle
@@ -194,8 +195,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
     
-    if (!vert.showInterior)
-        return vert.color * (1.0 - abs(min_dist - 0.7071));
+//    if (!vert.showInterior)
+//        return vert.color * (1.0 - abs(min_dist - 0.7071));
     
     if (min_dist > 0.7071)
         return vert.color;
