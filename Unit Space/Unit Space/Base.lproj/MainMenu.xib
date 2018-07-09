@@ -724,6 +724,12 @@
                                     <action selector="toggleUseMask:" target="-1" id="YtA-Ka-hQv"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Use Stroke Color" keyEquivalent="s" id="7Mj-YO-9gc">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleUseStrokeColor:" target="-1" id="e9r-mh-avO"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

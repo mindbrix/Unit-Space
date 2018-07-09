@@ -146,6 +146,7 @@ struct MeshState {
     bool                showEdges;
     bool                showColors;
     bool                showInterior;
+    bool                useStrokeColor;
     int                 colorsSize;
     int                 reverseCount;
 };

@@ -40,6 +40,7 @@ using namespace std;
 @property(nonatomic) BOOL showTriangle;
 @property(nonatomic) BOOL useDelaunay;
 @property(nonatomic) BOOL useMask;
+@property(nonatomic) BOOL useStrokeColor;
 @property(nonatomic) AffineTransform unitCTM;
 @property(nonatomic) AffineTransform ctm0;
 @property(nonatomic) AffineTransform ctm1;
@@ -320,7 +321,10 @@ using namespace std;
     [self reset];
     [self redraw];
 }
-
+- (IBAction)toggleUseStrokeColor:(id)sender {
+    _useStrokeColor = !_useStrokeColor;
+    [self redraw];
+}
 - (void)updateFromState {
     self.metalLayer.backgroundColor = CGColorGetConstantColor(_showColors ? kCGColorClear : kCGColorWhite);
 }
@@ -514,6 +518,7 @@ using namespace std;
     
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
+        uniforms.strokeColor = { 0, 0, 0, 1 };
         
         MeshState meshState;
         meshState.hideCurves = !_showCurves;
@@ -521,6 +526,7 @@ using namespace std;
         meshState.showEdges = _showEdges;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
+        meshState.useStrokeColor = _useStrokeColor;
         
         int p = -1;
         for (int i = 0; _showPoints && i < _scene._paths.size(); i++)
