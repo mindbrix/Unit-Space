@@ -163,9 +163,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.distance = { d0, d1, d2 };
     vert.showInterior = meshState.showInterior;
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
-    
-//    vert.color = { state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a };
-//    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
 
