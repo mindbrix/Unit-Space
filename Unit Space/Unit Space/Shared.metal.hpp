@@ -113,6 +113,14 @@ struct Arcs {
 #define kCirclesSize 340
 
 struct Circles {
+    bool add(float x, float y, float r) {
+        if (count == kCirclesSize)
+            return false;
+        circles[count++] = { x, y, r };
+        return true;
+    }
+    void empty() { count = 0; }
+    
     int         count;
     Circle      circles[kCirclesSize];
 };
