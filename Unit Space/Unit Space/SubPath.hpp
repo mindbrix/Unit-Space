@@ -54,28 +54,19 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
             dot = ax * bx + ay * by;
             if (dot > 0) {
                 cosine = std::sqrt(dot * dot / ((ax * ax + ay * ay) * (bx * bx + by * by)));
-                
                 if (cosine > 0.99999) {
                     cx = p[2] - x2, cy = p[3] - y2;
-                    t = std::sqrt((ax * ax + ay * ay) / (cx * cx + cy * cy));
-                    assert(t != 0);
-                    rt = 1.0 / t;
+                    rt = 1.0 / std::sqrt((ax * ax + ay * ay) / (cx * cx + cy * cy));
                     tx1 = lerp(rt, x0, x1);
-                    n12 = lerp(rt, x1, x2);
-                    tx2 = lerp(rt, tx1, n12);
-                    n23 = lerp(rt, n12, p[2]);
-                    tx3 = lerp(rt, tx2, n23);
+                    n12 = lerp(rt, x1, x2), tx2 = lerp(rt, tx1, n12);
+                    n23 = lerp(rt, n12, p[2]), tx3 = lerp(rt, tx2, n23);
                     
                     ty1 = lerp(rt, y0, y1);
-                    n12 = lerp(rt, y1, y2);
-                    ty2 = lerp(rt, ty1, n12);
-                    n23 = lerp(rt, n12, p[3]);
-                    ty3 = lerp(rt, ty2, n23);
+                    n12 = lerp(rt, y1, y2), ty2 = lerp(rt, ty1, n12);
+                    n23 = lerp(rt, n12, p[3]), ty3 = lerp(rt, ty2, n23);
                     dx = tx3 - p[6], dy = ty3 - p[7];
                     if (dx * dx + dy * dy < 1e-3) {
-                        x1 = tx1, y1 = ty1;
-                        x2 = tx2, y2 = ty2;
-                        x3 = p[6], y3 = p[7];
+                        x1 = tx1, y1 = ty1, x2 = tx2, y2 = ty2, x3 = p[6], y3 = p[7];
                         i += 3;
                         merged = true;
                     }
