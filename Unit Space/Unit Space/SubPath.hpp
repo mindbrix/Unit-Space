@@ -38,13 +38,24 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     float n01, n12, n23;
     float n012, n123;
     float n0123;
-    float dx, dy;
+    float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy;
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
     
     for (int i = 0; i < npoints - 1; i += 3) {
         const float *p = src + i * 2;
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
         
+        if (i + 3 < npoints - 1) {
+            ax = x3 - x2, ay = y3 - y2;
+            bx = p[8] - x3, by = p[9] - y3;
+            dot = ax * bx + ay * by;
+            cosine = std::sqrt(dot * dot / ((ax * ax + ay * ay) * (bx * bx + by * by)));
+            
+            if (cosine > 0.999) {
+                cx = p[8] - x2, cy = p[9] - y2;
+                t = std::sqrt((ax * ax + ay * ay) / (cx * cx + cy * cy));
+            }
+        }
         do {
             xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
             D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
