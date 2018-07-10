@@ -38,22 +38,48 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     float n01, n12, n23;
     float n012, n123;
     float n0123;
-    float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy;
+    float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
     
     for (int i = 0; i < npoints - 1; i += 3) {
-        const float *p = src + i * 2;
+        float *p = (float *)src + i * 2;
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
         
-        if (i + 3 < npoints - 1) {
+        bool merged = true;
+        while (merged && i + 3 < npoints - 1) {
+            merged = false;
+            p += 6;
             ax = x3 - x2, ay = y3 - y2;
-            bx = p[8] - x3, by = p[9] - y3;
+            bx = p[2] - x3, by = p[3] - y3;
             dot = ax * bx + ay * by;
-            cosine = std::sqrt(dot * dot / ((ax * ax + ay * ay) * (bx * bx + by * by)));
-            
-            if (cosine > 0.999) {
-                cx = p[8] - x2, cy = p[9] - y2;
-                t = std::sqrt((ax * ax + ay * ay) / (cx * cx + cy * cy));
+            if (dot > 0) {
+                cosine = std::sqrt(dot * dot / ((ax * ax + ay * ay) * (bx * bx + by * by)));
+                
+                if (cosine > 0.99999) {
+                    cx = p[2] - x2, cy = p[3] - y2;
+                    t = std::sqrt((ax * ax + ay * ay) / (cx * cx + cy * cy));
+                    assert(t != 0);
+                    rt = 1.0 / t;
+                    tx1 = lerp(rt, x0, x1);
+                    n12 = lerp(rt, x1, x2);
+                    tx2 = lerp(rt, tx1, n12);
+                    n23 = lerp(rt, n12, p[2]);
+                    tx3 = lerp(rt, tx2, n23);
+                    
+                    ty1 = lerp(rt, y0, y1);
+                    n12 = lerp(rt, y1, y2);
+                    ty2 = lerp(rt, ty1, n12);
+                    n23 = lerp(rt, n12, p[3]);
+                    ty3 = lerp(rt, ty2, n23);
+                    dx = tx3 - p[6], dy = ty3 - p[7];
+                    if (dx * dx + dy * dy < 1e-3) {
+                        x1 = tx1, y1 = ty1;
+                        x2 = tx2, y2 = ty2;
+                        x3 = p[6], y3 = p[7];
+                        i += 3;
+                        merged = true;
+                    }
+                }
             }
         }
         do {
