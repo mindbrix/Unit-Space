@@ -542,29 +542,40 @@ using namespace std;
             Call& call = _calls.back();
             call.type = kCallTypeCircles;
             call.state = uniforms;
-            Circles& circles = call.circles;
+            Circles *circles = & call.circles;
+            circles->empty();
             
-            int i = 0;
             if (_svgData == nullptr) {
                 if (self.pathBitmask & kPathBitmaskTriangle)
-                    for (int j = 0; j < _triangle.size() && j < kCirclesSize / 3; j++)
-                        circles.circles[i++] = { _triangle[j].x, _triangle[j].y, radius };
+                    for (int j = 0; j < _triangle.size(); j++)
+                        if (!circles->add(_triangle[j].x, _triangle[j].y, radius))
+                            break;
 
                 if (self.pathBitmask & kPathBitmaskLozenge)
-                    for (int j = 0; j < _lozenge.size() && j < kCirclesSize / 3; j++)
-                        circles.circles[i++] = { _lozenge[j].x, _lozenge[j].y, radius };
+                    for (int j = 0; j < _lozenge.size(); j++)
+                        if (!circles->add(_lozenge[j].x, _lozenge[j].y, radius))
+                            break;
 				
                 if (self.pathBitmask & kPathBitmaskQuad)
-                    for (int j = 0; j < _quad.size() && j < kCirclesSize / 3; j++)
-                        circles.circles[i++] = { _quad[j].x, _quad[j].y, radius };
+                    for (int j = 0; j < _quad.size(); j++)
+                        if (!circles->add(_quad[j].x, _quad[j].y, radius))
+                            break;
             } else if (p != -1) {
                 for (SubPath& s : _scene._paths[p]._subPaths) {
                     float *points = s._points.get();
-                    for (int j = 0; j < s._npoints && i < kCirclesSize; j++)
-                        circles.circles[i++] = { points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius };
+                    for (int j = 0; j < s._npoints; j++) {
+                        if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius)) {
+                            _calls.emplace_back();
+                            Call& call = _calls.back();
+                            call.type = kCallTypeCircles;
+                            call.state = uniforms;
+                            circles = & call.circles;
+                            circles->empty();
+                            circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius);
+                        }
+                    }
                 }
             }
-            circles.count = i;
         }
     }
     if (_flags & 16) {
