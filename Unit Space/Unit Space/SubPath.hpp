@@ -100,11 +100,7 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
         if (cpx != x0 || cpy != y0)
             *dst++ = x0, *dst++ = y0, *cpdst++ = cpx, *cpdst++ = cpy;
     }
-    dx = src[0] - src[npoints * 2 - 2], dy = src[1] - src[npoints * 2 - 1];
-    if (dx * dx + dy * dy < 1e-6)
-        *dst++ = src[0], *dst++ = src[1];
-    else
-        *dst++ = x3, *dst++ = y3;
+    *dst++ = x3, *dst++ = y3;
     return (int)(dst - dbegin) / 2;
 }
 
@@ -135,20 +131,25 @@ struct SubPath {
     
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type) {
-        _closed = type == kLine && (points[0] == points[npoints * 2 - 2] && points[1] == points[npoints * 2 - 1]);
+        float dx, dy;
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
-
+        dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
+        
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
             _points.alloc(_npoints * 2);
             _controlPoints.alloc(_npoints * 2);
             _npoints = splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
+            if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3) {
+                float *pts = _points.get();
+                pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
+            }
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
             memcpy(_points.get(), points, npoints * kPointStride);
-            if (_closed)
+            if (dx == 0 && dy == 0)
                 _npoints--;
         }
     }
@@ -160,7 +161,6 @@ struct SubPath {
     
     Memory<float>               _points;
     Memory<float>               _controlPoints;
-    bool                        _closed;
     int                         _npoints;
     float                       _area;
     Bounds                      _bounds;
