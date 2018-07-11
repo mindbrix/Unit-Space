@@ -162,6 +162,7 @@ struct libTess {
     }
     
     Vector miter(const float *edgePoints, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
+        float limit = 5e-1;
         float px, py, nx, ny, x, y;
         bool left;
         
@@ -172,7 +173,10 @@ struct libTess {
         else
             x = x2, y = y2;
         left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
-        return miterVector(x0, y0, px, py, nx, ny, left);
+        if ((x1 == px && y1 == py) || (x1 == nx && y1 == ny))
+            if ((x2 == px && y2 == py) || (x2 == nx && y2 == ny))
+                limit = 5e-3;
+        return miterVector(x0, y0, px, py, nx, ny, left, limit);
     }
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
@@ -192,7 +196,12 @@ struct libTess {
             writeTessTriangles(mesh, tess, scene);
         } else {
             tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-            for (Path& path : scene._paths) {
+            for (int p = 0; p < scene._paths.size(); p++) {
+                Path& path = scene._paths[p];
+                if (p == 180) {
+                    p = p;
+                }
+//            for (Path& path : scene._paths) {
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                     int count = tessGetVertexCount(tess);
@@ -251,7 +260,7 @@ struct libTess {
                                 a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                             }
                             mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._interiorScales.emplace_back(t1 > 0 && (a1 < 1 || a1 < a0) ? t1 : t);
+                            mesh._interiorScales.emplace_back(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                             mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                         }
                         for (int i = 0; i < npoints; i++)
