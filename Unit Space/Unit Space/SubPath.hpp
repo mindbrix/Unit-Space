@@ -40,19 +40,30 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     float n0123;
     float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
-    
+    constexpr float kTinyLimit = 1e-6;
     for (int i = 0; i < npoints - 1; i += 3) {
         float *p = (float *)src + i * 2;
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
         
-        bool merged = true;
+        bool merged = true, tiny;
         while (merged && i + 3 < npoints - 1) {
-            merged = false;
+            tiny = merged = false;
             p += 6;
             ax = x3 - x2, ay = y3 - y2;
             bx = p[2] - x3, by = p[3] - y3;
+            if (bx * bx + by * by < kTinyLimit) {
+                dx = p[4] - x3, dy = p[5] - y3;
+                if (dx * dx + dy * dy < kTinyLimit) {
+                    dx = p[6] - x3, dy = p[7] - y3;
+                    if (dx * dx + dy * dy < kTinyLimit) {
+                        x3 = p[6], y3 = p[7];
+                        i += 3;
+                        tiny = true;
+                    }
+                }
+            }
             dot = ax * bx + ay * by;
-            if (dot > 0) {
+            if (!tiny && dot > 0) {
                 cosine = std::sqrt(dot * dot / ((ax * ax + ay * ay) * (bx * bx + by * by)));
                 if (cosine > 0.99999) {
                     cx = p[2] - x2, cy = p[3] - y2;
