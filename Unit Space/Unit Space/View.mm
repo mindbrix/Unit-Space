@@ -392,7 +392,7 @@ using namespace std;
     
     Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine) });
     Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic) });
-    Path p2(false, black, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
+    Path p2(false, red, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
 	
     Scene scene;
     if (self.pathBitmask & kPathBitmaskTriangle)
