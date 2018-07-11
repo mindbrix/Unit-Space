@@ -40,7 +40,7 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
     float n0123;
     float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
-    constexpr float kTinyLimit = 1e-6;
+    constexpr float kTinyLimit = 1e-6, kMergeLimit = 1e-3;
     for (int i = 0; i < npoints - 1; i += 3) {
         float *p = (float *)src + i * 2;
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
@@ -76,7 +76,7 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
                     n12 = lerp(rt, y1, y2), ty2 = lerp(rt, ty1, n12);
                     n23 = lerp(rt, n12, p[3]), ty3 = lerp(rt, ty2, n23);
                     dx = tx3 - p[6], dy = ty3 - p[7];
-                    if (dx * dx + dy * dy < 1e-3) {
+                    if (dx * dx + dy * dy < kMergeLimit) {
                         x1 = tx1, y1 = ty1, x2 = tx2, y2 = ty2, x3 = p[6], y3 = p[7];
                         i += 3;
                         merged = true;
