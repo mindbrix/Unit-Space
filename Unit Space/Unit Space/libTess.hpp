@@ -157,8 +157,10 @@ struct libTess {
     }
     
     static void writeTessTriangles(Mesh& mesh, TESStesselator *tess, Scene& scene) {
-        for (Path& path : scene._paths)
+        for (Path& path : scene._paths) {
+            mesh._triangleIndices.emplace_back((int)mesh._triangles.size());
             writePathTriangles(mesh, tess, path);
+        }
     }
     
     Vector miter(const float *edgePoints, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
@@ -202,6 +204,7 @@ struct libTess {
                     p = p;
                 }
 //            for (Path& path : scene._paths) {
+                mesh._triangleIndices.emplace_back((int)mesh._triangles.size());
                 addContours(tess, path, false);
                 if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                     int count = tessGetVertexCount(tess);
