@@ -156,25 +156,21 @@ struct Scene {
                         for (vertex = vertices, j = 0; j < nverts; j++, vertex++) {
                             switch (vertex->type) {
                                 case STBTT_vmove:
-                                    *dst++ = vertex->x, *dst++ = vertex->y;
                                     break;
                                 case STBTT_vline:
                                     *dst++ = lerp(px, vertex->x, kOneThird), *dst++ = lerp(py, vertex->y, kOneThird);
                                     *dst++ = lerp(px, vertex->x, kTwoThirds), *dst++ = lerp(py, vertex->y, kTwoThirds);
-                                    *dst++ = vertex->x, *dst++ = vertex->y;
                                     break;
                                 case STBTT_vcurve:
                                     *dst++ = lerp(px, vertex->cx, kTwoThirds), *dst++ = lerp(py, vertex->cy, kTwoThirds);
                                     *dst++ = lerp(vertex->x, vertex->cx, kTwoThirds), *dst++ = lerp(vertex->y, vertex->cy, kTwoThirds);
-                                    *dst++ = vertex->x, *dst++ = vertex->y;
                                     break;
                                 case STBTT_vcubic:
                                     *dst++ = vertex->cx, *dst++ = vertex->cy;
                                     *dst++ = vertex->cx1, *dst++ = vertex->cy1;
-                                    *dst++ = vertex->x, *dst++ = vertex->y;
                                     break;
                             }
-                            px = vertex->x, py = vertex->y;
+                            *dst++ = px = vertex->x, *dst++ = py = vertex->y;
                         }
                         stbtt_FreeShape(& font, vertices);
                     }
