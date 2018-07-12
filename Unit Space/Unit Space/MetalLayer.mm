@@ -304,14 +304,24 @@
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
+        Call *call = nullptr;
+        int base, end, count;
         for (int p = 0; p < mesh._colors.size(); p++) {
-            
+            if (mesh._colors[p].a == 255) {
+                base = mesh._triangleIndices[p];
+                end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
+                count = end - base;
+                if (call == nullptr || call->baseInstance + call->instanceCount != base) {
+                    calls.emplace_back(tmpl);
+                    call = & calls.back();
+                    call->type = kCallTypeMeshInterior;
+                }
+                if (call->instanceCount == 0)
+                    call->baseInstance = base;
+                call->instanceCount += count;
+                call->meshState.reverseCount = end;
+            }
         }
-        calls.emplace_back(tmpl);
-        Call& call = calls.back();
-        call.type = kCallTypeMeshInterior;
-        call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
-        call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
         
         if (!meshState.showEdges) {
             calls.emplace_back(tmpl);
