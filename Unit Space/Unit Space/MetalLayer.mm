@@ -240,11 +240,12 @@
                 drawQuads = NO;
                 break;
             case kCallTypeMeshInterior:
+            case kCallTypeMeshInteriorBlend:
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
                     continue;
                 
-                [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : _meshInteriorPipelineState];
+                [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];

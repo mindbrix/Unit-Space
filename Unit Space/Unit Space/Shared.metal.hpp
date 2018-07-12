@@ -185,6 +185,7 @@ enum CallType : unsigned int {
     kCallTypeMeshCurves,
     kCallTypeMeshConcaveCurves,
     kCallTypeMeshInterior,
+    kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
     kCallTypeQuadratics,
     kCallTypeUnits,
