@@ -143,7 +143,7 @@ struct Scene {
         if (retval) {
             stbtt_GetFontBoundingBox(& font, & flx, & fly, & fux, & fuy);
             
-            for (i = 0; i < font.numGlyphs; i++) {
+            for (i = 0; i < font.numGlyphs && i < 20; i++) {
                 if (stbtt_IsGlyphEmpty(& font, i) == 0) {
                     retval = stbtt_GetGlyphBox(& font, i, & lx, & ly, & ux, & uy);
                     nverts = stbtt_GetGlyphShape(& font, i, & vertices);
@@ -187,7 +187,6 @@ struct Scene {
                         }
                         addPath(p);
                         stbtt_FreeShape(& font, vertices);
-                        break;
                     }
                 }
             }

@@ -545,7 +545,7 @@ using namespace std;
             Circles *circles = & call.circles;
             circles->empty();
             
-            if (_svgData == nullptr) {
+            if (_svgData == nullptr && _fontData  == nullptr) {
                 if (self.pathBitmask & kPathBitmaskTriangle)
                     for (int j = 0; j < _triangle.size(); j++)
                         if (!circles->add(_triangle[j].x, _triangle[j].y, radius))
