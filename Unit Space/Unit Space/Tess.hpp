@@ -133,7 +133,7 @@ struct Scene {
         }
     }
     void addFont(const void *bytes, size_t size) {
-        int retval, i, j, nverts, count;
+        int retval, i, j, nverts, count, ncontours;
         int flx, fly, fux, fuy;
         int lx, ly, ux, uy;
         stbtt_fontinfo font;
@@ -148,14 +148,18 @@ struct Scene {
                     retval = stbtt_GetGlyphBox(& font, i, & lx, & ly, & ux, & uy);
                     nverts = stbtt_GetGlyphShape(& font, i, & vertices);
                     if (nverts) {
-                        for (count = 0, vertex = vertices, j = 0; j < nverts; j++, vertex++)
-                            count += vertex->type == STBTT_vmove ? 1 : 3;
+                        for (ncontours = 0, vertex = vertices, j = 0; j < nverts; j++, vertex++)
+                            if (vertex->type == STBTT_vmove)
+                                ncontours++;
                         
-                        float buffer[count * 2], *dst = buffer, px = 0, py = 0, kOneThird = 1.0 / 3.0, kTwoThirds = 2.0 / 3.0;
+                        count = (nverts - ncontours) * 3 + ncontours;
+                        float buffer[count * 2], transformed[count * 2], *dst = buffer, px = 0, py = 0, kOneThird = 1.0 / 3.0, kTwoThirds = 2.0 / 3.0;
+                        int bases[ncontours], *base = bases, begin, end;
                         
                         for (vertex = vertices, j = 0; j < nverts; j++, vertex++) {
                             switch (vertex->type) {
                                 case STBTT_vmove:
+                                    *base++ = (int)(dst - buffer) / 2;
                                     break;
                                 case STBTT_vline:
                                     *dst++ = lerp(px, vertex->x, kOneThird), *dst++ = lerp(py, vertex->y, kOneThird);
@@ -171,6 +175,17 @@ struct Scene {
                                     break;
                             }
                             *dst++ = px = vertex->x, *dst++ = py = vertex->y;
+                        }
+                        
+                        for (j = 0; j < count; j++) {
+                            px = buffer[j * 2], py = buffer[j * 2 + 1];
+                            transformed[j * 2] = px * 1e-3, transformed[j * 2 + 1] = py * 1e-3;
+                        }
+                        for (base = bases, j = 0; j < ncontours; j++, base++) {
+                            begin = *base;
+                            end = j + 1 == ncontours ? count : *(base + 1);
+                            
+                            SubPath s(& transformed[begin * 2], end - begin, SubPath::kCubic);
                         }
                         stbtt_FreeShape(& font, vertices);
                     }
