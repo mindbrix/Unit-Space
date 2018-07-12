@@ -133,17 +133,51 @@ struct Scene {
         }
     }
     void addFont(const void *bytes, size_t size) {
-        int retval, i;
+        int retval, i, j, nverts, count;
+        int flx, fly, fux, fuy;
+        int lx, ly, ux, uy;
         stbtt_fontinfo font;
-        stbtt_vertex *vertices;
+        stbtt_vertex *vertices, *vertex;
         const unsigned char *ttf_buffer = (const unsigned char *)bytes;
-        retval = stbtt_InitFont(& font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
+        retval = stbtt_InitFont(& font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer, 0));
         if (retval) {
-            for (i = 1; i < font.numGlyphs; i++) {
-                retval = stbtt_GetGlyphShape(& font, i, & vertices);
-                if (retval) {
-                    stbtt_FreeShape(& font, vertices);
-                    break;
+            stbtt_GetFontBoundingBox(& font, & flx, & fly, & fux, & fuy);
+            
+            for (i = 0; i < font.numGlyphs; i++) {
+                if (stbtt_IsGlyphEmpty(& font, i) == 0) {
+                    retval = stbtt_GetGlyphBox(& font, i, & lx, & ly, & ux, & uy);
+                    nverts = stbtt_GetGlyphShape(& font, i, & vertices);
+                    if (nverts) {
+                        for (count = 0, vertex = vertices, j = 0; j < nverts; j++, vertex++)
+                            count += vertex->type == STBTT_vmove ? 1 : 3;
+                        
+                        float buffer[count * 2], *dst = buffer, px = 0, py = 0, kOneThird = 1.0 / 3.0, kTwoThirds = 2.0 / 3.0;
+                        
+                        for (vertex = vertices, j = 0; j < nverts; j++, vertex++) {
+                            switch (vertex->type) {
+                                case STBTT_vmove:
+                                    *dst++ = vertex->x, *dst++ = vertex->y;
+                                    break;
+                                case STBTT_vline:
+                                    *dst++ = lerp(px, vertex->x, kOneThird), *dst++ = lerp(py, vertex->y, kOneThird);
+                                    *dst++ = lerp(px, vertex->x, kTwoThirds), *dst++ = lerp(py, vertex->y, kTwoThirds);
+                                    *dst++ = vertex->x, *dst++ = vertex->y;
+                                    break;
+                                case STBTT_vcurve:
+                                    *dst++ = lerp(px, vertex->cx, kTwoThirds), *dst++ = lerp(py, vertex->cy, kTwoThirds);
+                                    *dst++ = lerp(vertex->x, vertex->cx, kTwoThirds), *dst++ = lerp(vertex->y, vertex->cy, kTwoThirds);
+                                    *dst++ = vertex->x, *dst++ = vertex->y;
+                                    break;
+                                case STBTT_vcubic:
+                                    *dst++ = vertex->cx, *dst++ = vertex->cy;
+                                    *dst++ = vertex->cx1, *dst++ = vertex->cy1;
+                                    *dst++ = vertex->x, *dst++ = vertex->y;
+                                    break;
+                            }
+                            px = vertex->x, py = vertex->y;
+                        }
+                        stbtt_FreeShape(& font, vertices);
+                    }
                 }
             }
         }
