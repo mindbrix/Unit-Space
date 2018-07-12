@@ -135,7 +135,7 @@ struct Scene {
         }
     }
     void addFont(const void *bytes, size_t size) {
-        int retval, i, j, nverts, count, ncontours;
+        int retval, i, j, nverts, count, ncontours, d, ix, iy;
         int flx, fly, fux, fuy;
         int lx, ly, ux, uy;
         stbtt_fontinfo font;
@@ -144,8 +144,11 @@ struct Scene {
         retval = stbtt_InitFont(& font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer, 0));
         if (retval) {
             stbtt_GetFontBoundingBox(& font, & flx, & fly, & fux, & fuy);
+            d = std::ceil(std::sqrt((float)font.numGlyphs));
             
-            for (i = 0; i < font.numGlyphs && i < 20; i++) {
+            for (i = 0; i < font.numGlyphs; i++) {
+                ix = i % d, iy = i / d;
+                AffineTransform CTM = { 1, 0, 0, 1, float(ix * (fux - flx)), float(iy * (fuy - fly)) };
                 if (stbtt_IsGlyphEmpty(& font, i) == 0) {
                     retval = stbtt_GetGlyphBox(& font, i, & lx, & ly, & ux, & uy);
                     nverts = stbtt_GetGlyphShape(& font, i, & vertices);
@@ -179,7 +182,7 @@ struct Scene {
                             *dst++ = px = vertex->x, *dst++ = py = vertex->y;
                         }
                         
-                        Path p(false, RGBA8(255, 0, 0, 255));
+                        Path p(false, RGBA8(0, 0, 0, 255));
                         for (base = bases, j = 0; j < ncontours; j++, base++) {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
@@ -187,7 +190,7 @@ struct Scene {
                             SubPath s(& buffer[begin * 2], end - begin, SubPath::kCubic);
                             p.addSubPath(s);
                         }
-                        addPath(p);
+                        addPath(p, & CTM);
                         stbtt_FreeShape(& font, vertices);
                     }
                 }
