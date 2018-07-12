@@ -33,6 +33,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
+@property (nonatomic, strong) id <MTLDepthStencilState> noDepthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
 
 @end
@@ -63,6 +64,10 @@
     depthStencilDescriptor.depthWriteEnabled = YES;
     depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionGreaterEqual;
     self.depthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+    
+    depthStencilDescriptor.depthWriteEnabled = NO;
+    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionAlways;
+    self.noDepthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
@@ -110,9 +115,6 @@
     descriptor.label = @"Quadratic";
     self.quadraticPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-//    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
-//    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
@@ -123,6 +125,8 @@
     descriptor.label = @"Curve";
     self.meshCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationReverseSubtract;
     descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationReverseSubtract;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
@@ -227,6 +231,7 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
                 [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
+                [commandEncoder setDepthStencilState:_noDepthState];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
@@ -276,6 +281,7 @@
                                vertexCount:3
                              instanceCount:instanceCount
                               baseInstance:baseInstance];
+        [commandEncoder setDepthStencilState:_depthState];
     }
     
     [commandEncoder endEncoding];
