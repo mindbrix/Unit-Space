@@ -299,47 +299,38 @@
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
     meshState.colorsSize = (int)mesh._colors.size();
+    Call tmpl;
+    tmpl.meshState = meshState;
+    tmpl.state = uniforms;
+    tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
-//        if (meshState.showInterior) {
-            calls.emplace_back();
-            Call& call = calls.back();
-            call.meshState = meshState;
-            call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
-            call.type = kCallTypeMeshInterior;
-            call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
-            call.baseInstance = 0;
-            call.state = uniforms;
-//        }
+        for (int p = 0; p < mesh._colors.size(); p++) {
+            
+        }
+        calls.emplace_back(tmpl);
+        Call& call = calls.back();
+        call.type = kCallTypeMeshInterior;
+        call.meshState.reverseCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+        call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+        
         if (!meshState.showEdges) {
-            calls.emplace_back();
+            calls.emplace_back(tmpl);
             Call& call = calls.back();
-            call.meshState = meshState;
-            call.meshState.reverseCount = 0;
             call.type = kCallTypeMeshTriangles;
             call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
-            call.baseInstance = 0;
-            call.state = uniforms;
         }
     }
-    
     if (mesh._concaveCurves.size()) {
-        calls.emplace_back();
+        calls.emplace_back(tmpl);
         Call& call = calls.back();
-        call.meshState = meshState;
         call.type = kCallTypeMeshConcaveCurves;
         call.instanceCount = (int)_concaveCurvesBuffer.length / sizeof(Triangle);
-        call.baseInstance = 0;
-        call.state = uniforms;
     }
-    
     if (mesh._curves.size()) {
-        calls.emplace_back();
+        calls.emplace_back(tmpl);
         Call& call = calls.back();
-        call.meshState = meshState;
         call.type = kCallTypeMeshCurves;
         call.instanceCount = (int)_curvesBuffer.length / sizeof(Triangle);
-        call.baseInstance = 0;
-        call.state = uniforms;
     }
     memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
     [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
