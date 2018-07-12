@@ -122,7 +122,7 @@ static void findIntersections(vector<Intersection>& intersections, IntersectionE
 }
 
 struct Scene {
-    void addPath(Path& path) {
+    void addPath(Path& path, AffineTransform *CTM = nullptr) {
         if (path._subPaths.size() != 0) {
             path.update();
             if (_paths.size() == 0)
@@ -130,6 +130,8 @@ struct Scene {
             _bounds.unite(path._bounds);
             _npoints += path.countPoints();
             _paths.emplace_back(path);
+            AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
+            _CTMs.emplace_back(CTM ? *CTM : identity);
         }
     }
     void addFont(const void *bytes, size_t size) {
@@ -271,6 +273,7 @@ struct Scene {
         return dst;
     }
     vector<Path>    _paths;
+    vector<AffineTransform> _CTMs;
     Bounds          _bounds;
     int             _npoints, _nsubpaths;
 };

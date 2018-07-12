@@ -188,9 +188,8 @@ struct libTess {
         for (Path& path : scene._paths)
             mesh._colors.emplace_back(path._color);
         
-        AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
         for (int i = 0; i < scene._paths.size(); i++)
-            mesh._pathCTMs.emplace_back(identity);
+            mesh._pathCTMs.emplace_back(scene._CTMs[i]);
         
         Tess::writeCurves(mesh, scene);
         if (useMasking) {
