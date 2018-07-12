@@ -30,6 +30,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshConcaveCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
@@ -90,6 +91,9 @@
     descriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+    descriptor.label = @"InteriorBlend";
+    self.meshInteriorBlendPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"arc_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"arc_fragment_main"];
     descriptor.label = @"Arc";
