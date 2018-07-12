@@ -193,12 +193,7 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float min_dist = min(vert.distance.x, min(vert.distance.y, vert.distance.z));
-    
-//    if (!vert.showInterior)
-//        return vert.color * (1.0 - abs(min_dist - 0.7071));
-    
-    if (min_dist > 0.7071)
+    if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 0.7071)
         return vert.color;
     
     float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
