@@ -299,14 +299,14 @@
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
     meshState.colorsSize = (int)mesh._colors.size();
-    Call tmpl;
+    int base, end, count, p;
+    Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
-        Call *call = nullptr;
-        int base, end, count;
-        for (int p = 0; p < mesh._colors.size(); p++) {
+        call = nullptr;
+        for (p = 0; p < mesh._colors.size(); p++) {
             if (mesh._colors[p].a == 255) {
                 base = mesh._triangleIndices[p];
                 end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
@@ -324,10 +324,35 @@
         }
         
         if (!meshState.showEdges) {
-            calls.emplace_back(tmpl);
-            Call& call = calls.back();
-            call.type = kCallTypeMeshTriangles;
-            call.instanceCount = (int)_trianglesBuffer.length / sizeof(Triangle);
+            call = nullptr;
+            for (p = 0; p < mesh._colors.size(); p++) {
+                base = mesh._triangleIndices[p];
+                end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
+                count = end - base;
+                if (mesh._colors[p].a == 255) {
+                    if (call == nullptr) {
+                        calls.emplace_back(tmpl);
+                        call = & calls.back();
+                        call->type = kCallTypeMeshTriangles;
+                    }
+                    if (call->instanceCount == 0)
+                        call->baseInstance = base;
+                    call->instanceCount += count;
+                } else {
+                    calls.emplace_back(tmpl);
+                    call = & calls.back();
+                    call->type = kCallTypeMeshInteriorBlend;
+                    call->baseInstance = base;
+                    call->instanceCount = count;
+                    
+                    calls.emplace_back(tmpl);
+                    call = & calls.back();
+                    call->type = kCallTypeMeshTriangles;
+                    call->baseInstance = base;
+                    call->instanceCount = count;
+                    call = nullptr;
+                }
+            }
         }
     }
     if (mesh._concaveCurves.size()) {
