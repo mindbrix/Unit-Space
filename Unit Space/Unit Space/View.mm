@@ -529,9 +529,12 @@ using namespace std;
         meshState.useStrokeColor = _useStrokeColor;
         
         int p = -1;
-        for (int i = 0; _showPoints && i < _scene._paths.size(); i++)
-            if (_scene._paths[i].contains(float(user.x), float(user.y)))
+        float ux = float(user.x), uy = float(user.y);
+        for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
+            AffineTransform inv = AffineTransformInvert(_scene._CTMs[i]);
+            if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
                 p = i;
+        }
         for (int i = 0; i < _scene._paths.size(); i++)
             _mesh._colors[i] = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
