@@ -44,7 +44,7 @@ struct InteriorVertex
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device Vector *interiorVectors [[buffer(6)]], device AffineTransform *pathCTMs [[buffer(7)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    uint idx = select(iid - biid, meshState.reverseCount - 1 - iid - biid, meshState.reverseCount);
+    uint idx = select(iid, meshState.reverseCount - 1 - iid, meshState.reverseCount);
     device Triangle &triangle = triangles[idx];
     float t = triangleScales[idx];
     AffineTransform CTM = pathCTMs[triangle.c];
