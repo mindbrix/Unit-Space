@@ -564,6 +564,7 @@ using namespace std;
                         if (!circles->add(_quad[j].x, _quad[j].y, radius))
                             break;
             } else if (p != -1) {
+                call.state.CTM = AffineTransformConcat(_scene._CTMs[p], call.state.CTM);
                 for (SubPath& s : _scene._paths[p]._subPaths) {
                     float *points = s._points.get();
                     for (int j = 0; j < s._npoints; j++) {
@@ -572,6 +573,7 @@ using namespace std;
                             Call& call = _calls.back();
                             call.type = kCallTypeCircles;
                             call.state = uniforms;
+                            call.state.CTM = AffineTransformConcat(_scene._CTMs[p], call.state.CTM);
                             circles = & call.circles;
                             circles->empty();
                             circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius);
