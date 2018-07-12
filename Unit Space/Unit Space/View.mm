@@ -359,7 +359,7 @@ using namespace std;
     AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
-    if (_svgData) {
+    if (_svgData || _fontData) {
         if (self.useDelaunay)
             _tess.triangulate(_mesh, _scene, self.useMask);
         else

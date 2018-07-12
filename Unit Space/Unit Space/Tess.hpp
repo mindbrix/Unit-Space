@@ -153,7 +153,7 @@ struct Scene {
                                 ncontours++;
                         
                         count = (nverts - ncontours) * 3 + ncontours;
-                        float buffer[count * 2], transformed[count * 2], *dst = buffer, px = 0, py = 0, kOneThird = 1.0 / 3.0, kTwoThirds = 2.0 / 3.0;
+                        float buffer[count * 2], *dst = buffer, px = 0, py = 0, kOneThird = 1.0 / 3.0, kTwoThirds = 2.0 / 3.0;
                         int bases[ncontours], *base = bases, begin, end;
                         
                         for (vertex = vertices, j = 0; j < nverts; j++, vertex++) {
@@ -162,12 +162,12 @@ struct Scene {
                                     *base++ = (int)(dst - buffer) / 2;
                                     break;
                                 case STBTT_vline:
-                                    *dst++ = lerp(px, vertex->x, kOneThird), *dst++ = lerp(py, vertex->y, kOneThird);
-                                    *dst++ = lerp(px, vertex->x, kTwoThirds), *dst++ = lerp(py, vertex->y, kTwoThirds);
+                                    *dst++ = lerp(kOneThird, px, vertex->x), *dst++ = lerp(kOneThird, py, vertex->y);
+                                    *dst++ = lerp(kTwoThirds, px, vertex->x), *dst++ = lerp(kTwoThirds, py, vertex->y);
                                     break;
                                 case STBTT_vcurve:
-                                    *dst++ = lerp(px, vertex->cx, kTwoThirds), *dst++ = lerp(py, vertex->cy, kTwoThirds);
-                                    *dst++ = lerp(vertex->x, vertex->cx, kTwoThirds), *dst++ = lerp(vertex->y, vertex->cy, kTwoThirds);
+                                    *dst++ = lerp(kTwoThirds, px, vertex->cx), *dst++ = lerp(kTwoThirds, py, vertex->cy);
+                                    *dst++ = lerp(kTwoThirds, vertex->x, vertex->cx), *dst++ = lerp(kTwoThirds, vertex->y, vertex->cy);
                                     break;
                                 case STBTT_vcubic:
                                     *dst++ = vertex->cx, *dst++ = vertex->cy;
@@ -177,17 +177,17 @@ struct Scene {
                             *dst++ = px = vertex->x, *dst++ = py = vertex->y;
                         }
                         
-                        for (j = 0; j < count; j++) {
-                            px = buffer[j * 2], py = buffer[j * 2 + 1];
-                            transformed[j * 2] = px * 1e-3, transformed[j * 2 + 1] = py * 1e-3;
-                        }
+                        Path p(false, RGBA8(255, 0, 0, 255));
                         for (base = bases, j = 0; j < ncontours; j++, base++) {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
                             
-                            SubPath s(& transformed[begin * 2], end - begin, SubPath::kCubic);
+                            SubPath s(& buffer[begin * 2], end - begin, SubPath::kCubic);
+                            p.addSubPath(s);
                         }
+                        addPath(p);
                         stbtt_FreeShape(& font, vertices);
+                        break;
                     }
                 }
             }
