@@ -638,6 +638,18 @@ using namespace std;
     return (MetalLayer *)self.layer;
 }
 
+- (void)setFontData:(NSData *)fontData {
+    _fontData = fontData;
+    
+    if (_fontData) {
+        _scene.empty();
+        _scene.addFont(_fontData.bytes, _fontData.length);
+    }
+    _flags |= 8;
+    [self reset];
+    [self redraw];
+}
+
 - (void)setPngData:(NSData *)pngData {
     _pngData = pngData;
     

@@ -58,6 +58,7 @@
 		E9DFC48D2093190A00AFDAC7 /* Mesh.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
 		E9EBC19920E7B5A80045D338 /* Mesh.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Mesh.hpp; sourceTree = "<group>"; };
 		E9EBC19A20EF8A2A0045D338 /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_image.h; path = ../../../../stb/stb_image.h; sourceTree = "<group>"; };
+		E9EBC19B20F79EBF0045D338 /* stb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_truetype.h; path = ../../../../stb/stb_truetype.h; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
 		E9EE5F7B20851100005823F7 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
 		E9EE5F7C20851100005823F7 /* bucketalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bucketalloc.h; sourceTree = "<group>"; };
@@ -126,6 +127,7 @@
 				E92BB39220E1052700AF2EF3 /* Murmur */,
 				E96B3465207BDECB006D74B1 /* nanosvg.h */,
 				E9EBC19A20EF8A2A0045D338 /* stb_image.h */,
+				E9EBC19B20F79EBF0045D338 /* stb_truetype.h */,
 			);
 			name = libs;
 			path = "Unit Space/libs";

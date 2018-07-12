@@ -48,6 +48,20 @@
 			<key>NSDocumentClass</key>
 			<string>Document</string>
 		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>ttf</string>
+				<string>ttc</string>
+				<string>otf</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>TTF</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
+		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>

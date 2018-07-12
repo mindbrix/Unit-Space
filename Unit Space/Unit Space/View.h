@@ -10,6 +10,7 @@
 
 @interface View : NSView
 
+@property(nonatomic, strong) NSData *fontData;
 @property(nonatomic, strong) NSData *pngData;
 @property(nonatomic, strong) NSData *svgData;
 

@@ -10,6 +10,7 @@
 
 @interface Document ()
 
+@property( nonatomic, strong ) NSData *fontData;
 @property( nonatomic, strong ) NSData *pngData;
 @property( nonatomic, strong ) NSData *svgData;
 
@@ -38,6 +39,7 @@
 
 - (void)windowControllerDidLoadNib:(NSWindowController *)aController {
     [super windowControllerDidLoadNib:aController];
+    self.view.fontData = self.fontData;
     self.view.pngData = self.pngData;
     self.view.svgData = self.svgData;
 }
@@ -58,6 +60,8 @@
         self.svgData = data;
     else if ([typeName isEqualToString:@"PNG"])
         self.pngData = data;
+    else if ([typeName isEqualToString:@"TTF"])
+        self.fontData = data;
     return YES;
 }
 

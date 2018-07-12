@@ -15,6 +15,8 @@
 #import "nanosvg.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
+#include "stb_truetype.h"
 
 #pragma mark - Data structures
 
@@ -128,6 +130,22 @@ struct Scene {
             _bounds.unite(path._bounds);
             _npoints += path.countPoints();
             _paths.emplace_back(path);
+        }
+    }
+    void addFont(const void *bytes, size_t size) {
+        int retval, i;
+        stbtt_fontinfo font;
+        stbtt_vertex *vertices;
+        const unsigned char *ttf_buffer = (const unsigned char *)bytes;
+        retval = stbtt_InitFont(& font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
+        if (retval) {
+            for (i = 1; i < font.numGlyphs; i++) {
+                retval = stbtt_GetGlyphShape(& font, i, & vertices);
+                if (retval) {
+                    stbtt_FreeShape(& font, vertices);
+                    break;
+                }
+            }
         }
     }
     void addPNG(const void *bytes, size_t size) {
