@@ -101,7 +101,7 @@ struct TriangleVertex
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device AffineTransform *pathCTMs [[buffer(7)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    device Triangle &triangle = triangles[iid - biid];
+    device Triangle &triangle = triangles[iid];
     RGBA8 color = colors[triangle.c];
     Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
     AffineTransform CTM = pathCTMs[triangle.c];
