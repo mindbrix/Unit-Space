@@ -134,6 +134,21 @@ static size_t pointInPolygon(const float *p, const float *polygon, size_t n, siz
     return wn;
 }
 
+static int quadraticDivisions(float x0, float y0, float x1, float y1, float x2, float y2) {
+    constexpr float kHeight = 0.2;
+    float bvx, bvy, cpx, cpy, area, unit;
+    bool left, in0, in1;
+    bvx = x2 - x0, bvy = y2 - y0;
+    left = bvx * (y1 - y0) - bvy * (x1 - x0) > 0;
+    cpx = (x0 + x2) * 0.5 + kHeight * bvy * (left ? -1 : 1);
+    cpy = (y0 + y2) * 0.5 + kHeight * bvx * (left ? 1 : -1);
+    in0 = ((cpx - x0) * (y1 - y0) - (cpy - y0) * (x1 - x0)) * (left ? -1 : 1) > 0;
+    in1 = ((x2 - cpx) * (y1 - cpy) - (y2 - cpy) * (x1 - cpx)) * (left ? -1 : 1) > 0;
+    area = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
+    unit = bvx * (cpy - y0) - bvy * (cpx - x0);
+    return in0 && in1 ? 0 : std::ceil(std::max(0.f, log2f(std::abs(area / unit))));
+}
+
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose,
@@ -156,6 +171,9 @@ struct SubPath {
                 float *pts = _points.get();
                 pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
             }
+            
+            vector<float> q;
+            writeQuadratics(q);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -170,6 +188,33 @@ struct SubPath {
         return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
+    void writeQuadratics(vector<float> & dst) {
+        float *points, *controlPoints, x0, y0, x1, y1, x2, y2, dt;
+        float x01, x12, x012, y01, y12, y012;
+        int i, divisions, div;
+        if (_npoints > 2) {
+            points = _points.get(), controlPoints = _controlPoints.get();
+            dst.resize(0);
+            for (x0 = points[0], y0 = points[1], i = 0; i < _npoints - 1; i++, x0 = x2, y0 = y2) {
+                x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
+                x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
+                divisions = quadraticDivisions(x0, y0, x1, y1, x2, y2);
+                for (div = divisions + 1; div > 0; div--) {
+                    dst.emplace_back(x0), dst.emplace_back(y0);
+                    if (div == 1)
+                        dst.emplace_back(x1), dst.emplace_back(y1);
+                    else {
+                        dt = 1.0 / float(div);
+                        x01 = lerp(dt, x0, x1), x12 = lerp(dt, x1, x2), x012 = lerp(dt, x01, x12);
+                        y01 = lerp(dt, y0, y1), y12 = lerp(dt, y1, y2), y012 = lerp(dt, y01, y12);
+                        dst.emplace_back(x01), dst.emplace_back(y01);
+                        x0 = x012, y0 = y012, x1 = x12, y1 = y12;
+                    }
+                }
+            }
+            dst.emplace_back(x2), dst.emplace_back(y2);
+        }
+    }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
     int                         _npoints;
