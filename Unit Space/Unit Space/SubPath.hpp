@@ -186,7 +186,10 @@ struct SubPath {
     
     int pointWinding(float x, float y) {
         float p[2] = { x, y };
-        return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
+        if (_quadratics.get())
+            return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4, kPointStride * 2);
+        else
+            return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
     void writeQuadratics(vector<float> & dst) {
