@@ -134,21 +134,6 @@ static size_t pointInPolygon(const float *p, const float *polygon, size_t n, siz
     return wn;
 }
 
-static int quadraticDivisions(float x0, float y0, float x1, float y1, float x2, float y2) {
-    constexpr float kHeight = 0.2;
-    float bvx, bvy, cpx, cpy, area, unit;
-    bool left, in0, in1;
-    bvx = x2 - x0, bvy = y2 - y0;
-    left = bvx * (y1 - y0) - bvy * (x1 - x0) > 0;
-    cpx = (x0 + x2) * 0.5 + kHeight * bvy * (left ? -1 : 1);
-    cpy = (y0 + y2) * 0.5 + kHeight * bvx * (left ? 1 : -1);
-    in0 = ((cpx - x0) * (y1 - y0) - (cpy - y0) * (x1 - x0)) * (left ? -1 : 1) > 0;
-    in1 = ((x2 - cpx) * (y1 - cpy) - (y2 - cpy) * (x1 - cpx)) * (left ? -1 : 1) > 0;
-    area = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
-    unit = bvx * (cpy - y0) - bvy * (cpx - x0);
-    return in0 && in1 ? 0 : std::ceil(std::max(0.f, log2f(std::abs(area / unit))));
-}
-
 struct SubPath {
     enum Type {
         kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose,
@@ -191,9 +176,8 @@ struct SubPath {
     }
     
     void writeQuadratics(vector<float> & dst, float *points, float *controlPoints) {
-        float x0, y0, x1, y1, x2, y2, dt, x01, x12, x012, y01, y12, y012;
-        float prec, ax, ay;
-        int i;//, divisions, div;
+        float x0, y0, x1, y1, x2, y2, dt, x01, x12, x012, y01, y12, y012, prec, ax, ay;
+        int i;
         if (_npoints > 2) {
             dst.resize(0);
             prec = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
@@ -204,7 +188,7 @@ struct SubPath {
                 do {
                     ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
                     dt = prec / std::sqrt(ax * ax + ay * ay);
-                    dt = dt < 0 ? 0 : dt > 1 ? 1 : std::sqrt(dt);
+                    dt = dt > 1 ? 1 : std::sqrt(dt);
                     
                     dst.emplace_back(x0), dst.emplace_back(y0);
                     if (dt == 1)
@@ -217,20 +201,6 @@ struct SubPath {
                         x0 = x012, y0 = y012, x1 = x12, y1 = y12;
                     }
                 } while (dt < 1);
-                
-//                divisions = quadraticDivisions(x0, y0, x1, y1, x2, y2);
-//                for (div = divisions + 1; div > 0; div--) {
-//                    dst.emplace_back(x0), dst.emplace_back(y0);
-//                    if (div == 1)
-//                        dst.emplace_back(x1), dst.emplace_back(y1);
-//                    else {
-//                        dt = 1.0 / float(div);
-//                        x01 = lerp(dt, x0, x1), x12 = lerp(dt, x1, x2), x012 = lerp(dt, x01, x12);
-//                        y01 = lerp(dt, y0, y1), y12 = lerp(dt, y1, y2), y012 = lerp(dt, y01, y12);
-//                        dst.emplace_back(x01), dst.emplace_back(y01);
-//                        x0 = x012, y0 = y012, x1 = x12, y1 = y12;
-//                    }
-//                }
             }
             dst.emplace_back(x2), dst.emplace_back(y2);
         }
