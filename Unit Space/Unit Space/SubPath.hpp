@@ -171,6 +171,10 @@ struct SubPath {
                 float *pts = _points.get();
                 pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
             }
+            vector<float> dst;
+            writeQuadratics(dst);
+            _quadratics.alloc((int)dst.size());
+            memcpy(_quadratics.get(), & dst[0], _quadratics.size());
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -216,6 +220,7 @@ struct SubPath {
     }
     Memory<float>               _points;
     Memory<float>               _controlPoints;
+    Memory<float>               _quadratics;
     int                         _npoints;
     float                       _area;
     Bounds                      _bounds;

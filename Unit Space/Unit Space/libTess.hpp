@@ -67,18 +67,13 @@ struct libTess {
     }
     
     static void addContours(TESStesselator *tess, Path& path, bool reverse) {
-        vector<float> contour;
-        float *points, *controlPoints;
-        
         tessSetOption(tess, TESS_REVERSE_CONTOURS, reverse ? 1 : 0);
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
-                points = s._points.get(), controlPoints = s._controlPoints.get();
-                if (controlPoints) {
-                    s.writeQuadratics(contour);
-                    tessAddContour(tess, 2, & contour[0], kPointStride * 2, (int)contour.size() / 4);
-                } else
-                    tessAddContour(tess, 2, points, kPointStride, s._npoints);
+                if (s._quadratics.get())
+                    tessAddContour(tess, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4);
+                else
+                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             }
     }
     
@@ -139,9 +134,7 @@ struct libTess {
     }
     static void writePathTriangles(Mesh& mesh, TESStesselator *tess, Path& path) {
         mesh._colors.emplace_back(path._color);
-        
-        for (SubPath& s : path._subPaths)
-            tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+        addContours(tess, path, false);
         writeTriangles(mesh, tess, 1, TESS_WINDING_NONZERO, (int)mesh._colors.size() - 1);
     }
     
