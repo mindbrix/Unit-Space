@@ -566,8 +566,10 @@ using namespace std;
             } else if (p != -1) {
                 call.state.CTM = AffineTransformConcat(_scene._CTMs[p], call.state.CTM);
                 for (SubPath& s : _scene._paths[p]._subPaths) {
-                    float *points = s._points.get();
-                    for (int j = 0; j < s._npoints; j++) {
+                    float *points = s._quadratics.get() ?: s._points.get();
+                    int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
+                    int stride = s._quadratics.get() ? 2 : 1;
+                    for (int j = 0; j < npoints; j += stride) {
                         if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius)) {
                             _calls.emplace_back();
                             Call& call = _calls.back();
