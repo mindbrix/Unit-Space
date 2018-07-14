@@ -53,7 +53,7 @@ struct libTess {
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
                 if (s._quadratics.get())
-                    tessAddContour(tess, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4);
+                    tessAddContour(tess, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
                 else
                     tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             }

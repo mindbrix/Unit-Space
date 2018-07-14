@@ -187,7 +187,7 @@ struct SubPath {
     int pointWinding(float x, float y) {
         float p[2] = { x, y };
         if (_quadratics.get())
-            return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4, kPointStride * 2);
+            return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4 + 1, kPointStride * 2);
         else
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
@@ -217,8 +217,6 @@ struct SubPath {
                 }
             }
             dst.emplace_back(x2), dst.emplace_back(y2);
-            if (!(dst[0] == x2 && dst[1] == y2))
-                dst.emplace_back(dst[0]), dst.emplace_back(dst[1]);
         }
     }
     Memory<float>               _points;
