@@ -44,11 +44,14 @@ struct Path {
             count += subPath._npoints;
         
         Memory<float> hashPoints(count * 2);
-        float *hp = hashPoints.get(), *points;
-        for (SubPath& subPath : _subPaths)
-            for (points = subPath._points.get(), i = 0; i < subPath._npoints; i++)
-                *hp++ = *points++ - _bounds.lx, *hp++ = *points++ - _bounds.ly;
-        
+        float *hp = hashPoints.get();
+        for (SubPath& s : _subPaths) {
+            float *points = s._quadratics.get() ?: s._points.get();
+            int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
+            int stride = s._quadratics.get() ? 2 : 1;
+            for (i = 0; i < npoints; i += stride)
+                *hp++ = points[i * 2] - _bounds.lx, *hp++ = points[i * 2 + 1] - _bounds.ly;
+        }
         uint32_t *ix, *iend;
         for (ix = (uint32_t *)hashPoints.get(), iend = ix + count * 2; ix < iend; ix++)
             *ix &= ~0xFFFF;
