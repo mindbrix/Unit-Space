@@ -171,9 +171,6 @@ struct SubPath {
                 float *pts = _points.get();
                 pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
             }
-            
-            vector<float> q;
-            writeQuadratics(q);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -213,6 +210,8 @@ struct SubPath {
                 }
             }
             dst.emplace_back(x2), dst.emplace_back(y2);
+            if (!(dst[0] == x2 && dst[1] == y2))
+                dst.emplace_back(dst[0]), dst.emplace_back(dst[1]);
         }
     }
     Memory<float>               _points;
