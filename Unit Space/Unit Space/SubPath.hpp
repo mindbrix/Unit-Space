@@ -164,15 +164,13 @@ struct SubPath {
         
         if (type == kCubic) {
             _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
-            _points.alloc(_npoints * 2);
-            _controlPoints.alloc(_npoints * 2);
-            _npoints = splitCubics(_points.get(), _controlPoints.get(), points, npoints, kSplitCubicPrecision);
-            if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3) {
-                float *pts = _points.get();
+            float pts[_npoints * 2], controlPoints[_npoints * 2];
+             _npoints = splitCubics(pts, controlPoints, points, npoints, kSplitCubicPrecision);
+            if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
                 pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
-            }
+            
             vector<float> dst;
-            writeQuadratics(dst);
+            writeQuadratics(dst, pts, controlPoints);
             _quadratics.alloc((int)dst.size());
             memcpy(_quadratics.get(), & dst[0], _quadratics.size());
         } else {
@@ -192,12 +190,10 @@ struct SubPath {
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
-    void writeQuadratics(vector<float> & dst) {
-        float *points, *controlPoints, x0, y0, x1, y1, x2, y2, dt;
-        float x01, x12, x012, y01, y12, y012;
+    void writeQuadratics(vector<float> & dst, float *points, float *controlPoints) {
+        float x0, y0, x1, y1, x2, y2, dt, x01, x12, x012, y01, y12, y012;
         int i, divisions, div;
         if (_npoints > 2) {
-            points = _points.get(), controlPoints = _controlPoints.get();
             dst.resize(0);
             for (x0 = points[0], y0 = points[1], i = 0; i < _npoints - 1; i++, x0 = x2, y0 = y2) {
                 x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
@@ -220,7 +216,6 @@ struct SubPath {
         }
     }
     Memory<float>               _points;
-    Memory<float>               _controlPoints;
     Memory<float>               _quadratics;
     int                         _npoints;
     float                       _area;
