@@ -160,24 +160,24 @@ struct Tess {
             SubPath* outer = & path._subPaths[outerIndex];
             
             for (SubPath& s : path._subPaths)
-                if (s._controlPoints.get() != NULL) {
-                    const float *points = s._points.get();
-                    const float *controlPoints = s._controlPoints.get();
+                if (s._quadratics.get() != NULL) {
+                    const float *points = s._quadratics.get();
+                    int npoints = (int)s._quadratics.count() / 2;
                     pi = (int)mesh._points.size();
                     c = (int)(& path - & scene._paths[0]);
                     
                     Vector p0 = { points[0], points[1] }, p1, p2;
                     mesh._points.emplace_back(p0);
                     
-                    for (int i = 0; i < s._npoints - 1; i++) {
-                        p1 = { controlPoints[i * 2], controlPoints[i * 2 + 1] };
-                        p2 = { points[i * 2 + 2], points[i * 2 + 3] };
+                    for (int i = 0; i < npoints - 1; i += 2, p0 = p2) {
+                        p1 = { points[i * 2 + 2], points[i * 2 + 3] };
+                        p2 = { points[i * 2 + 4], points[i * 2 + 5] };
                         
                         mesh._points.emplace_back(p1);
                         mesh._points.emplace_back(p2);
                         
                         area = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
-                        Triangle tri = { pi + i * 2, pi + i * 2 + 1, pi + i * 2 + 2, c };
+                        Triangle tri = { pi + i, pi + i + 1, pi + i + 2, c };
                         
                         if (area != 0) {
                             if (area < 0)
@@ -190,8 +190,6 @@ struct Tess {
                             else
                                 mesh._curves.emplace_back(tri);
                         }
-                        
-                        p0 = p2;
                     }
                 }
         }
