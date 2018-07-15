@@ -154,11 +154,13 @@ struct SubPath {
             if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
                 pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
             
-            vector<float> dst;
-            precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
-            writeQuadratics(dst, pts, controlPoints, precision);
-            _quadratics.alloc((int)dst.size());
-            memcpy(_quadratics.get(), & dst[0], _quadratics.size());
+            if (_npoints > 2) {
+                vector<float> dst;
+                precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
+                writeQuadratics(dst, pts, controlPoints, precision);
+                _quadratics.alloc((int)dst.size());
+                memcpy(_quadratics.get(), & dst[0], _quadratics.size());
+            }
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -179,30 +181,28 @@ struct SubPath {
     void writeQuadratics(vector<float> & dst, float *points, float *controlPoints, float precision) {
         float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ax, ay;
         int i;
-        if (_npoints > 2) {
-            for (x0 = points[0], y0 = points[1], i = 0; i < _npoints - 1; i++, x0 = x2, y0 = y2) {
-                x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
-                x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
+        for (x0 = points[0], y0 = points[1], i = 0; i < _npoints - 1; i++, x0 = x2, y0 = y2) {
+            x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
+            x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
+            
+            do {
+                ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
+                t = precision * precision / (ax * ax + ay * ay);
+                t = t > 1 ? 1 : std::sqrt(std::sqrt(t));
                 
-                do {
-                    ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
-                    t = precision * precision / (ax * ax + ay * ay);
-                    t = t > 1 ? 1 : std::sqrt(std::sqrt(t));
-                    
-                    dst.emplace_back(x0), dst.emplace_back(y0);
-                    if (t == 1)
-                        dst.emplace_back(x1), dst.emplace_back(y1);
-                    else {
-                        t = t > 0.5 ? 0.5 : t;
-                        x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
-                        y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
-                        dst.emplace_back(x01), dst.emplace_back(y01);
-                        x0 = x012, y0 = y012, x1 = x12, y1 = y12;
-                    }
-                } while (t < 1);
-            }
-            dst.emplace_back(x2), dst.emplace_back(y2);
+                dst.emplace_back(x0), dst.emplace_back(y0);
+                if (t == 1)
+                    dst.emplace_back(x1), dst.emplace_back(y1);
+                else {
+                    t = t > 0.5 ? 0.5 : t;
+                    x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
+                    y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
+                    dst.emplace_back(x01), dst.emplace_back(y01);
+                    x0 = x012, y0 = y012, x1 = x12, y1 = y12;
+                }
+            } while (t < 1);
         }
+        dst.emplace_back(x2), dst.emplace_back(y2);
     }
     Memory<float>               _points;
     Memory<float>               _quadratics;
