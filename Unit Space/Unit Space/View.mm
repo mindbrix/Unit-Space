@@ -574,7 +574,7 @@ using namespace std;
                     int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
                     int stride = s._quadratics.get() ? 2 : 1;
                     for (int j = 0; j < npoints; j += stride) {
-                        if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius)) {
+                        if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius)) {
                             _calls.emplace_back();
                             Call& call = _calls.back();
                             call.type = kCallTypeCircles;
@@ -582,7 +582,7 @@ using namespace std;
                             call.state.CTM = AffineTransformConcat(_scene._CTMs[p], call.state.CTM);
                             circles = & call.circles;
                             circles->empty();
-                            circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == 1 ? (largeRadius + radius) * 0.5f : radius);
+                            circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius);
                         }
                     }
                 }
