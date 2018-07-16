@@ -135,10 +135,7 @@ static size_t pointInPolygon(const float *p, const float *polygon, size_t n, siz
 }
 
 struct SubPath {
-    enum Type {
-        kNull = 0, kMove, kLine, kQuadratic, kCubic, kClose,
-        kPoints, kControlPoints
-    };
+    enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type) {
