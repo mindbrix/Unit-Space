@@ -319,14 +319,13 @@
             l0 = x0 * x0 + y0 * y0, l1 = x1 * x1 + y1 * y1;
             if (mesh._colors[p].a == 255)
                 interiors[p] = true;
-            if ((l0 > 4 || l1 > 4) && mesh._colors[p].a == 255)
-                interiors[p] = true;
+//            if (l0 > 400 && l1 > 400 && mesh._colors[p].a == 255)
+//                interiors[p] = true;
         }
         call = nullptr;
-        for (p = (int)mesh._colors.size() - 1; p >= 0; p--) {
+        for (end = (int)mesh._triangles.size(), p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
+            base = mesh._triangleIndices[p];
             if (interiors[p]) {
-                base = mesh._triangleIndices[p];
-                end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
                 count = end - base;
                 if (call == nullptr || call->baseInstance != end) {
                     calls.emplace_back(tmpl);
