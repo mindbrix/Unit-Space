@@ -302,32 +302,41 @@
     int base, end, count, p;
     AffineTransform ctm;
     Bounds bounds;
-    float w, h, x0, y0, x1, y1;
+    float w, h, x0, y0, x1, y1, l0, l1;
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
-        call = nullptr;
+        bool interiors[mesh._colors.size()];
+        memset(interiors, 0, sizeof(interiors));
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             bounds = mesh._bounds[p];
             w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
             x0 = w * ctm.a, y0 = w * ctm.b;
             x1 = h * ctm.c, y1 = h * ctm.d;
-            //(x0 * x0 + y0 * y0) > 4 && (x1 * x1 + y1 * y1) > 4 &&
-            if (mesh._colors[p].a == 255) {
+            l0 = x0 * x0 + y0 * y0, l1 = x1 * x1 + y1 * y1;
+            if (mesh._colors[p].a == 255)
+                interiors[p] = true;
+            if ((l0 > 4 || l1 > 4) && mesh._colors[p].a == 255)
+                interiors[p] = true;
+        }
+        call = nullptr;
+        for (p = (int)mesh._colors.size() - 1; p >= 0; p--) {
+            if (interiors[p]) {
                 base = mesh._triangleIndices[p];
                 end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
                 count = end - base;
-                if (call == nullptr || call->baseInstance + call->instanceCount != base) {
+                if (call == nullptr || call->baseInstance != end) {
                     calls.emplace_back(tmpl);
                     call = & calls.back();
                     call->type = kCallTypeMeshInterior;
                     call->baseInstance = base;
+                    call->meshState.reverseCount = end;
                 }
+                call->baseInstance = base;
                 call->instanceCount += count;
-                call->meshState.reverseCount = end;
             }
         }
         
