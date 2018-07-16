@@ -81,11 +81,11 @@ struct libTess {
         mesh.empty();
         TESStesselator *tess = _tess.get(), *dst = _dst.get();
         
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
-        
-        for (int i = 0; i < scene._paths.size(); i++)
+        for (int i = 0; i < scene._paths.size(); i++) {
+            mesh._colors.emplace_back(scene._paths[i]._color);
+            mesh._bounds.emplace_back(scene._paths[i]._bounds);
             mesh._pathCTMs.emplace_back(scene._CTMs[i]);
+        }
         
         Tess::writeCurves(mesh, scene);
         if (useMasking) {
