@@ -81,87 +81,78 @@ struct libTess {
         mesh.empty();
         TESStesselator *tess = _tess.get(), *dst = _dst.get();
         
-        for (int i = 0; i < scene._paths.size(); i++) {
-            mesh._colors.emplace_back(scene._paths[i]._color);
-            mesh._bounds.emplace_back(scene._paths[i]._bounds);
-            mesh._pathCTMs.emplace_back(scene._CTMs[i]);
-        }
-        
         Tess::writeCurves(mesh, scene);
-        if (useMasking) {
-        } else {
-            tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-            for (int p = 0; p < scene._paths.size(); p++) {
-                Path& path = scene._paths[p];
-                if (p == 180) {
-                    p = p;
-                }
-//            for (Path& path : scene._paths) {
-                mesh._triangleIndices.emplace_back((int)mesh._triangles.size());
-                addContours(tess, path, false);
-                if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-                    int count = tessGetVertexCount(tess);
-                    const float *edgePoints = tessGetVertices(tess);
-                    Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
-                    addContours(dst, tess, edges);
-                    sort(edges, eend);
-                    if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
-                        float *points = (float *)tessGetVertices(dst);
-                        int npoints = tessGetVertexCount(dst);
-                        const int nelems = tessGetElementCount(dst);
-                        const TESSindex *polygon = tessGetElements(dst);
-                        float x0, y0, x1, y1, x2, y2, t, t1, a0, a1;
-                        float tx0, ty0, tx1, ty1, tx2, ty2;
-                        Vector m0, m1, m2;
+        tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+        for (int p = 0; p < scene._paths.size(); p++) {
+            Path& path = scene._paths[p];
+            mesh._colors.emplace_back(path._color);
+            mesh._bounds.emplace_back(path._bounds);
+            mesh._pathCTMs.emplace_back(scene._CTMs[p]);
+            mesh._triangleIndices.emplace_back((int)mesh._triangles.size());
+            
+            addContours(tess, path, false);
+            if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
+                int count = tessGetVertexCount(tess);
+                const float *edgePoints = tessGetVertices(tess);
+                Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
+                addContours(dst, tess, edges);
+                sort(edges, eend);
+                if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                    float *points = (float *)tessGetVertices(dst);
+                    int npoints = tessGetVertexCount(dst);
+                    const int nelems = tessGetElementCount(dst);
+                    const TESSindex *polygon = tessGetElements(dst);
+                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1;
+                    float tx0, ty0, tx1, ty1, tx2, ty2;
+                    Vector m0, m1, m2;
+                    
+                    int pi = (int)mesh._points.size(), i0, i1, i2;
+                    for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                        i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                         
-                        int pi = (int)mesh._points.size(), i0, i1, i2;
-                        for (int i = 0; i < nelems; i++, polygon += kPolySize) {
-                            i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
-                            
-                            x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
-                            x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
-                            x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
-                            
-                            e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
-                            e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
-                            e2 = lower_bound(edges, eend, Edge(x2, y2, 0, 0, 0));
-                            if (e0->base != e1->base || e1->base != e2->base || e2->base != e0->base) {
-                                if (e0->base == e1->base) {
-                                    while (e2 < eend - 1 && (e2 + 1)->x == x2 && (e2 + 1)->y == y2)
-                                        if ((++e2)->base == e0->base)
-                                            break;
-                                } else if (e1->base == e2->base) {
-                                    while (e0 < eend - 1 && (e0 + 1)->x == x0 && (e0 + 1)->y == y0)
-                                        if ((++e0)->base == e1->base)
-                                            break;
-                                } else if (e2->base == e0->base) {
-                                    while (e1 < eend - 1 && (e1 + 1)->x == x1 && (e1 + 1)->y == y1)
-                                        if ((++e1)->base == e2->base)
-                                            break;
-                                }
+                        x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
+                        x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
+                        x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
+                        
+                        e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
+                        e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
+                        e2 = lower_bound(edges, eend, Edge(x2, y2, 0, 0, 0));
+                        if (e0->base != e1->base || e1->base != e2->base || e2->base != e0->base) {
+                            if (e0->base == e1->base) {
+                                while (e2 < eend - 1 && (e2 + 1)->x == x2 && (e2 + 1)->y == y2)
+                                    if ((++e2)->base == e0->base)
+                                        break;
+                            } else if (e1->base == e2->base) {
+                                while (e0 < eend - 1 && (e0 + 1)->x == x0 && (e0 + 1)->y == y0)
+                                    if ((++e0)->base == e1->base)
+                                        break;
+                            } else if (e2->base == e0->base) {
+                                while (e1 < eend - 1 && (e1 + 1)->x == x1 && (e1 + 1)->y == y1)
+                                    if ((++e1)->base == e2->base)
+                                        break;
                             }
-                            m0 = miter(edgePoints, e0, x0, y0, x1, y1, x2, y2);
-                            m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
-                            m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
-                            
-                            solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
-                            tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
-                            tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
-                            tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-                            a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
-                            if (t1 != -1) {
-                                tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
-                                tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
-                                tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
-                                a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
-                            }
-                            mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], (int) (&path - & scene._paths[0]));
-                            mesh._interiorScales.emplace_back(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
-                            mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                         }
-                        for (int i = 0; i < npoints; i++)
-                            mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
+                        m0 = miter(edgePoints, e0, x0, y0, x1, y1, x2, y2);
+                        m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
+                        m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
+                        
+                        solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
+                        tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
+                        tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
+                        tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
+                        a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
+                        if (t1 != -1) {
+                            tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
+                            tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
+                            tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
+                            a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
+                        }
+                        mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
+                        mesh._interiorScales.emplace_back(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
+                        mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                     }
+                    for (int i = 0; i < npoints; i++)
+                        mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
                 }
             }
         }
