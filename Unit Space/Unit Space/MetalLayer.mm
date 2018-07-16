@@ -300,6 +300,9 @@
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
     meshState.colorsSize = (int)mesh._colors.size();
     int base, end, count, p;
+    AffineTransform ctm;
+    Bounds bounds;
+    float w, h, x0, y0, x1, y1;
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
@@ -307,6 +310,12 @@
     if (mesh._triangles.size()) {
         call = nullptr;
         for (p = 0; p < mesh._colors.size(); p++) {
+            ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
+            bounds = mesh._bounds[p];
+            w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
+            x0 = w * ctm.a, y0 = w * ctm.b;
+            x1 = h * ctm.c, y1 = h * ctm.d;
+            //(x0 * x0 + y0 * y0) > 4 && (x1 * x1 + y1 * y1) > 4 &&
             if (mesh._colors[p].a == 255) {
                 base = mesh._triangleIndices[p];
                 end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
@@ -315,9 +324,8 @@
                     calls.emplace_back(tmpl);
                     call = & calls.back();
                     call->type = kCallTypeMeshInterior;
-                }
-                if (call->instanceCount == 0)
                     call->baseInstance = base;
+                }
                 call->instanceCount += count;
                 call->meshState.reverseCount = end;
             }
@@ -334,9 +342,8 @@
                         calls.emplace_back(tmpl);
                         call = & calls.back();
                         call->type = kCallTypeMeshTriangles;
-                    }
-                    if (call->instanceCount == 0)
                         call->baseInstance = base;
+                    }
                     call->instanceCount += count;
                 } else {
                     calls.emplace_back(tmpl);
