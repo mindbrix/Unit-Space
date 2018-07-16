@@ -309,7 +309,6 @@
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
         bool interiors[mesh._colors.size()];
-        memset(interiors, 0, sizeof(interiors));
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             bounds = mesh._bounds[p];
@@ -317,8 +316,7 @@
             x0 = w * ctm.a, y0 = w * ctm.b;
             x1 = h * ctm.c, y1 = h * ctm.d;
             l0 = x0 * x0 + y0 * y0, l1 = x1 * x1 + y1 * y1;
-            if (mesh._colors[p].a == 255)
-                interiors[p] = true;
+            interiors[p] = mesh._colors[p].a == 255;
 //            if (l0 > 400 && l1 > 400 && mesh._colors[p].a == 255)
 //                interiors[p] = true;
         }
