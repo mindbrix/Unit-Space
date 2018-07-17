@@ -302,23 +302,21 @@
     int base, end, count, p;
     AffineTransform ctm;
     Bounds bounds;
-    float scale, w, h, x0, y0, x1, y1, l0, l1;
+    float w, h, x0, y0, x1, y1, l0, l1;
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
-        bool opaques[mesh._colors.size()], smalls[mesh._colors.size()];
+        bool opaques[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
-            scale = std::sqrt(std::abs(ctm.d * ctm.a - ctm.b * ctm.c));
             bounds = mesh._bounds[p];
             w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
             x0 = w * ctm.a, y0 = w * ctm.b;
             x1 = h * ctm.c, y1 = h * ctm.d;
             l0 = x0 * x0 + y0 * y0, l1 = x1 * x1 + y1 * y1;
-            smalls[p] = l0 < 400 || l1 < 400;
-            opaques[p] = smalls[p] || mesh._colors[p].a == 255;
+            opaques[p] = l0 < 400 || l1 < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;
         for (end = (int)mesh._triangles.size(), p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
