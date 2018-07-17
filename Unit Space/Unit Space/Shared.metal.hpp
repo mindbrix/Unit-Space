@@ -82,6 +82,21 @@ struct Bounds {
     bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
+    Bounds transformed(AffineTransform t) {
+        float wa0 = t.a < 0 ? 1 : 0, wa1 = 1.0 - wa0;
+        float wb0 = t.b < 0 ? 1 : 0, wb1 = 1.0 - wb0;
+        float wc0 = t.c < 0 ? 1 : 0, wc1 = 1.0 - wc0;
+        float wd0 = t.d < 0 ? 1 : 0, wd1 = 1.0 - wd0;
+        float w, h, x0, x1, y0, y1, ox, oy;
+        w = ux - lx, h = uy - ly;
+        x0 = wa0 * t.a * w + wc0 * t.c * h;
+        x1 = wa1 * t.a * w + wc1 * t.c * h;
+        y0 = wb0 * t.b * w + wd0 * t.d * h;
+        y1 = wb1 * t.b * w + wd1 * t.d * h;
+        ox = lx * t.a + ly * t.c + t.tx;
+        oy = lx * t.b + ly * t.d + t.ty;
+        return { ox + x0, oy + y0, ox + x1, oy + y1 };
+    }
     void unite(Bounds other) {
         lx = lx < other.lx ? lx : other.lx, ly = ly < other.ly ? ly : other.ly;
         ux = ux > other.ux ? ux : other.ux, uy = uy > other.uy ? uy : other.uy;
