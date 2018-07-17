@@ -13,12 +13,6 @@
 
 #pragma clang diagnostic ignored "-Wcomma"
 
-inline bool signBit(float n) {
-    union { float x; unsigned int ix; };
-    x = n;
-    return (ix & ~0x7FFFFFFF) >> 31;
-}
-
 struct Arc { float x, y, r, t0, t1; };
 
 struct Circle { float x, y, r; };
@@ -89,16 +83,12 @@ struct Bounds {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
     Bounds transformed(AffineTransform t) {
-        bool wa0 = signBit(t.a), wa1 = !wa0;
-        bool wb0 = signBit(t.b), wb1 = !wb0;
-        bool wc0 = signBit(t.c), wc1 = !wc0;
-        bool wd0 = signBit(t.d), wd1 = !wd0;
         float w, h, x0, x1, y0, y1, ox, oy;
         w = ux - lx, h = uy - ly;
-        x0 = wa0 * t.a * w + wc0 * t.c * h;
-        x1 = wa1 * t.a * w + wc1 * t.c * h;
-        y0 = wb0 * t.b * w + wd0 * t.d * h;
-        y1 = wb1 * t.b * w + wd1 * t.d * h;
+        x0 = (t.a < 0 ? t.a * w : 0) + (t.c < 0 ? t.c * h : 0);
+        x1 = (t.a < 0 ? 0 : t.a * w) + (t.c < 0 ? 0 : t.c * h);
+        y0 = (t.b < 0 ? t.b * w : 0) + (t.d < 0 ? t.d * h : 0);
+        y1 = (t.b < 0 ? 0 : t.b * w) + (t.d < 0 ? 0 : t.d * h);
         ox = lx * t.a + ly * t.c + t.tx;
         oy = lx * t.b + ly * t.d + t.ty;
         return { ox + x0, oy + y0, ox + x1, oy + y1 };
