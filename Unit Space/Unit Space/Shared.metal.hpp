@@ -218,7 +218,7 @@ struct Call {
     };
 };
 
-static AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
+inline AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
     return {
         t0.a * t1.a + t0.b * t1.c,              t0.a * t1.b + t0.b * t1.d,
         t0.c * t1.a + t0.d * t1.c,              t0.c * t1.b + t0.d * t1.d,
@@ -226,7 +226,7 @@ static AffineTransform AffineTransformConcat(const AffineTransform t0, const Aff
     };
 }
 
-static AffineTransform AffineTransformInvert(const AffineTransform t) {
+inline AffineTransform AffineTransformInvert(const AffineTransform t) {
     float determinant = t.a * t.d - t.b * t.c;
     if (determinant == 0)
         return t;
