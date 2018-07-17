@@ -13,11 +13,12 @@
 
 #pragma clang diagnostic ignored "-Wcomma"
 
-inline float signBit(float n) {
+inline bool signBit(float n) {
     union { float x; unsigned int ix; };
     x = n;
-    return ((ix & ~0x7FFFFFFF) >> 31);
+    return (ix & ~0x7FFFFFFF) >> 31;
 }
+
 struct Arc { float x, y, r, t0, t1; };
 
 struct Circle { float x, y, r; };
@@ -88,10 +89,10 @@ struct Bounds {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
     Bounds transformed(AffineTransform t) {
-        float wa0 = signBit(t.a), wa1 = 1.0 - wa0;
-        float wb0 = signBit(t.b), wb1 = 1.0 - wb0;
-        float wc0 = signBit(t.c), wc1 = 1.0 - wc0;
-        float wd0 = signBit(t.d), wd1 = 1.0 - wd0;
+        bool wa0 = signBit(t.a), wa1 = !wa0;
+        bool wb0 = signBit(t.b), wb1 = !wb0;
+        bool wc0 = signBit(t.c), wc1 = !wc0;
+        bool wd0 = signBit(t.d), wd1 = !wd0;
         float w, h, x0, x1, y0, y1, ox, oy;
         w = ux - lx, h = uy - ly;
         x0 = wa0 * t.a * w + wc0 * t.c * h;
