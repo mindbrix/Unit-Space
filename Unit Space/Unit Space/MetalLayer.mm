@@ -308,7 +308,7 @@
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
-        bool interiors[mesh._colors.size()];
+        bool opaques[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             bounds = mesh._bounds[p];
@@ -316,14 +316,14 @@
             x0 = w * ctm.a, y0 = w * ctm.b;
             x1 = h * ctm.c, y1 = h * ctm.d;
             l0 = x0 * x0 + y0 * y0, l1 = x1 * x1 + y1 * y1;
-            interiors[p] = mesh._colors[p].a == 255;
+            opaques[p] = mesh._colors[p].a == 255;
 //            if (l0 > 400 && l1 > 400 && mesh._colors[p].a == 255)
 //                interiors[p] = true;
         }
         call = nullptr;
         for (end = (int)mesh._triangles.size(), p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
             base = mesh._triangleIndices[p];
-            if (interiors[p]) {
+            if (opaques[p]) {
                 count = end - base;
                 if (call == nullptr || call->baseInstance != end) {
                     calls.emplace_back(tmpl);
@@ -343,7 +343,7 @@
                 base = mesh._triangleIndices[p];
                 end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
                 count = end - base;
-                if (interiors[p]) {
+                if (opaques[p]) {
                     if (call == nullptr) {
                         calls.emplace_back(tmpl);
                         call = & calls.back();
