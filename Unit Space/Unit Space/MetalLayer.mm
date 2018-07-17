@@ -301,16 +301,18 @@
     meshState.colorsSize = (int)mesh._colors.size();
     int base, end, count, p;
     AffineTransform ctm;
-    Bounds bounds;
+    Bounds bounds, deviceBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     float w, h, x0, y0, x1, y1, l0, l1;
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
-        bool opaques[mesh._colors.size()];
+        bool opaques[mesh._colors.size()], visibles[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
+            bounds = mesh._bounds[p].transformed(ctm);
+            visibles[p] = bounds.intersects(deviceBounds);
             bounds = mesh._bounds[p];
             w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
             x0 = w * ctm.a, y0 = w * ctm.b;
@@ -321,7 +323,7 @@
         call = nullptr;
         for (end = (int)mesh._triangles.size(), p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
             base = mesh._triangleIndices[p];
-            if (opaques[p]) {
+            if (visibles[p] && opaques[p]) {
                 count = end - base;
                 if (call == nullptr || call->baseInstance != end) {
                     calls.emplace_back(tmpl);
@@ -338,6 +340,10 @@
         if (!meshState.showEdges) {
             call = nullptr;
             for (p = 0; p < mesh._colors.size(); p++) {
+                if (!visibles[p]) {
+                    call = nullptr;
+                    continue;
+                }
                 base = mesh._triangleIndices[p];
                 end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
                 count = end - base;
