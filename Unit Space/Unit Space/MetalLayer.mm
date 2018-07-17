@@ -302,7 +302,7 @@
     int base, end, count, p;
     AffineTransform ctm;
     Bounds bounds;
-    float w, h, x0, y0, x1, y1, l0, l1;
+    float scale, w, h, x0, y0, x1, y1, l0, l1;
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
@@ -311,6 +311,7 @@
         bool opaques[mesh._colors.size()], smalls[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
+            scale = std::sqrt(std::abs(ctm.d * ctm.a - ctm.b * ctm.c));
             bounds = mesh._bounds[p];
             w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
             x0 = w * ctm.a, y0 = w * ctm.b;
