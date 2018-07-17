@@ -12,28 +12,8 @@ constexpr float kSplitCubicPrecision = 0.1;
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
-static int countSplitCubics(const float *src, const int npoints, const float prec) {
-    float x0, y0, x1, y1, x2, y2, x3, y3;
-    float xD01, yD01, D01, tcubed;
-    int count = 0, calculated;
-    
-    constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
-    
-    for (int i = 0; i < npoints - 1; i += 3) {
-        const float *p = src + i * 2;
-        x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
-        
-        xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
-        D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-        tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
-        calculated = tcubed >= 1 ? 1 : std::ceil(1.0 / cbrt(tcubed));
-        count += calculated;
-    }
-    return count + 1;
-}
-
-static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, const float prec) {
-    float *dbegin = dst, x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
+static int splitCubics(vector<float>& dst, const float *src, int npoints, const float prec) {
+    float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23;
     float n012, n123;
@@ -91,7 +71,7 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
             if (tcubed > 0.999999)
                 break;
             
-            *dst++ = x0, *dst++ = y0;
+            dst.emplace_back(x0), dst.emplace_back(y0);
             t = cbrt(tcubed);
             n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
             n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
@@ -104,16 +84,18 @@ static int splitCubics(float *dst, float *cpdst, const float *src, int npoints, 
             n0123 = lerp(t, n012, n123);
             cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
             y0 = n0123, y1 = n123, y2 = n23;
-            *cpdst++ = cpx, *cpdst++ = cpy;
+            dst.emplace_back(cpx), dst.emplace_back(cpy);
         } while (1);
         
         cpx = (3.0 * (x2 + x1) - x0 - x3) * 0.25, cpy = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
         if (cpx != x0 || cpy != y0)
-            *dst++ = x0, *dst++ = y0, *cpdst++ = cpx, *cpdst++ = cpy;
+            dst.emplace_back(x0), dst.emplace_back(y0), dst.emplace_back(cpx), dst.emplace_back(cpy);
     }
-    *dst++ = x3, *dst++ = y3;
-    return (int)(dst - dbegin) / 2;
+    dst.emplace_back(x3), dst.emplace_back(y3);
+    return (int)dst.size() / 2;
 }
+
+
 
 static inline float isLeft(const float *P0, const float *P1, const float *P2) {
     return (P1[0] - P0[0]) * (P2[1] - P0[1]) - (P2[0] -  P0[0]) * (P1[1] - P0[1]);
@@ -145,16 +127,14 @@ struct SubPath {
         dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
         
         if (type == kCubic) {
-            _npoints = countSplitCubics(points, npoints, kSplitCubicPrecision);
-            float pts[_npoints * 2], controlPoints[_npoints * 2];
-             _npoints = splitCubics(pts, controlPoints, points, npoints, kSplitCubicPrecision);
+            vector<float> split;
+            _npoints = splitCubics(split, points, npoints, kSplitCubicPrecision);
             if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
-                pts[_npoints * 2 - 2] = pts[0], pts[_npoints * 2 - 1] = pts[1];
-            
+                split[_npoints * 2 - 2] = split[0], split[_npoints * 2 - 1] = split[1];
             if (_npoints > 2) {
                 vector<float> dst;
                 precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
-                writeQuadratics(dst, pts, controlPoints, precision);
+                writeQuadratics(dst, split, precision);
                 _quadratics.alloc((int)dst.size());
                 memcpy(_quadratics.get(), & dst[0], _quadratics.size());
             }
@@ -175,11 +155,11 @@ struct SubPath {
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
-    void writeQuadratics(vector<float> & dst, float *points, float *controlPoints, float precision) {
+    void writeQuadratics(vector<float> & dst, vector<float> & points, float precision) {
         float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ax, ay;
-        int i;
-        for (x0 = points[0], y0 = points[1], i = 0; i < _npoints - 1; i++, x0 = x2, y0 = y2) {
-            x1 = controlPoints[i * 2], y1 = controlPoints[i * 2 + 1];
+        int i, npoints;
+        for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
+            x1 = points[i * 2], y1 = points[i * 2 + 1];
             x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
             
             do {
@@ -201,6 +181,7 @@ struct SubPath {
         }
         dst.emplace_back(x2), dst.emplace_back(y2);
     }
+    
     Memory<float>               _points;
     Memory<float>               _quadratics;
     int                         _npoints;
