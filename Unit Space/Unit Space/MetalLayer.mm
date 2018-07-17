@@ -343,7 +343,7 @@
                 base = mesh._triangleIndices[p];
                 end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
                 count = end - base;
-                if (mesh._colors[p].a == 255) {
+                if (interiors[p]) {
                     if (call == nullptr) {
                         calls.emplace_back(tmpl);
                         call = & calls.back();
@@ -357,6 +357,7 @@
                     call->type = kCallTypeMeshInteriorBlend;
                     call->baseInstance = base;
                     call->instanceCount = count;
+                    call->meshState.reverseCount = end;
                     
                     calls.emplace_back(tmpl);
                     call = & calls.back();
