@@ -37,6 +37,7 @@ float edgeWinding(float2 p0, float2 p1) {
 struct EdgeVertex
 {
     float4 position [[position]];
+    float u, v;
     float4 color;
 };
 
@@ -60,13 +61,15 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
         p1.x * CTM.a + p1.y * CTM.c + CTM.tx,
         p1.x * CTM.b + p1.y * CTM.d + CTM.ty
     };
-    float2 nv = normalize(_p1 - _p0);
+    float2 nv = normalize(_p1 - _p0) * 1;
     float2 lnv = { -nv.y, nv.x };
     float2 devicePoint = select(_p0 - nv, _p1 + nv, vid > 1) + select(lnv, -lnv, vid & 1);
     
     EdgeVertex vert;
     float z = (triangle.c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
+    vert.u = select(-1, 1, vid & 1);
+    vert.v = select(-1, 1, vid > 1);
     RGBA8 color = colors[triangle.c];
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
@@ -74,7 +77,17 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 edge_fragment_main(EdgeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    return vert.color;
+    float u = 1.0 - abs(vert.u);
+    float v = 1.0 - abs(vert.v);
+    float r = rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
+    u *= r;
+    v *= rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
+    float x = max(0.0, r - u);
+    float y = max(0.0, r - v);
+    float d = r - sqrt(x * x + y * y);
+    return vert.color * saturate(d + 0.0);
+    //    return vert.color * saturate(u) * saturate(v);
+//    return vert.color * saturate(u) * saturate(v);
 }
 
 
