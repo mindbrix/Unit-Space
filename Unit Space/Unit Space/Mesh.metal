@@ -62,7 +62,7 @@ vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant
     };
     float2 nv = normalize(_p1 - _p0);
     float2 lnv = { -nv.y, nv.x };
-    float2 devicePoint = select(_p0 - nv, _p1 + nv, vid > 1) + select(lnv, -lnv, vid == 0 || vid == 3);
+    float2 devicePoint = select(_p0 - nv, _p1 + nv, vid > 1) + select(lnv, -lnv, vid & 1);
     
     EdgeVertex vert;
     float z = (triangle.c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
