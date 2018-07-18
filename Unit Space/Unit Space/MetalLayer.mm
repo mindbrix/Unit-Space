@@ -32,6 +32,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshTriangleEdgePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLDepthStencilState> noDepthState;
@@ -123,6 +124,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"edge_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"edge_fragment_main"];
+    descriptor.label = @"Edge";
+    self.meshTriangleEdgePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
@@ -256,6 +262,18 @@
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
+            case kCallTypeMeshTriangleEdges:
+                [commandEncoder setRenderPipelineState:_meshTriangleEdgePipelineState];
+                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
+                [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
+                [commandEncoder setVertexBuffer:_interiorScalesBuffer offset:0 atIndex:5];
+                [commandEncoder setVertexBuffer:_interiorVectorsBuffer offset:0 atIndex:6];
+                [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
+                drawQuads = YES;
+                break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
                 [commandEncoder setVertexBytes:&call->quadratics length:sizeof(Quadratics) atIndex:1];
@@ -279,7 +297,10 @@
                                         indexType:MTLIndexTypeUInt16
                                       indexBuffer:_indexBuffer
                                 indexBufferOffset:0
-                                    instanceCount:instanceCount];
+                                    instanceCount:instanceCount
+                                       baseVertex:0
+                                     baseInstance:baseInstance
+             ];
         else
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0

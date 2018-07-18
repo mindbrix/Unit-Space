@@ -32,6 +32,52 @@ float edgeWinding(float2 p0, float2 p1) {
     return coverage * (t1 - ((t1 - t0) * area));
 }
 
+#pragma mark - Triangle Edge
+
+struct EdgeVertex
+{
+    float4 position [[position]];
+    float4 color;
+};
+
+vertex EdgeVertex edge_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device Vector *interiorVectors [[buffer(6)]], device AffineTransform *pathCTMs [[buffer(7)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+{
+    uint idx = iid / 3;
+    device Triangle &triangle = triangles[idx];
+    AffineTransform CTM = pathCTMs[triangle.c];
+    CTM = AffineTransformConcat(CTM, state.CTM);
+    
+    int i0 = iid % 3, i1 = (iid + 1) % 3;
+    i0 = select(select(triangle.i2, triangle.i1, i0 == 1), triangle.i0, i0 == 0);
+    i1 = select(select(triangle.i2, triangle.i1, i1 == 1), triangle.i0, i1 == 0);
+    Vector p0 = points[i0], p1 = points[i1];
+    
+    float2 _p0 = {
+        p0.x * CTM.a + p0.y * CTM.c + CTM.tx,
+        p0.x * CTM.b + p0.y * CTM.d + CTM.ty
+    };
+    float2 _p1 = {
+        p1.x * CTM.a + p1.y * CTM.c + CTM.tx,
+        p1.x * CTM.b + p1.y * CTM.d + CTM.ty
+    };
+    float2 nv = normalize(_p1 - _p0);
+    float2 lnv = { -nv.y, nv.x };
+    float2 devicePoint = select(_p0 - nv, _p1 + nv, vid > 1) + select(lnv, -lnv, vid == 0 || vid == 3);
+    
+    EdgeVertex vert;
+    float z = (triangle.c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
+    RGBA8 color = colors[triangle.c];
+    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
+    return vert;
+}
+
+fragment float4 edge_fragment_main(EdgeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    return vert.color;
+}
+
+
 #pragma mark - Interior
 
 struct InteriorVertex
