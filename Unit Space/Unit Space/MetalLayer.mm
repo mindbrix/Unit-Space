@@ -329,6 +329,12 @@
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._triangles.size()) {
+//        calls.emplace_back(tmpl);
+//        Call& call = calls.back();
+//        call.type = kCallTypeMeshTriangleEdges;
+//        call.instanceCount = (int)mesh._triangles.size() * 3;
+        
+        /**/
         bool opaques[mesh._colors.size()], visibles[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
@@ -392,6 +398,7 @@
                 }
             }
         }
+         
     }
     if (mesh._concaveCurves.size()) {
         calls.emplace_back(tmpl);

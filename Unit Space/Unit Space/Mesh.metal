@@ -252,6 +252,8 @@ fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant S
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
+//    return vert.color * min(saturate(vert.distance.x + 0.5), min(saturate(vert.distance.y + 0.5), saturate(vert.distance.z + 0.5)));
+    
     if (min(vert.distance.x, min(vert.distance.y, vert.distance.z)) > 0.7071)
         return vert.color;
     
