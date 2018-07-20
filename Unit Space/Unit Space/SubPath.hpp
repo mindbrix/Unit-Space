@@ -134,12 +134,7 @@ struct SubPath {
             if (_npoints > 2) {
                 vector<float> dst;
                 precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
-                int count = countQuadratics(split, precision);
-                
                 writeQuadratics(dst, split, precision);
-                if (count * 2 + 1 < dst.size() / 2) {
-                    count = countQuadratics(split, precision);
-                }
                 _quadratics.alloc((int)dst.size());
                 memcpy(_quadratics.get(), & dst[0], _quadratics.size());
             }
@@ -160,45 +155,12 @@ struct SubPath {
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
-    int countQuadratics(vector<float> & points, float precision) {
-        float x0, y0, x1, y1, x2, y2, t, ax, ay;
-        int count = 0, i, npoints;
-        for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
-            x1 = points[i * 2], y1 = points[i * 2 + 1];
-            x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
-            
-            ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
-            t = precision * precision / (ax * ax + ay * ay);
-            t = t > 1 ? 1 : std::sqrt(std::sqrt(t));
-            count += std::ceil(1.0 / t);
-        }
-        return count;
-    }
     void writeQuadratics(vector<float> & dst, vector<float> & points, float precision) {
         float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ax, ay;
-        int i, npoints, count;
+        int i, npoints;
         for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = points[i * 2], y1 = points[i * 2 + 1];
             x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
-            
-//            ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
-//            t = precision * precision / (ax * ax + ay * ay);
-//            t = t > 1 ? 1 : std::sqrt(std::sqrt(t));
-//            count = std::ceil(1.0 / t);
-//
-//            do {
-//                t = 1.0 / float(count);
-//                dst.emplace_back(x0), dst.emplace_back(y0);
-//                if (t == 1)
-//                    dst.emplace_back(x1), dst.emplace_back(y1);
-//                else {
-//                    x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
-//                    y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
-//                    dst.emplace_back(x01), dst.emplace_back(y01);
-//                    x0 = x012, y0 = y012, x1 = x12, y1 = y12;
-//                }
-//            } while (--count);
-            
             
             do {
                 ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
