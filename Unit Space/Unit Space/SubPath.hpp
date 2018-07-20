@@ -138,6 +138,16 @@ struct SubPath {
                 _quadratics.alloc((int)dst.size());
                 memcpy(_quadratics.get(), & dst[0], _quadratics.size());
             }
+        } else if (type == kQuadratic) {
+            _npoints = npoints;
+            if (_npoints > 4) {
+                vector<float> quadratics(npoints * 2), dst;
+                memcpy(& quadratics[0], points, npoints * kPointStride);
+                precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
+                writeQuadratics(dst, quadratics, precision);
+                _quadratics.alloc((int)dst.size());
+                memcpy(_quadratics.get(), & dst[0], _quadratics.size());
+            }
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -156,7 +166,7 @@ struct SubPath {
     }
     
     void writeQuadratics(vector<float> & dst, vector<float> & points, float precision) {
-        float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ax, ay;
+        float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ax, ay, bx, by, vt;
         int i, npoints;
         for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = points[i * 2], y1 = points[i * 2 + 1];
@@ -164,13 +174,17 @@ struct SubPath {
             
             do {
                 ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
+                bx = 2.0 * (x1 - x0), by = 2.0 * (y1 - y0);
                 t = precision * precision / (ax * ax + ay * ay);
                 t = t > 1 ? 1 : t > 0.0625 ? 0.51 : std::sqrt(std::sqrt(t));
-
+                
                 dst.emplace_back(x0), dst.emplace_back(y0);
                 if (t == 1)
                     dst.emplace_back(x1), dst.emplace_back(y1);
                 else {
+//                    vt = (bx * ax + by * ay) * -0.5 / (ax * ax + ay * ay);
+//                    if (vt > 0.001 && vt < t)
+//                        t = vt;
                     x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
                     y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
                     dst.emplace_back(x01), dst.emplace_back(y01);
