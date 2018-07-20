@@ -572,21 +572,23 @@ using namespace std;
                         if (!circles->add(_quad[j].x, _quad[j].y, radius))
                             break;
             } else if (p != -1) {
-                call.state.CTM = AffineTransformConcat(_scene._CTMs[p], call.state.CTM);
+                AffineTransform m = _scene._CTMs[p];
+                float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
+                call.state.CTM = AffineTransformConcat(m, CTM);
                 for (SubPath& s : _scene._paths[p]._subPaths) {
                     float *points = s._quadratics.get() ?: s._points.get();
                     int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
                     int stride = s._quadratics.get() ? 2 : 1;
                     for (int j = 0; j < npoints; j += stride) {
-                        if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius)) {
+                        if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
                             _calls.emplace_back();
                             Call& call = _calls.back();
                             call.type = kCallTypeCircles;
                             call.state = uniforms;
-                            call.state.CTM = AffineTransformConcat(_scene._CTMs[p], call.state.CTM);
+                            call.state.CTM = AffineTransformConcat(m, CTM);
                             circles = & call.circles;
                             circles->empty();
-                            circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius);
+                            circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
                         }
                     }
                 }
