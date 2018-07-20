@@ -34,7 +34,7 @@ struct Scene {
     }
     void addFont(const void *bytes, size_t size) {
         int retval, i, j, nverts, count, ncontours, d, ix, iy;
-        int flx, fly, fux, fuy;
+        int flx, fly, fux, fuy, fw, fh, fdim;
         int lx, ly, ux, uy;
         stbtt_fontinfo font;
         stbtt_vertex *vertices, *vertex;
@@ -42,11 +42,14 @@ struct Scene {
         retval = stbtt_InitFont(& font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer, 0));
         if (retval) {
             stbtt_GetFontBoundingBox(& font, & flx, & fly, & fux, & fuy);
+            fw = fux - flx, fh = fuy - fly, fdim = fw < fh ? fw : fh;
             d = std::ceil(std::sqrt((float)font.numGlyphs));
+            AffineTransform scale = { 32.f / float(fdim), 0, 0, 32.f / float(fdim), 0, 0 };
             
             for (i = 0; i < font.numGlyphs; i++) {
                 ix = i % d, iy = i / d;
                 AffineTransform CTM = { 1, 0, 0, 1, float(ix * (fux - flx)), float(iy * (fuy - fly)) };
+                CTM = AffineTransformConcat(CTM, scale);
                 if (stbtt_IsGlyphEmpty(& font, i) == 0) {
                     retval = stbtt_GetGlyphBox(& font, i, & lx, & ly, & ux, & uy);
                     nverts = stbtt_GetGlyphShape(& font, i, & vertices);
