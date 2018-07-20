@@ -120,8 +120,8 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    SubPath(const float *points, const int npoints, Type type) {
-        float dx, dy, precision;
+    SubPath(const float *points, const int npoints, Type type, float precision = 1) {
+        float dx, dy;
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
@@ -133,7 +133,6 @@ struct SubPath {
                 split[_npoints * 2 - 2] = split[0], split[_npoints * 2 - 1] = split[1];
             if (_npoints > 2) {
                 vector<float> dst;
-                precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
                 writeQuadratics(dst, split, precision);
                 _quadratics.alloc((int)dst.size());
                 memcpy(_quadratics.get(), & dst[0], _quadratics.size());
@@ -143,7 +142,6 @@ struct SubPath {
             if (_npoints > 4) {
                 vector<float> quadratics(npoints * 2), dst;
                 memcpy(& quadratics[0], points, npoints * kPointStride);
-                precision = (_bounds.ux - _bounds.lx + _bounds.uy - _bounds.ly) * 0.05;
                 writeQuadratics(dst, quadratics, precision);
                 _quadratics.alloc((int)dst.size());
                 memcpy(_quadratics.get(), & dst[0], _quadratics.size());
