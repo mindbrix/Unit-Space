@@ -34,7 +34,7 @@ struct Scene {
     }
     void addFont(const void *bytes, size_t size) {
         int retval, i, j, nverts, count, ncontours, d, ix, iy;
-        int flx, fly, fux, fuy, fw, fh, fdim;
+        int flx, fly, fux, fuy, fw, fh, fdim, fsize = 32;
         int lx, ly, ux, uy;
         stbtt_fontinfo font;
         stbtt_vertex *vertices, *vertex;
@@ -44,7 +44,7 @@ struct Scene {
             stbtt_GetFontBoundingBox(& font, & flx, & fly, & fux, & fuy);
             fw = fux - flx, fh = fuy - fly, fdim = fw < fh ? fw : fh;
             d = std::ceil(std::sqrt((float)font.numGlyphs));
-            AffineTransform scale = { 32.f / float(fdim), 0, 0, 32.f / float(fdim), 0, 0 };
+            AffineTransform scale = { float(fsize) / float(fdim), 0, 0, float(fsize) / float(fdim), 0, 0 };
             
             for (i = 0; i < font.numGlyphs; i++) {
                 ix = i % d, iy = i / d;
@@ -88,7 +88,7 @@ struct Scene {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
                             
-                            SubPath s(& buffer[begin * 2], end - begin, SubPath::kCubic);
+                            SubPath s(& buffer[begin * 2], end - begin, SubPath::kCubic, 1.0 / scale.a);
                             p.addSubPath(s);
                         }
                         addPath(p, & CTM);

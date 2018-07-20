@@ -376,8 +376,12 @@ using namespace std;
 //        };
         
         _lozenge = {
-            { 0, 0 }, { 66.666, 0 }, { 100, 33.333 }, { 100, 100 }, { 33.333, 100 }, { 0, 66.666 }, { 0, 0 }
+            { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
         };
+        
+//        _lozenge = {
+//            { 0, 0 }, { 66.666, 0 }, { 100, 33.333 }, { 100, 100 }, { 33.333, 100 }, { 0, 66.666 }, { 0, 0 }
+//        };
 
 		_quad = {
             { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }
@@ -395,7 +399,7 @@ using namespace std;
     RGBA8 alpha(255, 0, 0, 128);
     
     Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kCubic) });
-    Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic) });
+    Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kQuadratic) });
     Path p2(false, red, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
 	
     Scene scene;
