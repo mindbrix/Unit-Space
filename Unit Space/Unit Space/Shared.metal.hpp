@@ -83,14 +83,14 @@ struct Bounds {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
     Bounds transformed(AffineTransform t) {
-        float w, h, x0, x1, y0, y1, ox, oy;
+        float w, h, ox, oy, x0, x1, y0, y1;
         w = ux - lx, h = uy - ly;
+        ox = lx * t.a + ly * t.c + t.tx;
+        oy = lx * t.b + ly * t.d + t.ty;
         x0 = (t.a < 0 ? t.a * w : 0) + (t.c < 0 ? t.c * h : 0);
         x1 = (t.a < 0 ? 0 : t.a * w) + (t.c < 0 ? 0 : t.c * h);
         y0 = (t.b < 0 ? t.b * w : 0) + (t.d < 0 ? t.d * h : 0);
         y1 = (t.b < 0 ? 0 : t.b * w) + (t.d < 0 ? 0 : t.d * h);
-        ox = lx * t.a + ly * t.c + t.tx;
-        oy = lx * t.b + ly * t.d + t.ty;
         return { ox + x0, oy + y0, ox + x1, oy + y1 };
     }
     void unite(Bounds other) {
