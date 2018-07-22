@@ -146,10 +146,18 @@ struct libTess {
                             tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
                             a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                         }
+                        
                         mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
-                        mesh._interiorScales.emplace_back(ta > t ? ta : t);
+                        t = ta > t ? ta : t;
+            
+                        mesh._pts.emplace_back(p, t);
+                        mesh._pts.emplace_back(x0, y0), mesh._pts.emplace_back(m0);
+                        mesh._pts.emplace_back(x1, y1), mesh._pts.emplace_back(m1);
+                        mesh._pts.emplace_back(x2, y2), mesh._pts.emplace_back(m2);
+                        
+                        mesh._interiorScales.emplace_back(t);
                         mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                     }
                     for (int i = 0; i < npoints; i++)

@@ -42,22 +42,35 @@ struct InteriorVertex
     float4 color;
 };
 
-vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device Vector *interiorVectors [[buffer(6)]], device AffineTransform *pathCTMs [[buffer(7)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device Vector *interiorVectors [[buffer(6)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
-    device Triangle &triangle = triangles[idx];
-    float t = triangleScales[idx];
-    AffineTransform CTM = pathCTMs[triangle.c];
-    CTM = AffineTransformConcat(CTM, state.CTM);
+    idx *= 7;
     
-    int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
+    int c = pts[idx].x;
+    float t = pts[idx].y;
+    int i = idx + 1 + vid * 2;
+    
+    
+//    device Triangle &triangle = triangles[idx];
+//    float t = triangleScales[idx];
+//    int c = triangle.c;
+//    int i = select(select(triangle.i2, triangle.i1, vid == 1), triangle.i0, vid == 0);
+    
+    AffineTransform CTM = pathCTMs[c];
+    CTM = AffineTransformConcat(CTM, state.CTM);
     float2 devicePoint = {
-        points[i].x * CTM.a + points[i].y * CTM.c + CTM.tx,
-        points[i].x * CTM.b + points[i].y * CTM.d + CTM.ty
+        pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx,
+        pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty
     };
+//    float2 devicePoint = {
+//        points[i].x * CTM.a + points[i].y * CTM.c + CTM.tx,
+//        points[i].x * CTM.b + points[i].y * CTM.d + CTM.ty
+//    };
     
     float scale = sqrt(abs(CTM.d * CTM.a - CTM.b * CTM.c));
-    Vector interiorVector = interiorVectors[idx * 3 + vid];
+    Vector interiorVector = pts[i + 1];
+//    Vector interiorVector = interiorVectors[idx * 3 + vid];
     float2 iv = {
         interiorVector.x * CTM.a + interiorVector.y * CTM.c,
         interiorVector.x * CTM.b + interiorVector.y * CTM.d
@@ -65,12 +78,12 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     devicePoint += iv / scale;
     devicePoint = select(devicePoint, 0, scale < t);
     InteriorVertex vert;
-    float z = (triangle.c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
+    float z = (c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
     vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
     vert.showInterior = meshState.showInterior;
-    RGBA8 color = colors[triangle.c];
+    RGBA8 color = colors[c];
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -99,7 +112,7 @@ struct TriangleVertex
 
 #pragma mark Vertex
 
-vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device AffineTransform *pathCTMs [[buffer(7)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     device Triangle &triangle = triangles[iid];
     RGBA8 color = colors[triangle.c];

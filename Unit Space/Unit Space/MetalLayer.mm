@@ -17,6 +17,7 @@
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorScalesBuffer;
@@ -253,6 +254,7 @@
                 [commandEncoder setVertexBuffer:_interiorScalesBuffer offset:0 atIndex:5];
                 [commandEncoder setVertexBuffer:_interiorVectorsBuffer offset:0 atIndex:6];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
+                [commandEncoder setVertexBuffer:_ptsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
@@ -398,6 +400,10 @@
     _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
                                              length:mesh._colors.size() * sizeof(RGBA8)
                                             options:MTLResourceStorageModeManaged];
+    if (mesh._pts.size())
+        _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
+                                                 length:mesh._pts.size() * sizeof(Vector)
+                                                options:MTLResourceStorageModeShared];
     if (mesh._triangles.size())
         _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
                                                     length:mesh._triangles.size() * sizeof(Triangle)

@@ -12,6 +12,7 @@ using namespace std;
 
 struct Mesh {
     vector<RGBA8>                       _colors;
+    vector<Vector>                      _pts;
     vector<Vector>                      _points;
     vector<Triangle>                    _triangles;
     vector<Triangle>                    _curves;
@@ -23,6 +24,6 @@ struct Mesh {
     vector<int>                         _triangleIndices;
     
     void empty() {
-        _colors.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0), _interiorScales.resize(0), _interiorVectors.resize(0), _bounds.resize(0), _pathCTMs.resize(0), _triangleIndices.resize(0);
+        _colors.resize(0), _pts.resize(0), _points.resize(0), _triangles.resize(0), _curves.resize(0), _concaveCurves.resize(0), _interiorScales.resize(0), _interiorVectors.resize(0), _bounds.resize(0), _pathCTMs.resize(0), _triangleIndices.resize(0);
     }
 };
