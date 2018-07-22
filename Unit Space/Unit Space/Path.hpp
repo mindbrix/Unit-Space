@@ -16,10 +16,10 @@ struct Path {
     void addSubPath(SubPath& s) {
         if (s._npoints > 2) {
             if (_subPaths.size() == 0)
-                _maxArea = 0;
+                _bounds = s._bounds, _maxArea = 0;
+            _bounds.unite(s._bounds);
             if (std::abs(s._area) > _maxArea)
                 _maxArea = std::abs(s._area), _outerIndex = _subPaths.size();
-            _bounds = _subPaths.size() ? _bounds.united(s._bounds) : s._bounds;
             _subPaths.emplace_back(s);
         }
     }
