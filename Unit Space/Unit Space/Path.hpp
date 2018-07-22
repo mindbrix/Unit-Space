@@ -26,11 +26,7 @@ struct Path {
             wn += subPath.pointWinding(x, y);
         return _evenOdd ? wn & 1 : wn;
     }
-    
-    bool intersects(Path& path) const {
-        return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
-    }
-    
+        
     uint64_t hash() {
         int count = 0, i;
         for (SubPath& subPath : _subPaths)
