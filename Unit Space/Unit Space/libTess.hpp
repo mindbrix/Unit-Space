@@ -135,10 +135,6 @@ struct libTess {
                         m0 = miter(edgePoints, e0, x0, y0, x1, y1, x2, y2);
                         m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
                         m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
-                        
-                        a0 = 0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1));
-                        ta = 1.0 / std::sqrt(a0);
-                        
                         solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
                         tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                         tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
@@ -152,6 +148,7 @@ struct libTess {
                         }
                         mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
+                        ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
                         mesh._interiorScales.emplace_back(ta > t ? ta : t);
                         mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                     }
