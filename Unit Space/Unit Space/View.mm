@@ -367,13 +367,13 @@ using namespace std;
         
         [self.metalLayer uploadMesh:_mesh];
     } else {
-        _triangle = {
-            { 0, 0 }, { 100.0 / 3, 100.0 / 3}, { 200.0 / 3, 200.0 / 3 }, { 100, 100 }, { 200.0 / 3, 100 }, { 100.0 / 3, 100 }, { 0, 100 }
-        };
-        
 //        _triangle = {
-//            { 0, 0 }, { 100, 100 }, { 0, 100 }
+//            { 0, 0 }, { 100.0 / 3, 100.0 / 3}, { 200.0 / 3, 200.0 / 3 }, { 100, 100 }, { 200.0 / 3, 100 }, { 100.0 / 3, 100 }, { 0, 100 }
 //        };
+        
+        _triangle = {
+            { 0, 0 }, { 100, 100 }, { 0, 100 }
+        };
         
         _lozenge = {
             { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
@@ -398,7 +398,7 @@ using namespace std;
     RGBA8 black(0, 0, 0, 255);
     RGBA8 alpha(255, 0, 0, 128);
     
-    Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kCubic) });
+    Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine) });
     Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kQuadratic) });
     Path p2(false, red, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
 	

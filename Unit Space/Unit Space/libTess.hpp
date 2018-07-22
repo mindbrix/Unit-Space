@@ -59,6 +59,10 @@ struct libTess {
             }
     }
     
+//    Vector miter(float x0, float y0, float x1, float y1, float x2, float y2) {
+//        return miterVector(x0, y0, x2, y2, x1, y1, true, 5e-9);
+//    }
+    
     Vector miter(const float *edgePoints, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
@@ -102,7 +106,7 @@ struct libTess {
                     int npoints = tessGetVertexCount(dst);
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
-                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1;
+                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta;
                     float tx0, ty0, tx1, ty1, tx2, ty2;
                     Vector m0, m1, m2;
                     
@@ -136,9 +140,12 @@ struct libTess {
                         m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
                         m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
                         
-//                        a0 = 0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1));
-//                        t = std::sqrt(a0);
+                        a0 = 0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1));
+                        ta = 1.0 / std::sqrt(a0);
                         
+//                        solveTriangle(Vector(x0, y0), miter(x0, y0, x1, y1, x2, y2), Vector(x1, y1), miter(x1, y1, x2, y2, x0, y0), Vector(x2, y2), miter(edgePoints, e2, x2, y2, x0, y0, x1, y1), & t, & t1);
+                        
+//                        assert(t1 == -1);
                         solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
                         tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                         tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
@@ -151,8 +158,9 @@ struct libTess {
                             a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                         }
                         mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
-//                        mesh._interiorScales.emplace_back(t);
-                        mesh._interiorScales.emplace_back(1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t));
+//                        t = 1.0 / t;
+                        t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
+                        mesh._interiorScales.emplace_back(ta > t ? ta : t);
                         mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                     }
                     for (int i = 0; i < npoints; i++)
