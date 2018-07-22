@@ -14,8 +14,10 @@ struct Path {
     Path(bool evenOdd, RGBA8 color) : _color(color), _evenOdd(evenOdd), _outerIndex(0) {}
     
     void addSubPath(SubPath& s) {
-        if (s._npoints > 2)
+        if (s._npoints > 2) {
+            _bounds = _subPaths.size() ? _bounds.united(s._bounds) : s._bounds;
             _subPaths.emplace_back(s);
+        }
     }
     
     bool contains(float x, float y) {
@@ -26,7 +28,7 @@ struct Path {
             wn += subPath.pointWinding(x, y);
         return _evenOdd ? wn & 1 : wn;
     }
-        
+    
     uint64_t hash() {
         int count = 0, i;
         for (SubPath& subPath : _subPaths)
@@ -53,10 +55,6 @@ struct Path {
         for (size_t i = 0; i < _subPaths.size(); i++)
             if ((area = std::abs(_subPaths[i]._area)) > maxArea)
                 maxArea = area, _outerIndex = i;
-        
-        _bounds = _subPaths[0]._bounds;
-        for (SubPath& subPath : _subPaths)
-            _bounds.unite(subPath._bounds);
     }
     RGBA8                       _color;
     bool                        _evenOdd;
