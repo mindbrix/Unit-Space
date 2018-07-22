@@ -67,8 +67,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     InteriorVertex vert;
     float z = (c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
-    vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
-    vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
+    vert.u = float(vid == 2);
+    vert.v = float(vid == 0);
     vert.showInterior = meshState.showInterior;
     RGBA8 color = colors[c];
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
@@ -160,8 +160,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     devicePoint -= 0.5;
     vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
     
-    vert.u = select(select(1.0, 0.0, vid == 1), 0.0, vid == 0);
-    vert.v = select(select(0.0, 0.0, vid == 1), 1.0, vid == 0);
+    vert.u = float(vid == 2);
+    vert.v = float(vid == 0);
     vert.distance = { d0, d1, d2 };
     vert.showInterior = meshState.showInterior;
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
