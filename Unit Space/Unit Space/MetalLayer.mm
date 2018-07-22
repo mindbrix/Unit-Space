@@ -369,7 +369,6 @@
                 }
             }
         }
-         
     }
     if (mesh._concaveCurves.size()) {
         calls.emplace_back(tmpl);
