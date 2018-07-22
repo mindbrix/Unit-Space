@@ -18,7 +18,6 @@
 @property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathCTMsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
@@ -306,7 +305,7 @@
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
-    if (mesh._triangles.size()) {
+    if (mesh._pts.size()) {
         bool opaques[mesh._colors.size()], visibles[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
@@ -319,7 +318,7 @@
             opaques[p] = l0 < 400 || l1 < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;
-        for (end = (int)mesh._triangles.size(), p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
+        for (end = (int)mesh._pts.size() / 7, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
             base = mesh._triangleIndices[p];
             if (visibles[p] && opaques[p]) {
                 count = end - base;
@@ -343,7 +342,7 @@
                     continue;
                 }
                 base = mesh._triangleIndices[p];
-                end = p + 1 == mesh._colors.size() ? (int)mesh._triangles.size() : mesh._triangleIndices[p + 1];
+                end = p + 1 == mesh._colors.size() ? (int)mesh._pts.size() / 7 : mesh._triangleIndices[p + 1];
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {
@@ -398,10 +397,6 @@
         _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
                                                  length:mesh._pts.size() * sizeof(Vector)
                                                 options:MTLResourceStorageModeShared];
-    if (mesh._triangles.size())
-        _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
-                                                    length:mesh._triangles.size() * sizeof(Triangle)
-                                                   options:MTLResourceStorageModeShared];
     if (mesh._curves.size())
         _curvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._curves[0]
                                                  length:mesh._curves.size() * sizeof(Triangle)

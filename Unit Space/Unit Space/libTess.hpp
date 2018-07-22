@@ -88,9 +88,7 @@ struct libTess {
             mesh._colors.emplace_back(path._color);
             mesh._bounds.emplace_back(path._bounds);
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
-            
-//            mesh._triangleIndices.emplace_back((int)mesh._pts.size() / 7);
-            mesh._triangleIndices.emplace_back((int)mesh._triangles.size());
+            mesh._triangleIndices.emplace_back((int)mesh._pts.size() / 7);
             
             addContours(tess, path, false);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
@@ -103,11 +101,9 @@ struct libTess {
                     float *points = (float *)tessGetVertices(dst);
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
-                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta;
-                    float tx0, ty0, tx1, ty1, tx2, ty2;
+                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
                     Vector m0, m1, m2;
-                    
-                    int pi = (int)mesh._points.size(), i0, i1, i2;
+                    int i0, i1, i2;
                     for (int i = 0; i < nelems; i++, polygon += kPolySize) {
                         i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                         
@@ -147,13 +143,10 @@ struct libTess {
                             tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
                             a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
                         }
-                        
-                        mesh._triangles.emplace_back(pi + polygon[0], pi + polygon[1], pi + polygon[2], p);
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
-                        t = ta > t ? ta : t;
-            
-                        mesh._pts.emplace_back(p, t);
+                        
+                        mesh._pts.emplace_back(p, ta > t ? ta : t);
                         mesh._pts.emplace_back(x0, y0), mesh._pts.emplace_back(m0);
                         mesh._pts.emplace_back(x1, y1), mesh._pts.emplace_back(m1);
                         mesh._pts.emplace_back(x2, y2), mesh._pts.emplace_back(m2);
