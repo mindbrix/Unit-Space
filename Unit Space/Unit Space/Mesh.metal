@@ -114,10 +114,16 @@ struct TriangleVertex
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device Vector *points [[buffer(3)]], device Triangle *triangles [[buffer(4)]], device float *triangleScales [[buffer(5)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    device Triangle &triangle = triangles[iid];
-    RGBA8 color = colors[triangle.c];
-    Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
-    AffineTransform CTM = pathCTMs[triangle.c];
+    uint idx = iid * 7;
+    int c = pts[idx].x;
+    Vector _v0 = pts[idx + 1], _v1 = pts[idx + 3], _v2 = pts[idx + 5];
+    
+//    device Triangle &triangle = triangles[iid];
+//    int c = triangle.c;
+//    Vector _v0 = points[triangle.i0], _v1 = points[triangle.i1], _v2 = points[triangle.i2];
+    
+    RGBA8 color = colors[c];
+    AffineTransform CTM = pathCTMs[c];
     CTM = AffineTransformConcat(CTM, state.CTM);
     
     float2 p0 = {
@@ -164,7 +170,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float d1 = dot(p1 - devicePoint, n12);
     float d2 = dot(p2 - devicePoint, n20);
     
-    float z = (triangle.c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
+    float z = (c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
