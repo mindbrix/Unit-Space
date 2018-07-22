@@ -15,6 +15,10 @@ struct Path {
     
     void addSubPath(SubPath& s) {
         if (s._npoints > 2) {
+            if (_subPaths.size() == 0)
+                _maxArea = 0;
+            if (std::abs(s._area) > _maxArea)
+                _maxArea = std::abs(s._area), _outerIndex = _subPaths.size();
             _bounds = _subPaths.size() ? _bounds.united(s._bounds) : s._bounds;
             _subPaths.emplace_back(s);
         }
@@ -49,15 +53,9 @@ struct Path {
         
         return MurmurHash3_x64_64(hashPoints.get(), count * kPointStride, count);
     }
-    void update() {
-        float area, maxArea = 0;
-        _outerIndex = 0;
-        for (size_t i = 0; i < _subPaths.size(); i++)
-            if ((area = std::abs(_subPaths[i]._area)) > maxArea)
-                maxArea = area, _outerIndex = i;
-    }
     RGBA8                       _color;
     bool                        _evenOdd;
+    float                       _maxArea;
     size_t                      _outerIndex;
     vector<SubPath>             _subPaths;
     Bounds                      _bounds;

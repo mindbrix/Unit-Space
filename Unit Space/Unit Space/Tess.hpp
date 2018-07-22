@@ -22,7 +22,6 @@
 struct Scene {
     void addPath(Path& path, AffineTransform *CTM = nullptr) {
         if (path._subPaths.size() != 0) {
-            path.update();
             if (_paths.size() == 0)
                 _bounds = path._bounds;
             _bounds.unite(path._bounds);
