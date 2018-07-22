@@ -10,7 +10,6 @@
 		E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */; };
 		E90D1DC5203E9F6D00F9F35B /* Library.metal in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC4203E9F6D00F9F35B /* Library.metal */; };
 		E90D1DC7203E9FA200F9F35B /* Headers.metal in Sources */ = {isa = PBXBuildFile; fileRef = E90D1DC6203E9FA100F9F35B /* Headers.metal */; };
-		E92BB39520E1052700AF2EF3 /* murmur3.c in Sources */ = {isa = PBXBuildFile; fileRef = E92BB39320E1052700AF2EF3 /* murmur3.c */; };
 		E9DFC48E2093190A00AFDAC7 /* Mesh.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9DFC48D2093190A00AFDAC7 /* Mesh.metal */; };
 		E9EE5F9220851100005823F7 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7B20851100005823F7 /* bucketalloc.c */; };
 		E9EE5F9320851100005823F7 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7D20851100005823F7 /* dict.c */; };
@@ -42,8 +41,6 @@
 		E92BB38F20DC422300AF2EF3 /* Memory.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Memory.hpp; sourceTree = "<group>"; };
 		E92BB39020DC442F00AF2EF3 /* SubPath.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SubPath.hpp; sourceTree = "<group>"; };
 		E92BB39120DC44FA00AF2EF3 /* Path.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Path.hpp; sourceTree = "<group>"; };
-		E92BB39320E1052700AF2EF3 /* murmur3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = murmur3.c; sourceTree = "<group>"; };
-		E92BB39420E1052700AF2EF3 /* murmur3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = murmur3.h; sourceTree = "<group>"; };
 		E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VGQuadTree.hpp; sourceTree = "<group>"; };
 		E96B3465207BDECB006D74B1 /* nanosvg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nanosvg.h; sourceTree = "<group>"; };
 		E9DFC48D2093190A00AFDAC7 /* Mesh.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
@@ -97,20 +94,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		E92BB39220E1052700AF2EF3 /* Murmur */ = {
-			isa = PBXGroup;
-			children = (
-				E92BB39320E1052700AF2EF3 /* murmur3.c */,
-				E92BB39420E1052700AF2EF3 /* murmur3.h */,
-			);
-			path = Murmur;
-			sourceTree = "<group>";
-		};
 		E96B3452207BDECB006D74B1 /* libs */ = {
 			isa = PBXGroup;
 			children = (
 				E9EE5F6A20851100005823F7 /* libtess2 */,
-				E92BB39220E1052700AF2EF3 /* Murmur */,
 				E96B3465207BDECB006D74B1 /* nanosvg.h */,
 				E9EBC19A20EF8A2A0045D338 /* stb_image.h */,
 				E9EBC19B20F79EBF0045D338 /* stb_truetype.h */,
@@ -304,7 +291,6 @@
 				E9EE5F9820851100005823F7 /* tess.c in Sources */,
 				E9EEAD7A200BC63400F2BFB2 /* Document.m in Sources */,
 				E9EEAD85200BC63400F2BFB2 /* main.m in Sources */,
-				E92BB39520E1052700AF2EF3 /* murmur3.c in Sources */,
 				E90D1DC5203E9F6D00F9F35B /* Library.metal in Sources */,
 				E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */,
 				E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */,
