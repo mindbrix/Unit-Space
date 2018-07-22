@@ -310,7 +310,7 @@
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             bounds = mesh._bounds[p];
-            visibles[p] = bounds.transformed(ctm).intersects(deviceBounds);
+            visibles[p] = mesh._colors[p].a == 255 || bounds.transformed(ctm).intersects(deviceBounds);
             w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
             x0 = w * ctm.a, y0 = w * ctm.b;
             x1 = h * ctm.c, y1 = h * ctm.d;
