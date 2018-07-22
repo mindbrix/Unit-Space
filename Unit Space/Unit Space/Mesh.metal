@@ -62,8 +62,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
         interiorVector.x * CTM.a + interiorVector.y * CTM.c,
         interiorVector.x * CTM.b + interiorVector.y * CTM.d
     };
-    devicePoint += iv / scale;
-    devicePoint = select(devicePoint, 0, scale < t);
+    devicePoint = select(devicePoint + iv / scale, 0, scale < t);
     InteriorVertex vert;
     float z = (c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
