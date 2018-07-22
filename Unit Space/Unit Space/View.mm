@@ -53,7 +53,6 @@ using namespace std;
 @property(nonatomic) Mesh mesh;
 @property(nonatomic) Scene scene;
 @property(nonatomic) libTess libtess;
-@property(nonatomic) Tess tess;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 
@@ -360,10 +359,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     if (_svgData || _fontData) {
-        if (self.useDelaunay)
-            _tess.triangulate(_mesh, _scene, self.useMask);
-        else
-            _libtess.triangulate(_mesh, _scene, self.useMask);
+        _libtess.triangulate(_mesh, _scene, self.useMask);
         
         [self.metalLayer uploadMesh:_mesh];
     } else {
@@ -412,10 +408,7 @@ using namespace std;
     if (self.pathBitmask & kPathBitmaskQuad)
         scene.addPath(p2);
     
-    if (self.useDelaunay)
-        _tess.triangulate(_mesh, scene, self.useMask);
-    else
-        _libtess.triangulate(_mesh, scene, self.useMask);
+    _libtess.triangulate(_mesh, scene, self.useMask);
     
     [self.metalLayer uploadMesh:_mesh];
 }
@@ -606,10 +599,7 @@ using namespace std;
         Scene scene;
         scene.addPath(p0);
     
-        if (self.useDelaunay)
-            _tess.triangulate(_mesh, scene, self.useMask);
-        else
-            _libtess.triangulate(_mesh, scene, self.useMask);
+        _libtess.triangulate(_mesh, scene, self.useMask);
         
         [self.metalLayer uploadMesh:_mesh];
         

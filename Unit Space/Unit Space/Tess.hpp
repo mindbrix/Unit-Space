@@ -194,11 +194,4 @@ struct Tess {
                 }
         }
     }
-    
-    void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
-        mesh.empty();
-        writeCurves(mesh, scene);
-        for (Path& path : scene._paths)
-            mesh._colors.emplace_back(path._color);
-    }
 };
