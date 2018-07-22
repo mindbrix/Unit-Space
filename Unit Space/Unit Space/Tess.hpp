@@ -24,9 +24,8 @@ struct Scene {
         if (path._subPaths.size() != 0) {
             path.update();
             if (_paths.size() == 0)
-                _bounds = path._bounds, _npoints = 0;
+                _bounds = path._bounds;
             _bounds.unite(path._bounds);
-            _npoints += path.countPoints();
             _paths.emplace_back(path);
             AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
             _CTMs.emplace_back(CTM ? *CTM : identity);
@@ -148,10 +147,9 @@ struct Scene {
     }
     void empty() { _paths.resize(0); }
     
-    vector<Path>    _paths;
+    vector<Path>            _paths;
     vector<AffineTransform> _CTMs;
-    Bounds          _bounds;
-    int             _npoints, _nsubpaths;
+    Bounds                  _bounds;
 };
 
 struct Tess {
