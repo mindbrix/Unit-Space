@@ -81,7 +81,7 @@ struct libTess {
         mesh.empty();
         TESStesselator *tess = _tess.get(), *dst = _dst.get();
         
-        Tess::writeCurves(mesh, scene);
+        Scene::writeCurves(mesh, scene);
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = 0; p < scene._paths.size(); p++) {
             Path& path = scene._paths[p];

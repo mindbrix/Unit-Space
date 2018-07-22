@@ -20,6 +20,48 @@
 
 
 struct Scene {
+    static void writeCurves(Mesh& mesh, Scene& scene) {
+        int pi, c;
+        float area, flip;
+        for (Path& path : scene._paths) {
+            size_t outerIndex = path._outerIndex;
+            SubPath* outer = & path._subPaths[outerIndex];
+            
+            for (SubPath& s : path._subPaths)
+                if (s._quadratics.get() != NULL) {
+                    const float *points = s._quadratics.get();
+                    int npoints = (int)s._quadratics.count() / 2;
+                    pi = (int)mesh._points.size();
+                    c = (int)(& path - & scene._paths[0]);
+                    
+                    Vector p0 = { points[0], points[1] }, p1, p2;
+                    mesh._points.emplace_back(p0);
+                    
+                    for (int i = 0; i < npoints - 1; i += 2, p0 = p2) {
+                        p1 = { points[i * 2 + 2], points[i * 2 + 3] };
+                        p2 = { points[i * 2 + 4], points[i * 2 + 5] };
+                        
+                        mesh._points.emplace_back(p1);
+                        mesh._points.emplace_back(p2);
+                        
+                        area = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
+                        Triangle tri = { pi + i, pi + i + 1, pi + i + 2, c };
+                        
+                        if (area != 0) {
+                            if (area < 0)
+                                std::swap(tri.i0, tri.i2);
+                            
+                            flip = outer == & s ? 1 : -1;
+                            
+                            if (flip * area * s._area < 0)
+                                mesh._concaveCurves.emplace_back(tri);
+                            else
+                                mesh._curves.emplace_back(tri);
+                        }
+                    }
+                }
+        }
+    }
     void addPath(Path& path, AffineTransform *CTM = nullptr) {
         if (path._subPaths.size() != 0) {
             if (_paths.size() == 0)
@@ -149,49 +191,4 @@ struct Scene {
     vector<Path>            _paths;
     vector<AffineTransform> _CTMs;
     Bounds                  _bounds;
-};
-
-struct Tess {
-    static void writeCurves(Mesh& mesh, Scene& scene) {
-        int pi, c;
-        float area, flip;
-        for (Path& path : scene._paths) {
-            size_t outerIndex = path._outerIndex;
-            SubPath* outer = & path._subPaths[outerIndex];
-            
-            for (SubPath& s : path._subPaths)
-                if (s._quadratics.get() != NULL) {
-                    const float *points = s._quadratics.get();
-                    int npoints = (int)s._quadratics.count() / 2;
-                    pi = (int)mesh._points.size();
-                    c = (int)(& path - & scene._paths[0]);
-                    
-                    Vector p0 = { points[0], points[1] }, p1, p2;
-                    mesh._points.emplace_back(p0);
-                    
-                    for (int i = 0; i < npoints - 1; i += 2, p0 = p2) {
-                        p1 = { points[i * 2 + 2], points[i * 2 + 3] };
-                        p2 = { points[i * 2 + 4], points[i * 2 + 5] };
-                        
-                        mesh._points.emplace_back(p1);
-                        mesh._points.emplace_back(p2);
-                        
-                        area = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
-                        Triangle tri = { pi + i, pi + i + 1, pi + i + 2, c };
-                        
-                        if (area != 0) {
-                            if (area < 0)
-                                std::swap(tri.i0, tri.i2);
-                            
-                            flip = outer == & s ? 1 : -1;
-                            
-                            if (flip * area * s._area < 0)
-                                mesh._concaveCurves.emplace_back(tri);
-                            else
-                                mesh._curves.emplace_back(tri);
-                        }
-                    }
-                }
-        }
-    }
 };
