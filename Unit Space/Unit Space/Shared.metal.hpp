@@ -93,6 +93,9 @@ struct Bounds {
         y1 = (t.b < 0 ? 0 : t.b * w) + (t.d < 0 ? 0 : t.d * h);
         return { ox + x0, oy + y0, ox + x1, oy + y1 };
     }
+    Bounds united(Bounds other) {
+        return { lx < other.lx ? lx : other.lx, ly < other.ly ? ly : other.ly, ux > other.ux ? ux : other.ux, uy > other.uy ? uy : other.uy };
+    }
     void unite(Bounds other) {
         lx = lx < other.lx ? lx : other.lx, ly = ly < other.ly ? ly : other.ly;
         ux = ux > other.ux ? ux : other.ux, uy = uy > other.uy ? uy : other.uy;
