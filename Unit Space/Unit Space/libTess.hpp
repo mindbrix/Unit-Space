@@ -88,6 +88,8 @@ struct libTess {
             mesh._colors.emplace_back(path._color);
             mesh._bounds.emplace_back(path._bounds);
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
+            
+//            mesh._triangleIndices.emplace_back((int)mesh._pts.size() / 7);
             mesh._triangleIndices.emplace_back((int)mesh._triangles.size());
             
             addContours(tess, path, false);
@@ -99,7 +101,6 @@ struct libTess {
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(dst);
-                    int npoints = tessGetVertexCount(dst);
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
                     float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta;
@@ -156,12 +157,7 @@ struct libTess {
                         mesh._pts.emplace_back(x0, y0), mesh._pts.emplace_back(m0);
                         mesh._pts.emplace_back(x1, y1), mesh._pts.emplace_back(m1);
                         mesh._pts.emplace_back(x2, y2), mesh._pts.emplace_back(m2);
-                        
-                        mesh._interiorScales.emplace_back(t);
-                        mesh._interiorVectors.emplace_back(m0), mesh._interiorVectors.emplace_back(m1), mesh._interiorVectors.emplace_back(m2);
                     }
-                    for (int i = 0; i < npoints; i++)
-                        mesh._points.emplace_back(points[i * 2], points[i * 2 + 1]);
                 }
             }
         }

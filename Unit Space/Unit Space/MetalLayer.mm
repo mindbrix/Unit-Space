@@ -20,8 +20,6 @@
 @property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorScalesBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorVectorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathCTMsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
@@ -249,10 +247,6 @@
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
-                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
-                [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:4];
-                [commandEncoder setVertexBuffer:_interiorScalesBuffer offset:0 atIndex:5];
-                [commandEncoder setVertexBuffer:_interiorVectorsBuffer offset:0 atIndex:6];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
                 [commandEncoder setVertexBuffer:_ptsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
@@ -408,10 +402,6 @@
         _trianglesBuffer = [self.device newBufferWithBytes:(void *)& mesh._triangles[0]
                                                     length:mesh._triangles.size() * sizeof(Triangle)
                                                    options:MTLResourceStorageModeShared];
-    if (mesh._points.size())
-        _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
-                                                 length:mesh._points.size() * sizeof(Vector)
-                                                options:MTLResourceStorageModeShared];
     if (mesh._curves.size())
         _curvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._curves[0]
                                                  length:mesh._curves.size() * sizeof(Triangle)
@@ -420,14 +410,6 @@
         _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._concaveCurves[0]
                                                         length:mesh._concaveCurves.size() * sizeof(Triangle)
                                                        options:MTLResourceStorageModeShared];
-    if (mesh._interiorScales.size())
-        _interiorScalesBuffer = [self.device newBufferWithBytes:(void *)& mesh._interiorScales[0]
-                                                          length:mesh._interiorScales.size() * sizeof(float)
-                                                         options:MTLResourceStorageModeShared];
-    if (mesh._interiorVectors.size())
-        _interiorVectorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._interiorVectors[0]
-                                                          length:mesh._interiorVectors.size() * sizeof(Vector)
-                                                         options:MTLResourceStorageModeShared];
     if (mesh._pathCTMs.size())
         _pathCTMsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pathCTMs[0]
                                                           length:mesh._pathCTMs.size() * sizeof(AffineTransform)
