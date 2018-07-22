@@ -29,7 +29,7 @@
 		E9EEAD93200BC96D00F2BFB2 /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD92200BC96D00F2BFB2 /* MetalLayer.mm */; };
 		E9EEAD95200BD61600F2BFB2 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD94200BD61600F2BFB2 /* Shaders.metal */; };
 		E9EEAD97200BE97900F2BFB2 /* Shared.metal.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */; };
-		E9F50F9C2072CF9400C26317 /* Tess.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F9B2072CF9400C26317 /* Tess.hpp */; };
+		E9F50F9C2072CF9400C26317 /* Scene.hpp in Sources */ = {isa = PBXBuildFile; fileRef = E9F50F9B2072CF9400C26317 /* Scene.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,7 +83,7 @@
 		E9EEAD94200BD61600F2BFB2 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Shared.metal.hpp; sourceTree = "<group>"; };
 		E9EEAD99200BE9F700F2BFB2 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		E9F50F9B2072CF9400C26317 /* Tess.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Tess.hpp; sourceTree = "<group>"; };
+		E9F50F9B2072CF9400C26317 /* Scene.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Scene.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,7 +203,7 @@
 				E9EEAD94200BD61600F2BFB2 /* Shaders.metal */,
 				E9EEAD96200BE97900F2BFB2 /* Shared.metal.hpp */,
 				E913A4FF209EEAA6003CBC77 /* libTess.hpp */,
-				E9F50F9B2072CF9400C26317 /* Tess.hpp */,
+				E9F50F9B2072CF9400C26317 /* Scene.hpp */,
 				E92BB38F20DC422300AF2EF3 /* Memory.hpp */,
 				E92BB39020DC442F00AF2EF3 /* SubPath.hpp */,
 				E92BB39120DC44FA00AF2EF3 /* Path.hpp */,
@@ -293,7 +293,7 @@
 			files = (
 				E9DFC48E2093190A00AFDAC7 /* Mesh.metal in Sources */,
 				E9EE5F9320851100005823F7 /* dict.c in Sources */,
-				E9F50F9C2072CF9400C26317 /* Tess.hpp in Sources */,
+				E9F50F9C2072CF9400C26317 /* Scene.hpp in Sources */,
 				E90D1DC2200C28A900F9F35B /* VGAffineTransform.m in Sources */,
 				E9EE5F9720851100005823F7 /* sweep.c in Sources */,
 				E9EE5F9220851100005823F7 /* bucketalloc.c in Sources */,

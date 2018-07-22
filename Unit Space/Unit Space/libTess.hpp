@@ -6,7 +6,7 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
-#import "Tess.hpp"
+#import "Scene.hpp"
 #import <vector>
 #import "tesselator.h"
 #import "Algorithms.hpp"

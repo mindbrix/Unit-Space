@@ -1,5 +1,5 @@
 //
-//  Tess.hpp
+//  Scene.hpp
 //  Unit Space
 //
 //  Created by Nigel Barber on 02/04/2018.

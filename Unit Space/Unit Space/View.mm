@@ -10,7 +10,7 @@
 #import "MetalLayer.h"
 #import "VGAffineTransform.h"
 #import "Algorithms.hpp"
-#import "Tess.hpp"
+#import "Scene.hpp"
 #import "libTess.hpp"
 
 constexpr float kPointDeviceRadius = 8;
