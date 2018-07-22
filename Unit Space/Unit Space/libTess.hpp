@@ -58,11 +58,7 @@ struct libTess {
                     tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
             }
     }
-    
-//    Vector miter(float x0, float y0, float x1, float y1, float x2, float y2) {
-//        return miterVector(x0, y0, x2, y2, x1, y1, true, 5e-9);
-//    }
-    
+        
     Vector miter(const float *edgePoints, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
