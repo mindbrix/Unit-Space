@@ -395,8 +395,8 @@
                                             options:MTLResourceStorageModeManaged];
     if (mesh._pts.size())
         _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
-                                                 length:mesh._pts.size() * sizeof(Vector)
-                                                options:MTLResourceStorageModeShared];
+                                              length:mesh._pts.size() * sizeof(Vector)
+                                             options:MTLResourceStorageModeShared];
     if (mesh._curves.size())
         _curvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._curves[0]
                                                  length:mesh._curves.size() * sizeof(Triangle)
@@ -407,8 +407,8 @@
                                                        options:MTLResourceStorageModeShared];
     if (mesh._pathCTMs.size())
         _pathCTMsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pathCTMs[0]
-                                                          length:mesh._pathCTMs.size() * sizeof(AffineTransform)
-                                                         options:MTLResourceStorageModeManaged];
+                                                   length:mesh._pathCTMs.size() * sizeof(AffineTransform)
+                                                  options:MTLResourceStorageModeManaged];
 }
 
 @end
