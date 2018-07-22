@@ -31,13 +31,6 @@ struct Path {
         return _subPaths.size() && path._subPaths.size() && _bounds.intersects(path._bounds);
     }
     
-    int countPoints() {
-        int count = 0;
-        for (SubPath& s : _subPaths)
-            count += s._npoints;
-        return count;
-    }
-    
     uint64_t hash() {
         int count = 0, i;
         for (SubPath& subPath : _subPaths)
