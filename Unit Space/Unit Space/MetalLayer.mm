@@ -318,7 +318,7 @@
             opaques[p] = l0 < 400 || l1 < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;
-        for (end = (int)mesh._pts.size() / 7, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
+        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
             base = mesh._triangleIndices[p];
             if (visibles[p] && opaques[p]) {
                 count = end - base;
@@ -342,7 +342,7 @@
                     continue;
                 }
                 base = mesh._triangleIndices[p];
-                end = p + 1 == mesh._colors.size() ? (int)mesh._pts.size() / 7 : mesh._triangleIndices[p + 1];
+                end = p + 1 == mesh._colors.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._triangleIndices[p + 1];
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {
@@ -370,18 +370,18 @@
             }
         }
     }
-    if (mesh._concaveCurves.size()) {
-        calls.emplace_back(tmpl);
-        Call& call = calls.back();
-        call.type = kCallTypeMeshConcaveCurves;
-        call.instanceCount = (int)_concaveCurvesBuffer.length / sizeof(Triangle);
-    }
-    if (mesh._curves.size()) {
-        calls.emplace_back(tmpl);
-        Call& call = calls.back();
-        call.type = kCallTypeMeshCurves;
-        call.instanceCount = (int)_curvesBuffer.length / sizeof(Triangle);
-    }
+//    if (mesh._concaveCurves.size()) {
+//        calls.emplace_back(tmpl);
+//        Call& call = calls.back();
+//        call.type = kCallTypeMeshConcaveCurves;
+//        call.instanceCount = (int)_concaveCurvesBuffer.length / sizeof(Triangle);
+//    }
+//    if (mesh._curves.size()) {
+//        calls.emplace_back(tmpl);
+//        Call& call = calls.back();
+//        call.type = kCallTypeMeshCurves;
+//        call.instanceCount = (int)_curvesBuffer.length / sizeof(Triangle);
+//    }
     memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
     [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);

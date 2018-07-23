@@ -88,7 +88,7 @@ struct libTess {
             mesh._colors.emplace_back(path._color);
             mesh._bounds.emplace_back(path._bounds);
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
-            mesh._triangleIndices.emplace_back((int)mesh._pts.size() / 7);
+            mesh._triangleIndices.emplace_back((int)mesh._pts.size() / kMeshTriangleSize);
             
             addContours(tess, path, false);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
@@ -150,6 +150,7 @@ struct libTess {
                         mesh._pts.emplace_back(x0, y0), mesh._pts.emplace_back(m0);
                         mesh._pts.emplace_back(x1, y1), mesh._pts.emplace_back(m1);
                         mesh._pts.emplace_back(x2, y2), mesh._pts.emplace_back(m2);
+//                        mesh._pts.emplace_back(0, 0);
                     }
                 }
             }

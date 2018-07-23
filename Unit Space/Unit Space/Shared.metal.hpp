@@ -10,6 +10,7 @@
 
 #define PI 3.1415926536
 #define TWO_PI 6.2831853072
+#define kMeshTriangleSize  7
 
 #pragma clang diagnostic ignored "-Wcomma"
 

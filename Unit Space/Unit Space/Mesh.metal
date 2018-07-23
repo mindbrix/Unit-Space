@@ -44,7 +44,7 @@ struct InteriorVertex
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    uint idx = 7 * select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
+    uint idx = kMeshTriangleSize * select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
     int c = pts[idx].x;
     float t = pts[idx].y;
     int i = idx + 1 + vid * 2;
@@ -100,7 +100,7 @@ struct TriangleVertex
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    uint idx = iid * 7;
+    uint idx = iid * kMeshTriangleSize;
     int c = pts[idx].x;
     Vector _v0 = pts[idx + 1], _v1 = pts[idx + 3], _v2 = pts[idx + 5];
     
