@@ -48,6 +48,22 @@ struct libTess {
         }
     }
     
+    static void writeIndices(vector<int>& indices, Path& path) {
+        int npoints, stride, i, j;
+        for (i = 0; i < path._subPaths.size(); i++) {
+            SubPath& s = path._subPaths[i];
+            if (s._npoints > 2) {
+                if (s._quadratics.get())
+                    npoints = (int)s._quadratics.count() / 4 + 1, stride = 2;
+                else
+                    npoints = s._npoints, stride = 1;
+                
+                for (j = 0; j < npoints; j++)
+                    indices.emplace_back(i << 16 | j * stride);
+            }
+        }
+    }
+    
     static void addContours(TESStesselator *tess, Path& path) {
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
@@ -88,10 +104,26 @@ struct libTess {
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
             mesh._triangleIndices.emplace_back((int)mesh._pts.size() / kMeshTriangleSize);
             
+            vector<int> indices;
+            writeIndices(indices, path);
+            
             addContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess);
                 const float *edgePoints = tessGetVertices(tess);
+                const TESSindex *vertexIndices = tessGetVertexIndices(tess);
+                float px0, py0, px1, py1;
+                for (int n = 0; n < count; n++) {
+                    px0 = edgePoints[n * 2], py0 = edgePoints[n * 2 + 1];
+                    if (n < indices.size() && vertexIndices[n] != -1) {
+                        int idx = indices[vertexIndices[n]], i = idx >> 16, j = idx & 0xFFFF;
+                        SubPath& s = path._subPaths[i];
+                        float *pts = s._quadratics.get() ?: s._points.get();
+                        px1 = pts[j * 2], py1 = pts[j * 2 + 1];
+                        assert(px0 == px1);
+                        assert(py0 == py1);
+                    }
+                }
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                 addContours(dst, tess, edges);
                 sort(edges, eend);
