@@ -62,8 +62,9 @@ struct libTess {
     }
     
     static void writeControlPoints(vector<float>& dst, Path& path) {
-        if (path._subPaths.size() == 0 || path._subPaths[0]._quadratics.get() == nullptr)
-            return;
+        for (SubPath& s : path._subPaths)
+            if (s._quadratics.get() == nullptr)
+                return;
         
         for (SubPath& s : path._subPaths) {
             int npoints = (int)s._quadratics.count() / 4 + 1;
