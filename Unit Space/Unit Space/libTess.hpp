@@ -29,8 +29,9 @@ struct libTess {
     
     libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)), _dst(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
     
-    static void addContours(TESStesselator *dst, TESStesselator *src, Edge *edge) {
+    static void addContours(TESStesselator *dst, TESStesselator *src, Edge *edge, vector<float>& controlPoints) {
         const float *verts = tessGetVertices(src);
+        const TESSindex *vertexIndices = tessGetVertexIndices(src);
         const int *elems = tessGetElements(src);
         const int nelems = tessGetElementCount(src);
         int base, npoints, i, j;
@@ -40,6 +41,18 @@ struct libTess {
             const float *points = verts + base * 2;
             
             if (npoints > 2) {
+                if (controlPoints.size()) {
+                    float px0, py0, px1, py1;
+                    for (j = 0; j < npoints; j++) {
+                        px0 = points[j * 2], py0 = points[j * 2 + 1];
+                        int idx = vertexIndices[base + j];
+                        if (idx != -1) {
+                            px1 = controlPoints[idx * 2], py1 = controlPoints[idx * 2 + 1];
+                            assert(px0 == px1);
+                            assert(py0 == py1);
+                        }
+                    }
+                }
                 tessAddContour(dst, 2, points, kPointStride, npoints);
                 if (edge)
                     for (j = 0; j < npoints; j++)
@@ -103,26 +116,12 @@ struct libTess {
             
             controlPoints.resize(0);
             writeControlPoints(controlPoints, path);
-            
             addContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess);
                 const float *edgePoints = tessGetVertices(tess);
-                const TESSindex *vertexIndices = tessGetVertexIndices(tess);
-                float px0, py0, px1, py1;
-                
-                if (controlPoints.size()) {
-                    for (int n = 0; n < count; n++) {
-                        px0 = edgePoints[n * 2], py0 = edgePoints[n * 2 + 1];
-                        if (vertexIndices[n] != -1) {
-                            px1 = controlPoints[vertexIndices[n] * 2], py1 = controlPoints[vertexIndices[n] * 2 + 1];
-                            assert(px0 == px1);
-                            assert(py0 == py1);
-                        }
-                    }
-                }
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
-                addContours(dst, tess, edges);
+                addContours(dst, tess, edges, controlPoints);
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(dst);
