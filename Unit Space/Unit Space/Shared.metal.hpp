@@ -198,8 +198,6 @@ enum CallType : unsigned int {
     kCallTypeCircles,
     kCallTypeFractal,
     kCallTypeLines,
-    kCallTypeMeshCurves,
-    kCallTypeMeshConcaveCurves,
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,

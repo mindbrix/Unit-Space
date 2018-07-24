@@ -15,8 +15,6 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> curvesBuffer;
-@property (nonatomic, strong) id <MTLBuffer> concaveCurvesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathCTMsBuffer;
@@ -25,8 +23,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshCurvePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshConcaveCurvePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -122,20 +118,6 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
-    descriptor.label = @"Curve";
-    self.meshCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationReverseSubtract;
-    descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationReverseSubtract;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"curve_fragment_main"];
-    descriptor.label = @"Concave Curve";
-    self.meshConcaveCurvePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
                                                 length:sizeof(indices)
@@ -211,31 +193,6 @@
                 [commandEncoder setRenderPipelineState:_linePipelineState];
                 [commandEncoder setVertexBytes:&call->lines length:sizeof(Lines) atIndex:1];
                 instanceCount = call->lines.count;
-                break;
-            case kCallTypeMeshCurves:
-                if (call->meshState.hideCurves)
-                    continue;
-                [commandEncoder setRenderPipelineState:_meshCurvePipelineState];
-                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
-                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
-                [commandEncoder setVertexBuffer:_curvesBuffer offset:0 atIndex:4];
-                [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-                drawQuads = NO;
-                break;
-            case kCallTypeMeshConcaveCurves:
-                if (call->meshState.hideCurves)
-                    continue;
-                [commandEncoder setRenderPipelineState:call->meshState.showInterior && !call->meshState.hideTriangles ? _meshConcaveCurvePipelineState : _meshCurvePipelineState];
-                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
-                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:3];
-                [commandEncoder setVertexBuffer:_concaveCurvesBuffer offset:0 atIndex:4];
-                [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
-                [commandEncoder setDepthStencilState:_noDepthState];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-                drawQuads = NO;
                 break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
@@ -370,19 +327,7 @@
             }
         }
     }
-//    if (mesh._concaveCurves.size()) {
-//        calls.emplace_back(tmpl);
-//        Call& call = calls.back();
-//        call.type = kCallTypeMeshConcaveCurves;
-//        call.instanceCount = (int)_concaveCurvesBuffer.length / sizeof(Triangle);
-//    }
-//    if (mesh._curves.size()) {
-//        calls.emplace_back(tmpl);
-//        Call& call = calls.back();
-//        call.type = kCallTypeMeshCurves;
-//        call.instanceCount = (int)_curvesBuffer.length / sizeof(Triangle);
-//    }
-    memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
+   memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
     [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
     [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
@@ -396,14 +341,6 @@
         _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
                                               length:mesh._pts.size() * sizeof(Vector)
                                              options:MTLResourceStorageModeShared];
-    if (mesh._curves.size())
-        _curvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._curves[0]
-                                                 length:mesh._curves.size() * sizeof(Triangle)
-                                                options:MTLResourceStorageModeShared];
-    if (mesh._concaveCurves.size())
-        _concaveCurvesBuffer = [self.device newBufferWithBytes:(void *)& mesh._concaveCurves[0]
-                                                        length:mesh._concaveCurves.size() * sizeof(Triangle)
-                                                       options:MTLResourceStorageModeShared];
     if (mesh._pathCTMs.size())
         _pathCTMsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pathCTMs[0]
                                                    length:mesh._pathCTMs.size() * sizeof(AffineTransform)
