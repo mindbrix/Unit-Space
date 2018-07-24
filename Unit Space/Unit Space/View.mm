@@ -316,7 +316,7 @@ using namespace std;
 }
 - (IBAction)toggleUseMask:(id)sender {
     _useMask = !_useMask;
-    [self reset];
+    self.metalLayer.multisample = _useMask;
     [self redraw];
 }
 - (IBAction)toggleUseStrokeColor:(id)sender {

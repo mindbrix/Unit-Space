@@ -18,6 +18,7 @@
 @interface MetalLayer : CAMetalLayer
 
 @property(weak) id <LayerDelegate> layerDelegate;
+@property(nonatomic) BOOL multisample;
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms;
 - (void)uploadMesh:(Mesh &)mesh;

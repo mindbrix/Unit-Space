@@ -24,12 +24,14 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorMultisamplePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLDepthStencilState> noDepthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
+@property (nonatomic, strong) id <MTLTexture> multisampleTexture;
 
 @end
 
@@ -77,6 +79,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
     self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.sampleCount = 8;
+    descriptor.label = @"meshInteriorMultisamplePipelineState";
+    self.meshInteriorMultisamplePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.sampleCount = 1;
     
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
@@ -144,20 +151,37 @@
     if (drawable == nil)
         return;
     
-    if (self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height) {
-        MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
-                                                                                        width:self.drawableSize.width
-                                                                                       height:self.drawableSize.height
-                                                                                    mipmapped:NO];
-        desc.storageMode = MTLStorageModePrivate;
-        desc.usage = MTLTextureUsageRenderTarget;
+    MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
+                                                                                    width:self.drawableSize.width
+                                                                                   height:self.drawableSize.height
+                                                                                mipmapped:NO];
+    desc.storageMode = MTLStorageModePrivate;
+    desc.usage = MTLTextureUsageRenderTarget;
+    BOOL sizeChanged = self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height;
+    if (sizeChanged || self.multisample == (self.multisampleTexture == nil)) {
+        if (_multisample)
+            desc.sampleCount = 8, desc.textureType = MTLTextureType2DMultisample;
+        
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
-        [self.depthTexture setLabel:@"Depth"];
+        [self.depthTexture setLabel:@"depthTexture"];
+        
+        if (_multisample) {
+            desc.pixelFormat = MTLPixelFormatBGRA8Unorm;
+            self.multisampleTexture = [self.device newTextureWithDescriptor:desc];
+            [self.multisampleTexture setLabel:@"multisampleTexture"];
+        } else
+            self.multisampleTexture = nil;
     }
-
+    
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-    descriptor.colorAttachments[0].texture = drawable.texture;
-    descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+    if (_multisample) {
+        descriptor.colorAttachments[0].texture = _multisampleTexture;
+        descriptor.colorAttachments[0].resolveTexture = drawable.texture;
+        descriptor.colorAttachments[0].storeAction = MTLStoreActionMultisampleResolve;
+    } else {
+        descriptor.colorAttachments[0].texture = drawable.texture;
+        descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+    }
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
     descriptor.depthAttachment.texture = _depthTexture;
@@ -199,8 +223,11 @@
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
                     continue;
-                
-                [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
+                if (_multisample)
+                    [commandEncoder setRenderPipelineState:_meshInteriorMultisamplePipelineState];
+                else {
+                    [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
+                }
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
@@ -327,7 +354,7 @@
             }
         }
     }
-   memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
+    memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
     [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
     [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
