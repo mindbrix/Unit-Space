@@ -312,7 +312,6 @@ using namespace std;
 
 - (IBAction)toggleUseDelaunay:(id)sender {
     _useDelaunay = !_useDelaunay;
-    [self reset];
     [self redraw];
 }
 - (IBAction)toggleUseMask:(id)sender {
@@ -522,6 +521,7 @@ using namespace std;
         uniforms.strokeColor = { 0, 0, 0, 1 };
         
         MeshState meshState;
+        meshState.disableInteriorVector = _useDelaunay;;
         meshState.hideCurves = !_showCurves;
         meshState.hideTriangles = !_showTriangle;
         meshState.showEdges = _showEdges;

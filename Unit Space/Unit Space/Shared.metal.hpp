@@ -164,6 +164,7 @@ struct Units {
 };
 
 struct MeshState {
+    bool                disableInteriorVector;
     bool                hideCurves;
     bool                hideTriangles;
     bool                showEdges;
