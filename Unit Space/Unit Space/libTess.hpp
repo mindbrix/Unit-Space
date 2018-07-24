@@ -48,8 +48,7 @@ struct libTess {
         }
     }
     
-    static void addContours(TESStesselator *tess, Path& path, bool reverse) {
-        tessSetOption(tess, TESS_REVERSE_CONTOURS, reverse ? 1 : 0);
+    static void addContours(TESStesselator *tess, Path& path) {
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
                 if (s._quadratics.get())
@@ -89,7 +88,7 @@ struct libTess {
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
             mesh._triangleIndices.emplace_back((int)mesh._pts.size() / kMeshTriangleSize);
             
-            addContours(tess, path, false);
+            addContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess);
                 const float *edgePoints = tessGetVertices(tess);
