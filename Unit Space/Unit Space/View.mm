@@ -531,6 +531,7 @@ using namespace std;
         meshState.showEdges = _showEdges;
         meshState.showColors = _showColors;
         meshState.showInterior = _showInterior;
+        meshState.showVisibles = _showVisibles;
         meshState.useStrokeColor = _useStrokeColor;
         
         AffineTransform scale = { 1, 0, 0, 1, 0, 0 };
@@ -594,15 +595,6 @@ using namespace std;
                     }
                 }
             }
-        }
-        if (_showVisibles) {
-            _calls.emplace_back();
-            Call& call = _calls.back();
-            call.type = kCallTypeFlags;
-            call.state = uniforms;
-            call.flags.count = 32;
-            call.flags.w = call.flags.h = 64;
-            call.flags.flags[0] = 0xAAAAAAAA;
         }
     }
     if (_flags & 16) {

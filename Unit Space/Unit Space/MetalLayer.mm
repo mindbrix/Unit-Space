@@ -74,15 +74,15 @@
     descriptor.label = @"Unit";
     self.unitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
+    descriptor.label = @"flagPipelineState";
+    self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
     self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
-    descriptor.label = @"visiblePipelineState";
-    self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
@@ -265,7 +265,7 @@
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
     meshState.colorsSize = (int)mesh._colors.size();
-    int base, end, count, p;
+    int base, end, count, p, i, j;
     AffineTransform ctm;
     Bounds bounds, deviceBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     float w, h, x0, y0, x1, y1, l0, l1;
@@ -278,7 +278,10 @@
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             bounds = mesh._bounds[p];
-            visibles[p] = mesh._colors[p].a == 255 || bounds.transformed(ctm).intersects(deviceBounds);
+            if (meshState.showVisibles)
+                visibles[p] = bounds.transformed(ctm).intersects(deviceBounds);
+            else
+                visibles[p] = mesh._colors[p].a == 255 || bounds.transformed(ctm).intersects(deviceBounds);
             w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
             x0 = w * ctm.a, y0 = w * ctm.b;
             x1 = h * ctm.c, y1 = h * ctm.d;
@@ -335,6 +338,22 @@
                     call->instanceCount = count;
                     call = nullptr;
                 }
+            }
+        }
+        if (meshState.showVisibles) {
+            calls.emplace_back();
+            call = & calls.back();
+            call->type = kCallTypeFlags;
+            call->state = uniforms;
+            call->flags.count = (int)mesh._colors.size();
+            call->flags.w = call->flags.h = 64;
+            
+            for (p = 0; p < mesh._colors.size(); p++) {
+                i = p >> 5, j = p % 32;
+                if (j == 0)
+                    call->flags.flags[i] = 0;
+                if (visibles[p])
+                    call->flags.flags[i] |= (1 << j);
             }
         }
     }
