@@ -150,18 +150,16 @@
     if (drawable == nil)
         return;
     
-    MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
-                                                                                    width:self.drawableSize.width
-                                                                                   height:self.drawableSize.height
-                                                                                mipmapped:NO];
-    desc.storageMode = MTLStorageModePrivate;
-    desc.usage = MTLTextureUsageRenderTarget;
-    BOOL sizeChanged = self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height;
-    if (sizeChanged) {
+    if (self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height) {
+        MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
+                                                                                        width:self.drawableSize.width
+                                                                                       height:self.drawableSize.height
+                                                                                    mipmapped:NO];
+        desc.storageMode = MTLStorageModePrivate;
+        desc.usage = MTLTextureUsageRenderTarget;
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
     }
-    
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
