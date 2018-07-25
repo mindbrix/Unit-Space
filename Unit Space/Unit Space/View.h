@@ -37,5 +37,6 @@
 - (IBAction)toggleUseDelaunay:(id)sender;
 - (IBAction)toggleUseMask:(id)sender;
 - (IBAction)toggleUseStrokeColor:(id)sender;
+- (IBAction)toggleShowVisibles:(id)sender;
 
 @end

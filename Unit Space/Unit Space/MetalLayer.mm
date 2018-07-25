@@ -20,6 +20,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
@@ -78,6 +79,12 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
     self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
+    descriptor.label = @"visiblePipelineState";
+    self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     
     descriptor.sampleCount = 8;
     descriptor.label = @"meshInteriorMultisamplePipelineState";
@@ -205,6 +212,11 @@
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
                 [commandEncoder setVertexBytes:&call->circles length:sizeof(Circles) atIndex:1];
                 instanceCount = call->circles.count;
+                break;
+            case kCallTypeFlags:
+                [commandEncoder setRenderPipelineState:_flagPipelineState];
+                [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:1];
+                instanceCount = call->flags.count;
                 break;
             case kCallTypeFractal:
                 [commandEncoder setRenderPipelineState:_fractalPipelineState];

@@ -38,6 +38,7 @@ using namespace std;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
+@property(nonatomic) BOOL showVisibles;
 @property(nonatomic) BOOL useDelaunay;
 @property(nonatomic) BOOL useMask;
 @property(nonatomic) BOOL useStrokeColor;
@@ -323,6 +324,10 @@ using namespace std;
     _useStrokeColor = !_useStrokeColor;
     [self redraw];
 }
+- (IBAction)toggleShowVisibles:(id)sender {
+    _showVisibles = !_showVisibles;
+    [self redraw];
+}
 - (void)updateFromState {
     self.metalLayer.backgroundColor = CGColorGetConstantColor(_showColors ? kCGColorClear : kCGColorWhite);
 }
@@ -590,6 +595,15 @@ using namespace std;
                     }
                 }
             }
+        }
+        if (_showVisibles) {
+            _calls.emplace_back();
+            Call& call = _calls.back();
+            call.type = kCallTypeFlags;
+            call.state = uniforms;
+            call.flags.count = 32;
+            call.flags.w = call.flags.h = 64;
+            call.flags.flags[0] = 0xAAAAAAAA;
         }
     }
     if (_flags & 16) {

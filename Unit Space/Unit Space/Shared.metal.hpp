@@ -140,6 +140,12 @@ struct Circles {
     Circle      circles[kCirclesSize];
 };
 
+struct Flags {
+    int                 count;
+    int                 w, h;
+    unsigned int        flags[1021];
+};
+
 struct Fractals {
     int                 count;
     AffineTransform     unitCTM;
@@ -196,6 +202,7 @@ struct State {
 enum CallType : unsigned int {
     kCallTypeArcs = 0,
     kCallTypeCircles,
+    kCallTypeFlags,
     kCallTypeFractal,
     kCallTypeLines,
     kCallTypeMeshInterior,
@@ -213,6 +220,7 @@ struct Call {
     union {
         Arcs        arcs;
         Circles     circles;
+        Flags       flags;
         Fractals    fractals;
         Lines       lines;
         MeshState   meshState;

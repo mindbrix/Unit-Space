@@ -730,6 +730,12 @@
                                     <action selector="toggleUseStrokeColor:" target="-1" id="e9r-mh-avO"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Show Visibles" keyEquivalent="v" id="3ZK-tU-5yv">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleShowVisibles:" target="-1" id="18Z-QA-1tT"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
