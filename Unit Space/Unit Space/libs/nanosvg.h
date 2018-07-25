@@ -1707,7 +1707,7 @@ static int nsvg__parseStrokeDashArray(NSVGparser* p, const char* str, float* str
 
 static void nsvg__parseStyle(NSVGparser* p, const char* str);
 
-static int nsvg__parseAttr(NSVGparser* p, const char* name, const char* value)
+static int nsvg__parseAttr(NSVGparser* p, const char* name, const char* value, const char *el = nullptr)
 {
 	float xform[6];
 	NSVGattrib* attr = nsvg__getAttr(p);
@@ -1771,7 +1771,7 @@ static int nsvg__parseAttr(NSVGparser* p, const char* name, const char* value)
 		attr->stopOpacity = nsvg__parseOpacity(value);
 	} else if (strcmp(name, "offset") == 0) {
 		attr->stopOffset = nsvg__parseCoordinate(p, value, 0.0f, 1.0f);
-	} else if (strcmp(name, "id") == 0) {
+	} else if (el && strcmp(name, "id") == 0) {
 		strncpy(attr->id, value, 63);
 		attr->id[63] = '\0';
 	} else {
@@ -1833,7 +1833,7 @@ static void nsvg__parseStyle(NSVGparser* p, const char* str)
 	}
 }
 
-static void nsvg__parseAttribs(NSVGparser* p, const char** attr)
+static void nsvg__parseAttribs(NSVGparser* p, const char** attr, const char *el = nullptr)
 {
 	int i;
 	for (i = 0; attr[i]; i += 2)
@@ -1841,7 +1841,7 @@ static void nsvg__parseAttribs(NSVGparser* p, const char** attr)
 		if (strcmp(attr[i], "style") == 0)
 			nsvg__parseStyle(p, attr[i + 1]);
 		else
-			nsvg__parseAttr(p, attr[i], attr[i + 1]);
+			nsvg__parseAttr(p, attr[i], attr[i + 1], el);
 	}
 }
 
@@ -2658,7 +2658,7 @@ static void nsvg__startElement(void* ud, const char* el, const char** attr)
 
 	if (strcmp(el, "g") == 0) {
 		nsvg__pushAttr(p);
-		nsvg__parseAttribs(p, attr);
+		nsvg__parseAttribs(p, attr, el);
 	} else if (strcmp(el, "path") == 0) {
 		if (p->pathFlag)	// Do not allow nested paths.
 			return;
