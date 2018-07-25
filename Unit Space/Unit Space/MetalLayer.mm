@@ -142,8 +142,9 @@
 - (void)draw {
     Call *calls = nullptr;
     size_t count = 0;
-    if ([self.layerDelegate respondsToSelector:@selector(drawCallsWithCount:forLayer:)])
-        calls = [self.layerDelegate drawCallsWithCount:&count forLayer:self];
+    Mesh *mesh = nullptr;
+    if ([self.layerDelegate respondsToSelector:@selector(drawCallsWithCount:forLayer:fromMesh:)])
+        calls = [self.layerDelegate drawCallsWithCount:&count forLayer:self fromMesh:& mesh];
     if (calls == nullptr || count == 0)
         return;
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];

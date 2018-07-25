@@ -11,7 +11,7 @@
 #import "Mesh.hpp"
 
 @protocol LayerDelegate <NSObject>
-- (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer;
+- (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer fromMesh:(Mesh **)mesh;
 @end
 
 

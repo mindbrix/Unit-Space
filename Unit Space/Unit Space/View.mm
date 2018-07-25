@@ -643,8 +643,9 @@ using namespace std;
 
 #pragma mark - LayerDelegate
 
-- (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer {
+- (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer fromMesh:(Mesh **)mesh {
     *count = _calls.size();
+    *mesh = & _mesh;
     return & _calls[0];
 }
 
