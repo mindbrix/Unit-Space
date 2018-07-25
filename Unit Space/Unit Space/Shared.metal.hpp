@@ -140,10 +140,9 @@ struct Circles {
     Circle      circles[kCirclesSize];
 };
 
-#define kFlagsSize 1021
+#define kFlagsSize 1022
 
 struct Flags {
-    int                 count;
     int                 w, h;
     unsigned int        flags[kFlagsSize];
 };

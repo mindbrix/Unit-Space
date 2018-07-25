@@ -193,7 +193,7 @@
             case kCallTypeFlags:
                 [commandEncoder setRenderPipelineState:_flagPipelineState];
                 [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:1];
-                instanceCount = call->flags.count;
+                instanceCount = call->instanceCount;
                 break;
             case kCallTypeFractal:
                 [commandEncoder setRenderPipelineState:_fractalPipelineState];
@@ -345,7 +345,7 @@
             call = & calls.back();
             call->type = kCallTypeFlags;
             call->state = uniforms;
-            call->flags.count = (int)mesh._colors.size();
+            call->instanceCount = (int)mesh._colors.size();
             call->flags.w = call->flags.h = 64;
             
             for (p = 0; p < mesh._colors.size(); p++) {
