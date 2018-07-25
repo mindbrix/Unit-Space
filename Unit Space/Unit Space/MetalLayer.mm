@@ -24,7 +24,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorMultisamplePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
@@ -84,12 +83,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
     descriptor.label = @"visiblePipelineState";
     self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    
-    descriptor.sampleCount = 8;
-    descriptor.label = @"meshInteriorMultisamplePipelineState";
-    self.meshInteriorMultisamplePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    descriptor.sampleCount = 1;
     
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
@@ -164,30 +157,14 @@
     desc.storageMode = MTLStorageModePrivate;
     desc.usage = MTLTextureUsageRenderTarget;
     BOOL sizeChanged = self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height;
-    if (sizeChanged || self.multisample == (self.multisampleTexture == nil)) {
-        if (_multisample)
-            desc.sampleCount = 8, desc.textureType = MTLTextureType2DMultisample;
-        
+    if (sizeChanged) {
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
-        
-        if (_multisample) {
-            desc.pixelFormat = MTLPixelFormatBGRA8Unorm;
-            self.multisampleTexture = [self.device newTextureWithDescriptor:desc];
-            [self.multisampleTexture setLabel:@"multisampleTexture"];
-        } else
-            self.multisampleTexture = nil;
     }
     
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-    if (_multisample) {
-        descriptor.colorAttachments[0].texture = _multisampleTexture;
-        descriptor.colorAttachments[0].resolveTexture = drawable.texture;
-        descriptor.colorAttachments[0].storeAction = MTLStoreActionMultisampleResolve;
-    } else {
-        descriptor.colorAttachments[0].texture = drawable.texture;
-        descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-    }
+    descriptor.colorAttachments[0].texture = drawable.texture;
+    descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
     descriptor.depthAttachment.texture = _depthTexture;
@@ -234,11 +211,7 @@
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
                     continue;
-                if (_multisample)
-                    [commandEncoder setRenderPipelineState:_meshInteriorMultisamplePipelineState];
-                else {
-                    [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
-                }
+                [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
                 [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
