@@ -174,7 +174,8 @@ struct SubPath {
                 ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
                 bx = 2.0 * (x1 - x0), by = 2.0 * (y1 - y0);
                 t = precision * precision / (ax * ax + ay * ay);
-                t = t > 1 ? 1 : t > 0.0625 ? 0.51 : std::sqrt(std::sqrt(t));
+//                t = t > 1 ? 1 : t > 0.0625 ? 0.51 : std::sqrt(std::sqrt(t));
+                t = t > 1 ? 1 : t > 0.25 ? 0.51 : (std::sqrt(t));
                 
                 dst.emplace_back(x0), dst.emplace_back(y0);
                 if (t == 1)
