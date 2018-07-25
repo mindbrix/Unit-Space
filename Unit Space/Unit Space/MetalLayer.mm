@@ -354,6 +354,9 @@
             }
         }
     }
+    [self syncMesh:mesh];
+}
+- (void)syncMesh:(Mesh &)mesh {
     memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
     [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
