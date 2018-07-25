@@ -252,11 +252,9 @@
                                vertexCount:3
                              instanceCount:instanceCount
                               baseInstance:baseInstance];
-        [commandEncoder setDepthStencilState:_depthState];
     }
-    
     [commandEncoder endEncoding];
-    
+
     [commandBuffer presentDrawable:drawable];
     [commandBuffer commit];
 }
