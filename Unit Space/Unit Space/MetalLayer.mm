@@ -144,7 +144,8 @@
     size_t count = 0;
     if ([self.layerDelegate respondsToSelector:@selector(drawCallsWithCount:forLayer:)])
         calls = [self.layerDelegate drawCallsWithCount:&count forLayer:self];
-
+    if (calls == nullptr || count == 0)
+        return;
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     id <CAMetalDrawable> drawable = [self nextDrawable];
     if (drawable == nil)
