@@ -120,7 +120,7 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    SubPath(const float *points, const int npoints, Type type, float precision = 0.7071) {
+    SubPath(const float *points, const int npoints, Type type, float precision = 1) {
         float dx, dy;
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
@@ -174,7 +174,7 @@ struct SubPath {
                 ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
                 bx = 2.0 * (x1 - x0), by = 2.0 * (y1 - y0);
                 t = precision * precision / (ax * ax + ay * ay);
-                t = t > 1 ? 1 : t > 0.0625 ? 0.51 : std::sqrt(std::sqrt(t));
+                t = t > 1 ? 1 : t > 0.0625 ? 0.51 : t > 0.012345679012346 ? 0.334 : std::sqrt(std::sqrt(t));
                 
                 dst.emplace_back(x0), dst.emplace_back(y0);
                 if (t == 1)
