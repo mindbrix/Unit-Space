@@ -365,9 +365,10 @@
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
-    _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
-                                             length:mesh._colors.size() * sizeof(RGBA8)
-                                            options:MTLResourceStorageModeManaged];
+    if (mesh._colors.size())
+        _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
+                                                 length:mesh._colors.size() * sizeof(RGBA8)
+                                                options:MTLResourceStorageModeManaged];
     if (mesh._pts.size())
         _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
                                               length:mesh._pts.size() * sizeof(Vector)
