@@ -230,16 +230,16 @@ vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]],
 
 fragment float4 mesh_unit_fragment_main(MeshUnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]])
 {
+    float tx = state.CTM.tx - vert.devicePoint.x, ty = state.CTM.ty - vert.devicePoint.y;
     float2 p0 = {
-        grid.points[0].x * state.CTM.a + grid.points[0].y * state.CTM.c + state.CTM.tx,
-        grid.points[0].x * state.CTM.b + grid.points[0].y * state.CTM.d + state.CTM.ty };
+        grid.points[0].x * state.CTM.a + grid.points[0].y * state.CTM.c + tx,
+        grid.points[0].x * state.CTM.b + grid.points[0].y * state.CTM.d + ty };
     float2 p1 = {
-        grid.points[1].x * state.CTM.a + grid.points[1].y * state.CTM.c + state.CTM.tx,
-        grid.points[1].x * state.CTM.b + grid.points[1].y * state.CTM.d + state.CTM.ty };
+        grid.points[1].x * state.CTM.a + grid.points[1].y * state.CTM.c + tx,
+        grid.points[1].x * state.CTM.b + grid.points[1].y * state.CTM.d + ty };
     float2 p2 = {
-        grid.points[2].x * state.CTM.a + grid.points[2].y * state.CTM.c + state.CTM.tx,
-        grid.points[2].x * state.CTM.b + grid.points[2].y * state.CTM.d + state.CTM.ty };
-    p0 -= vert.devicePoint, p1 -= vert.devicePoint, p2 -= vert.devicePoint;
+        grid.points[2].x * state.CTM.a + grid.points[2].y * state.CTM.c + tx,
+        grid.points[2].x * state.CTM.b + grid.points[2].y * state.CTM.d + ty };
     
     float winding = edgeWinding(p0, p1) + edgeWinding(p1, p2) + edgeWinding(p2, p0);
     return vert.color * abs(winding);
