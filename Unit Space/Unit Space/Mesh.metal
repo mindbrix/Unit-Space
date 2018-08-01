@@ -213,14 +213,16 @@ struct MeshUnitVertex {
 
 vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]], uint vid [[vertex_id]])
 {
-    float2 userPoint = { select(grid.bounds.lx, grid.bounds.ux, vid & 1), select(grid.bounds.ly, grid.bounds.uy, vid & 2) };
+    float dx = 0.5 * rsqrt( state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
+    float dy = 0.5 * rsqrt( state.CTM.c * state.CTM.c + state.CTM.d * state.CTM.d);
+    float2 userPoint = { select(grid.bounds.lx - dx, grid.bounds.ux + dx, vid & 1), select(grid.bounds.ly - dy, grid.bounds.uy + dy, vid & 2) };
     float2 devicePoint = {
         userPoint.x * state.CTM.a + userPoint.y * state.CTM.c + state.CTM.tx,
         userPoint.x * state.CTM.b + userPoint.y * state.CTM.d + state.CTM.ty };
     
     MeshUnitVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 1.0, 1.0);
-    vert.color = { 1, 0, 0, 1 };
+    vert.color = { 0, 0, 0, 1 };
     vert.unitPoint = float2(vid & 1, vid & 2);
     vert.devicePoint = devicePoint - 0.5;
     return vert;
@@ -241,6 +243,4 @@ fragment float4 mesh_unit_fragment_main(MeshUnitVertex vert [[stage_in]], consta
     
     float winding = edgeWinding(p0, p1) + edgeWinding(p1, p2) + edgeWinding(p2, p0);
     return vert.color * abs(winding);
-    
-//    return vert.color;
 }
