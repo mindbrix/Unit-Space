@@ -262,3 +262,12 @@ inline AffineTransform AffineTransformInvert(const AffineTransform t) {
         (t.c * t.ty - t.d * t.tx) * recip,      -(t.a * t.ty - t.b * t.tx) * recip
     };
 }
+
+inline AffineTransform AffineTransformMakeUnit(Bounds bounds, AffineTransform t) {
+    float w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
+    return {
+        t.a * w,                                    t.b * w,
+        t.c * h,                                    t.d * h,
+        bounds.lx * t.a + bounds.ly * t.c + t.tx,   bounds.lx * t.b + bounds.ly * t.d + t.ty
+    };
+}
