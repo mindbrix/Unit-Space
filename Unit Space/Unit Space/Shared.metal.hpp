@@ -263,7 +263,7 @@ inline AffineTransform AffineTransformInvert(const AffineTransform t) {
     };
 }
 
-inline AffineTransform AffineTransformMakeUnit(Bounds bounds, AffineTransform t) {
+inline AffineTransform AffineTransformMakeUnit(const Bounds bounds, const AffineTransform t) {
     float w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
     return {
         t.a * w,                                    t.b * w,
