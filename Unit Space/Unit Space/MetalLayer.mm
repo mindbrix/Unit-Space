@@ -370,11 +370,17 @@
         call->type = kCallTypeMeshUnits;
         call->state = uniforms;
         call->state.CTM = AffineTransformConcat(mesh._pathCTMs[0], call->state.CTM);
+        call->state.CTM = AffineTransformMakeUnit(mesh._bounds[0], call->state.CTM);
         call->instanceCount = 1;
-        call->boundsGrid.bounds = mesh._bounds[0];
-        call->boundsGrid.points[0] = { mesh._bounds[0].lx, mesh._bounds[0].ly };
-        call->boundsGrid.points[1] = { mesh._bounds[0].ux, mesh._bounds[0].ly };
-        call->boundsGrid.points[2] = { mesh._bounds[0].ux, mesh._bounds[0].uy };
+        float w = mesh._bounds[0].ux - mesh._bounds[0].lx, h = mesh._bounds[0].uy- mesh._bounds[0].ly;
+        call->boundsGrid.bounds = { 0, 0, 1, 1 };
+        call->boundsGrid.points[0] = { 0, 0 };
+        call->boundsGrid.points[1] = { 1, 0 };
+        call->boundsGrid.points[2] = { 1, 1 };
+//        call->boundsGrid.bounds = mesh._bounds[0];
+//        call->boundsGrid.points[0] = { mesh._bounds[0].lx, mesh._bounds[0].ly };
+//        call->boundsGrid.points[1] = { mesh._bounds[0].ux, mesh._bounds[0].ly };
+//        call->boundsGrid.points[2] = { mesh._bounds[0].ux, mesh._bounds[0].uy };
     }
     [self syncMesh:mesh];
 }

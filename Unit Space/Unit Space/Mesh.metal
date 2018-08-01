@@ -208,7 +208,6 @@ struct MeshUnitVertex {
     float4 color;
     float2 unitPoint;
     float2 devicePoint;
-//    float a, b, c, d, tx, ty;
 };
 
 vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]], uint vid [[vertex_id]])
