@@ -199,3 +199,48 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
 }
+
+#pragma mark Unit
+
+struct MeshUnitVertex {
+    float4 position [[position]];
+    
+    float4 color;
+    float2 unitPoint;
+    float2 devicePoint;
+//    float a, b, c, d, tx, ty;
+};
+
+vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]], uint vid [[vertex_id]])
+{
+    float2 userPoint = { select(grid.bounds.lx, grid.bounds.ux, vid & 1), select(grid.bounds.ly, grid.bounds.uy, vid & 2) };
+    float2 devicePoint = {
+        userPoint.x * state.CTM.a + userPoint.y * state.CTM.c + state.CTM.tx,
+        userPoint.x * state.CTM.b + userPoint.y * state.CTM.d + state.CTM.ty };
+    
+    MeshUnitVertex vert;
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 1.0, 1.0);
+    vert.color = { 1, 0, 0, 1 };
+    vert.unitPoint = float2(vid & 1, vid & 2);
+    vert.devicePoint = devicePoint - 0.5;
+    return vert;
+}
+
+fragment float4 mesh_unit_fragment_main(MeshUnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]])
+{
+    float2 p0 = {
+        grid.points[0].x * state.CTM.a + grid.points[0].y * state.CTM.c + state.CTM.tx,
+        grid.points[0].x * state.CTM.b + grid.points[0].y * state.CTM.d + state.CTM.ty };
+    float2 p1 = {
+        grid.points[1].x * state.CTM.a + grid.points[1].y * state.CTM.c + state.CTM.tx,
+        grid.points[1].x * state.CTM.b + grid.points[1].y * state.CTM.d + state.CTM.ty };
+    float2 p2 = {
+        grid.points[2].x * state.CTM.a + grid.points[2].y * state.CTM.c + state.CTM.tx,
+        grid.points[2].x * state.CTM.b + grid.points[2].y * state.CTM.d + state.CTM.ty };
+    p0 -= vert.devicePoint, p1 -= vert.devicePoint, p2 -= vert.devicePoint;
+    
+    float winding = edgeWinding(p0, p1) + edgeWinding(p1, p2) + edgeWinding(p2, p0);
+    return vert.color * abs(winding);
+    
+//    return vert.color;
+}

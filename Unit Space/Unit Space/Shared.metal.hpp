@@ -125,6 +125,15 @@ struct Arcs {
     Arc         arcs[192];
 };
 
+#define kBoundsGridDimension 32
+
+struct BoundsGrid {
+    Bounds  bounds;
+    unsigned int x[kBoundsGridDimension];
+    unsigned int y[kBoundsGridDimension];
+    Vector points[3 * 32];
+};
+
 #define kCirclesSize 340
 
 struct Circles {
@@ -210,6 +219,7 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
+    kCallTypeMeshUnits,
     kCallTypeQuadratics,
     kCallTypeUnits,
 };
@@ -221,6 +231,7 @@ struct Call {
     State       state;
     union {
         Arcs        arcs;
+        BoundsGrid  boundsGrid;
         Circles     circles;
         Flags       flags;
         Fractals    fractals;

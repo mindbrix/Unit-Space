@@ -23,6 +23,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshUnitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -124,6 +125,11 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_unit_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"mesh_unit_fragment_main"];
+    descriptor.label = @"meshBoundsGridPipelineState";
+    self.meshUnitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
                                                 length:sizeof(indices)
@@ -218,6 +224,11 @@
                 [commandEncoder setVertexBuffer:_ptsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
+                break;
+            case kCallTypeMeshUnits:
+                [commandEncoder setRenderPipelineState:_meshUnitPipelineState];
+                [commandEncoder setVertexBytes:&call->boundsGrid length:sizeof(BoundsGrid) atIndex:1];
+                [commandEncoder setFragmentBytes:&call->boundsGrid length:sizeof(BoundsGrid) atIndex:1];
                 break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
@@ -354,6 +365,16 @@
                     call->flags.flags[i] |= (1 << j);
             }
         }
+        calls.emplace_back();
+        call = & calls.back();
+        call->type = kCallTypeMeshUnits;
+        call->state = uniforms;
+        call->state.CTM = AffineTransformConcat(mesh._pathCTMs[0], call->state.CTM);
+        call->instanceCount = 1;
+        call->boundsGrid.bounds = mesh._bounds[0];
+        call->boundsGrid.points[0] = { mesh._bounds[0].lx, mesh._bounds[0].ly };
+        call->boundsGrid.points[1] = { mesh._bounds[0].ux, mesh._bounds[0].ly };
+        call->boundsGrid.points[2] = { mesh._bounds[0].ux, mesh._bounds[0].uy };
     }
     [self syncMesh:mesh];
 }
