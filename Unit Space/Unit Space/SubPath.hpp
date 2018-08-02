@@ -129,22 +129,17 @@ struct SubPath {
         if (type == kCubic) {
             vector<float> split;
             _npoints = splitCubics(split, points, npoints, kSplitCubicPrecision);
-            if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
-                split[_npoints * 2 - 2] = split[0], split[_npoints * 2 - 1] = split[1];
             if (_npoints > 2) {
-                vector<float> dst;
-                flattenQuadratics(dst, split, precision);
-                _quadratics.alloc((int)dst.size());
-                memcpy(_quadratics.get(), & dst[0], _quadratics.size());
+                if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
+                    split[_npoints * 2 - 2] = split[0], split[_npoints * 2 - 1] = split[1];
+                flattenQuadratics(_quadratics, split, precision);
             }
         } else if (type == kQuadratic) {
             _npoints = npoints;
             if (_npoints > 4) {
                 vector<float> quadratics(npoints * 2), dst;
                 memcpy(& quadratics[0], points, npoints * kPointStride);
-                flattenQuadratics(dst, quadratics, precision);
-                _quadratics.alloc((int)dst.size());
-                memcpy(_quadratics.get(), & dst[0], _quadratics.size());
+                flattenQuadratics(_quadratics, quadratics, precision);
             }
         } else {
             _npoints = npoints;
@@ -163,7 +158,8 @@ struct SubPath {
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
-    void flattenQuadratics(vector<float> & dst, vector<float> & points, float precision) {
+    void flattenQuadratics(Memory<float>& quadratics, vector<float> & points, float precision) {
+        vector<float> dst;
         float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ax, ay, bx, by;
         int i, npoints;
         for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
@@ -188,6 +184,9 @@ struct SubPath {
             } while (t < 1);
         }
         dst.emplace_back(x2), dst.emplace_back(y2);
+        
+        quadratics.alloc((int)dst.size());
+        memcpy(quadratics.get(), & dst[0], quadratics.size());
     }
     
     Memory<float>               _points;
