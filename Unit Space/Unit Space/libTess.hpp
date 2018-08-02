@@ -69,13 +69,13 @@ struct libTess {
             }
     }
         
-    Vector miter(const float *edgePoints, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
+    Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
         bool left;
         
-        px = edgePoints[e->prev() * 2], py = edgePoints[e->prev() * 2 + 1];
-        nx = edgePoints[e->next() * 2], ny = edgePoints[e->next() * 2 + 1];
+        px = verts[e->prev() * 2], py = verts[e->prev() * 2 + 1];
+        nx = verts[e->next() * 2], ny = verts[e->next() * 2 + 1];
         if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
             x = x1, y = y1;
         else
@@ -106,7 +106,7 @@ struct libTess {
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess), idx;
                 const TESSindex *indices = tessGetVertexIndices(tess);
-                const float *edgePoints = tessGetVertices(tess);
+                const float *verts = tessGetVertices(tess);
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                 addContours(dst, tess, edges);
                 if (controlPoints.size())
@@ -149,9 +149,9 @@ struct libTess {
                                         break;
                             }
                         }
-                        m0 = miter(edgePoints, e0, x0, y0, x1, y1, x2, y2);
-                        m1 = miter(edgePoints, e1, x1, y1, x2, y2, x0, y0);
-                        m2 = miter(edgePoints, e2, x2, y2, x0, y0, x1, y1);
+                        m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2);
+                        m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0);
+                        m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1);
                         solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
                         tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                         tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
