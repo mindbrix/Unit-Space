@@ -123,8 +123,8 @@ struct libTess {
                     const TESSindex *polygon = tessGetElements(dst);
                     float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
                     Vector m0, m1, m2;
-                    int i0, i1, i2;
-                    for (int i = 0; i < nelems; i++, polygon += kPolySize) {
+                    int i, i0, i1, i2;
+                    for (i = 0; i < nelems; i++, polygon += kPolySize) {
                         i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                         
                         x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
