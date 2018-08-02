@@ -67,7 +67,7 @@ struct libTess {
         }
     }
     
-   Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
+   static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
         bool left;
@@ -85,7 +85,7 @@ struct libTess {
         return miterVector(x0, y0, px, py, nx, ny, left, limit, 0.7071);
     }
     
-    void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
+    static void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
         mesh.empty();
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         

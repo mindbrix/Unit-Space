@@ -362,7 +362,7 @@ using namespace std;
     _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
     
     if (_svgData || _fontData) {
-        _libtess.triangulate(_mesh, _scene, self.useMask);
+        libTess::triangulate(_mesh, _scene, self.useMask);
         
         [self.metalLayer uploadMesh:_mesh];
     } else {
@@ -411,7 +411,7 @@ using namespace std;
     if (self.pathBitmask & kPathBitmaskQuad)
         scene.addPath(p2);
     
-    _libtess.triangulate(_mesh, scene, self.useMask);
+    libTess::triangulate(_mesh, scene, self.useMask);
     
     [self.metalLayer uploadMesh:_mesh];
 }
