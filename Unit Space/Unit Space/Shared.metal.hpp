@@ -131,7 +131,6 @@ struct BoundsGrid {
     Bounds  bounds;
     unsigned int x[kBoundsGridDimension];
     unsigned int y[kBoundsGridDimension];
-    unsigned short pts[6];
     Vector points[3 * 32];
 };
 

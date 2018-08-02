@@ -372,17 +372,12 @@
         call->instanceCount = 1;
         call->state.CTM = AffineTransformConcat(mesh._pathCTMs[0], call->state.CTM);
         call->state.CTM = AffineTransformMakeUnit(mesh._bounds[0], call->state.CTM);
-//        AffineTransform scale = { 0.0000152590219, 0, 0, 0.0000152590219, 0, 0 };
-//        call->state.CTM = AffineTransformConcat(scale, call->state.CTM);
         
         call->boundsGrid.bounds = { 0, 0, 1, 1 };
         call->boundsGrid.points[0] = { 0, 0 };
         call->boundsGrid.points[1] = { 1, 0 };
         call->boundsGrid.points[2] = { 1, 1 };
         
-        call->boundsGrid.bounds = { 0, 0, 65535, 65535 };
-        unsigned short *pts = call->boundsGrid.pts;
-        *pts++ = 0, *pts++ = 0, *pts++ = 65535, *pts++ = 0, *pts++ = 65535, *pts++ = 65535;
 //        float w = mesh._bounds[0].ux - mesh._bounds[0].lx, h = mesh._bounds[0].uy- mesh._bounds[0].ly;
     }
     [self syncMesh:mesh];

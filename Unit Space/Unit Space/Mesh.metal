@@ -229,17 +229,7 @@ vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]],
 
 fragment float4 mesh_unit_fragment_main(MeshUnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]])
 {
-    float tx = state.CTM.tx - vert.devicePoint.x, ty = state.CTM.ty - vert.devicePoint.y;
-//    float2 p0 = {
-//        grid.pts[0] * state.CTM.a + grid.pts[1] * state.CTM.c + tx,
-//        grid.pts[0] * state.CTM.b + grid.pts[1] * state.CTM.d + ty };
-//    float2 p1 = {
-//        grid.pts[2] * state.CTM.a + grid.pts[3] * state.CTM.c + tx,
-//        grid.pts[2] * state.CTM.b + grid.pts[3] * state.CTM.d + ty };
-//    float2 p2 = {
-//        grid.pts[4] * state.CTM.a + grid.pts[5] * state.CTM.c + tx,
-//        grid.pts[4] * state.CTM.b + grid.pts[5] * state.CTM.d + ty };
-    
+    float tx = state.CTM.tx - vert.devicePoint.x, ty = state.CTM.ty - vert.devicePoint.y;    
     float2 p0 = {
         grid.points[0].x * state.CTM.a + grid.points[0].y * state.CTM.c + tx,
         grid.points[0].x * state.CTM.b + grid.points[0].y * state.CTM.d + ty };
