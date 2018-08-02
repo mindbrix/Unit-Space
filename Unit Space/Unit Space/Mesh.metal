@@ -221,7 +221,7 @@ vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]],
     
     MeshUnitVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 1.0, 1.0);
-    vert.color = { 0, 0, 0, 1 };
+    vert.color = { state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a };
     vert.unitPoint = float2(vid & 1, vid & 2);
     vert.devicePoint = devicePoint - 0.5;
     return vert;

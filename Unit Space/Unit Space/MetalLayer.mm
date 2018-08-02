@@ -370,6 +370,7 @@
         call->type = kCallTypeMeshUnits;
         call->state = uniforms;
         call->instanceCount = 1;
+        call->state.fillColor = { 0, 1, 0, 1 };
         call->state.CTM = AffineTransformConcat(mesh._pathCTMs[0], call->state.CTM);
         call->state.CTM = AffineTransformMakeUnit(mesh._bounds[0], call->state.CTM);
         call->boundsGrid.bounds = { 0, 0, 1, 1 };
