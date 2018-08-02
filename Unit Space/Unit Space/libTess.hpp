@@ -27,8 +27,6 @@ struct libTess {
         unsigned short int i, npoints;
     };
     
-    libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)), _dst(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
-    
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
@@ -89,7 +87,7 @@ struct libTess {
     
     void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
         mesh.empty();
-        TESStesselator *tess = _tess.get(), *dst = _dst.get();
+        TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         
         vector<float> controlPoints;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
@@ -175,7 +173,6 @@ struct libTess {
                 }
             }
         }
+        tessDeleteTess(tess), tessDeleteTess(dst);
     }
-    
-    shared_ptr<TESStesselator> _tess, _dst;
 };
