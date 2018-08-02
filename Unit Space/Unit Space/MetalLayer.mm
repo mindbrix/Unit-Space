@@ -23,7 +23,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshUnitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -125,11 +124,6 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_unit_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"mesh_unit_fragment_main"];
-    descriptor.label = @"meshBoundsGridPipelineState";
-    self.meshUnitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
     self.indexBuffer = [self.device newBufferWithBytes:indices
                                                 length:sizeof(indices)
@@ -224,11 +218,6 @@
                 [commandEncoder setVertexBuffer:_ptsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
-                break;
-            case kCallTypeMeshUnits:
-                [commandEncoder setRenderPipelineState:_meshUnitPipelineState];
-                [commandEncoder setVertexBytes:&call->boundsGrid length:sizeof(BoundsGrid) atIndex:1];
-                [commandEncoder setFragmentBytes:&call->boundsGrid length:sizeof(BoundsGrid) atIndex:1];
                 break;
             case kCallTypeQuadratics:
                 [commandEncoder setRenderPipelineState:_quadraticPipelineState];
@@ -365,41 +354,6 @@
                     call->flags.flags[i] |= (1 << j);
             }
         }
-        calls.emplace_back();
-        call = & calls.back();
-        call->type = kCallTypeMeshUnits;
-        call->state = uniforms;
-        call->instanceCount = 1;
-        call->state.fillColor = { 0, 0, 0, 1 };
-        call->state.CTM = AffineTransformConcat(mesh._pathCTMs[0], call->state.CTM);
-        call->state.CTM = AffineTransformMakeUnit(mesh._bounds[0], call->state.CTM);
-        BoundsGrid& grid = call->boundsGrid;
-        grid.bounds = { 0, 0, 1, 1 };
-        memset(grid.x, 0, sizeof(grid.x));
-        memset(grid.y, 0, sizeof(grid.y));
-        p = 0;
-        base = mesh._triangleIndices[p];
-        end = p + 1 == mesh._colors.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._triangleIndices[p + 1];
-        
-        float w = mesh._bounds[p].ux - mesh._bounds[p].lx, h = mesh._bounds[p].uy - mesh._bounds[p].ly;
-        float x, y, lx, ly, ux, uy;
-        unsigned int idx, i, mask;
-        for (idx = base; idx < end && idx - base < 32; idx++) {
-            lx = ly = FLT_MAX, ux = uy = -FLT_MAX;
-            for (i = 0; i < 3; i++) {
-                x = mesh._pts[idx * kMeshTriangleSize + 1 + i * 2].x, y = mesh._pts[idx * kMeshTriangleSize + 1 + i * 2].y;
-                x = (x - mesh._bounds[p].lx) / w, y = (y - mesh._bounds[p].ly) / h;
-                lx = lx < x ? lx : x, ly = ly < y ? ly : y, ux = ux > x ? ux : x, uy = uy > y ? uy : y;
-                grid.points[idx * 3 + i] = { x, y };
-            }
-            mask = 1 << (idx - base);
-            grid.x[int(lx * kBoundsGridDimension)] |= mask, grid.x[int(ux * kBoundsGridDimension) + 1] |= mask;
-            grid.y[int(ly * kBoundsGridDimension)] |= mask, grid.y[int(uy * kBoundsGridDimension) + 1] |= mask;
-        }
-        for (i = mask = 0; i <= kBoundsGridDimension; i++)
-            mask ^= grid.x[i], grid.x[i] = mask;
-        for (i = mask = 0; i <= kBoundsGridDimension; i++)
-            mask ^= grid.y[i], grid.y[i] = mask;
     }
     [self syncMesh:mesh];
 }
