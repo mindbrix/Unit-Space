@@ -298,21 +298,21 @@
             opaques[p] = l0 < 400 || l1 < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;
-        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
-            base = mesh._triangleIndices[p];
-            if (visibles[p] && opaques[p]) {
-                count = end - base;
-                if (call == nullptr || call->baseInstance != end) {
-                    calls.emplace_back(tmpl);
-                    call = & calls.back();
-                    call->type = kCallTypeMeshInterior;
-                    call->baseInstance = base;
-                    call->meshState.reverseCount = end;
-                }
-                call->baseInstance = base;
-                call->instanceCount += count;
-            }
-        }
+//        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
+//            base = mesh._triangleIndices[p];
+//            if (visibles[p] && opaques[p]) {
+//                count = end - base;
+//                if (call == nullptr || call->baseInstance != end) {
+//                    calls.emplace_back(tmpl);
+//                    call = & calls.back();
+//                    call->type = kCallTypeMeshInterior;
+//                    call->baseInstance = base;
+//                    call->meshState.reverseCount = end;
+//                }
+//                call->baseInstance = base;
+//                call->instanceCount += count;
+//            }
+//        }
         
         if (!meshState.showEdges) {
             call = nullptr;
@@ -369,18 +369,21 @@
         call = & calls.back();
         call->type = kCallTypeMeshUnits;
         call->state = uniforms;
+        call->instanceCount = 1;
         call->state.CTM = AffineTransformConcat(mesh._pathCTMs[0], call->state.CTM);
         call->state.CTM = AffineTransformMakeUnit(mesh._bounds[0], call->state.CTM);
-        call->instanceCount = 1;
-        float w = mesh._bounds[0].ux - mesh._bounds[0].lx, h = mesh._bounds[0].uy- mesh._bounds[0].ly;
+//        AffineTransform scale = { 0.0000152590219, 0, 0, 0.0000152590219, 0, 0 };
+//        call->state.CTM = AffineTransformConcat(scale, call->state.CTM);
+        
         call->boundsGrid.bounds = { 0, 0, 1, 1 };
         call->boundsGrid.points[0] = { 0, 0 };
         call->boundsGrid.points[1] = { 1, 0 };
         call->boundsGrid.points[2] = { 1, 1 };
-//        call->boundsGrid.bounds = mesh._bounds[0];
-//        call->boundsGrid.points[0] = { mesh._bounds[0].lx, mesh._bounds[0].ly };
-//        call->boundsGrid.points[1] = { mesh._bounds[0].ux, mesh._bounds[0].ly };
-//        call->boundsGrid.points[2] = { mesh._bounds[0].ux, mesh._bounds[0].uy };
+        
+        call->boundsGrid.bounds = { 0, 0, 65535, 65535 };
+        unsigned short *pts = call->boundsGrid.pts;
+        *pts++ = 0, *pts++ = 0, *pts++ = 65535, *pts++ = 0, *pts++ = 65535, *pts++ = 65535;
+//        float w = mesh._bounds[0].ux - mesh._bounds[0].lx, h = mesh._bounds[0].uy- mesh._bounds[0].ly;
     }
     [self syncMesh:mesh];
 }
