@@ -129,8 +129,8 @@ struct Arcs {
 
 struct BoundsGrid {
     Bounds  bounds;
-    unsigned int x[kBoundsGridDimension];
-    unsigned int y[kBoundsGridDimension];
+    unsigned int x[kBoundsGridDimension + 1];
+    unsigned int y[kBoundsGridDimension + 1];
     Vector points[3 * 32];
 };
 
