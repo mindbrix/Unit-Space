@@ -37,13 +37,11 @@ struct libTess {
         
         for (i = 0; i < nelems; i++) {
             base = elems[i * 2], npoints = elems[i * 2 + 1];
-            const float *points = verts + base * 2;
-            
             if (npoints > 2) {
+                const float *points = verts + base * 2;
                 tessAddContour(dst, 2, points, kPointStride, npoints);
-                if (edge)
-                    for (j = 0; j < npoints; j++)
-                        new (edge++) Edge(points[j * 2], points[j * 2 + 1], base, j, npoints);
+                for (j = 0; j < npoints; j++)
+                    new (edge++) Edge(points[j * 2], points[j * 2 + 1], base, j, npoints);
             }
         }
     }
