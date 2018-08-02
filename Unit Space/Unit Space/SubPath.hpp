@@ -167,12 +167,11 @@ struct SubPath {
             x2 = points[i * 2 + 2], y2 = points[i * 2 + 3];
             
             do {
+                dst.emplace_back(x0), dst.emplace_back(y0);
                 ax = x0 + x2 - x1 - x1, ay = y0 + y2 - y1 - y1;
                 bx = 2.0 * (x1 - x0), by = 2.0 * (y1 - y0);
                 t = precision * precision / (ax * ax + ay * ay);
                 t = t > 1 ? 1 : t > 0.0625 ? 0.51 : t > 0.012345679012346 ? 0.334 : std::sqrt(std::sqrt(t));
-                
-                dst.emplace_back(x0), dst.emplace_back(y0);
                 if (t == 1)
                     dst.emplace_back(x1), dst.emplace_back(y1);
                 else {
