@@ -29,20 +29,20 @@ struct libTess {
     
     libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)), _dst(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
     
-    static void addPathContours(TESStesselator *tess, Path& path) {
+    static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
             if (s._npoints > 2) {
                 if (s._quadratics.get())
-                    tessAddContour(tess, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
+                    tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
                 else
-                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+                    tessAddContour(dst, 2, s._points.get(), kPointStride, s._npoints);
             }
     }
     
-    static void addTessContours(TESStesselator *dst, TESStesselator *src, Edge *edge) {
-        const float *verts = tessGetVertices(src);
-        const int *elems = tessGetElements(src);
-        const int nelems = tessGetElementCount(src);
+    static void addTessContours(TESStesselator *dst, TESStesselator *tess, Edge *edge) {
+        const float *verts = tessGetVertices(tess);
+        const int *elems = tessGetElements(tess);
+        const int nelems = tessGetElementCount(tess);
         int base, npoints, i, j;
         
         for (i = 0; i < nelems; i++) {
