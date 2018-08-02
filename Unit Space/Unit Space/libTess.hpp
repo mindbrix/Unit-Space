@@ -29,7 +29,17 @@ struct libTess {
     
     libTess() : _tess(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)), _dst(shared_ptr<TESStesselator>(tessNewTess(NULL), tessDeleteTess)) {}
     
-    static void addContours(TESStesselator *dst, TESStesselator *src, Edge *edge) {
+    static void addPathContours(TESStesselator *tess, Path& path) {
+        for (SubPath& s : path._subPaths)
+            if (s._npoints > 2) {
+                if (s._quadratics.get())
+                    tessAddContour(tess, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
+                else
+                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
+            }
+    }
+    
+    static void addTessContours(TESStesselator *dst, TESStesselator *src, Edge *edge) {
         const float *verts = tessGetVertices(src);
         const int *elems = tessGetElements(src);
         const int nelems = tessGetElementCount(src);
@@ -59,17 +69,7 @@ struct libTess {
         }
     }
     
-    static void addContours(TESStesselator *tess, Path& path) {
-        for (SubPath& s : path._subPaths)
-            if (s._npoints > 2) {
-                if (s._quadratics.get())
-                    tessAddContour(tess, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
-                else
-                    tessAddContour(tess, 2, s._points.get(), kPointStride, s._npoints);
-            }
-    }
-        
-    Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
+   Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
         bool left;
@@ -102,13 +102,13 @@ struct libTess {
             
             controlPoints.resize(0);
             writeControlPoints(controlPoints, path);
-            addContours(tess, path);
+            addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess), idx;
                 const TESSindex *indices = tessGetVertexIndices(tess);
                 const float *verts = tessGetVertices(tess);
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
-                addContours(dst, tess, edges);
+                addTessContours(dst, tess, edges);
                 if (controlPoints.size())
                     for (Edge& edge : edges) {
                         if ((idx = indices[edge.base + edge.i]) != -1) {
