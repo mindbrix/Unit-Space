@@ -53,7 +53,6 @@ using namespace std;
 @property(nonatomic) vector<Vector> quad;
 @property(nonatomic) Mesh mesh;
 @property(nonatomic) Scene scene;
-@property(nonatomic) libTess libtess;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 
@@ -597,25 +596,7 @@ using namespace std;
             }
         }
     }
-    if (_flags & 16) {
-        RGBA8 red(255, 0, 0, 255);
-        SubPath lozenge((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kCubic);
-        Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine) });
-        Scene scene;
-        scene.addPath(p0);
-    
-        _libtess.triangulate(_mesh, scene, self.useMask);
-        
-        [self.metalLayer uploadMesh:_mesh];
-        
-        MeshState meshState;
-        meshState.hideCurves = !_showCurves;
-        meshState.hideTriangles = !_showTriangle;
-        meshState.showColors = _showColors;
-        meshState.showInterior = _showInterior;
-        
-        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
-    }
+    if (_flags & 16) {}
 }
 
 - (void)redraw {
