@@ -220,9 +220,9 @@ vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]],
         userPoint.x * state.CTM.b + userPoint.y * state.CTM.d + state.CTM.ty };
     
     MeshUnitVertex vert;
-    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 1.0, 1.0);
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     vert.color = { state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a };
-    vert.unitPoint = float2(vid & 1, vid & 2);
+    vert.unitPoint = float2(vid & 1, vid >> 1);
     vert.devicePoint = devicePoint - 0.5;
     return vert;
 }
@@ -230,23 +230,31 @@ vertex MeshUnitVertex mesh_unit_vertex_main(constant State &state [[buffer(0)]],
 fragment float4 mesh_unit_fragment_main(MeshUnitVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant BoundsGrid &grid [[buffer(1)]])
 {
     float tx = state.CTM.tx - vert.devicePoint.x, ty = state.CTM.ty - vert.devicePoint.y;
+    uint mask = grid.x[int(vert.unitPoint.x * kBoundsGridDimension)] & grid.y[int(vert.unitPoint.y * kBoundsGridDimension)], count, idx = 0, base;
     float winding = 0;
-    for (int idx = 0; idx < 1; idx++) {
-        int base = idx * 3;
-        float2 p0 = {
+    float2 p0, p1, p2;
+    while (mask && abs(winding) < 1.0) {
+        count = ctz(mask);
+        mask = mask >> (count + 1);
+        idx += count;
+        if (idx > 31)
+            break;
+        
+        base = idx * 3;
+        idx++;
+        p0 = {
             grid.points[base].x * state.CTM.a + grid.points[base].y * state.CTM.c + tx,
             grid.points[base].x * state.CTM.b + grid.points[base].y * state.CTM.d + ty };
         base++;
-        float2 p1 = {
+        p1 = {
             grid.points[base].x * state.CTM.a + grid.points[base].y * state.CTM.c + tx,
             grid.points[base].x * state.CTM.b + grid.points[base].y * state.CTM.d + ty };
         base++;
-        float2 p2 = {
+        p2 = {
             grid.points[base].x * state.CTM.a + grid.points[base].y * state.CTM.c + tx,
             grid.points[base].x * state.CTM.b + grid.points[base].y * state.CTM.d + ty };
         
         winding += edgeWinding(p0, p1) + edgeWinding(p1, p2) + edgeWinding(p2, p0);
     }
-    
     return vert.color * abs(winding);
 }

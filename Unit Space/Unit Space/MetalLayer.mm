@@ -298,21 +298,21 @@
             opaques[p] = l0 < 400 || l1 < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;
-//        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
-//            base = mesh._triangleIndices[p];
-//            if (visibles[p] && opaques[p]) {
-//                count = end - base;
-//                if (call == nullptr || call->baseInstance != end) {
-//                    calls.emplace_back(tmpl);
-//                    call = & calls.back();
-//                    call->type = kCallTypeMeshInterior;
-//                    call->baseInstance = base;
-//                    call->meshState.reverseCount = end;
-//                }
-//                call->baseInstance = base;
-//                call->instanceCount += count;
-//            }
-//        }
+        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
+            base = mesh._triangleIndices[p];
+            if (visibles[p] && opaques[p]) {
+                count = end - base;
+                if (call == nullptr || call->baseInstance != end) {
+                    calls.emplace_back(tmpl);
+                    call = & calls.back();
+                    call->type = kCallTypeMeshInterior;
+                    call->baseInstance = base;
+                    call->meshState.reverseCount = end;
+                }
+                call->baseInstance = base;
+                call->instanceCount += count;
+            }
+        }
         
         if (!meshState.showEdges) {
             call = nullptr;
@@ -393,8 +393,8 @@
                 grid.points[idx * 3 + i] = { x, y };
             }
             mask = 1 << (idx - base);
-            grid.x[int(lx * kBoundsGridDimension)] |= mask, grid.x[int(ux * kBoundsGridDimension)] |= mask;
-            grid.y[int(ly * kBoundsGridDimension)] |= mask, grid.y[int(uy * kBoundsGridDimension)] |= mask;
+            grid.x[int(lx * kBoundsGridDimension)] |= mask, grid.x[int(ux * kBoundsGridDimension) + 1] |= mask;
+            grid.y[int(ly * kBoundsGridDimension)] |= mask, grid.y[int(uy * kBoundsGridDimension) + 1] |= mask;
         }
         for (i = mask = 0; i <= kBoundsGridDimension; i++)
             mask ^= grid.x[i], grid.x[i] = mask;
