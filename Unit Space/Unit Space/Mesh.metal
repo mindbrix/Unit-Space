@@ -155,6 +155,12 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 #pragma mark Fragment
 
+fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
+    return vert.color * abs(winding);
+}
+
 //fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 //{
 //    float w = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - w * w;
@@ -177,9 +183,3 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 //    float winding = edgeWinding(vert.p0, p01) + edgeWinding(p01, p12) + edgeWinding(p12, vert.p2) + edgeWinding(vert.p2, vert.p0);
 //    return vert.color * abs(winding);
 //}
-
-fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
-{
-    float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
-    return vert.color * abs(winding);
-}
