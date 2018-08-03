@@ -106,41 +106,26 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         _v0.x * CTM.a + _v0.y * CTM.c + CTM.tx,
         _v0.x * CTM.b + _v0.y * CTM.d + CTM.ty
     };
-    
     float2 p1 = {
         _v1.x * CTM.a + _v1.y * CTM.c + CTM.tx,
         _v1.x * CTM.b + _v1.y * CTM.d + CTM.ty
     };
-    
     float2 p2 = {
         _v2.x * CTM.a + _v2.y * CTM.c + CTM.tx,
         _v2.x * CTM.b + _v2.y * CTM.d + CTM.ty
     };
     
-    float2 v01 = p1 - p0;
-    float2 n01 = normalize(float2(v01.y, -v01.x));
-    
-    float2 v12 = p2 - p1;
-    float2 n12 = normalize(float2(v12.y, -v12.x));
-    
-    float2 v20 = p0 - p2;
-    float2 n20 = normalize(float2(v20.y, -v20.x));
-    
-    float h0 = dot(n12, v01);
-    float h1 = dot(n20, v12);
-    float h2 = dot(n01, v20);
-    
-    const float r = 10.0;
-    const float dilation = -0.7071067812;
-    const float hmin = 0.1;
-    
+    const float dilation = -0.7071067812, hmin = 0.1;
+    float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
+    float2 v12 = p2 - p1, n12 = normalize(float2(v12.y, -v12.x));
+    float2 v20 = p0 - p2, n20 = normalize(float2(v20.y, -v20.x));
+    float h0 = dot(n12, v01), h1 = dot(n20, v12), h2 = dot(n01, v20);
     float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
-//    dh0 = min(0.33333, dh0), dh1 = min(0.33333, dh1), dh2 = min(0.33333, dh2);
     float2 v0 = p0 * (1 - dh1 - dh2) + p1 * dh1 + p2 * dh2;
     float2 v1 = p0 * dh0 + p1 * (1 - dh0 - dh2) + p2 * dh2;
     float2 v2 = p0 * dh0 + p1 * dh1 + p2 * (1 - dh0 - dh1);
-    
     float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
+    
     float z = (c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
