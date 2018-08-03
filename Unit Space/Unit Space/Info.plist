@@ -39,18 +39,6 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>png</string>
-			</array>
-			<key>CFBundleTypeName</key>
-			<string>PNG</string>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-			<key>NSDocumentClass</key>
-			<string>Document</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
 				<string>ttf</string>
 				<string>ttc</string>
 				<string>otf</string>
