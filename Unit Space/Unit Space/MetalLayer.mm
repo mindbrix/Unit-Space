@@ -258,7 +258,7 @@
     meshState.colorsSize = (int)mesh._colors.size();
     int base, end, count, p, i, j;
     AffineTransform ctm;
-    Bounds bounds, clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
+    Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
@@ -268,7 +268,6 @@
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
-            bounds = { 0, 0, 1, 1 };
             if (meshState.showVisibles)
                 visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
             else
