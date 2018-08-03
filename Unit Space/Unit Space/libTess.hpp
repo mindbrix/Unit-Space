@@ -41,15 +41,13 @@ struct libTess {
         const float *verts = tessGetVertices(tess);
         const int *elems = tessGetElements(tess);
         const int nelems = tessGetElementCount(tess);
-        int base, npoints, i, j;
-        
-        for (i = 0; i < nelems; i++) {
-            base = elems[i * 2], npoints = elems[i * 2 + 1];
+        int base, npoints, e, i;
+        for (e = 0; e < nelems; e++) {
+            base = elems[e * 2], npoints = elems[e * 2 + 1];
             if (npoints > 2) {
-                const float *points = verts + base * 2;
-                tessAddContour(dst, 2, points, kPointStride, npoints);
-                for (j = 0; j < npoints; j++)
-                    new (edge++) Edge(points[j * 2], points[j * 2 + 1], base, j, npoints);
+                tessAddContour(dst, 2, verts + base * 2, kPointStride, npoints);
+                for (i = 0; i < npoints; i++)
+                    new (edge++) Edge(verts[(base + i) * 2], verts[(base + i) * 2 + 1], base, i, npoints);
             }
         }
     }
