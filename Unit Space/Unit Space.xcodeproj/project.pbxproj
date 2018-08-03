@@ -42,7 +42,6 @@
 		E92BB39020DC442F00AF2EF3 /* SubPath.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SubPath.hpp; sourceTree = "<group>"; };
 		E92BB39120DC44FA00AF2EF3 /* Path.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Path.hpp; sourceTree = "<group>"; };
 		E937DD2D2109220E00655858 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = nanosvg.h; path = ../../../../nanosvg/src/nanosvg.h; sourceTree = "<group>"; };
-		E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VGQuadTree.hpp; sourceTree = "<group>"; };
 		E9DFC48D2093190A00AFDAC7 /* Mesh.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
 		E9EBC19920E7B5A80045D338 /* Mesh.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Mesh.hpp; sourceTree = "<group>"; };
 		E9EBC19A20EF8A2A0045D338 /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_image.h; path = ../../../../stb/stb_image.h; sourceTree = "<group>"; };
@@ -168,7 +167,6 @@
 				E96B3452207BDECB006D74B1 /* libs */,
 				E90D1DC0200C28A900F9F35B /* VGAffineTransform.h */,
 				E90D1DC1200C28A900F9F35B /* VGAffineTransform.m */,
-				E96B34502077FF0C006D74B1 /* VGQuadTree.hpp */,
 				E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */,
 				E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */,
 				E9EEAD78200BC63400F2BFB2 /* Document.h */,
