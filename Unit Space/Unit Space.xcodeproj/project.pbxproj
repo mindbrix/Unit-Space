@@ -198,13 +198,13 @@
 				E9EEAD78200BC63400F2BFB2 /* Document.h */,
 				E9EEAD79200BC63400F2BFB2 /* Document.m */,
 				E9EEAD7B200BC63400F2BFB2 /* Document.xib */,
+				E9EEAD8E200BC76C00F2BFB2 /* View.h */,
+				E9EEAD8F200BC76C00F2BFB2 /* View.mm */,
 				E9EEAD7E200BC63400F2BFB2 /* Assets.xcassets */,
 				E9EEAD80200BC63400F2BFB2 /* MainMenu.xib */,
 				E9EEAD83200BC63400F2BFB2 /* Info.plist */,
 				E9EEAD84200BC63400F2BFB2 /* main.m */,
 				E9EEAD86200BC63400F2BFB2 /* Unit_Space.entitlements */,
-				E9EEAD8E200BC76C00F2BFB2 /* View.h */,
-				E9EEAD8F200BC76C00F2BFB2 /* View.mm */,
 			);
 			path = "Unit Space";
 			sourceTree = "<group>";
