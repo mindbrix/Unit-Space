@@ -89,11 +89,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
 struct TriangleVertex
 {
     float4 position [[position]];
-    
     float2 p0, p1, p2;
-    float u, v;
-    float3 distance;
-    bool showInterior;
     float4 color;
 };
 
@@ -136,7 +132,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float h1 = dot(n20, v12);
     float h2 = dot(n01, v20);
     
-    
     const float r = 10.0;
     const float dilation = -0.7071067812;
     const float hmin = 0.1;
@@ -148,49 +143,40 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 v2 = p0 * dh0 + p1 * dh1 + p2 * (1 - dh0 - dh1);
     
     float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
-    float d0 = dot(p0 - devicePoint, n01);
-    float d1 = dot(p1 - devicePoint, n12);
-    float d2 = dot(p2 - devicePoint, n20);
-    
     float z = (c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
     devicePoint -= 0.5;
     vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
-    
-    vert.u = float(vid == 2);
-    vert.v = float(vid == 0);
-    vert.distance = { d0, d1, d2 };
-    vert.showInterior = meshState.showInterior;
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
 
 #pragma mark Fragment
 
-fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
-{
-    float w = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - w * w;
-    float dfx = dfdx(f), dfy = dfdy(f);
-    float dist = f * rsqrt(dfx * dfx + dfy * dfy);
-    
-    if (!vert.showInterior)
-        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
-    
-    if (dist < -0.7071)
-        return 0;
-    
-    if (dist > 1.41 && vert.distance.z > 0.7071)
-        return vert.color;
-    
-    float t = saturate(vert.u / (vert.u + w * 0.5));
-    t = select(t, 1.0 - saturate(vert.v / (vert.v + w * 0.5)), t < 0.5);
-    float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
-    
-    float winding = edgeWinding(vert.p0, p01) + edgeWinding(p01, p12) + edgeWinding(p12, vert.p2) + edgeWinding(vert.p2, vert.p0);
-    return vert.color * abs(winding);
-}
+//fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+//{
+//    float w = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - w * w;
+//    float dfx = dfdx(f), dfy = dfdy(f);
+//    float dist = f * rsqrt(dfx * dfx + dfy * dfy);
+//
+//    if (!vert.showInterior)
+//        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
+//
+//    if (dist < -0.7071)
+//        return 0;
+//
+//    if (dist > 1.41 && vert.distance.z > 0.7071)
+//        return vert.color;
+//
+//    float t = saturate(vert.u / (vert.u + w * 0.5));
+//    t = select(t, 1.0 - saturate(vert.v / (vert.v + w * 0.5)), t < 0.5);
+//    float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
+//
+//    float winding = edgeWinding(vert.p0, p01) + edgeWinding(p01, p12) + edgeWinding(p12, vert.p2) + edgeWinding(vert.p2, vert.p0);
+//    return vert.color * abs(winding);
+//}
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
