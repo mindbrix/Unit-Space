@@ -95,7 +95,6 @@ struct libTess {
             mesh._bounds.emplace_back(path._bounds);
             
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
-            mesh._triangleIndices.emplace_back((int)mesh._pts.size() / kMeshTriangleSize);
             
             controlPoints.resize(0);
             writeControlPoints(controlPoints, path);

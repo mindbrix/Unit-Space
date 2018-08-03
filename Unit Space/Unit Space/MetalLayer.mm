@@ -275,7 +275,7 @@
         }
         call = nullptr;
         for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
-            base = mesh._triangleIndices[p];
+            base = mesh._paths[p].idx;
             if (visibles[p] && opaques[p]) {
                 count = end - base;
                 if (call == nullptr || call->baseInstance != end) {
@@ -297,8 +297,8 @@
                     call = nullptr;
                     continue;
                 }
-                base = mesh._triangleIndices[p];
-                end = p + 1 == mesh._paths.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._triangleIndices[p + 1];
+                base = mesh._paths[p].idx;
+                end = p + 1 == mesh._paths.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {

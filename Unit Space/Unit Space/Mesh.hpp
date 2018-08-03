@@ -16,7 +16,6 @@ struct Mesh {
     vector<Bounds>                      _bounds;
     
     vector<AffineTransform>             _pathCTMs;
-    vector<int>                         _triangleIndices;
-
-    void empty() { _paths.resize(0), _pts.resize(0), _bounds.resize(0), _pathCTMs.resize(0), _triangleIndices.resize(0); }
+    
+    void empty() { _paths.resize(0), _pts.resize(0), _bounds.resize(0), _pathCTMs.resize(0); }
 };
