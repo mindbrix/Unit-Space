@@ -49,6 +49,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float t = pts[idx].y;
     int i = idx + 1 + vid * 2;
     
+    RGBA8 color = paths[c].color;
     AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
     float2 devicePoint = {
         pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx,
@@ -70,7 +71,6 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
     vert.showInterior = meshState.showInterior;
-    RGBA8 color = paths[c].color;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
