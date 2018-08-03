@@ -91,7 +91,7 @@ struct libTess {
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = 0; p < scene._paths.size(); p++) {
             Path& path = scene._paths[p];
-            mesh._paths.emplace_back(path._color, (int)(mesh._pts.size() / kMeshTriangleSize), scene._CTMs[p]);
+            mesh._paths.emplace_back(path._color, (int)(mesh._points.size() / kMeshTriangleSize), scene._CTMs[p]);
             mesh._bounds.emplace_back(path._bounds);
             
             controlPoints.resize(0);
@@ -160,11 +160,11 @@ struct libTess {
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
                         
-                        mesh._pts.emplace_back(p, ta > t ? ta : t);
-                        mesh._pts.emplace_back(x0, y0), mesh._pts.emplace_back(m0);
-                        mesh._pts.emplace_back(x1, y1), mesh._pts.emplace_back(m1);
-                        mesh._pts.emplace_back(x2, y2), mesh._pts.emplace_back(m2);
-//                        mesh._pts.emplace_back(0, 0);
+                        mesh._points.emplace_back(p, ta > t ? ta : t);
+                        mesh._points.emplace_back(x0, y0), mesh._points.emplace_back(m0);
+                        mesh._points.emplace_back(x1, y1), mesh._points.emplace_back(m1);
+                        mesh._points.emplace_back(x2, y2), mesh._points.emplace_back(m2);
+//                        mesh._points.emplace_back(0, 0);
                     }
                 }
             }

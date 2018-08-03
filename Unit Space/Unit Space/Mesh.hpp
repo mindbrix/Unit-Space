@@ -12,8 +12,8 @@ using namespace std;
 
 struct Mesh {
     vector<MeshPath>                    _paths;
-    vector<Vector>                      _pts;
+    vector<Vector>                      _points;
     vector<Bounds>                      _bounds;
         
-    void empty() { _paths.resize(0), _pts.resize(0), _bounds.resize(0); }
+    void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0); }
 };

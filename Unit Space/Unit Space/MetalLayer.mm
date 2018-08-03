@@ -261,7 +261,7 @@
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
-    if (mesh._pts.size()) {
+    if (mesh._points.size()) {
         bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
             ctm = AffineTransformConcat(mesh._paths[p].ctm, uniforms.CTM);
@@ -273,7 +273,7 @@
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
         call = nullptr;
-        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
+        for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
             base = mesh._paths[p].idx;
             if (visibles[p] && opaques[p]) {
                 count = end - base;
@@ -297,7 +297,7 @@
                     continue;
                 }
                 base = mesh._paths[p].idx;
-                end = p + 1 == mesh._paths.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
+                end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {
@@ -353,9 +353,9 @@
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._paths[0]
                                                  length:mesh._paths.size() * sizeof(MeshPath)
                                                 options:MTLResourceStorageModeManaged];
-    if (mesh._pts.size())
-        _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
-                                              length:mesh._pts.size() * sizeof(Vector)
+    if (mesh._points.size())
+        _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
+                                              length:mesh._points.size() * sizeof(Vector)
                                              options:MTLResourceStorageModeShared];
 }
 
