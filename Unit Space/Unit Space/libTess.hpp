@@ -41,7 +41,7 @@ struct libTess {
         const float *verts = tessGetVertices(tess);
         const int *elems = tessGetElements(tess);
         const int nelems = tessGetElementCount(tess);
-        int base, npoints, e, i;
+        int e, base, npoints, i;
         for (e = 0; e < nelems; e++) {
             base = elems[e * 2], npoints = elems[e * 2 + 1];
             if (npoints > 2) {
