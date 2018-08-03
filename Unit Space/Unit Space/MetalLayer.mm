@@ -15,6 +15,7 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathCTMsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
@@ -346,6 +347,8 @@
     [self syncMesh:mesh];
 }
 - (void)syncMesh:(Mesh &)mesh {
+    memcpy(_pathsBuffer.contents, & mesh._paths[0], _pathsBuffer.length);
+    [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
     memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
     [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
@@ -353,6 +356,11 @@
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
+    
+    if (mesh._paths.size())
+        _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._paths[0]
+                                                 length:mesh._paths.size() * sizeof(MeshPath)
+                                                options:MTLResourceStorageModeManaged];
     if (mesh._colors.size())
         _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
                                                  length:mesh._colors.size() * sizeof(RGBA8)

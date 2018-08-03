@@ -11,11 +11,13 @@ using namespace std;
 #pragma clang diagnostic ignored "-Wcomma"
 
 struct Mesh {
-    vector<RGBA8>                       _colors;
+    vector<MeshPath>                    _paths;
     vector<Vector>                      _pts;
     vector<Bounds>                      _bounds;
+    
+    vector<RGBA8>                       _colors;
     vector<AffineTransform>             _pathCTMs;
     vector<int>                         _triangleIndices;
-    
-    void empty() { _colors.resize(0), _pts.resize(0), _bounds.resize(0), _pathCTMs.resize(0), _triangleIndices.resize(0); }
+
+    void empty() { _paths.resize(0), _colors.resize(0), _pts.resize(0), _bounds.resize(0), _pathCTMs.resize(0), _triangleIndices.resize(0); }
 };

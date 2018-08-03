@@ -167,6 +167,15 @@ struct Units {
     AffineTransform     ctms[170];
 };
 
+struct MeshPath {
+    MeshPath() {}
+    MeshPath(RGBA8 color, int idx, AffineTransform ctm) : color(color), idx(idx), ctm(ctm) {}
+    
+    RGBA8               color;
+    int                 idx;
+    AffineTransform     ctm;
+};
+
 struct MeshState {
     bool                disableInteriorVector;
     bool                hideCurves;
