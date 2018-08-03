@@ -83,17 +83,6 @@ static inline CGAffineTransform makeCTM(CGFloat angle, CGFloat s, CGPoint t, CGP
 }
 
 
-#pragma mark - Helpers
-
--(CGFloat)rotationFromCTM {
-    return -atan2f(_affineTransform.c, _affineTransform.d);
-}
-
--(CGFloat)scaleFromCTM {
-    return sqrt(fabs(_affineTransform.a * _affineTransform.d - _affineTransform.b * _affineTransform.c));
-}
-
-
 #pragma mark - Equality
 
 -(BOOL)isEqualToTransform:(VGAffineTransform *)aTransform {
@@ -105,8 +94,8 @@ static inline CGAffineTransform makeCTM(CGFloat angle, CGFloat s, CGPoint t, CGP
 
 -(void)setAnchorPoint:(CGPoint)anchorPoint {
     _anchorPoint = CGPointApplyAffineTransform(anchorPoint, CGAffineTransformInvert(_affineTransform));
-    _rotation = [self rotationFromCTM];
-    _scale = [self scaleFromCTM];
+    _rotation = -atan2f(_affineTransform.c, _affineTransform.d);
+    _scale = sqrt(fabs(_affineTransform.a * _affineTransform.d - _affineTransform.b * _affineTransform.c));
     _translation = CGPointMake(anchorPoint.x - _anchorPoint.x, anchorPoint.y - _anchorPoint.y);
     _affineTransform = makeCTM(_rotation, _scale, _translation, _anchorPoint);
 }
