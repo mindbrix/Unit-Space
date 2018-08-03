@@ -266,11 +266,3 @@ inline AffineTransform AffineTransformMakeUnit(const Bounds bounds, const Affine
         bounds.lx * t.a + bounds.ly * t.c + t.tx,   bounds.lx * t.b + bounds.ly * t.d + t.ty
     };
 }
-
-inline float lineIntersection(float px, float py, float prx, float pry, float qx, float qy, float qsx, float qsy) {
-    float rx, ry, sx, sy, vx, vy, t;
-    rx = prx - px, ry = pry - py, sx = qsx - qx, sy = qsy - qy;
-    vx = qx - px, vy = qy - py;
-    t = (vx * sy - vy * sx) / (rx * sy - ry * sx);
-    return t;
-}
