@@ -15,7 +15,7 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
@@ -206,7 +206,7 @@
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:_ptsBuffer offset:0 atIndex:10];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
@@ -354,7 +354,7 @@
                                                  length:mesh._paths.size() * sizeof(MeshPath)
                                                 options:MTLResourceStorageModeManaged];
     if (mesh._points.size())
-        _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
+        _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
                                               length:mesh._points.size() * sizeof(Vector)
                                              options:MTLResourceStorageModeShared];
 }
