@@ -266,7 +266,6 @@
     int base, end, count, p, i, j;
     AffineTransform ctm;
     Bounds bounds, clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
-    float w, h, x0, y0, x1, y1, l0, l1;
     Call tmpl, *call;
     tmpl.meshState = meshState;
     tmpl.state = uniforms;
@@ -275,16 +274,13 @@
         bool opaques[mesh._colors.size()], visibles[mesh._colors.size()];
         for (p = 0; p < mesh._colors.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
-            bounds = mesh._bounds[p];
+            ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
+            bounds = { 0, 0, 1, 1 };
             if (meshState.showVisibles)
                 visibles[p] = bounds.transformed(ctm).intersects(clipBounds);
             else
                 visibles[p] = mesh._colors[p].a == 255 || bounds.transformed(ctm).intersects(clipBounds);
-            w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
-            x0 = w * ctm.a, y0 = w * ctm.b;
-            x1 = h * ctm.c, y1 = h * ctm.d;
-            l0 = x0 * x0 + y0 * y0, l1 = x1 * x1 + y1 * y1;
-            opaques[p] = l0 < 400 || l1 < 400 || mesh._colors[p].a == 255;
+            opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;
         for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
