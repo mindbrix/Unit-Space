@@ -28,9 +28,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
-@property (nonatomic, strong) id <MTLDepthStencilState> noDepthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
-@property (nonatomic, strong) id <MTLTexture> multisampleTexture;
 
 @end
 
@@ -60,10 +58,6 @@
     depthStencilDescriptor.depthWriteEnabled = YES;
     depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionGreaterEqual;
     self.depthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
-    
-    depthStencilDescriptor.depthWriteEnabled = NO;
-    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionAlways;
-    self.noDepthState = [self.device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
@@ -134,7 +128,6 @@
 - (void)display {
     @autoreleasepool {
         self.drawableSize = CGSizeMake(self.bounds.size.width * self.contentsScale, self.bounds.size.height * self.contentsScale);
-        
         [self draw];
     }
 }
