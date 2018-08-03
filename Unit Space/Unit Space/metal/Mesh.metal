@@ -112,7 +112,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         x2 * CTM.b + y2 * CTM.d + CTM.ty
     };
     
-    const float dilation = -0.7071067812, hmin = 0.1;
+    const float dilation = -0.5, hmin = 0.1;
     float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
     float2 v12 = p2 - p1, n12 = normalize(float2(v12.y, -v12.x));
     float2 v20 = p0 - p2, n20 = normalize(float2(v20.y, -v20.x));
