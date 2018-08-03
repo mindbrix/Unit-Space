@@ -14,7 +14,6 @@
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
-@property (nonatomic, strong) id <MTLBuffer> colorsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathCTMsBuffer;
@@ -207,8 +206,7 @@
                     continue;
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBuffer:_colorsBuffer offset:0 atIndex:2];
-                [commandEncoder setVertexBuffer:_pathCTMsBuffer offset:0 atIndex:7];
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_ptsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
@@ -256,7 +254,7 @@
 #pragma mark - Public
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
-    meshState.colorsSize = (int)mesh._colors.size();
+    meshState.colorsSize = (int)mesh._paths.size();
     int base, end, count, p, i, j;
     AffineTransform ctm;
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
@@ -265,18 +263,18 @@
     tmpl.state = uniforms;
     tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
     if (mesh._pts.size()) {
-        bool opaques[mesh._colors.size()], visibles[mesh._colors.size()];
-        for (p = 0; p < mesh._colors.size(); p++) {
+        bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
+        for (p = 0; p < mesh._paths.size(); p++) {
             ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
             ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
             if (meshState.showVisibles)
                 visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
             else
-                visibles[p] = mesh._colors[p].a == 255 || Bounds::transformUnit(ctm).intersects(clipBounds);
-            opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._colors[p].a == 255;
+                visibles[p] = mesh._paths[p].color.a == 255 || Bounds::transformUnit(ctm).intersects(clipBounds);
+            opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
         call = nullptr;
-        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._colors.size() - 1; p >= 0; p--, end = base) {
+        for (end = (int)mesh._pts.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
             base = mesh._triangleIndices[p];
             if (visibles[p] && opaques[p]) {
                 count = end - base;
@@ -294,13 +292,13 @@
         
         if (!meshState.showEdges) {
             call = nullptr;
-            for (p = 0; p < mesh._colors.size(); p++) {
+            for (p = 0; p < mesh._paths.size(); p++) {
                 if (!visibles[p]) {
                     call = nullptr;
                     continue;
                 }
                 base = mesh._triangleIndices[p];
-                end = p + 1 == mesh._colors.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._triangleIndices[p + 1];
+                end = p + 1 == mesh._paths.size() ? (int)mesh._pts.size() / kMeshTriangleSize : mesh._triangleIndices[p + 1];
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {
@@ -332,10 +330,10 @@
             call = & calls.back();
             call->type = kCallTypeFlags;
             call->state = uniforms;
-            call->instanceCount = (int)mesh._colors.size();
+            call->instanceCount = (int)mesh._paths.size();
             call->flags.w = call->flags.h = 64;
             
-            for (p = 0; p < mesh._colors.size(); p++) {
+            for (p = 0; p < mesh._paths.size(); p++) {
                 i = p >> 5, j = p % 32;
                 if (j == 0)
                     call->flags.flags[i] = 0;
@@ -349,21 +347,14 @@
 - (void)syncMesh:(Mesh &)mesh {
     memcpy(_pathsBuffer.contents, & mesh._paths[0], _pathsBuffer.length);
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
-    memcpy(_colorsBuffer.contents, & mesh._colors[0], _colorsBuffer.length);
-    [_colorsBuffer didModifyRange:NSMakeRange(0, _colorsBuffer.length)];
     memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
     [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
-    
     if (mesh._paths.size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._paths[0]
                                                  length:mesh._paths.size() * sizeof(MeshPath)
-                                                options:MTLResourceStorageModeManaged];
-    if (mesh._colors.size())
-        _colorsBuffer = [self.device newBufferWithBytes:(void *)& mesh._colors[0]
-                                                 length:mesh._colors.size() * sizeof(RGBA8)
                                                 options:MTLResourceStorageModeManaged];
     if (mesh._pts.size())
         _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]

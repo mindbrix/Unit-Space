@@ -42,14 +42,14 @@ struct InteriorVertex
     float4 color;
 };
 
-vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = kMeshTriangleSize * select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
     int c = pts[idx].x;
     float t = pts[idx].y;
     int i = idx + 1 + vid * 2;
     
-    AffineTransform CTM = pathCTMs[c];
+    AffineTransform CTM = paths[c].ctm;
     CTM = AffineTransformConcat(CTM, state.CTM);
     float2 devicePoint = {
         pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx,
@@ -71,7 +71,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
     vert.showInterior = meshState.showInterior;
-    RGBA8 color = colors[c];
+    RGBA8 color = paths[c].color;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -100,14 +100,14 @@ struct TriangleVertex
 
 #pragma mark Vertex
 
-vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device RGBA8 *colors [[buffer(2)]], device AffineTransform *pathCTMs [[buffer(7)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = iid * kMeshTriangleSize;
     int c = pts[idx].x;
     Vector _v0 = pts[idx + 1], _v1 = pts[idx + 3], _v2 = pts[idx + 5];
     
-    RGBA8 color = colors[c];
-    AffineTransform CTM = pathCTMs[c];
+    RGBA8 color = paths[c].color;
+    AffineTransform CTM = paths[c].ctm;
     CTM = AffineTransformConcat(CTM, state.CTM);
     
     float2 p0 = {

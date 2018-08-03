@@ -94,7 +94,6 @@ struct libTess {
             mesh._paths.emplace_back(path._color, (int)(mesh._pts.size() / kMeshTriangleSize), scene._CTMs[p]);
             mesh._bounds.emplace_back(path._bounds);
             
-            mesh._colors.emplace_back(path._color);
             mesh._pathCTMs.emplace_back(scene._CTMs[p]);
             mesh._triangleIndices.emplace_back((int)mesh._pts.size() / kMeshTriangleSize);
             
