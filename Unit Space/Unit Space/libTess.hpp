@@ -94,8 +94,6 @@ struct libTess {
             mesh._paths.emplace_back(path._color, (int)(mesh._pts.size() / kMeshTriangleSize), scene._CTMs[p]);
             mesh._bounds.emplace_back(path._bounds);
             
-            mesh._pathCTMs.emplace_back(scene._CTMs[p]);
-            
             controlPoints.resize(0);
             writeControlPoints(controlPoints, path);
             addPathContours(tess, path);

@@ -16,7 +16,6 @@
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> ptsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> pathCTMsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
@@ -265,7 +264,7 @@
     if (mesh._pts.size()) {
         bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
-            ctm = AffineTransformConcat(mesh._pathCTMs[p], uniforms.CTM);
+            ctm = AffineTransformConcat(mesh._paths[p].ctm, uniforms.CTM);
             ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
             if (meshState.showVisibles)
                 visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
@@ -347,8 +346,6 @@
 - (void)syncMesh:(Mesh &)mesh {
     memcpy(_pathsBuffer.contents, & mesh._paths[0], _pathsBuffer.length);
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
-    memcpy(_pathCTMsBuffer.contents, & mesh._pathCTMs[0], _pathCTMsBuffer.length);
-    [_pathCTMsBuffer didModifyRange:NSMakeRange(0, _pathCTMsBuffer.length)];
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
@@ -360,10 +357,6 @@
         _ptsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pts[0]
                                               length:mesh._pts.size() * sizeof(Vector)
                                              options:MTLResourceStorageModeShared];
-    if (mesh._pathCTMs.size())
-        _pathCTMsBuffer = [self.device newBufferWithBytes:(void *)& mesh._pathCTMs[0]
-                                                   length:mesh._pathCTMs.size() * sizeof(AffineTransform)
-                                                  options:MTLResourceStorageModeManaged];
 }
 
 @end

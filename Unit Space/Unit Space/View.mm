@@ -535,12 +535,12 @@ using namespace std;
         
         AffineTransform scale = { 1, 0, 0, 1, 0, 0 };
         for (int i = 0; i < _scene._paths.size(); i++)
-            _mesh._pathCTMs[i] = AffineTransformConcat(scale, _scene._CTMs[i]);
+            _mesh._paths[i].ctm = AffineTransformConcat(scale, _scene._CTMs[i]);
         
         int p = -1;
         float ux = float(user.x), uy = float(user.y);
         for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
-            AffineTransform inv = AffineTransformInvert(_mesh._pathCTMs[i]);
+            AffineTransform inv = AffineTransformInvert(_mesh._paths[i].ctm);
             if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
                 p = i;
         }
@@ -574,7 +574,7 @@ using namespace std;
                         if (!circles->add(_quad[j].x, _quad[j].y, radius))
                             break;
             } else if (p != -1) {
-                AffineTransform m = _mesh._pathCTMs[p];
+                AffineTransform m = _mesh._paths[p].ctm;
                 float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
                 call.state.CTM = AffineTransformConcat(m, CTM);
                 for (SubPath& s : _scene._paths[p]._subPaths) {
