@@ -97,22 +97,22 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 {
     uint idx = iid * kMeshTriangleSize;
     int c = pts[idx].x;
-    Vector _v0 = pts[idx + 1], _v1 = pts[idx + 3], _v2 = pts[idx + 5];
-    
+    float x0 = pts[idx + 1].x, y0 = pts[idx + 1].y, x1 = pts[idx + 3].x, y1 = pts[idx + 3].y, x2 = pts[idx + 5].x, y2 = pts[idx + 5].y;
+        
     RGBA8 color = paths[c].color;
     AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
     
     float2 p0 = {
-        _v0.x * CTM.a + _v0.y * CTM.c + CTM.tx,
-        _v0.x * CTM.b + _v0.y * CTM.d + CTM.ty
+        x0 * CTM.a + y0 * CTM.c + CTM.tx,
+        x0 * CTM.b + y0 * CTM.d + CTM.ty
     };
     float2 p1 = {
-        _v1.x * CTM.a + _v1.y * CTM.c + CTM.tx,
-        _v1.x * CTM.b + _v1.y * CTM.d + CTM.ty
+        x1 * CTM.a + y1 * CTM.c + CTM.tx,
+        x1 * CTM.b + y1 * CTM.d + CTM.ty
     };
     float2 p2 = {
-        _v2.x * CTM.a + _v2.y * CTM.c + CTM.tx,
-        _v2.x * CTM.b + _v2.y * CTM.d + CTM.ty
+        x2 * CTM.a + y2 * CTM.c + CTM.tx,
+        x2 * CTM.b + y2 * CTM.d + CTM.ty
     };
     
     const float dilation = -0.7071067812, hmin = 0.1;
@@ -121,10 +121,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 v20 = p0 - p2, n20 = normalize(float2(v20.y, -v20.x));
     float h0 = dot(n12, v01), h1 = dot(n20, v12), h2 = dot(n01, v20);
     float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
-    float2 v0 = p0 * (1 - dh1 - dh2) + p1 * dh1 + p2 * dh2;
-    float2 v1 = p0 * dh0 + p1 * (1 - dh0 - dh2) + p2 * dh2;
-    float2 v2 = p0 * dh0 + p1 * dh1 + p2 * (1 - dh0 - dh1);
-    float2 devicePoint = select(select(v2, v1, vid == 1), v0, vid == 0);
+    float2 dp0 = p0 * (1 - dh1 - dh2) + p1 * dh1 + p2 * dh2;
+    float2 dp1 = p0 * dh0 + p1 * (1 - dh0 - dh2) + p2 * dh2;
+    float2 dp2 = p0 * dh0 + p1 * dh1 + p2 * (1 - dh0 - dh1);
+    float2 devicePoint = select(select(dp2, dp1, vid == 1), dp0, vid == 0);
     
     float z = (c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
