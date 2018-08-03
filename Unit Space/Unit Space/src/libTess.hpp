@@ -125,6 +125,8 @@ struct libTess {
                         x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
                         x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
                         
+                        float ti = Vector::lineIntersection(x0, y0, x1, y1, x1, y1, x2, y2);
+                        
                         e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
                         e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
                         e2 = lower_bound(edges, eend, Edge(x2, y2, 0, 0, 0));

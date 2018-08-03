@@ -105,6 +105,13 @@ struct Vector {
     Vector() {}
     Vector(float x, float y) : x(x), y(y) {}
     float x, y;
+    static float lineIntersection(float px, float py, float prx, float pry, float qx, float qy, float qsx, float qsy) {
+        float rx, ry, sx, sy, vx, vy, t;
+        rx = prx - px, ry = pry - py, sx = qsx - qx, sy = qsy - qy;
+        vx = qx - px, vy = qy - py;
+        t = (vx * sy - vy * sx) / (rx * sy - ry * sx);
+        return t;
+    }
 };
 
 struct _Size { float w, h; };
