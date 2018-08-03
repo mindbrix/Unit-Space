@@ -277,9 +277,9 @@
             ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
             bounds = { 0, 0, 1, 1 };
             if (meshState.showVisibles)
-                visibles[p] = bounds.transformed(ctm).intersects(clipBounds);
+                visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
             else
-                visibles[p] = mesh._colors[p].a == 255 || bounds.transformed(ctm).intersects(clipBounds);
+                visibles[p] = mesh._colors[p].a == 255 || Bounds::transformUnit(ctm).intersects(clipBounds);
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._colors[p].a == 255;
         }
         call = nullptr;

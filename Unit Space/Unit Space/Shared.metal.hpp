@@ -83,16 +83,13 @@ struct Bounds {
     bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
-    Bounds transformed(AffineTransform t) {
-        float w, h, ox, oy, x0, x1, y0, y1;
-        w = ux - lx, h = uy - ly;
-        ox = lx * t.a + ly * t.c + t.tx;
-        oy = lx * t.b + ly * t.d + t.ty;
-        x0 = (t.a < 0 ? t.a * w : 0) + (t.c < 0 ? t.c * h : 0);
-        x1 = (t.a < 0 ? 0 : t.a * w) + (t.c < 0 ? 0 : t.c * h);
-        y0 = (t.b < 0 ? t.b * w : 0) + (t.d < 0 ? t.d * h : 0);
-        y1 = (t.b < 0 ? 0 : t.b * w) + (t.d < 0 ? 0 : t.d * h);
-        return { ox + x0, oy + y0, ox + x1, oy + y1 };
+    static Bounds transformUnit(const AffineTransform t) {
+        float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
+        return {
+            t.tx + wa * t.a + wc * t.c,
+            t.ty + wb * t.b + wd * t.d,
+            t.tx + (1 - wa) * t.a + (1 - wc) * t.c,
+            t.ty + (1 - wb) * t.b + (1 - wd) * t.d };
     }
     Bounds united(Bounds other) {
         return { lx < other.lx ? lx : other.lx, ly < other.ly ? ly : other.ly, ux > other.ux ? ux : other.ux, uy > other.uy ? uy : other.uy };
