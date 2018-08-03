@@ -49,8 +49,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float t = pts[idx].y;
     int i = idx + 1 + vid * 2;
     
-    AffineTransform CTM = paths[c].ctm;
-    CTM = AffineTransformConcat(CTM, state.CTM);
+    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
     float2 devicePoint = {
         pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx,
         pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty
@@ -107,8 +106,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     Vector _v0 = pts[idx + 1], _v1 = pts[idx + 3], _v2 = pts[idx + 5];
     
     RGBA8 color = paths[c].color;
-    AffineTransform CTM = paths[c].ctm;
-    CTM = AffineTransformConcat(CTM, state.CTM);
+    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
     
     float2 p0 = {
         _v0.x * CTM.a + _v0.y * CTM.c + CTM.tx,
