@@ -11,18 +11,11 @@
 
 #pragma mark - Static C helpers
 
-static inline CGAffineTransform CGAffineTransformMakeRST(CGFloat angle, CGSize s, CGPoint t) {
-    CGFloat sine = sinf(angle), cosine = cosf(angle);
-    return CGAffineTransformMake(cosine * s.width, sine * s.height, -sine * s.width, cosine * s.height, t.x, t.y);
-}
-
 static inline CGAffineTransform makeCTM(CGFloat angle, CGFloat s, CGPoint t, CGPoint anchorPoint) {
-    CGAffineTransform coreCTM = CGAffineTransformMakeRST(angle, CGSizeMake(s, s), t);
-    
+    CGFloat sine = sinf(angle), cosine = cosf(angle);
     CGAffineTransform ctm = CGAffineTransformMakeTranslation(anchorPoint.x, anchorPoint.y);
-    ctm = CGAffineTransformConcat(coreCTM, ctm);
+    ctm = CGAffineTransformConcat(CGAffineTransformMake(cosine * s, sine * s, -sine * s, cosine * s, t.x, t.y), ctm);
     ctm = CGAffineTransformTranslate(ctm , -anchorPoint.x, -anchorPoint.y);
-    
     return ctm;
 }
 
