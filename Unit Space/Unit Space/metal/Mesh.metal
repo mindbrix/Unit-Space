@@ -5,10 +5,8 @@
 //  Created by Nigel Barber on 27/04/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-
 #include "Shared.metal.hpp"
 #include <metal_stdlib>
-#include "Headers.metal"
 
 using namespace metal;
 
