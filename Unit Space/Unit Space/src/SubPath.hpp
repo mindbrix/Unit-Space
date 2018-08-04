@@ -160,7 +160,7 @@ struct SubPath {
     
     void flattenQuadratics(Memory<float>& quadratics, vector<float> & points, float precision) {
         vector<float> dst;
-        float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, a, ax, ay, dx, dy, mx, my, cpx, cpy;
+        float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, a, dx, dy;
         int i, npoints;
         for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = points[i * 2], y1 = points[i * 2 + 1];
@@ -176,15 +176,6 @@ struct SubPath {
                 else {
                     x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
                     y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
-                    
-                    mx = (x0 + x012) * 0.5, my = (y0 + y012) * 0.5;
-                    ax = x01 - mx, ay = y01 - my;
-                    dx = x012 - x0, dy = y012 - y0;
-                    float cosine = (ax * dx + ay * dy) / (std::sqrt(ax * ax + ay * ay) * std::sqrt(dx * dx + dy * dy));
-                    t = std::sqrt((ax * ax + ay * ay) / (dx * dx + dy * dy));
-                    t = copysign(t, a);
-                    cpx = mx - t * dy, cpy = my + t * dx;
-                    
                     dst.emplace_back(x01), dst.emplace_back(y01);
                     x0 = x012, y0 = y012, x1 = x12, y1 = y12;
                 }
