@@ -168,9 +168,8 @@ struct SubPath {
             
             do {
                 dst.emplace_back(x0), dst.emplace_back(y0);
-                dx = x1 - x0, dy = y1 - y0;
-                ay = (x2 - x0) * -dy + (y2 - y0) * dx;
-                t = precision * precision / (ay * ay / (dx * dx + dy * dy));
+                dx = x1 - x0, dy = y1 - y0, ay = dx * (y2 - y0) - dy * (x2 - x0);
+                t = precision * precision / (ay * ay) * (dx * dx + dy * dy);
                 t = t > 1 ? 1 : 1.0 / (std::ceil(1.0 / std::sqrt(std::sqrt(t))) - 0.1);
                 if (t == 1)
                     dst.emplace_back(x1), dst.emplace_back(y1);
