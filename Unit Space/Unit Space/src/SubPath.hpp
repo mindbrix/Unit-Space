@@ -178,9 +178,7 @@ struct SubPath {
         }
         dst.emplace_back(x2), dst.emplace_back(y2);
         
-        Memory<float> quadratics((int)dst.size());
-        memcpy(quadratics.get(), & dst[0], quadratics.size());
-        return quadratics;
+        return Memory<float>(& dst[0], dst.size());
     }
     
     Memory<float>               _points;
