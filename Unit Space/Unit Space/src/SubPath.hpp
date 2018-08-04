@@ -160,7 +160,7 @@ struct SubPath {
     
     void flattenQuadratics(Memory<float>& quadratics, vector<float> & points, float precision) {
         vector<float> dst;
-        float x0, y0, x1, y1, x2, y2, t, x01, x12, x012, y01, y12, y012, ay, dx, dy;
+        float x0, y0, x1, y1, x2, y2, dx, dy, ay, t, x01, x12, x012, y01, y12, y012;
         int i, npoints;
         for (npoints = (int)points.size() / 2, x0 = points[0], y0 = points[1], i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = points[i * 2], y1 = points[i * 2 + 1];
