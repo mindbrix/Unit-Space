@@ -8,7 +8,7 @@
 #import "Memory.hpp"
 
 constexpr int kPointStride = 2 * sizeof(float);
-constexpr float kSplitCubicPrecision = 0.1;
+constexpr float kSplitCubicPrecision = 0.1, kFlattenQuadraticPrecision = 0.5;
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
@@ -120,7 +120,7 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    SubPath(const float *points, const int npoints, Type type, float precision = 0.5) {
+    SubPath(const float *points, const int npoints, Type type, float precision = kFlattenQuadraticPrecision) {
         float dx, dy;
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
