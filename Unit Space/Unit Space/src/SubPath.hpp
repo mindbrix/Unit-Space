@@ -120,7 +120,7 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    SubPath(const float *points, const int npoints, Type type, float precision = 1) {
+    SubPath(const float *points, const int npoints, Type type, float precision =  1) {
         float dx, dy;
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
