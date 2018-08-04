@@ -10,6 +10,7 @@
 template<typename T>
 struct Memory {
     Memory()                            {}
+    Memory(void *memory, size_t count)  { alloc(count); memcpy(header->memory, memory, header->size); }
     Memory(size_t count)                { alloc(count); }
     Memory(const Memory& other)         { assign(other); }
     Memory& operator= (Memory other)    { assign(other); return *this; }
