@@ -132,12 +132,12 @@ struct SubPath {
             if (_npoints > 2) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
                     split[_npoints * 2 - 2] = split[0], split[_npoints * 2 - 1] = split[1];
-                flattenQuadratics(_quadratics, & split[0], (int)split.size() / 2, precision);
+                _quadratics = flattenQuadratics(& split[0], (int)split.size() / 2, precision);
             }
         } else if (type == kQuadratic) {
             _npoints = npoints;
             if (_npoints > 4)
-                flattenQuadratics(_quadratics, points, npoints, precision);
+                _quadratics = flattenQuadratics(points, npoints, precision);
         } else {
             _npoints = npoints;
             _points.alloc(_npoints * 2);
@@ -155,7 +155,7 @@ struct SubPath {
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
-    void flattenQuadratics(Memory<float>& quadratics, const float *points, int npoints, float precision) {
+    Memory<float> flattenQuadratics(const float *points, int npoints, float precision) {
         vector<float> dst;
         float x0, y0, x1, y1, x2, y2, dx, dy, ay, t, x01, x12, x012, y01, y12, y012;
         int i;
@@ -178,8 +178,9 @@ struct SubPath {
         }
         dst.emplace_back(x2), dst.emplace_back(y2);
         
-        quadratics.alloc((int)dst.size());
+        Memory<float> quadratics((int)dst.size());
         memcpy(quadratics.get(), & dst[0], quadratics.size());
+        return quadratics;
     }
     
     Memory<float>               _points;
