@@ -83,7 +83,7 @@ struct Scene {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
                             
-                            SubPath s(& buffer[begin * 2], end - begin, SubPath::kCubic, 1.0 / scale.a);
+                            SubPath s(& buffer[begin * 2], end - begin, SubPath::kCubic, 0.5 / scale.a);
                             p.addSubPath(s);
                         }
                         addPath(p, & CTM);
