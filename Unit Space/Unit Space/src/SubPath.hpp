@@ -172,7 +172,7 @@ struct SubPath {
                 if (t >= 1)
                     dst.emplace_back(x1), dst.emplace_back(y1);
                 else {
-                    t = 1.0 / (std::ceil(1.0 / std::sqrt(std::sqrt(t))) - 0.1);
+                    t = 1.0 / std::ceil(1.0 / std::sqrt(std::sqrt(t)));
                     x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
                     y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
                     dst.emplace_back(x01), dst.emplace_back(y01);
