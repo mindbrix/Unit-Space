@@ -70,7 +70,6 @@ using namespace std;
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
-    self.metalLayer.magnificationFilter = kCAFilterNearest;
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
     self.mouseLocation = { 0, 0 };

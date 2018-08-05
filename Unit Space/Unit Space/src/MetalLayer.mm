@@ -49,6 +49,7 @@
                       @"bounds": [NSNull null] };
     self.device = MTLCreateSystemDefaultDevice();
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    self.magnificationFilter = kCAFilterNearest;
     
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
