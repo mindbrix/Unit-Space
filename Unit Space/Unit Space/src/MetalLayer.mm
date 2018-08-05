@@ -266,10 +266,7 @@
         for (p = 0; p < mesh._paths.size(); p++) {
             ctm = AffineTransformConcat(mesh._paths[p].ctm, uniforms.CTM);
             ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
-            if (meshState.showVisibles)
-                visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
-            else
-                visibles[p] = mesh._paths[p].color.a == 255 || Bounds::transformUnit(ctm).intersects(clipBounds);
+            visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
         for (p = 0; p < mesh._paths.size(); p += 8) {
