@@ -37,22 +37,6 @@ inline float lerp(float t, float n0, float n1) {
     return n0 + t * (n1 - n0);
 }
 
-static inline bool linesIntersection(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy, float *px, float *py) {
-    double rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy;
-    double r_cross_s = rx * sy - ry * sx;
-    
-    if (r_cross_s == 0)
-        return false;
-    
-    double pqx = cx - ax, pqy = cy - ay;
-    double t = (pqx * sy - pqy * sx) / r_cross_s, u = (pqx * ry - pqy * rx) / r_cross_s;
-    if (px)
-        *px = ax + rx * t;
-    if (py)
-        *py = ay + ry * t;
-    return t > 0 && t < 1 && u > 0 && u < 1;
-}
-
 static float pointsSignedArea(const float *begin, const float *end, size_t stride) {
     double sum = 0.0;
     auto prev = (const float *)((char *)end - stride);
