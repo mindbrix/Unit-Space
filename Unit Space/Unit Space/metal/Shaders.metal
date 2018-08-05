@@ -133,11 +133,11 @@ fragment float4 flags_fragment_main(StrokeVertex vert [[stage_in]], constant Sta
 
 #pragma mark - Line
 
-vertex StrokeVertex line_vertex_main(constant State &state [[buffer(0)]], constant Lines &lines [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex line_vertex_main(constant State &state [[buffer(0)]], constant Points &points [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    constant Line& line = lines.lines[iid];
+    uint i0 = iid * 2, i1 = i0 + 2;
+    float2 p0 = { points.points[i0].x, points.points[i0].y }, p1 = { points.points[i1].x, points.points[i1].y };
     
-    float2 p0 = { line.x0, line.y0 }, p1 = { line.x1, line.y1 };
     float2 v = p1 - p0, nv = normalize(v);
     float2 lnv = { -nv.y, nv.x };
     float w2 = state.width * 0.5;

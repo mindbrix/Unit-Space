@@ -173,8 +173,8 @@
                 break;
             case kCallTypeLines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];
-                [commandEncoder setVertexBytes:&call->lines length:sizeof(Lines) atIndex:1];
-                instanceCount = call->lines.count;
+                [commandEncoder setVertexBytes:&call->points length:sizeof(Points) atIndex:1];
+                instanceCount = (call->points.count - 1) / 2;
                 break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:

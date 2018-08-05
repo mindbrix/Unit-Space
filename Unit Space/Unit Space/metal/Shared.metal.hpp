@@ -102,8 +102,6 @@ struct _Size { float w, h; };
 
 struct Quadratic { float x0, y0, x1, y1, x2, y2; };
 
-struct Line { float x0, y0, x1, y1; };
-
 struct Unit {
     AffineTransform     unitCTM;
 };
@@ -135,11 +133,6 @@ struct Flags {
     unsigned int        flags[kFlagsSize];
 };
 
-struct Lines {
-    int         count;
-    Line        lines[255];
-};
-
 struct MeshPath {
     MeshPath() {}
     MeshPath(RGBA8 color, int idx, AffineTransform ctm) : color(color), idx(idx), ctm(ctm) {}
@@ -150,7 +143,8 @@ struct MeshPath {
 };
 
 struct Points {
-    Vector points[512];
+    int     count;
+    Vector  points[511];
 };
 
 struct MeshState {
@@ -197,7 +191,6 @@ struct Call {
         Arcs        arcs;
         Circles     circles;
         Flags       flags;
-        Lines       lines;
         MeshState   meshState;
         Points      points;
     };
