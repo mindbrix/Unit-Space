@@ -42,11 +42,6 @@ using namespace std;
 @property(nonatomic) BOOL useDelaunay;
 @property(nonatomic) BOOL useMask;
 @property(nonatomic) BOOL useStrokeColor;
-@property(nonatomic) AffineTransform unitCTM;
-@property(nonatomic) AffineTransform ctm0;
-@property(nonatomic) AffineTransform ctm1;
-@property(nonatomic) AffineTransform ctm2;
-@property(nonatomic) AffineTransform ctm3;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
@@ -110,11 +105,6 @@ using namespace std;
     BOOL dragged = NO;
     if (_showPoints) {
         if (_flags & 4) {
-            AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
-            if ((dragged = [self mouseDragCTM:event CTM:ctm0]))
-                _ctm0 = AffineTransformConcat(AffineTransformInvert(_unitCTM), ctm0);
-            else
-                dragged = [self mouseDragCTM:event CTM:_unitCTM];
         } else if (_flags & 2)  {
         } else if (_flags & 8)  {
             if (_svgData) {
@@ -331,19 +321,6 @@ using namespace std;
 #pragma mark -
 
 - (void)reset {
-    _unitCTM = { 100, 0, 0, 100, 0, 0 };
-    
-    AffineTransform s = { 0.9, 0, 0, 0.9, 0, 0 };
-    float a0 =- M_PI / 24.f, cos0 = cosf(a0), sin0 = sinf(a0);
-    AffineTransform r = { cos0, sin0, -sin0, cos0, 0, 0 };
-    AffineTransform t = { 1, 0, 0, 1, 100, 100 };
-    _ctm0 = AffineTransformConcat(r, AffineTransformConcat(s, t));
-    float a1 =- M_PI / 12.f, cos1 = cosf(a1), sin1 = sinf(a1);
-    AffineTransform r1 = { cos1, sin1, -sin1, cos1, 0, 0 };
-    _ctm1 = r1;// AffineTransformConcat(s, r);
-    _ctm2 =  { 1, 0, 0, 1, 2000, 0 };
-    _ctm3 =  { 1, 0, 0, 1, -20000, 2000 };
-    
     if (_svgData || _fontData) {
         libTess::triangulate(_mesh, _scene, self.useMask);
         
@@ -417,53 +394,8 @@ using namespace std;
     _calls.resize(0);
     
     if (_flags & 1) {}
-    
     if (_flags & 2) {}
-    
-    if (_flags & 4) {
-        uniforms.fillColor = { 0, 0, 0, 0.333 };
-        _calls.emplace_back();
-        Call& call = _calls.back();
-        call.type = kCallTypeFractal;
-        call.state = uniforms;
-        Fractals& fractals = call.fractals;
-        fractals.unitCTM = _unitCTM;
-        
-        fractals.ctms[0] = _ctm0;
-        fractals.ctms[1] = _ctm1;
-        fractals.ctms[2] = _ctm2;
-        fractals.ctms[3] = _ctm3;
-        
-        fractals.counts[0] = 60;
-        fractals.counts[1] = 24;
-        fractals.counts[2] = 1;
-        fractals.counts[3] = 1;
-        fractals.count = fractals.counts[0] * fractals.counts[1] * fractals.counts[2] * fractals.counts[3];
-        fractals.ellipse = _showEllipse;
-        
-        if (_showPoints) {
-            uniforms.fillColor = { 1, 0, 0, 1 };
-            _calls.emplace_back();
-            Call& call = _calls.back();
-            call.type = kCallTypeCircles;
-            call.state = uniforms;
-            Circles& circles = call.circles;
-            AffineTransform& unit = _unitCTM;
-            
-            int i = 0;
-            circles.circles[i++] = { unit.tx, unit.ty, largeRadius };
-            circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
-            circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
-            
-            AffineTransform ctm0 = AffineTransformConcat(_unitCTM, _ctm0);
-            circles.circles[i++] = { ctm0.tx, ctm0.ty, largeRadius };
-            circles.circles[i++] = { ctm0.tx + ctm0.a, ctm0.ty + ctm0.b, radius };
-            circles.circles[i++] = { ctm0.tx + ctm0.a + ctm0.c, ctm0.ty + ctm0.b + ctm0.d, radius };
-            
-            circles.count = i;
-        }
-    }
-    
+    if (_flags & 4) {}
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         uniforms.strokeColor = { 0, 0, 0, 1 };

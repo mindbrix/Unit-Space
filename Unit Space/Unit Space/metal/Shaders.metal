@@ -130,56 +130,6 @@ fragment float4 flags_fragment_main(StrokeVertex vert [[stage_in]], constant Sta
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
 
-#pragma mark - Fractal
-
-vertex StrokeVertex fractal_vertex_main(constant State &state [[buffer(0)]], constant Fractals &fractals [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
-{
-    AffineTransform ctm = state.CTM;
-    
-    uint i0 = iid % uint(fractals.counts[0]);
-    uint i1 = iid / uint(fractals.counts[0]);
-    uint i2 = iid / uint(fractals.counts[0] * fractals.counts[1]);
-    uint i3 = iid / uint(fractals.counts[0] * fractals.counts[1] * fractals.counts[2]);
-    
-    for (uint i = 0; i < i3; i++)
-        ctm = AffineTransformConcat(fractals.ctms[3], ctm);
-    
-    for (uint i = 0; i < i2; i++)
-        ctm = AffineTransformConcat(fractals.ctms[2], ctm);
-    
-    for (uint i = 0; i < i1; i++)
-        ctm = AffineTransformConcat(fractals.ctms[1], ctm);
-    
-    for (uint i = 0; i < i0; i++)
-        ctm = AffineTransformConcat(fractals.ctms[0], ctm);
-    
-    ctm = AffineTransformConcat(fractals.unitCTM, ctm);
-    AffineTransform el = AffineTransformInvert(ctm);
-    float scale = sqrt(abs(ctm.a * ctm.d - ctm.b * ctm.c));
-    float dilation = 1.0 / scale;
-    
-    float2 up = { float(vid & 1), float(vid >> 1) };
-    up += (up - 0.5) * dilation;
-    float dx = up.x * ctm.a + up.y * ctm.c + ctm.tx;
-    float dy = up.x * ctm.b + up.y * ctm.d + ctm.ty;
-    
-    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
-    
-    StrokeVertex vert;
-    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
-    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    return vert;
-}
-
-fragment float4 fractal_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant Fractals &fractals [[buffer(1)]])
-{
-    float2 inverse = vert.unitPoint;
-//    float2 inverse = unitComplexMultiply(vert.unitPoint);
-//    float2 inverse = unitInverse(vert.unitPoint);
-    float alpha = saturate(fractals.ellipse ? ellipseDistance(inverse) : rectDistance(inverse));
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
-}
-
 
 #pragma mark - Line
 

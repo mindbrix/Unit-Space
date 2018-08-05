@@ -19,7 +19,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> fractalPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
@@ -91,11 +90,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
     descriptor.label = @"Circle";
     self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"fractal_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"fractal_fragment_main"];
-    descriptor.label = @"Fractal";
-    self.fractalPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"line_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
@@ -176,12 +170,6 @@
                 [commandEncoder setRenderPipelineState:_flagPipelineState];
                 [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:1];
                 instanceCount = call->instanceCount;
-                break;
-            case kCallTypeFractal:
-                [commandEncoder setRenderPipelineState:_fractalPipelineState];
-                [commandEncoder setVertexBytes:&call->fractals length:sizeof(Fractals) atIndex:1];
-                [commandEncoder setFragmentBytes:&call->fractals length:sizeof(Fractals) atIndex:1];
-                instanceCount = call->fractals.count;
                 break;
             case kCallTypeLines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];

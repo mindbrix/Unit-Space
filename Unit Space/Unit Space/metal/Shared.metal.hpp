@@ -135,22 +135,9 @@ struct Flags {
     unsigned int        flags[kFlagsSize];
 };
 
-struct Fractals {
-    int                 count;
-    AffineTransform     unitCTM;
-    AffineTransform     ctms[8];
-    int                 counts[8];
-    bool                ellipse;
-};
-
 struct Lines {
     int         count;
     Line        lines[255];
-};
-
-struct Units {
-    int                 count;
-    AffineTransform     ctms[170];
 };
 
 struct MeshPath {
@@ -198,7 +185,6 @@ enum CallType : unsigned int {
     kCallTypeArcs = 0,
     kCallTypeCircles,
     kCallTypeFlags,
-    kCallTypeFractal,
     kCallTypeLines,
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
@@ -214,7 +200,6 @@ struct Call {
         Arcs        arcs;
         Circles     circles;
         Flags       flags;
-        Fractals    fractals;
         Lines       lines;
         MeshState   meshState;
     };
