@@ -15,9 +15,7 @@ constexpr float kSplitCubicPrecision = 0.1, kFlattenQuadraticPrecision = 0.5;
 static int splitCubics(vector<float>& dst, const float *src, int npoints, const float prec) {
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
-    float n01, n12, n23;
-    float n012, n123;
-    float n0123;
+    float n01, n12, n23, n012, n123, n0123;
     float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
     constexpr float kTinyLimit = 1e-6, kMergeLimit = 1e-3;
@@ -135,8 +133,7 @@ struct SubPath {
                 _quadratics = flattenQuadratics(& split[0], (int)split.size() / 2, precision);
             }
         } else if (type == kQuadratic) {
-            _npoints = npoints;
-            if (_npoints > 4)
+            if ((_npoints = npoints) > 4)
                 _quadratics = flattenQuadratics(points, npoints, precision);
         } else {
             _npoints = npoints;
