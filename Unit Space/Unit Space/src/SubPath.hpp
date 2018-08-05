@@ -17,8 +17,7 @@ static int splitCubics(vector<float>& dst, const float *src, int npoints, const 
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23, n012, n123, n0123;
     float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
-    constexpr float multiplier = 10.3923048454; // 18/sqrt(3);
-    constexpr float kTinyLimit = 1e-6, kMergeLimit = 1e-3;
+    constexpr float kTinyLimit = 1e-6, kMergeLimit = 1e-3, multiplier = 10.3923048454; // 18/sqrt(3);;
     for (int i = 0; i < npoints - 1; i += 3) {
         float *p = (float *)src + i * 2;
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
