@@ -306,7 +306,6 @@ using namespace std;
 
 - (IBAction)toggleTriangle:(id)sender {
     _showTriangle = !_showTriangle;
-//    [self reset];
     [self redraw];
 }
 

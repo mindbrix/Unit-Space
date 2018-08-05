@@ -634,7 +634,7 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="hB3-LF-h0Y"/>
-                            <menuItem title="Reset Model" keyEquivalent="r" id="KiN-W0-YhM">
+                            <menuItem title="Reset Model" keyEquivalent="t" id="KiN-W0-YhM">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="resetModel:" target="-1" id="bpQ-rO-R5g"/>
@@ -734,12 +734,6 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="toggleShowVisibles:" target="-1" id="18Z-QA-1tT"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Triangle" keyEquivalent="t" id="3b5-zk-N0Z">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleTriangle:" target="-1" id="SuQ-9U-pav"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="mYK-Jo-Aue"/>
