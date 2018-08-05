@@ -264,18 +264,17 @@
     if (mesh._points.size()) {
         bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
-            ctm = AffineTransformConcat(mesh._paths[p].ctm, uniforms.CTM);
-            ctm = AffineTransformMakeUnit(mesh._bounds[p], ctm);
-            visibles[p] = Bounds::transformUnit(ctm).intersects(clipBounds);
+            ctm = AffineTransformMakeUnit(mesh._bounds[p], AffineTransformConcat(mesh._paths[p].ctm, uniforms.CTM));
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
         for (p = 0; p < mesh._paths.size(); p += 8) {
             bool set = false;
-            for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++)
-                set |= visibles[p + j];
-            if (set)
-                for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
-                    visibles[p + j] = true;
+            for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++) {
+                ctm = AffineTransformMakeUnit(mesh._bounds[p + j], AffineTransformConcat(mesh._paths[p + j].ctm, uniforms.CTM));
+                set |= Bounds::transformUnit(ctm).intersects(clipBounds);
+            }
+            for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
+                visibles[p + j] = set;
         }
         call = nullptr;
         for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
