@@ -149,6 +149,10 @@ struct MeshPath {
     AffineTransform     ctm;
 };
 
+struct Points {
+    Vector points[512];
+};
+
 struct MeshState {
     bool                disableInteriorVector;
     bool                hideCurves;
@@ -202,6 +206,7 @@ struct Call {
         Flags       flags;
         Lines       lines;
         MeshState   meshState;
+        Points      points;
     };
 };
 
