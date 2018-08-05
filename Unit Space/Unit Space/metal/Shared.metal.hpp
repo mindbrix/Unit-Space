@@ -157,11 +157,6 @@ struct Lines {
     Line        lines[255];
 };
 
-struct Quadratics {
-    int                 count;
-    AffineTransform     ctms[170];
-};
-
 struct Units {
     int                 count;
     AffineTransform     ctms[170];
@@ -217,7 +212,6 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
-    kCallTypeQuadratics,
     kCallTypeUnits,
 };
 
@@ -233,7 +227,6 @@ struct Call {
         Fractals    fractals;
         Lines       lines;
         MeshState   meshState;
-        Quadratics  quadratics;
         Units       units;
     };
 };

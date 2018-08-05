@@ -25,7 +25,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> quadraticPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
 
@@ -107,11 +106,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
     descriptor.label = @"Line";
     self.linePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_fragment_main"];
-    descriptor.label = @"Quadratic";
-    self.quadraticPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
@@ -210,10 +204,6 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
-                break;
-            case kCallTypeQuadratics:
-                [commandEncoder setRenderPipelineState:_quadraticPipelineState];
-                [commandEncoder setVertexBytes:&call->quadratics length:sizeof(Quadratics) atIndex:1];
                 break;
             case kCallTypeUnits:
                 [commandEncoder setRenderPipelineState:_unitPipelineState];

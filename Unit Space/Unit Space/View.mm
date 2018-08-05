@@ -47,7 +47,6 @@ using namespace std;
 @property(nonatomic) AffineTransform ctm1;
 @property(nonatomic) AffineTransform ctm2;
 @property(nonatomic) AffineTransform ctm3;
-@property(nonatomic) Quadratics quadratics;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
@@ -117,9 +116,6 @@ using namespace std;
             else
                 dragged = [self mouseDragCTM:event CTM:_unitCTM];
         } else if (_flags & 2)  {
-            for (int j = 0; j < _quadratics.count; j++)
-                if ((dragged = [self mouseDragCTM:event CTM:_quadratics.ctms[j]]))
-                    break;
         } else if (_flags & 8)  {
             if (_svgData) {
                 
@@ -359,9 +355,6 @@ using namespace std;
     Vector *q = !_showTriangle ? triangle : lozenge;
     int count = !_showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
     
-    AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
-    _quadratics.count = WriteQuadratics(& _quadratics.ctms[0], identity, q, count);
-    
     if (_svgData || _fontData) {
         libTess::triangulate(_mesh, _scene, self.useMask);
         
@@ -446,36 +439,7 @@ using namespace std;
         call.units.ctms[0] = _unitCTM;
     }
     
-    if (_flags & 2) {
-        uniforms.fillColor = { 0, 0, 0, 1 };
-        
-        _calls.emplace_back();
-        Call& call = _calls.back();
-        
-        call.type = kCallTypeQuadratics;
-        call.state = uniforms;
-        call.quadratics = _quadratics;
-        
-        if (_showPoints) {
-            _calls.emplace_back();
-            Call& call = _calls.back();
-            
-            uniforms.fillColor = { 1, 0, 0, 1 };
-            call.type = kCallTypeCircles;
-            call.state = uniforms;
-            Circles& circles = call.circles;
-            
-            int i = 0;
-            for (int j = 0; j < _quadratics.count; j++) {
-                AffineTransform unit = _quadratics.ctms[j];
-                
-                circles.circles[i++] = { unit.tx, unit.ty, largeRadius };
-                circles.circles[i++] = { unit.tx + unit.a, unit.ty + unit.b, radius };
-                circles.circles[i++] = { unit.tx + unit.a + unit.c, unit.ty + unit.b + unit.d, radius };
-            }
-            circles.count = i;
-        }
-    }
+    if (_flags & 2) {}
     
     if (_flags & 4) {
         uniforms.fillColor = { 0, 0, 0, 0.333 };
