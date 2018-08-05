@@ -32,7 +32,7 @@
 - (IBAction)togglePoints:(id)sender;
 - (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowInterior:(id)sender;
-- (IBAction)toggleTriangle:(id)sender;
+- (IBAction)toggleRetina:(id)sender;
 - (IBAction)toggleUseDelaunay:(id)sender;
 - (IBAction)toggleUseMask:(id)sender;
 - (IBAction)toggleUseStrokeColor:(id)sender;

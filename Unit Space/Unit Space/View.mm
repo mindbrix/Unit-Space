@@ -304,8 +304,11 @@ using namespace std;
     [self redraw];
 }
 
-- (IBAction)toggleTriangle:(id)sender {
-    _showTriangle = !_showTriangle;
+- (IBAction)toggleRetina:(id)sender {
+    if (self.metalLayer.contentsScale == [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width)
+        self.metalLayer.contentsScale = 1;
+    else
+        self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
     [self redraw];
 }
 

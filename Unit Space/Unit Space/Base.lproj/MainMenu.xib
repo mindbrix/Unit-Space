@@ -736,6 +736,12 @@
                                     <action selector="toggleShowVisibles:" target="-1" id="18Z-QA-1tT"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Retina" keyEquivalent="r" id="URL-wz-Inw">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleRetina:" target="-1" id="ime-V6-d8z"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="mYK-Jo-Aue"/>
                             <menuItem title="Show Sidebar" keyEquivalent="s" id="kIP-vf-haE">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
