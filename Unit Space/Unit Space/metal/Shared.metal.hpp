@@ -204,6 +204,7 @@ struct State {
     float               flatness;
     float               width;
     float               cap;
+    float               scaleFactor;
 };
 
 

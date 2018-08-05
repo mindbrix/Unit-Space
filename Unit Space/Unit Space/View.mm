@@ -431,7 +431,7 @@ using namespace std;
     uniforms.flatness = 0.03125;
     uniforms.width = 0.5;
     uniforms.cap = 8;
-    
+    uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     _calls.resize(0);
     
     if (_flags & 1) {

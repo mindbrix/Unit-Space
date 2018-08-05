@@ -191,13 +191,13 @@ fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant St
 
 vertex StrokeVertex flags_vertex_main(constant State &state [[buffer(0)]], constant Flags &flags [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    const float kDimension = 8;
+    const float kDimension = 4;
     
     unsigned int flag = flags.flags[iid >> 5];
     bool visible = flag & (1 << (iid % 32));
     unsigned int column = iid % flags.w, row = iid / flags.w;
     float lx = kDimension * column, ly = kDimension * row, ux = lx + kDimension, uy = ly + kDimension;
-    float x = select(lx, ux, vid & 1), y = select(ly, uy, vid > 1);
+    float x = select(lx, ux, vid & 1) * state.scaleFactor, y = select(ly, uy, vid > 1) * state.scaleFactor;
     float2 devicePoint = { x, y };
     devicePoint = select(0, devicePoint, visible);
     
