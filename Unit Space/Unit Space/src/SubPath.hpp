@@ -174,7 +174,6 @@ struct SubPath {
             } while (t < 1);
         }
         dst.emplace_back(x2), dst.emplace_back(y2);
-        
         return Memory<float>(& dst[0], dst.size());
     }
     
