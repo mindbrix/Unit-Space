@@ -344,17 +344,6 @@ using namespace std;
     _ctm2 =  { 1, 0, 0, 1, 2000, 0 };
     _ctm3 =  { 1, 0, 0, 1, -20000, 2000 };
     
-    Vector lozenge[] = {
-        { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-    };
-    
-    Vector triangle[] = {
-        { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }, { 0, 50 }, { 0, 0 }
-    };
-    
-    Vector *q = !_showTriangle ? triangle : lozenge;
-    int count = !_showTriangle ?  sizeof(triangle) / sizeof(triangle[0]) :  sizeof(lozenge) / sizeof(lozenge[0]);
-    
     if (_svgData || _fontData) {
         libTess::triangulate(_mesh, _scene, self.useMask);
         
@@ -427,17 +416,7 @@ using namespace std;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     _calls.resize(0);
     
-    if (_flags & 1) {
-        uniforms.fillColor = { 0, 0, 1, 1 };
-        
-        _calls.emplace_back();
-        Call& call = _calls.back();
-        
-        call.type = kCallTypeUnits;
-        call.state = uniforms;
-        call.units.count = 1;
-        call.units.ctms[0] = _unitCTM;
-    }
+    if (_flags & 1) {}
     
     if (_flags & 2) {}
     

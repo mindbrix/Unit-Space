@@ -16,7 +16,6 @@
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
-@property (nonatomic, strong) id <MTLRenderPipelineState> unitPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
@@ -62,10 +61,6 @@
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[0].blendingEnabled = NO;
     descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"unit_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"unit_fragment_main"];
-    descriptor.label = @"Unit";
-    self.unitPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
@@ -204,10 +199,6 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
-                break;
-            case kCallTypeUnits:
-                [commandEncoder setRenderPipelineState:_unitPipelineState];
-                [commandEncoder setVertexBytes:&call->units length:sizeof(Units) atIndex:1];
                 break;
         }
         if (instanceCount == 0)

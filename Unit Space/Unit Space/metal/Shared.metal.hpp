@@ -212,7 +212,6 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
-    kCallTypeUnits,
 };
 
 struct Call {
@@ -227,7 +226,6 @@ struct Call {
         Fractals    fractals;
         Lines       lines;
         MeshState   meshState;
-        Units       units;
     };
 };
 
