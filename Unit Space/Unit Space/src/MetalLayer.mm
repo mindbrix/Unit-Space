@@ -171,7 +171,7 @@
                 [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:1];
                 instanceCount = call->instanceCount;
                 break;
-            case kCallTypeLines:
+            case kCallTypeHairlines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];
                 [commandEncoder setVertexBytes:&call->points length:sizeof(Points) atIndex:1];
                 instanceCount = (call->points.count - 1) / 2;
