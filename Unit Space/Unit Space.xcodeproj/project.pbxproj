@@ -13,6 +13,7 @@
 		E97D7609211498610015388A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7605211498600015388A /* Shaders.metal */; };
 		E97D76152114995A0015388A /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97D76112114995A0015388A /* MetalLayer.mm */; };
 		E97D7618211499E20015388A /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E97D7617211499E20015388A /* VGAffineTransform.m */; };
+		E9C24949211724470019B25C /* Nu.icns in Resources */ = {isa = PBXBuildFile; fileRef = E9C24948211724470019B25C /* Nu.icns */; };
 		E9EE5F9220851100005823F7 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7B20851100005823F7 /* bucketalloc.c */; };
 		E9EE5F9320851100005823F7 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7D20851100005823F7 /* dict.c */; };
 		E9EE5F9420851100005823F7 /* geom.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7F20851100005823F7 /* geom.c */; };
@@ -47,6 +48,7 @@
 		E97D76142114995A0015388A /* SubPath.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SubPath.hpp; sourceTree = "<group>"; };
 		E97D7616211499E20015388A /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E97D7617211499E20015388A /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
+		E9C24948211724470019B25C /* Nu.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Nu.icns; path = ../../Designs/Nu.icns; sourceTree = "<group>"; };
 		E9EBC19B20F79EBF0045D338 /* stb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_truetype.h; path = ../../../../stb/stb_truetype.h; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
 		E9EE5F7B20851100005823F7 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
@@ -63,7 +65,7 @@
 		E9EE5F8620851100005823F7 /* sweep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sweep.h; sourceTree = "<group>"; };
 		E9EE5F8720851100005823F7 /* tess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tess.c; sourceTree = "<group>"; };
 		E9EE5F8820851100005823F7 /* tess.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tess.h; sourceTree = "<group>"; };
-		E9EEAD72200BC63400F2BFB2 /* Unit Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Unit Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E9EEAD72200BC63400F2BFB2 /* Nu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9EEAD75200BC63400F2BFB2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		E9EEAD76200BC63400F2BFB2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		E9EEAD78200BC63400F2BFB2 /* Document.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Document.h; sourceTree = "<group>"; };
@@ -182,7 +184,7 @@
 		E9EEAD73200BC63400F2BFB2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E9EEAD72200BC63400F2BFB2 /* Unit Space.app */,
+				E9EEAD72200BC63400F2BFB2 /* Nu.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -200,6 +202,7 @@
 				E9EEAD7B200BC63400F2BFB2 /* Document.xib */,
 				E9EEAD8E200BC76C00F2BFB2 /* View.h */,
 				E9EEAD8F200BC76C00F2BFB2 /* View.mm */,
+				E9C24948211724470019B25C /* Nu.icns */,
 				E9EEAD7E200BC63400F2BFB2 /* Assets.xcassets */,
 				E9EEAD80200BC63400F2BFB2 /* MainMenu.xib */,
 				E9EEAD83200BC63400F2BFB2 /* Info.plist */,
@@ -220,9 +223,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E9EEAD71200BC63400F2BFB2 /* Unit Space */ = {
+		E9EEAD71200BC63400F2BFB2 /* Nu */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E9EEAD89200BC63400F2BFB2 /* Build configuration list for PBXNativeTarget "Unit Space" */;
+			buildConfigurationList = E9EEAD89200BC63400F2BFB2 /* Build configuration list for PBXNativeTarget "Nu" */;
 			buildPhases = (
 				E9EEAD6E200BC63400F2BFB2 /* Sources */,
 				E9EEAD6F200BC63400F2BFB2 /* Frameworks */,
@@ -232,9 +235,9 @@
 			);
 			dependencies = (
 			);
-			name = "Unit Space";
+			name = Nu;
 			productName = "Unit Space";
-			productReference = E9EEAD72200BC63400F2BFB2 /* Unit Space.app */;
+			productReference = E9EEAD72200BC63400F2BFB2 /* Nu.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -265,7 +268,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E9EEAD71200BC63400F2BFB2 /* Unit Space */,
+				E9EEAD71200BC63400F2BFB2 /* Nu */,
 			);
 		};
 /* End PBXProject section */
@@ -276,6 +279,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E9EEAD7F200BC63400F2BFB2 /* Assets.xcassets in Resources */,
+				E9C24949211724470019B25C /* Nu.icns in Resources */,
 				E9EEAD7D200BC63400F2BFB2 /* Document.xib in Resources */,
 				E9EEAD82200BC63400F2BFB2 /* MainMenu.xib in Resources */,
 			);
@@ -479,7 +483,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E9EEAD89200BC63400F2BFB2 /* Build configuration list for PBXNativeTarget "Unit Space" */ = {
+		E9EEAD89200BC63400F2BFB2 /* Build configuration list for PBXNativeTarget "Nu" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E9EEAD8A200BC63400F2BFB2 /* Debug */,
