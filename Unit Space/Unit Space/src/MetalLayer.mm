@@ -272,6 +272,14 @@
                 visibles[p] = mesh._paths[p].color.a == 255 || Bounds::transformUnit(ctm).intersects(clipBounds);
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
+        for (p = 0; p < mesh._paths.size(); p += 8) {
+            bool set = false;
+            for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++)
+                set |= visibles[p + j];
+            if (set)
+                for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
+                    visibles[p + j] = true;
+        }
         call = nullptr;
         for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
             base = mesh._paths[p].idx;
