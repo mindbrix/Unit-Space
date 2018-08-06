@@ -424,7 +424,7 @@ using namespace std;
         for (int i = 0; i < _scene._paths.size(); i++)
             _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
         
-        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
+        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms];
     }
     if (_flags & 16) {}
     

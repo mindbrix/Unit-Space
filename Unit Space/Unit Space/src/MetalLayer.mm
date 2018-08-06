@@ -225,7 +225,7 @@
 
 #pragma mark - Public
 
-- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState uniforms:(State)uniforms {
+- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state {
     meshState.colorsSize = (int)mesh._paths.size();
     int base, end, count, p, i, j;
     AffineTransform ctm;
@@ -234,13 +234,13 @@
     if (mesh._points.size()) {
         bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
-            ctm = AffineTransformMakeUnit(mesh._bounds[p], AffineTransformConcat(mesh._paths[p].ctm, uniforms.CTM));
+            ctm = AffineTransformMakeUnit(mesh._bounds[p], AffineTransformConcat(mesh._paths[p].ctm, state.CTM));
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
         for (p = 0; p < mesh._paths.size(); p += 8) {
             bool set = false;
             for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++) {
-                ctm = AffineTransformMakeUnit(mesh._bounds[p + j], AffineTransformConcat(mesh._paths[p + j].ctm, uniforms.CTM));
+                ctm = AffineTransformMakeUnit(mesh._bounds[p + j], AffineTransformConcat(mesh._paths[p + j].ctm, state.CTM));
                 set |= Bounds::transformUnit(ctm).intersects(clipBounds);
             }
             for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
@@ -252,7 +252,7 @@
             if (visibles[p] && opaques[p]) {
                 count = end - base;
                 if (call == nullptr || call->baseInstance != end) {
-                    calls.emplace_back(kCallTypeMeshInterior, 0, base, uniforms, meshState);
+                    calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
                     call = & calls.back();
                     call->meshState.reverseCount = end;
                 }
@@ -273,20 +273,20 @@
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {
-                        calls.emplace_back(kCallTypeMeshTriangles, 0, base, uniforms, meshState);
+                        calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
                         call = & calls.back();
                     }
                     call->instanceCount += count;
                 } else {
-                    calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, uniforms, meshState);
+                    calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, state, meshState);
                     calls.back().meshState.reverseCount = end;
-                    calls.emplace_back(kCallTypeMeshTriangles, count, base, uniforms, meshState);
+                    calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
                     call = nullptr;
                 }
             }
         }
         if (meshState.showVisibles) {
-            calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, uniforms, meshState);
+            calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, state, meshState);
             call = & calls.back();
             call->flags.w = call->flags.h = 64;
             for (p = 0; p < mesh._paths.size(); p++) {
