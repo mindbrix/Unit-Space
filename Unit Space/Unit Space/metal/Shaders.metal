@@ -169,5 +169,5 @@ vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant
 fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     float ax = 1.0 - abs(vert.u), ay = 1.0 - abs(vert.v);
-    return vert.color * ax * saturate(ay / (fwidth(ay) * 1.74)) * 0.75;
+    return vert.color * saturate(ax / fwidth(vert.u)) * saturate(ay / (fwidth(ay) * 1.74));
 }
