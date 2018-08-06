@@ -398,12 +398,14 @@ using namespace std;
     int p = -1;
     
     if (_flags & 1) {
-        _calls.emplace_back(kCallTypeHairlines, 0, 0, uniforms, meshState);
-        Indices *indices = & _calls.back().indices;
-        indices->count = (int)_mesh._points.size() / kMeshTriangleSize * 3;
-        indices->count = indices->count < kIndicesSize ? indices->count : kIndicesSize;
-        for (int i = 0; i < indices->count; i++)
-            indices->indices[i] = i;
+        int i, j;
+        for (i = 0; i < _mesh._edges.size(); i += kIndicesSize) {
+            _calls.emplace_back(kCallTypeHairlines, 0, 0, uniforms, meshState);
+            Indices *indices = & _calls.back().indices;
+            for (j = 0; j < kIndicesSize && i + j < _mesh._edges.size(); j++)
+                indices->indices[j] = _mesh._edges[i + j];
+            indices->count = j;
+        }
     }
     if (_flags & 2) {}
     if (_flags & 4) {}

@@ -118,6 +118,8 @@ struct libTess {
                     float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
                     Vector m0, m1, m2;
                     int i, i0, i1, i2;
+                    unsigned int _edges[count];
+                    memset(_edges, 0xFFFFFFFF, sizeof(_edges));
                     for (i = 0; i < nelems; i++, polygon += kPolySize) {
                         i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                         
@@ -143,6 +145,13 @@ struct libTess {
                                         break;
                             }
                         }
+                        if (x1 == verts[e0->next() * 2] && y1 == verts[e0->next() * 2 + 1])
+                            _edges[e0->base + e0->i] = (mesh._paths.back().idx + i) * 3;
+                        if (x2 == verts[e1->next() * 2] && y2 == verts[e1->next() * 2 + 1])
+                            _edges[e1->base + e1->i] = (mesh._paths.back().idx + i) * 3 + 1;
+                        if (x0 == verts[e2->next() * 2] && y0 == verts[e2->next() * 2 + 1])
+                            _edges[e2->base + e2->i] = (mesh._paths.back().idx + i) * 3 + 2;
+                        
                         m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2);
                         m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0);
                         m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1);
@@ -166,6 +175,8 @@ struct libTess {
                         mesh._points.emplace_back(x2, y2), mesh._points.emplace_back(m2);
 //                        mesh._points.emplace_back(0, 0);
                     }
+                    for (unsigned int e : _edges)
+                        mesh._edges.emplace_back(e);
                 }
             }
         }
