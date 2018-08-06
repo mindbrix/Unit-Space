@@ -230,10 +230,7 @@
     int base, end, count, p, i, j;
     AffineTransform ctm;
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
-    Call tmpl, *call;
-    tmpl.meshState = meshState;
-    tmpl.state = uniforms;
-    tmpl.instanceCount = tmpl.meshState.reverseCount = tmpl.baseInstance = 0;
+    Call *call;
     if (mesh._points.size()) {
         bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
@@ -255,10 +252,8 @@
             if (visibles[p] && opaques[p]) {
                 count = end - base;
                 if (call == nullptr || call->baseInstance != end) {
-                    calls.emplace_back(tmpl);
+                    calls.emplace_back(kCallTypeMeshInterior, 0, base, uniforms, meshState);
                     call = & calls.back();
-                    call->type = kCallTypeMeshInterior;
-                    call->baseInstance = base;
                     call->meshState.reverseCount = end;
                 }
                 call->baseInstance = base;
@@ -278,10 +273,8 @@
                 count = end - base;
                 if (opaques[p]) {
                     if (call == nullptr) {
-                        calls.emplace_back(tmpl);
+                        calls.emplace_back(kCallTypeMeshTriangles, 0, base, uniforms, meshState);
                         call = & calls.back();
-                        call->type = kCallTypeMeshTriangles;
-                        call->baseInstance = base;
                     }
                     call->instanceCount += count;
                 } else {
@@ -293,13 +286,9 @@
             }
         }
         if (meshState.showVisibles) {
-            calls.emplace_back();
+            calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, uniforms, meshState);
             call = & calls.back();
-            call->type = kCallTypeFlags;
-            call->state = uniforms;
-            call->instanceCount = (int)mesh._paths.size();
             call->flags.w = call->flags.h = 64;
-            
             for (p = 0; p < mesh._paths.size(); p++) {
                 i = p >> 5, j = p % 32;
                 if (j == 0)
