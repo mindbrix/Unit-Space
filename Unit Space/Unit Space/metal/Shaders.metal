@@ -142,30 +142,17 @@ struct LineVertex
 vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant Points &points [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint i0 = iid * 2, i1 = i0 + 2;
-    float2 p0 = { points.points[i0].x, points.points[i0].y }, p1 = { points.points[i1].x, points.points[i1].y };
+    float x0 = points.points[i0].x, y0 = points.points[i0].y, x1 = points.points[i1].x, y1 = points.points[i1].y;
+    float2 p0 = { x0 * state.CTM.a + y0 * state.CTM.c + state.CTM.tx, x0 * state.CTM.b + y0 * state.CTM.d + state.CTM.ty };
+    float2 p1 = { x1 * state.CTM.a + y1 * state.CTM.c + state.CTM.tx, x1 * state.CTM.b + y1 * state.CTM.d + state.CTM.ty };
     
-    float2 v = p1 - p0, nv = normalize(v);
-    float2 lnv = { -nv.y, nv.x };
-    float w2 = state.width * 0.5;
-    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
-    
-    float dilation = 1.0 / scale;
-    
-    float2 up = select(p0, p1, vid & 2) + (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1)) * (w2 + dilation);
-    
-    float2 nvw = nv * state.width, ab = { nvw.y, -nvw.x };
-    float2 cd = v + nvw, txty = p0 - (nvw + ab) * 0.5;
-    
-    AffineTransform unit = { ab.x, ab.y, cd.x, cd.y, txty.x, txty.y };
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
-    
-    float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
-    float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
-    
-    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
+    float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
+    float deviceWidth = 2;
+    float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
+    float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
     LineVertex vert;
-    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
+    vert.position = float4(ndcPoint, 1.0, 1.0);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
     return vert;
 }
