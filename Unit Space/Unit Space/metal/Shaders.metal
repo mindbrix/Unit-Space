@@ -155,7 +155,7 @@ vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = 2;
+    float deviceWidth = 20;
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
@@ -168,7 +168,7 @@ vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant
 
 fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float ax = 1.0 - abs(vert.u), ay = 1.0 - abs(vert.v);
-    return vert.color * saturate(ax / fwidth(vert.u)) * saturate(ay / (fwidth(ay) * 1.74));
+    float ay = 1.0 - abs(vert.v);
+    return vert.color * saturate((1.0 - abs(vert.u)) / fwidth(vert.u)) * saturate(ay / (fwidth(ay) * 1.74));
 //    return vert.color * min(saturate(ax / fwidth(vert.u)), saturate(ay / (fwidth(ay) * 1.74)));
 }
