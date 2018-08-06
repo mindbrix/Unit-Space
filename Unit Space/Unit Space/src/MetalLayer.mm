@@ -285,18 +285,9 @@
                     }
                     call->instanceCount += count;
                 } else {
-                    calls.emplace_back(tmpl);
-                    call = & calls.back();
-                    call->type = kCallTypeMeshInteriorBlend;
-                    call->baseInstance = base;
-                    call->instanceCount = count;
-                    call->meshState.reverseCount = end;
-                    
-                    calls.emplace_back(tmpl);
-                    call = & calls.back();
-                    call->type = kCallTypeMeshTriangles;
-                    call->baseInstance = base;
-                    call->instanceCount = count;
+                    calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, uniforms, meshState);
+                    calls.back().meshState.reverseCount = end;
+                    calls.emplace_back(kCallTypeMeshTriangles, count, base, uniforms, meshState);
                     call = nullptr;
                 }
             }

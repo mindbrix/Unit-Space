@@ -186,6 +186,8 @@ enum CallType : unsigned int {
 
 struct Call {
     Call() {}
+    Call(CallType type, int instanceCount, int baseInstance, State state, MeshState meshState) : type(type), instanceCount(instanceCount), baseInstance(baseInstance), state(state), meshState(meshState) {}
+    
     CallType    type;
     int         instanceCount, baseInstance;
     State       state;
