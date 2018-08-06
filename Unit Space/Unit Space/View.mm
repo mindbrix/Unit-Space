@@ -97,31 +97,23 @@ using namespace std;
     [self redraw];
 }
 
-- (void)mouseDown:(NSEvent *)event {
-//    NSLog(@"%@", event.locationInWindow);
-}
+- (void)mouseDown:(NSEvent *)event {}
 
 - (void)mouseDragged:(NSEvent *)event {
     BOOL dragged = NO;
     if (_showPoints) {
-        if (_flags & 4) {
-        } else if (_flags & 2)  {
-        } else if (_flags & 8)  {
-            if (_svgData) {
-                
-            } else {
-                if (self.pathBitmask & kPathBitmaskTriangle)
-                    dragged = dragged ?:[self mouseDragPoints:event points:_triangle];
-                
-                if (self.pathBitmask & kPathBitmaskLozenge)
-                    dragged = dragged ?:[self mouseDragPoints:event points:_lozenge];
-                
-                if (self.pathBitmask & kPathBitmaskQuad)
-                    dragged = dragged ?:[self mouseDragPoints:event points:_quad];
-        
-                if (dragged)
-                    [self triangulate];
-            }
+        if (_svgData) {} else {
+            if (self.pathBitmask & kPathBitmaskTriangle)
+                dragged = dragged ?:[self mouseDragPoints:event points:_triangle];
+            
+            if (self.pathBitmask & kPathBitmaskLozenge)
+                dragged = dragged ?:[self mouseDragPoints:event points:_lozenge];
+            
+            if (self.pathBitmask & kPathBitmaskQuad)
+                dragged = dragged ?:[self mouseDragPoints:event points:_quad];
+            
+            if (dragged)
+                [self triangulate];
         }
     }
     if (!dragged)
@@ -392,6 +384,7 @@ using namespace std;
     uniforms.cap = 8;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     _calls.resize(0);
+    int p = -1;
     
     if (_flags & 1) {
         _calls.emplace_back();
@@ -424,7 +417,6 @@ using namespace std;
         for (int i = 0; i < _scene._paths.size(); i++)
             _mesh._paths[i].ctm = AffineTransformConcat(scale, _scene._CTMs[i]);
         
-        int p = -1;
         float ux = float(user.x), uy = float(user.y);
         for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
             AffineTransform inv = AffineTransformInvert(_mesh._paths[i].ctm);
@@ -435,56 +427,56 @@ using namespace std;
             _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
         
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState uniforms:uniforms];
+    }
+    if (_flags & 16) {}
+    
+    if (_showPoints) {
+        uniforms.fillColor = { 1, 0, 0, 1 };
+        _calls.emplace_back();
+        Call& call = _calls.back();
+        call.type = kCallTypeCircles;
+        call.state = uniforms;
+        Circles *circles = & call.circles;
+        circles->empty();
         
-        if (_showPoints) {
-            uniforms.fillColor = { 1, 0, 0, 1 };
-            _calls.emplace_back();
-            Call& call = _calls.back();
-            call.type = kCallTypeCircles;
-            call.state = uniforms;
-            Circles *circles = & call.circles;
-            circles->empty();
+        if (_svgData == nullptr && _fontData  == nullptr) {
+            if (self.pathBitmask & kPathBitmaskTriangle)
+                for (int j = 0; j < _triangle.size(); j++)
+                    if (!circles->add(_triangle[j].x, _triangle[j].y, radius))
+                        break;
             
-            if (_svgData == nullptr && _fontData  == nullptr) {
-                if (self.pathBitmask & kPathBitmaskTriangle)
-                    for (int j = 0; j < _triangle.size(); j++)
-                        if (!circles->add(_triangle[j].x, _triangle[j].y, radius))
-                            break;
-
-                if (self.pathBitmask & kPathBitmaskLozenge)
-                    for (int j = 0; j < _lozenge.size(); j++)
-                        if (!circles->add(_lozenge[j].x, _lozenge[j].y, radius))
-                            break;
-				
-                if (self.pathBitmask & kPathBitmaskQuad)
-                    for (int j = 0; j < _quad.size(); j++)
-                        if (!circles->add(_quad[j].x, _quad[j].y, radius))
-                            break;
-            } else if (p != -1) {
-                AffineTransform m = _mesh._paths[p].ctm;
-                float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
-                call.state.CTM = AffineTransformConcat(m, CTM);
-                for (SubPath& s : _scene._paths[p]._subPaths) {
-                    float *points = s._quadratics.get() ?: s._points.get();
-                    int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
-                    int stride = s._quadratics.get() ? 2 : 1;
-                    for (int j = 0; j < npoints; j += stride) {
-                        if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
-                            _calls.emplace_back();
-                            Call& call = _calls.back();
-                            call.type = kCallTypeCircles;
-                            call.state = uniforms;
-                            call.state.CTM = AffineTransformConcat(m, CTM);
-                            circles = & call.circles;
-                            circles->empty();
-                            circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
-                        }
+            if (self.pathBitmask & kPathBitmaskLozenge)
+                for (int j = 0; j < _lozenge.size(); j++)
+                    if (!circles->add(_lozenge[j].x, _lozenge[j].y, radius))
+                        break;
+            
+            if (self.pathBitmask & kPathBitmaskQuad)
+                for (int j = 0; j < _quad.size(); j++)
+                    if (!circles->add(_quad[j].x, _quad[j].y, radius))
+                        break;
+        } else if (p != -1) {
+            AffineTransform m = _mesh._paths[p].ctm;
+            float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
+            call.state.CTM = AffineTransformConcat(m, CTM);
+            for (SubPath& s : _scene._paths[p]._subPaths) {
+                float *points = s._quadratics.get() ?: s._points.get();
+                int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
+                int stride = s._quadratics.get() ? 2 : 1;
+                for (int j = 0; j < npoints; j += stride) {
+                    if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
+                        _calls.emplace_back();
+                        Call& call = _calls.back();
+                        call.type = kCallTypeCircles;
+                        call.state = uniforms;
+                        call.state.CTM = AffineTransformConcat(m, CTM);
+                        circles = & call.circles;
+                        circles->empty();
+                        circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
                     }
                 }
             }
         }
     }
-    if (_flags & 16) {}
 }
 
 - (void)redraw {
