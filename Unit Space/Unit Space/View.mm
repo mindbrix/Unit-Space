@@ -383,15 +383,23 @@ using namespace std;
     uniforms.width = 0.5;
     uniforms.cap = 8;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
+    
+    MeshState meshState;
+    meshState.disableInteriorVector = _useDelaunay;
+    meshState.hideCurves = !_showCurves;
+    meshState.hideTriangles = !_showTriangle;
+    meshState.showEdges = _showEdges;
+    meshState.showColors = _showColors;
+    meshState.showInterior = _showInterior;
+    meshState.showVisibles = _showVisibles;
+    meshState.useStrokeColor = _useStrokeColor;
+    
     _calls.resize(0);
     int p = -1;
     
     if (_flags & 1) {
-        _calls.emplace_back();
-        Call& call = _calls.back();
-        call.type = kCallTypeHairlines;
-        call.state = uniforms;
-        Indices *indices = & call.indices;
+        _calls.emplace_back(kCallTypeHairlines, 0, 0, uniforms, meshState);
+        Indices *indices = & _calls.back().indices;
         indices->count = (int)_mesh._points.size() / kMeshTriangleSize * 3;
         indices->count = indices->count < kIndicesSize ? indices->count : kIndicesSize;
         for (int i = 0; i < indices->count; i++)
@@ -402,16 +410,6 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         uniforms.strokeColor = { 0, 0, 0, 1 };
-        
-        MeshState meshState;
-        meshState.disableInteriorVector = _useDelaunay;;
-        meshState.hideCurves = !_showCurves;
-        meshState.hideTriangles = !_showTriangle;
-        meshState.showEdges = _showEdges;
-        meshState.showColors = _showColors;
-        meshState.showInterior = _showInterior;
-        meshState.showVisibles = _showVisibles;
-        meshState.useStrokeColor = _useStrokeColor;
         
         AffineTransform scale = { 1, 0, 0, 1, 0, 0 };
         for (int i = 0; i < _scene._paths.size(); i++)
