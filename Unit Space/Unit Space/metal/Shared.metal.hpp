@@ -133,6 +133,13 @@ struct Flags {
     unsigned int        flags[kFlagsSize];
 };
 
+#define kIndicesSize 1023
+
+struct Indices {
+    int                 count;
+    unsigned int        indices[kIndicesSize];
+};
+
 struct MeshPath {
     MeshPath() {}
     MeshPath(RGBA8 color, int idx, AffineTransform ctm) : color(color), idx(idx), ctm(ctm) {}
@@ -140,11 +147,6 @@ struct MeshPath {
     RGBA8               color;
     int                 idx;
     AffineTransform     ctm;
-};
-
-struct Points {
-    int     count;
-    Vector  points[511];
 };
 
 struct MeshState {
@@ -191,8 +193,8 @@ struct Call {
         Arcs        arcs;
         Circles     circles;
         Flags       flags;
+        Indices     indices;
         MeshState   meshState;
-        Points      points;
     };
 };
 

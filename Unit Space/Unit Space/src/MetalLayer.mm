@@ -173,8 +173,11 @@
                 break;
             case kCallTypeHairlines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];
-                [commandEncoder setVertexBytes:&call->points length:sizeof(Points) atIndex:1];
-                instanceCount = (call->points.count - 1) / 2;
+                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
+                [commandEncoder setVertexBytes:&call->indices length:sizeof(Indices) atIndex:2];
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
+                instanceCount = call->indices.count;
                 break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
