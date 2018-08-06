@@ -399,7 +399,7 @@ using namespace std;
         call.type = kCallTypeHairlines;
         call.state = uniforms;
         Indices *indices = & call.indices;
-        indices->count = (int)_mesh._points.size() / kMeshTriangleSize;
+        indices->count = (int)_mesh._points.size() / kMeshTriangleSize * 3;
         indices->count = indices->count < kIndicesSize ? indices->count : kIndicesSize;
         for (int i = 0; i < indices->count; i++)
             indices->indices[i] = i;
