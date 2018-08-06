@@ -170,4 +170,5 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State 
 {
     float ax = 1.0 - abs(vert.u), ay = 1.0 - abs(vert.v);
     return vert.color * saturate(ax / fwidth(vert.u)) * saturate(ay / (fwidth(ay) * 1.74));
+//    return vert.color * min(saturate(ax / fwidth(vert.u)), saturate(ay / (fwidth(ay) * 1.74)));
 }
