@@ -133,7 +133,13 @@ fragment float4 flags_fragment_main(StrokeVertex vert [[stage_in]], constant Sta
 
 #pragma mark - Line
 
-vertex StrokeVertex line_vertex_main(constant State &state [[buffer(0)]], constant Points &points [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+struct LineVertex
+{
+    float4 position [[position]];
+    float u, v;
+};
+
+vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant Points &points [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint i0 = iid * 2, i1 = i0 + 2;
     float2 p0 = { points.points[i0].x, points.points[i0].y }, p1 = { points.points[i1].x, points.points[i1].y };
@@ -158,17 +164,14 @@ vertex StrokeVertex line_vertex_main(constant State &state [[buffer(0)]], consta
     
     float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
-    StrokeVertex vert;
+    LineVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
-    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-//    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
-//    vert.alpha = min(1.0, state.width / dilation);
+    vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
     return vert;
 }
 
-fragment float4 line_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = rectDistance(vert.unitPoint);
-//    return mix(float4(0, 1, 0, 1), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), alpha);
+    float alpha = 1.0 - abs(vert.v);
     return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
 }
