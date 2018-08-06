@@ -144,7 +144,7 @@ vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant
 {
     uint idx = indices.indices[iid] * kMeshTriangleSize;
     int c = pts[idx].x;
-    float x0 = pts[idx + 1].x, y0 = pts[idx + 1].y, x1 = pts[idx + 3].x, y1 = pts[idx + 3].y, x2 = pts[idx + 5].x, y2 = pts[idx + 5].y;
+    float x0 = pts[idx + 1].x, y0 = pts[idx + 1].y, x1 = pts[idx + 3].x, y1 = pts[idx + 3].y;
     
     RGBA8 color = paths[c].color;
     AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
