@@ -393,7 +393,17 @@ using namespace std;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     _calls.resize(0);
     
-    if (_flags & 1) {}
+    if (_flags & 1) {
+        _calls.emplace_back();
+        Call& call = _calls.back();
+        call.type = kCallTypeHairlines;
+        call.state = uniforms;
+        Indices *indices = & call.indices;
+        indices->count = (int)_mesh._points.size() / kMeshTriangleSize;
+        indices->count = indices->count < kIndicesSize ? indices->count : kIndicesSize;
+        for (int i = 0; i < indices->count; i++)
+            indices->indices[i] = i;
+    }
     if (_flags & 2) {}
     if (_flags & 4) {}
     if (_flags & 8) {
