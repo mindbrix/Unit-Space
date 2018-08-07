@@ -378,7 +378,8 @@ using namespace std;
     
     State uniforms;
     uniforms.CTM = CTM;
-    uniforms.strokeColor = { 1, 0, 0, 1 };
+    uniforms.fillColor = { 0, 0, 0, 1 };
+    uniforms.strokeColor = { 0, 0, 0, 1 };
     uniforms.flatness = 0.03125;
     uniforms.width = 0.5;
     uniforms.cap = 8;
@@ -413,8 +414,6 @@ using namespace std;
     if (_flags & 2) {}
     if (_flags & 4) {}
     if (_flags & 8) {
-        uniforms.fillColor = { 0, 0, 0, 1 };
-        uniforms.strokeColor = { 0, 0, 0, 1 };
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms showPolygons:NO];
     }
     if (_flags & 16) {}
