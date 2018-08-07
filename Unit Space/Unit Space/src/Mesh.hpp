@@ -15,6 +15,8 @@ struct Mesh {
     vector<Vector>                      _points;
     vector<Bounds>                      _bounds;
     vector<unsigned int>                _edges;
-        
-    void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _edges.resize(0); }
+    vector<float>                       _xs, _ys;
+    vector<RGBA8>                       _colors;
+    
+    void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _edges.resize(0), _xs.resize(0), _ys.resize(0), _colors.resize(0); }
 };
