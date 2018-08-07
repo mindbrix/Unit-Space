@@ -407,22 +407,14 @@ using namespace std;
         _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
     
     if (_flags & 1) {
-        int i, j;
-        for (i = 0; i < _mesh._edges.size(); i += kIndicesSize) {
-            _calls.emplace_back(kCallTypeHairlines, 0, 0, uniforms, meshState);
-            Indices *indices = & _calls.back().indices;
-            for (j = 0; j < kIndicesSize && i + j < _mesh._edges.size(); j++)
-                indices->indices[j] = _mesh._edges[i + j];
-            indices->count = j;
-        }
-        [self.metalLayer syncMesh:_mesh];
+        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms showPolygons:YES];
     }
     if (_flags & 2) {}
     if (_flags & 4) {}
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         uniforms.strokeColor = { 0, 0, 0, 1 };
-        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms];
+        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms showPolygons:NO];
     }
     if (_flags & 16) {}
     

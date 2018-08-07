@@ -225,7 +225,7 @@
 
 #pragma mark - Public
 
-- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state {
+- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons {
     meshState.colorsSize = (int)mesh._paths.size();
     int base, end, count, p, i, j;
     AffineTransform ctm;
@@ -246,45 +246,57 @@
             for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
                 visibles[p + j] = set;
         }
-        call = nullptr;
-        for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
-            base = mesh._paths[p].idx;
-            if (visibles[p] && opaques[p]) {
-                count = end - base;
-                if (call == nullptr || call->baseInstance != end) {
-                    calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
-                    call = & calls.back();
-                    call->meshState.reverseCount = end;
+        if (showPolygons) {
+            int i, j;
+            for (i = 0; i < mesh._edges.size(); i += kIndicesSize) {
+                calls.emplace_back(kCallTypeHairlines, 0, 0, state, meshState);
+                Indices *indices = & calls.back().indices;
+                for (j = 0; j < kIndicesSize && i + j < mesh._edges.size(); j++)
+                    indices->indices[j] = mesh._edges[i + j];
+                indices->count = j;
+            }
+        } else {
+            call = nullptr;
+            for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
+                base = mesh._paths[p].idx;
+                if (visibles[p] && opaques[p]) {
+                    count = end - base;
+                    if (call == nullptr || call->baseInstance != end) {
+                        calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
+                        call = & calls.back();
+                        call->meshState.reverseCount = end;
+                    }
+                    call->baseInstance = base;
+                    call->instanceCount += count;
                 }
-                call->baseInstance = base;
-                call->instanceCount += count;
+            }
+            
+            if (!meshState.showEdges) {
+                call = nullptr;
+                for (p = 0; p < mesh._paths.size(); p++) {
+                    if (!visibles[p]) {
+                        call = nullptr;
+                        continue;
+                    }
+                    base = mesh._paths[p].idx;
+                    end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
+                    count = end - base;
+                    if (opaques[p]) {
+                        if (call == nullptr) {
+                            calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
+                            call = & calls.back();
+                        }
+                        call->instanceCount += count;
+                    } else {
+                        calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, state, meshState);
+                        calls.back().meshState.reverseCount = end;
+                        calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
+                        call = nullptr;
+                    }
+                }
             }
         }
         
-        if (!meshState.showEdges) {
-            call = nullptr;
-            for (p = 0; p < mesh._paths.size(); p++) {
-                if (!visibles[p]) {
-                    call = nullptr;
-                    continue;
-                }
-                base = mesh._paths[p].idx;
-                end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
-                count = end - base;
-                if (opaques[p]) {
-                    if (call == nullptr) {
-                        calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
-                        call = & calls.back();
-                    }
-                    call->instanceCount += count;
-                } else {
-                    calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, state, meshState);
-                    calls.back().meshState.reverseCount = end;
-                    calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
-                    call = nullptr;
-                }
-            }
-        }
         if (meshState.showVisibles) {
             calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, state, meshState);
             call = & calls.back();
