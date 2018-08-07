@@ -227,7 +227,6 @@
 #pragma mark - Public
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons {
-    meshState.colorsSize = (int)mesh._paths.size();
     int base, end, count, p, i, j;
     AffineTransform ctm;
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };

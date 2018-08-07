@@ -393,6 +393,7 @@ using namespace std;
     meshState.showInterior = _showInterior;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
+    meshState.colorsSize = (int)_mesh._paths.size();
     
     _calls.resize(0);
     int p = -1;
