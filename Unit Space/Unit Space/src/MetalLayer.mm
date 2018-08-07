@@ -185,11 +185,9 @@
                 break;
             case kCallTypeLinesAOS:
                 [commandEncoder setRenderPipelineState:_lineAOSPipelineState];
-                int cnt = call->instanceCount;
-                if (cnt) cnt++;
-                [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * cnt atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * cnt atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_bridges[call->baseInstance] length:sizeof(char) * cnt atIndex:13];
+                [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_bridges[call->baseInstance] length:sizeof(char) * (call->instanceCount + 1) atIndex:13];
                 instanceCount = call->instanceCount, baseInstance = 0;
                 break;
         }
