@@ -397,6 +397,15 @@ using namespace std;
     _calls.resize(0);
     int p = -1;
     
+    float ux = float(user.x), uy = float(user.y);
+    for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
+        AffineTransform inv = AffineTransformInvert(_mesh._paths[i].ctm);
+        if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
+            p = i;
+    }
+    for (int i = 0; i < _scene._paths.size(); i++)
+        _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
+    
     if (_flags & 1) {
         int i, j;
         for (i = 0; i < _mesh._edges.size(); i += kIndicesSize) {
@@ -412,30 +421,14 @@ using namespace std;
     if (_flags & 8) {
         uniforms.fillColor = { 0, 0, 0, 1 };
         uniforms.strokeColor = { 0, 0, 0, 1 };
-        
-        AffineTransform scale = { 1, 0, 0, 1, 0, 0 };
-        for (int i = 0; i < _scene._paths.size(); i++)
-            _mesh._paths[i].ctm = AffineTransformConcat(scale, _scene._CTMs[i]);
-        
-        float ux = float(user.x), uy = float(user.y);
-        for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
-            AffineTransform inv = AffineTransformInvert(_mesh._paths[i].ctm);
-            if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
-                p = i;
-        }
-        for (int i = 0; i < _scene._paths.size(); i++)
-            _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
-        
         [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms];
     }
     if (_flags & 16) {}
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
-        _calls.emplace_back();
+        _calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
         Call& call = _calls.back();
-        call.type = kCallTypeCircles;
-        call.state = uniforms;
         Circles *circles = & call.circles;
         circles->empty();
         
@@ -464,10 +457,8 @@ using namespace std;
                 int stride = s._quadratics.get() ? 2 : 1;
                 for (int j = 0; j < npoints; j += stride) {
                     if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
-                        _calls.emplace_back();
+                        _calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
                         Call& call = _calls.back();
-                        call.type = kCallTypeCircles;
-                        call.state = uniforms;
                         call.state.CTM = AffineTransformConcat(m, CTM);
                         circles = & call.circles;
                         circles->empty();
