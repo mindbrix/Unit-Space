@@ -381,7 +381,7 @@ using namespace std;
     uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 0, 0, 0, 1 };
     uniforms.flatness = 0.03125;
-    uniforms.width = 0.5;
+    uniforms.width = 1;
     uniforms.cap = 8;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     

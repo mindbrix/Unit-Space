@@ -147,7 +147,7 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     float2 p1 = { x1 * state.CTM.a + y1 * state.CTM.c + state.CTM.tx, x1 * state.CTM.b + y1 * state.CTM.d + state.CTM.ty };
     
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = select(2.0, 0.0, bridges[iid] == 1);
+    float deviceWidth = select(state.width + 1.0, 0.0, bridges[iid] == 1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
