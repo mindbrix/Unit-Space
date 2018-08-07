@@ -20,7 +20,8 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> linePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> hairlinePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> lineAOSPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -94,8 +95,13 @@
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"line_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
-    descriptor.label = @"Line";
-    self.linePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.label = @"hairlinePipelineState";
+    self.hairlinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineAOS_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
+    descriptor.label = @"lineAOSPipelineState";
+    self.lineAOSPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
@@ -173,7 +179,7 @@
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeHairlines:
-                [commandEncoder setRenderPipelineState:_linePipelineState];
+                [commandEncoder setRenderPipelineState:_hairlinePipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
@@ -191,6 +197,9 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
+                break;
+            case kCallTypeLinesAOS:
+                [commandEncoder setRenderPipelineState:_lineAOSPipelineState];
                 break;
         }
         if (instanceCount == 0)
