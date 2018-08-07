@@ -103,13 +103,14 @@ struct libTess {
                 const float *verts = tessGetVertices(tess);
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                 addTessContours(dst, tess, edges);
+                for (Edge& edge : edges) {
+                    mesh._xs.emplace_back(edge.x), mesh._ys.emplace_back(edge.y);
+                    mesh._colors.emplace_back(path._color);
+                }
                 if (controlPoints.size())
-                    for (Edge& edge : edges) {
-                        if ((idx = indices[edge.base + edge.i]) != -1) {
-                            assert(edge.x == controlPoints[idx * 2]);
-                            assert(edge.y == controlPoints[idx * 2 + 1]);
-                        }
-                    }
+                    for (Edge& edge : edges)
+                        if ((idx = indices[edge.base + edge.i]) != -1) {}
+                    
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(dst);
