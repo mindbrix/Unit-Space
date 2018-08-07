@@ -279,8 +279,7 @@
             }
             
             if (!meshState.showEdges) {
-                call = nullptr;
-                for (p = 0; p < mesh._paths.size(); p++) {
+                for (call = nullptr, p = 0; p < mesh._paths.size(); p++) {
                     if (!visibles[p]) {
                         call = nullptr;
                         continue;
