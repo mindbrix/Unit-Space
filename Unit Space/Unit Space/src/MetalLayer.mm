@@ -189,7 +189,6 @@
                 if (cnt) cnt++;
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * cnt atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * cnt atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_colors[call->baseInstance] length:sizeof(RGBA8) * cnt atIndex:12];
                 [commandEncoder setVertexBytes:& mesh->_bridges[call->baseInstance] length:sizeof(char) * cnt atIndex:13];
                 instanceCount = call->instanceCount, baseInstance = 0;
                 break;

@@ -107,11 +107,11 @@ struct libTess {
                     if (edge.i == 0 && mesh._bridges.size())
                         mesh._bridges.back() = 1;
                     mesh._xs.emplace_back(edge.x), mesh._ys.emplace_back(edge.y);
-                    mesh._colors.emplace_back(path._color);
+                    mesh._ps.emplace_back(p);
                     mesh._bridges.emplace_back(0);
                     if (edge.i == edge.npoints - 1 && !(edges[edge.base].x == edge.x && edges[edge.base].y == edge.y)) {
                         mesh._xs.emplace_back(edges[edge.base].x), mesh._ys.emplace_back(edges[edge.base].y);
-                        mesh._colors.emplace_back(path._color);
+                        mesh._ps.emplace_back(p);
                         mesh._bridges.emplace_back(0);
                     }
                 }

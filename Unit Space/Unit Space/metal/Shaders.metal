@@ -140,11 +140,9 @@ struct LineVertex
     float4 color;
 };
 
-vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant RGBA8 *colors [[buffer(12)]], constant char *bridges [[buffer(13)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(13)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     float x0 = xs[iid], y0 = ys[iid], x1 = xs[iid + 1], y1 = ys[iid + 1];
-    RGBA8 color = colors[iid];
-    
     float2 p0 = { x0 * state.CTM.a + y0 * state.CTM.c + state.CTM.tx, x0 * state.CTM.b + y0 * state.CTM.d + state.CTM.ty };
     float2 p1 = { x1 * state.CTM.a + y1 * state.CTM.c + state.CTM.tx, x1 * state.CTM.b + y1 * state.CTM.d + state.CTM.ty };
     
@@ -156,8 +154,9 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     LineVertex vert;
     vert.position = float4(ndcPoint, 1.0, 1.0);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
-    vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
-    vert.color = { 1, 0, 0, 1 };
+//    RGBA8 color = colors[iid];
+//    vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
+    vert.color = { state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a };
     return vert;
 }
 
