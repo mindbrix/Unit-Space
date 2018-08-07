@@ -20,6 +20,7 @@
 @property(weak) id <LayerDelegate> layerDelegate;
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state;
+- (void)syncMesh:(Mesh &)mesh;
 - (void)uploadMesh:(Mesh &)mesh;
 
 @end

@@ -415,6 +415,7 @@ using namespace std;
                 indices->indices[j] = _mesh._edges[i + j];
             indices->count = j;
         }
+        [self.metalLayer syncMesh:_mesh];
     }
     if (_flags & 2) {}
     if (_flags & 4) {}
