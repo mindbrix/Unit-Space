@@ -171,7 +171,6 @@ enum CallType : unsigned int {
     kCallTypeArcs = 0,
     kCallTypeCircles,
     kCallTypeFlags,
-    kCallTypeHairlines,
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,

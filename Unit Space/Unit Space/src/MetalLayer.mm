@@ -16,11 +16,9 @@
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> edgesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> hairlinePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineAOSPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
@@ -92,11 +90,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
     descriptor.label = @"Circle";
     self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"line_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
-    descriptor.label = @"hairlinePipelineState";
-    self.hairlinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineAOS_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
@@ -178,15 +171,7 @@
                 [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:1];
                 instanceCount = call->instanceCount;
                 break;
-            case kCallTypeHairlines:
-                [commandEncoder setRenderPipelineState:_hairlinePipelineState];
-                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
-                [commandEncoder setVertexBuffer:_edgesBuffer offset:0 atIndex:11];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-                break;
-            case kCallTypeMeshInterior:
+           case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
@@ -355,10 +340,6 @@
         _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
                                               length:mesh._points.size() * sizeof(Vector)
                                              options:MTLResourceStorageModeShared];
-    if (mesh._edges.size())
-        _edgesBuffer = [self.device newBufferWithBytes:(void *)& mesh._edges[0]
-                                                 length:mesh._edges.size() * sizeof(unsigned int)
-                                                options:MTLResourceStorageModeShared];
 }
 
 @end

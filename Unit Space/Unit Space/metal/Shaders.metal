@@ -161,32 +161,6 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     return vert;
 }
 
-vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], device unsigned int *edges [[buffer(11)]], uint vid [[vertex_id]], uint iid [[instance_id]])
-{
-    uint idx = edges[iid];
-    uint base = idx / 3 * kMeshTriangleSize;
-    int p = pts[base].x;
-    int i0 = base + 1 + (idx % 3) * 2, i1 = base + 1 + ((idx + 1) % 3) * 2;
-    float x0 = pts[i0].x, y0 = pts[i0].y, x1 = pts[i1].x, y1 = pts[i1].y;
-    
-    RGBA8 color = paths[p].color;
-    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    
-    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
-    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-    
-    float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = 2;
-    float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
-    float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
-    
-    LineVertex vert;
-    vert.position = float4(ndcPoint, 1.0, 1.0);
-    vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
-    vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
-    return vert;
-}
-
 fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     return vert.color
