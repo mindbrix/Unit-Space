@@ -200,6 +200,10 @@
                 break;
             case kCallTypeLinesAOS:
                 [commandEncoder setRenderPipelineState:_lineAOSPipelineState];
+                [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_colors[call->baseInstance] length:sizeof(RGBA8) * call->instanceCount atIndex:12];
+                instanceCount = call->instanceCount, baseInstance = 0;
                 break;
         }
         if (instanceCount == 0)
@@ -256,20 +260,28 @@
                 visibles[p + j] = set;
         }
         if (showPolygons) {
-            for (call = nullptr, p = 0; p < mesh._paths.size(); p++) {
-                if (!visibles[p])
-                    call = nullptr;
-                else {
-                    base = mesh._paths[p].edge;
-                    end = p + 1 == mesh._paths.size() ? (int)mesh._edges.size() : mesh._paths[p + 1].edge;
-                    count = end - base;
-                    if (call == nullptr) {
-                        calls.emplace_back(kCallTypeHairlines, 0, base, state, meshState);
-                        call = & calls.back();
-                    }
-                    call->instanceCount += count;
-                }
+            int i, end, count, size = (int)mesh._xs.size();
+            for (i = 0; i < size; i += 1024) {
+                end = i + 1024;
+                end = end < size ? end : size;
+                count = end - i;
+                calls.emplace_back(kCallTypeLinesAOS, count, i, state, meshState);
             }
+            
+//            for (call = nullptr, p = 0; p < mesh._paths.size(); p++) {
+//                if (!visibles[p])
+//                    call = nullptr;
+//                else {
+//                    base = mesh._paths[p].edge;
+//                    end = p + 1 == mesh._paths.size() ? (int)mesh._edges.size() : mesh._paths[p + 1].edge;
+//                    count = end - base;
+//                    if (call == nullptr) {
+//                        calls.emplace_back(kCallTypeHairlines, 0, base, state, meshState);
+//                        call = & calls.back();
+//                    }
+//                    call->instanceCount += count;
+//                }
+//            }
         } else {
             call = nullptr;
             for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {

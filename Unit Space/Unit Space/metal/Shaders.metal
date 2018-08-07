@@ -157,6 +157,7 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     vert.position = float4(ndcPoint, 1.0, 1.0);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
     vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
+    vert.color = { 1, 0, 0, 1 };
     return vert;
 }
 
