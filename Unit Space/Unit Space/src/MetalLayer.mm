@@ -16,6 +16,7 @@
 @property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> edgesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
@@ -174,10 +175,10 @@
             case kCallTypeHairlines:
                 [commandEncoder setRenderPipelineState:_linePipelineState];
                 [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
-                [commandEncoder setVertexBytes:&call->indices length:sizeof(Indices) atIndex:2];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
-                instanceCount = call->indices.count;
+                [commandEncoder setVertexBuffer:_edgesBuffer offset:0 atIndex:11];
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
@@ -247,14 +248,7 @@
                 visibles[p + j] = set;
         }
         if (showPolygons) {
-            int i, j;
-            for (i = 0; i < mesh._edges.size(); i += kIndicesSize) {
-                calls.emplace_back(kCallTypeHairlines, 0, 0, state, meshState);
-                Indices *indices = & calls.back().indices;
-                for (j = 0; j < kIndicesSize && i + j < mesh._edges.size(); j++)
-                    indices->indices[j] = mesh._edges[i + j];
-                indices->count = j;
-            }
+            calls.emplace_back(kCallTypeHairlines, (int)mesh._edges.size(), 0, state, meshState);
         } else {
             call = nullptr;
             for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
@@ -326,6 +320,10 @@
         _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
                                               length:mesh._points.size() * sizeof(Vector)
                                              options:MTLResourceStorageModeShared];
+    if (mesh._edges.size())
+        _edgesBuffer = [self.device newBufferWithBytes:(void *)& mesh._edges[0]
+                                                 length:mesh._edges.size() * sizeof(unsigned int)
+                                                options:MTLResourceStorageModeShared];
 }
 
 @end

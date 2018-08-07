@@ -140,9 +140,9 @@ struct LineVertex
     float4 color;
 };
 
-vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Indices& indices[[buffer(2)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex LineVertex line_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], device unsigned int *edges [[buffer(11)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    uint idx = indices.indices[iid];
+    uint idx = edges[iid];
     uint base = idx / 3 * kMeshTriangleSize;
     int p = pts[base].x;
     int i0 = base + 1 + (idx % 3) * 2, i1 = base + 1 + ((idx + 1) % 3) * 2;
