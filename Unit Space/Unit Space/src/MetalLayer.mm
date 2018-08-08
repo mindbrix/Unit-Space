@@ -258,28 +258,14 @@
             }
         }
         if (showPolygons) {
-            int i, end, count, size = (int)mesh._xs.size();
-            for (i = 0; i < size; i += 1023) {
-                end = i + 1024;
-                end = end < size ? end : size;
-                count = end - i;
-                calls.emplace_back(kCallTypeLinesAOS, count - 1, i, state, meshState);
+            for (i = 0; i < ranges.size(); i += 2) {
+                base = mesh._paths[ranges[i]].edge;
+                end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._paths[ranges[i + 1]].edge;
+                for (j = base; j < end; j += 1023) {
+                    count = (j + 1024 < end ? j + 1024 : end) - j;
+                    calls.emplace_back(kCallTypeLinesAOS, count - 1, j, state, meshState);
+                }
             }
-            
-//            for (call = nullptr, p = 0; p < mesh._paths.size(); p++) {
-//                if (!visibles[p])
-//                    call = nullptr;
-//                else {
-//                    base = mesh._paths[p].edge;
-//                    end = p + 1 == mesh._paths.size() ? (int)mesh._edges.size() : mesh._paths[p + 1].edge;
-//                    count = end - base;
-//                    if (call == nullptr) {
-//                        calls.emplace_back(kCallTypeHairlines, 0, base, state, meshState);
-//                        call = & calls.back();
-//                    }
-//                    call->instanceCount += count;
-//                }
-//            }
         } else {
             call = nullptr;
             for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
