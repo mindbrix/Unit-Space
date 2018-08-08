@@ -71,10 +71,10 @@ struct Bounds {
     bool contains(Bounds other) const {
         return lx <= other.lx && ux >= other.ux && ly <= other.ly && uy >= other.uy;
     }
-    bool intersects(Bounds other) const {
+    inline bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
-    static Bounds transformUnit(const AffineTransform t) {
+    static inline Bounds transformUnit(const AffineTransform t) {
         float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
         return {
             t.tx + wa * t.a + wc * t.c,
