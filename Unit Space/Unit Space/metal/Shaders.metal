@@ -140,7 +140,7 @@ struct LineVertex
     float4 color;
 };
 
-vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(13)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(12)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     float x0 = xs[iid], y0 = ys[iid], x1 = xs[iid + 1], y1 = ys[iid + 1];
     float2 p0 = { x0 * state.CTM.a + y0 * state.CTM.c + state.CTM.tx, x0 * state.CTM.b + y0 * state.CTM.d + state.CTM.ty };
