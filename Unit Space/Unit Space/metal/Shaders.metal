@@ -142,13 +142,16 @@ struct LineVertex
 
 vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(12)]], constant MeshPath *paths [[buffer(14)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
+    uint idx = iid;
+    float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
     AffineTransform CTM = AffineTransformConcat(paths[0].ctm, state.CTM);
-    float x0 = xs[iid], y0 = ys[iid], x1 = xs[iid + 1], y1 = ys[iid + 1];
     float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-    
+//    float s = 20.0 * rsqrt(length_squared(p1 - p0));
+//    float2 cp = { (p0.x + p1.x) * 0.5 + -s * (p1.y - p0.y), (p0.y + p1.y) * 0.5 + s * (p1.x - p0.x)};
+//    p1 = cp;
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = select(state.width + 1.0, 0.0, bridges[iid] == 1);
+    float deviceWidth = select(state.width + 1.0, 0.0, bridges[idx] == 1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
