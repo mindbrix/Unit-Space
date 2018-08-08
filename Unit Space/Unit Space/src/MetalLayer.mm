@@ -185,13 +185,14 @@
                 break;
             case kCallTypeLinesAOS:
                 [commandEncoder setRenderPipelineState:_lineAOSPipelineState];
+                [commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
                 [commandEncoder setVertexBytes:& mesh->_bridges[call->baseInstance] length:sizeof(char) * (call->instanceCount + 1) atIndex:12];
                 MeshPath path;
                 path.ctm = { 1, 0, 0, 1, 0 , 0 }, path.color = call->state.strokeColor;
                 [commandEncoder setVertexBytes:& path length:sizeof(MeshPath) * 1 atIndex:14];
-                instanceCount = call->instanceCount, baseInstance = 0;
+                instanceCount = call->instanceCount * call->meshState.subdivisionCount, baseInstance = 0;
                 break;
         }
         if (instanceCount == 0)

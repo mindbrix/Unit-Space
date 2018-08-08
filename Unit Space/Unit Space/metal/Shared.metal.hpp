@@ -149,6 +149,7 @@ struct MeshState {
     bool                useStrokeColor;
     int                 colorsSize;
     int                 reverseCount;
+    unsigned int        subdivisionCount;
 };
 
 struct State {
