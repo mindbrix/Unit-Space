@@ -234,16 +234,16 @@
     Call *call;
     if (mesh._points.size()) {
         bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
+        AffineTransform units[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
-            ctm = AffineTransformMakeUnit(mesh._bounds[p], AffineTransformConcat(mesh._paths[p].ctm, state.CTM));
+            ctm = units[p] = AffineTransformMakeUnit(mesh._bounds[p], AffineTransformConcat(mesh._paths[p].ctm, state.CTM));
             opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
         }
         for (p = 0; p < mesh._paths.size(); p += 8) {
             bool set = false;
-            for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++) {
-                ctm = AffineTransformMakeUnit(mesh._bounds[p + j], AffineTransformConcat(mesh._paths[p + j].ctm, state.CTM));
-                set |= Bounds::transformUnit(ctm).intersects(clipBounds);
-            }
+            for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++)
+                set |= Bounds::transformUnit(units[p + j]).intersects(clipBounds);
+            
             for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
                 visibles[p + j] = set;
         }
