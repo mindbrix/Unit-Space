@@ -74,6 +74,14 @@ struct Bounds {
     bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
+    static bool transformedUnitIntersectUnit(const AffineTransform t) {
+        float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
+        return
+            1 > (t.tx + wa * t.a + wc * t.c) &&
+            1 > (t.ty + wb * t.b + wd * t.d) &&
+            (t.tx + (1 - wa) * t.a + (1 - wc) * t.c) > 0 &&
+            (t.ty + (1 - wb) * t.b + (1 - wd) * t.d) > 0;
+    }
     static Bounds transformUnit(const AffineTransform t) {
         float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
         return {
