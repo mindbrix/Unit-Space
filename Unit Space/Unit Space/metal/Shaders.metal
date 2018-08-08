@@ -149,10 +149,10 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
     if (meshState.subdivisionCount > 1) {
-        float dt = 1.0 / float(meshState.subdivisionCount), t0 = float(iid % meshState.subdivisionCount) * dt, t1 = t0 + dt;
-        float s0 = 1.0 - t0, s1 = 1.0 - t1;
         float s = -0.1;// 20.0 * rsqrt(length_squared(p1 - p0));
         float2 cp = { (p0.x + p1.x) * 0.5 + -s * (p1.y - p0.y), (p0.y + p1.y) * 0.5 + s * (p1.x - p0.x)};
+        float dt = 1.0 / float(meshState.subdivisionCount), t0 = float(iid % meshState.subdivisionCount) * dt, t1 = t0 + dt;
+        float s0 = 1.0 - t0, s1 = 1.0 - t1;
         float2 tp0 = s0 * s0 * p0 + 2.0 * s0 * t0 * cp + t0 * t0 * p1;
         float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
         p0 = tp0, p1 = tp1;

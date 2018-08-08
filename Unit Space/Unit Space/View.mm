@@ -395,7 +395,7 @@ using namespace std;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
-    meshState.subdivisionCount = 1;
+    meshState.subdivisionCount = 2;
     
     _calls.resize(0);
     int p = -1;
