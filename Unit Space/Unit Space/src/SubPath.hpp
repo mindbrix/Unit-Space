@@ -153,14 +153,15 @@ struct SubPath {
     
     Memory<float> flattenQuadratics(const float *points, int npoints, float precision) {
         vector<float> dst;
-        float x0, y0, x1, y1, x2, y2, dx01, dy01, area, t, x01, x12, x012, y01, y12, y012;
+        float x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, area, t, x01, x12, x012, y01, y12, y012;
         int i;
         for (x0 = *points++, y0 = *points++, i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
             do {
                 dst.emplace_back(x0), dst.emplace_back(y0);
-                dx01 = x1 - x0, dy01 = y1 - y0, area = dx01 * (y2 - y0) - dy01 * (x2 - x0);
-                t = precision / std::abs(area) * std::sqrt(dx01 * dx01 + dy01 * dy01);
+                dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
+                area = dx01 * dy02 - dy01 * dx02;
+                t = precision / std::abs(area) * std::sqrt(dx02 * dx02 + dy02 * dy02);
                 if (t >= 1)
                     dst.emplace_back(x1), dst.emplace_back(y1);
                 else {
