@@ -243,7 +243,6 @@
             bool set = false;
             for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++)
                 set |= Bounds::transformUnit(units[p + j]).intersects(clipBounds);
-            
             for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
                 visibles[p + j] = set;
         }
