@@ -398,7 +398,7 @@ using namespace std;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
     scale /= uniforms.scaleFactor;
-    meshState.subdivisionCount = scale <= 1 ? 1 : sqrt(scale);
+    meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : sqrt(scale);
     
     _calls.resize(0);
     int p = -1;
