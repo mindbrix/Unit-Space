@@ -140,11 +140,12 @@ struct LineVertex
     float4 color;
 };
 
-vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(12)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(12)]], constant MeshPath *paths [[buffer(14)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
+    AffineTransform CTM = AffineTransformConcat(paths[0].ctm, state.CTM);
     float x0 = xs[iid], y0 = ys[iid], x1 = xs[iid + 1], y1 = ys[iid + 1];
-    float2 p0 = { x0 * state.CTM.a + y0 * state.CTM.c + state.CTM.tx, x0 * state.CTM.b + y0 * state.CTM.d + state.CTM.ty };
-    float2 p1 = { x1 * state.CTM.a + y1 * state.CTM.c + state.CTM.tx, x1 * state.CTM.b + y1 * state.CTM.d + state.CTM.ty };
+    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
+    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
     float deviceWidth = select(state.width + 1.0, 0.0, bridges[iid] == 1);
@@ -154,9 +155,7 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     LineVertex vert;
     vert.position = float4(ndcPoint, 1.0, 1.0);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
-//    RGBA8 color = colors[iid];
-//    vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
-    vert.color = { state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a };
+    vert.color = { float(paths[0].color.r) / 255.0, float(paths[0].color.g) / 255.0, float(paths[0].color.b) / 255.0, float(paths[0].color.a) / 255.0 };
     return vert;
 }
 
