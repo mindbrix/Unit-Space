@@ -229,7 +229,7 @@
 #pragma mark - Public
 
 - (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons {
-    int base, end, count, p, i, j, size, capacity;
+    int base, end, count, p, i, j;
     AffineTransform ctm;
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     Call *call;
@@ -259,7 +259,6 @@
         }
         if (showPolygons) {
             for (i = 0; i < ranges.size(); i += 2) {
-                size = ranges[i + 1] - ranges[i];
                 base = mesh._paths[ranges[i]].edge;
                 end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._paths[ranges[i + 1]].edge;
                 for (j = base; j < end; j += 1023) {
