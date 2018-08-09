@@ -56,17 +56,20 @@ struct libTess {
         for (SubPath& s : path._subPaths)
             if (s._quadratics.get() == nullptr)
                 return;
-        float *points, x0, y0, x1, y1, x2, y2;
+        float *points, x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, area, scale;
         int npoints, i;
         for (SubPath& s : path._subPaths) {
             points = s._quadratics.get();
             npoints = (int)s._quadratics.count() / 2;
             x0 = *points++, y0 = *points++;
-            dst.emplace_back(x0), dst.emplace_back(y0);
             for (i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
                 x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
-                dst.emplace_back(x2), dst.emplace_back(y2);
+                dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
+                area = dx02 * dy01 - dy02 * dx01;
+                scale = area / (dx02 * dx02 + dy02 * dy02);
+                dst.emplace_back(scale);
             }
+            dst.emplace_back(0);
         }
     }
     
@@ -92,39 +95,40 @@ struct libTess {
         mesh.empty();
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         
-        vector<float> controlPoints;
+        vector<float> scales;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = 0; p < scene._paths.size(); p++) {
             Path& path = scene._paths[p];
             mesh._paths.emplace_back(path._color, (int)(mesh._points.size() / kMeshTriangleSize), (int)mesh._xs.size(), scene._CTMs[p]);
             mesh._bounds.emplace_back(path._bounds);
             
-            controlPoints.resize(0);
-            writeControlPoints(controlPoints, path);
+            scales.resize(0);
+            writeControlPoints(scales, path);
             addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess), idx;
                 const TESSindex *indices = tessGetVertexIndices(tess);
                 const float *verts = tessGetVertices(tess);
+                float scale;
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                 addTessContours(dst, tess, edges);
                 for (Edge& edge : edges) {
+                    scale = 0;
+                    if (scales.size() && (idx = indices[edge.base + edge.i]) != -1)
+                        scale = scales[idx];
+                    
                     if (edge.i == 0 && mesh._ps.size())
                         mesh._ps.back() = -1;
                     mesh._xs.emplace_back(edge.x), mesh._ys.emplace_back(edge.y);
+                    mesh._scales.emplace_back(scale);
                     mesh._ps.emplace_back(p);
                     if (edge.i == edge.npoints - 1 && !(edges[edge.base].x == edge.x && edges[edge.base].y == edge.y)) {
                         mesh._xs.emplace_back(edges[edge.base].x), mesh._ys.emplace_back(edges[edge.base].y);
                         mesh._ps.emplace_back(p);
+                        mesh._scales.emplace_back(scale);
                     }
                 }                
-                if (controlPoints.size()) {
-                    float cpx, cpy;
-                    for (Edge& edge : edges)
-                        if ((idx = indices[edge.base + edge.i]) != -1) {
-                            cpx = controlPoints[idx * 2], cpy = controlPoints[idx * 2 + 1];
-                        }
-                }
+                
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(dst);
