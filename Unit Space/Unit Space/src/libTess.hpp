@@ -52,7 +52,7 @@ struct libTess {
         }
     }
     
-    static void writeControlPoints(vector<float>& dst, Path& path) {
+    static void writeQuadratics(Mesh& mesh, Path& path, int p) {
         for (SubPath& s : path._subPaths)
             if (s._quadratics.get() == nullptr)
                 return;
@@ -61,19 +61,29 @@ struct libTess {
         for (SubPath& s : path._subPaths) {
             points = s._quadratics.get();
             npoints = (int)s._quadratics.count() / 2;
+            
+            if (mesh._ps.size())
+                mesh._ps.back() = -1;
+            
             x0 = *points++, y0 = *points++;
+            mesh._xs.emplace_back(x0), mesh._ys.emplace_back(y0);
+            mesh._scales.emplace_back(0);
+            mesh._ps.emplace_back(p);
+            
             for (i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
                 x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
                 dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
                 area = dx02 * dy01 - dy02 * dx01;
                 scale = area / (dx02 * dx02 + dy02 * dy02);
-                dst.emplace_back(scale);
+                
+                mesh._xs.emplace_back(x2), mesh._ys.emplace_back(y2);
+                mesh._scales.emplace_back(0);
+                mesh._ps.emplace_back(p);
             }
-            dst.emplace_back(0);
         }
     }
     
-   static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
+    static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
         bool left;
@@ -102,33 +112,13 @@ struct libTess {
             mesh._paths.emplace_back(path._color, (int)(mesh._points.size() / kMeshTriangleSize), (int)mesh._xs.size(), scene._CTMs[p]);
             mesh._bounds.emplace_back(path._bounds);
             
-            scales.resize(0);
-            writeControlPoints(scales, path);
+            writeQuadratics(mesh, path, p);
             addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-                int count = tessGetVertexCount(tess), idx;
-                const TESSindex *indices = tessGetVertexIndices(tess);
+                int count = tessGetVertexCount(tess);
                 const float *verts = tessGetVertices(tess);
-                float scale;
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                 addTessContours(dst, tess, edges);
-                for (Edge& edge : edges) {
-                    scale = 0;
-                    if (scales.size() && (idx = indices[edge.base + edge.i]) != -1)
-                        scale = scales[idx];
-                    
-                    if (edge.i == 0 && mesh._ps.size())
-                        mesh._ps.back() = -1;
-                    mesh._xs.emplace_back(edge.x), mesh._ys.emplace_back(edge.y);
-                    mesh._scales.emplace_back(scale);
-                    mesh._ps.emplace_back(p);
-                    if (edge.i == edge.npoints - 1 && !(edges[edge.base].x == edge.x && edges[edge.base].y == edge.y)) {
-                        mesh._xs.emplace_back(edges[edge.base].x), mesh._ys.emplace_back(edges[edge.base].y);
-                        mesh._ps.emplace_back(p);
-                        mesh._scales.emplace_back(scale);
-                    }
-                }                
-                
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(dst);
