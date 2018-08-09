@@ -67,7 +67,6 @@ struct libTess {
             
             x0 = *points++, y0 = *points++;
             mesh._xs.emplace_back(x0), mesh._ys.emplace_back(y0);
-            mesh._scales.emplace_back(0);
             mesh._ps.emplace_back(p);
             
             for (i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
@@ -77,9 +76,11 @@ struct libTess {
                 scale = area / (dx02 * dx02 + dy02 * dy02);
                 
                 mesh._xs.emplace_back(x2), mesh._ys.emplace_back(y2);
-                mesh._scales.emplace_back(0);
+                mesh._scales.emplace_back(scale);
                 mesh._ps.emplace_back(p);
             }
+            mesh._scales.emplace_back(0);
+            
         }
     }
     
