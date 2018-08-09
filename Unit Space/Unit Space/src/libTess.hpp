@@ -59,16 +59,14 @@ struct libTess {
         float *points, sx, sy, x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, area, scale;
         int npoints, i;
         for (SubPath& s : path._subPaths) {
+            if (mesh._ps.size())  mesh._ps.back() = -1;
+            
             points = s._quadratics.get();
-            npoints = (int)s._quadratics.count() / 2;
-            
-            if (mesh._ps.size())
-                mesh._ps.back() = -1;
-            
             sx = x0 = x2 = *points++, sy = y0 = y2 = *points++;
             mesh._xs.emplace_back(x0), mesh._ys.emplace_back(y0);
             mesh._ps.emplace_back(p);
             
+            npoints = (int)s._quadratics.count() / 2;
             for (i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
                 x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
                 dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
@@ -76,15 +74,13 @@ struct libTess {
                 scale = area / (dx02 * dx02 + dy02 * dy02);
                 
                 mesh._xs.emplace_back(x2), mesh._ys.emplace_back(y2);
-                mesh._scales.emplace_back(scale);
-                mesh._ps.emplace_back(p);
+                mesh._scales.emplace_back(scale), mesh._ps.emplace_back(p);
             }
             mesh._scales.emplace_back(0);
             
             if (!(sx == x2 && sy == y2)) {
                 mesh._xs.emplace_back(sx), mesh._ys.emplace_back(sy);
-                mesh._scales.emplace_back(0);
-                mesh._ps.emplace_back(p);
+                mesh._scales.emplace_back(0), mesh._ps.emplace_back(p);
             }
         }
     }
@@ -158,9 +154,6 @@ struct libTess {
                                         break;
                             }
                         }
-//                        if (x1 == verts[e0->next() * 2] && y1 == verts[e0->next() * 2 + 1])
-//                            _edges[e0->base + e0->i] = (mesh._paths.back().idx + i) * 3;
-                        
                         m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2);
                         m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0);
                         m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1);
@@ -182,7 +175,6 @@ struct libTess {
                         mesh._points.emplace_back(x0, y0), mesh._points.emplace_back(m0);
                         mesh._points.emplace_back(x1, y1), mesh._points.emplace_back(m1);
                         mesh._points.emplace_back(x2, y2), mesh._points.emplace_back(m2);
-//                        mesh._points.emplace_back(0, 0);
                     }
                 }
             }
