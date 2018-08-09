@@ -56,12 +56,17 @@ struct libTess {
         for (SubPath& s : path._subPaths)
             if (s._quadratics.get() == nullptr)
                 return;
-        
+        float *points, x0, y0, x1, y1, x2, y2;
+        int npoints, i;
         for (SubPath& s : path._subPaths) {
-            int npoints = (int)s._quadratics.count() / 4 + 1;
-            float *points = s._quadratics.get();
-            for (int i = 0; i < npoints; i++)
-                dst.emplace_back(points[i * 4]), dst.emplace_back(points[i * 4 + 1]);
+            points = s._quadratics.get();
+            npoints = (int)s._quadratics.count() / 2;
+            x0 = *points++, y0 = *points++;
+            dst.emplace_back(x0), dst.emplace_back(y0);
+            for (i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
+                x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
+                dst.emplace_back(x2), dst.emplace_back(y2);
+            }
         }
     }
     
@@ -113,10 +118,13 @@ struct libTess {
                         mesh._ps.emplace_back(p);
                     }
                 }                
-                if (controlPoints.size())
+                if (controlPoints.size()) {
+                    float cpx, cpy;
                     for (Edge& edge : edges)
-                        if ((idx = indices[edge.base + edge.i]) != -1) {}
-                    
+                        if ((idx = indices[edge.base + edge.i]) != -1) {
+                            cpx = controlPoints[idx * 2], cpy = controlPoints[idx * 2 + 1];
+                        }
+                }
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
                     float *points = (float *)tessGetVertices(dst);
