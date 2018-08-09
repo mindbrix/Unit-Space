@@ -143,8 +143,9 @@ struct LineVertex
 vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant int *ps [[buffer(12)]], constant MeshPath *paths [[buffer(14)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint idx = iid / meshState.subdivisionCount;
+    int p = max(0, ps[idx]);
     float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
-    AffineTransform CTM = AffineTransformConcat(paths[0].ctm, state.CTM);
+    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
@@ -165,7 +166,7 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
     LineVertex vert;
     vert.position = float4(ndcPoint, 1.0, 1.0);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
-    vert.color = { float(paths[0].color.r) / 255.0, float(paths[0].color.g) / 255.0, float(paths[0].color.b) / 255.0, float(paths[0].color.a) / 255.0 };
+    vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
     return vert;
 }
 
