@@ -56,7 +56,7 @@ struct libTess {
         for (SubPath& s : path._subPaths)
             if (s._quadratics.get() == nullptr)
                 return;
-        float *points, x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, area, scale;
+        float *points, sx, sy, x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, area, scale;
         int npoints, i;
         for (SubPath& s : path._subPaths) {
             points = s._quadratics.get();
@@ -65,7 +65,7 @@ struct libTess {
             if (mesh._ps.size())
                 mesh._ps.back() = -1;
             
-            x0 = *points++, y0 = *points++;
+            sx = x0 = x2 = *points++, sy = y0 = y2 = *points++;
             mesh._xs.emplace_back(x0), mesh._ys.emplace_back(y0);
             mesh._ps.emplace_back(p);
             
@@ -81,6 +81,11 @@ struct libTess {
             }
             mesh._scales.emplace_back(0);
             
+            if (!(sx == x2 && sy == y2)) {
+                mesh._xs.emplace_back(sx), mesh._ys.emplace_back(sy);
+                mesh._scales.emplace_back(0);
+                mesh._ps.emplace_back(p);
+            }
         }
     }
     
