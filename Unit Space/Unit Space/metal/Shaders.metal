@@ -140,7 +140,7 @@ struct LineVertex
     float4 color;
 };
 
-vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant char *bridges [[buffer(12)]], constant MeshPath *paths [[buffer(14)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant int *ps [[buffer(12)]], constant MeshPath *paths [[buffer(14)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint idx = iid / meshState.subdivisionCount;
     float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
@@ -158,7 +158,7 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
         p0 = tp0, p1 = tp1;
     }
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = select(state.width + 1.0, 0.0, bridges[idx] == 1);
+    float deviceWidth = select(state.width + 1.0, 0.0, ps[idx] == -1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     

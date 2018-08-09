@@ -16,7 +16,6 @@ struct Mesh {
     vector<Bounds>                      _bounds;
     vector<float>                       _xs, _ys;
     vector<int>                         _ps;
-    vector<char>                        _bridges;
     
-    void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _xs.resize(0), _ys.resize(0), _bridges.resize(0); }
+    void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _xs.resize(0), _ys.resize(0), _ps.resize(0); }
 };
