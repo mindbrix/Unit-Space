@@ -315,8 +315,7 @@
             }
         }
     }
-    if (!showPolygons)
-        [self syncMesh:mesh];
+    [self syncMesh:mesh];
 }
 - (void)syncMesh:(Mesh &)mesh {
     memcpy(_pathsBuffer.contents, & mesh._paths[0], _pathsBuffer.length);
