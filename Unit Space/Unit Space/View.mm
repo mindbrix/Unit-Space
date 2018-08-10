@@ -388,7 +388,7 @@ using namespace std;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     
     MeshState meshState;
-    meshState.disableInteriorVector = _useDelaunay;
+    meshState.disableInteriorVector = false;
     meshState.hideCurves = !_showCurves;
     meshState.hideTriangles = !_showTriangle;
     meshState.showEdges = _showEdges;

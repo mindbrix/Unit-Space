@@ -8,7 +8,7 @@
 #import "Memory.hpp"
 
 constexpr int kPointStride = 2 * sizeof(float);
-constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.333;
+constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.5;
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
@@ -69,7 +69,7 @@ static int splitCubics(vector<float>& dst, const float *src, int npoints, const 
                 break;
             
             dst.emplace_back(x0), dst.emplace_back(y0);
-            t = cbrt(tcubed);
+            t = 1.0 / std::ceil(1.0 / cbrt(tcubed));
             n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
             n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
             n0123 = lerp(t, n012, n123);
