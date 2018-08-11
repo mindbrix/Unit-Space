@@ -18,7 +18,6 @@ struct Memory {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
     }
-    inline T &operator[] (const size_t index) { return ((T *)header->memory)[index]; }
     void alloc(size_t count) {
         if (count == 0)
             return;
@@ -41,21 +40,24 @@ struct Memory {
         }
         return Memory();
     }
-    void push_back(T n) {
+    inline T *new_ptr() {
         if (header == nullptr)
-            return;
+            alloc(8);
         if (header->end * sizeof(T) == header->size)
             alloc(header->end * 1.5);
-        *((T *)header->memory + header->end++) = n;
+        return ((T *)header->memory + header->end++);
     }
     Memory& zero() {
         if (header)
             memset(header->memory, 0, header->size);
         return *this;
     }
-    size_t count() { return header ? (header->end ? header->end : header->size / sizeof(T)) : 0; }
-    size_t size() { return header ? header->size : 0; }
-    T *get() const { return (T *) (header ? header->memory : nullptr); }
+    size_t count()                              { return header ? (header->end ? header->end : header->size / sizeof(T)) : 0; }
+    size_t size()                               { return header ? header->size : 0; }
+    T *get() const                              { return (T *) (header ? header->memory : nullptr); }
+    inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
+    inline void push_back(T n)                  { *new_ptr() = n; }
+    
 private:
     void assign(const Memory& other) {
         if (this != & other) {

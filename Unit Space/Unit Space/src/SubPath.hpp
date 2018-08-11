@@ -135,7 +135,6 @@ struct SubPath {
         } else {
             float x0, y0, x1, y1;
             _npoints = dx == 0 && dy == 0 ? npoints - 1 : npoints;
-            _quadratics.alloc(8);
             x0 = points[0], y0 = points[1];
             _quadratics.push_back(x0), _quadratics.push_back(y0);
             for (int i = 1; i < _npoints; i++, x0 = x1, y0 = y1) {
