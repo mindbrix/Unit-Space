@@ -50,7 +50,7 @@ struct Memory {
             memset(header->memory, 0, header->size);
         return *this;
     }
-    size_t count()                              { return header ? (header->end ? header->end : header->size / sizeof(T)) : 0; }
+    size_t count()                              { return header ? (header->end ?: header->size / sizeof(T)) : 0; }
     size_t size()                               { return header ? header->size : 0; }
     T *get() const                              { return (T *) (header ? header->memory : nullptr); }
     inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
