@@ -158,17 +158,17 @@
         switch (call->type) {
             case kCallTypeArcs:
                 [commandEncoder setRenderPipelineState:_arcPipelineState];
-                [commandEncoder setVertexBytes:&call->arcs length:sizeof(Arcs) atIndex:1];
+                [commandEncoder setVertexBytes:&call->arcs length:sizeof(Arcs) atIndex:10];
                 instanceCount = std::ceil(1.0 / call->state.flatness) * call->arcs.count;
                 break;
             case kCallTypeCircles:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
-                [commandEncoder setVertexBytes:&call->circles length:sizeof(Circles) atIndex:1];
+                [commandEncoder setVertexBytes:&call->circles length:sizeof(Circles) atIndex:10];
                 instanceCount = call->circles.count;
                 break;
             case kCallTypeFlags:
                 [commandEncoder setRenderPipelineState:_flagPipelineState];
-                [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:1];
+                [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:10];
                 instanceCount = call->instanceCount;
                 break;
            case kCallTypeMeshInterior:
@@ -177,7 +177,6 @@
                 if (call->meshState.hideTriangles)
                     continue;
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
-                [commandEncoder setVertexBytes:&call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
@@ -185,7 +184,6 @@
                 break;
             case kCallTypeLinesAOS:
                 [commandEncoder setRenderPipelineState:_lineAOSPipelineState];
-                [commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
@@ -201,6 +199,7 @@
         State state = call->state;
         state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
         [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
+        [commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
         [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
         
         if (drawQuads)

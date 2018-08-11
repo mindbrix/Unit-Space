@@ -25,7 +25,7 @@ struct StrokeVertex
     float alpha;
 };
 
-vertex StrokeVertex arc_vertex_main(constant State &state [[buffer(0)]], constant Arcs &arcs [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex arc_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Arcs &arcs [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint count = ceil(1.0 / state.flatness);
     uint index = iid / count;
@@ -74,7 +74,7 @@ fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State
 
 #pragma mark - Circle
 
-vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant Circles &circles [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Circles &circles [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     constant Circle& circle = circles.circles[iid];
     
@@ -107,7 +107,7 @@ fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant St
 
 #pragma mark - Flags
 
-vertex StrokeVertex flags_vertex_main(constant State &state [[buffer(0)]], constant Flags &flags [[buffer(1)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex flags_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Flags &flags [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     const float kDimension = 4;
     
