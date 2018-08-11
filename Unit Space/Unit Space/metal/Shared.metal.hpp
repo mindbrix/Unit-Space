@@ -181,11 +181,11 @@ struct Call {
     CallType    type;
     int         instanceCount, baseInstance;
     State       state;
+    MeshState   meshState;
     union {
         Arcs        arcs;
         Circles     circles;
         Flags       flags;
-        MeshState   meshState;
     };
 };
 
