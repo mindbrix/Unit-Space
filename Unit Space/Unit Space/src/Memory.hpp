@@ -27,6 +27,7 @@ struct Memory {
             header = (Header *)malloc(sizeof(Header));
             header->memory = malloc(count * sizeof(T));
             header->refCount = 1;
+            header->end = 0;
         }
         header->size = count * sizeof(T);
     }
@@ -34,16 +35,24 @@ struct Memory {
         if (header) {
             Memory c(header->size);
             memcpy(c.header->memory, header->memory, header->size);
+            c.header->end = header->end;
             return c;
         }
         return Memory();
+    }
+    void push_back(T n) {
+        if (header == nullptr)
+            return;
+        if (header->end * sizeof(T) == header->size)
+            alloc(header->end * 1.5);
+        *((T *)header->memory + header->end++) = n;
     }
     Memory& zero() {
         if (header)
             memset(header->memory, 0, header->size);
         return *this;
     }
-    size_t count() { return header ? header->size / sizeof(T) : 0; }
+    size_t count() { return header ? (header->end ? header->end : header->size / sizeof(T)) : 0; }
     size_t size() { return header ? header->size : 0; }
     T *get() const { return (T *) (header ? header->memory : nullptr); }
 private:
@@ -54,6 +63,6 @@ private:
                 header->refCount++;
         }
     }
-    struct Header { int refCount; void *memory; size_t size; };
+    struct Header { int refCount; void *memory; size_t size, end; };
     Header *header = nullptr;
 };

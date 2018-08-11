@@ -152,28 +152,28 @@ struct SubPath {
     }
     
     Memory<float> flattenQuadratics(const float *points, int npoints, float precision) {
-        vector<float> dst;
+        Memory<float> quadratics(16);
         float x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, t, x01, x12, x012, y01, y12, y012;
         int i;
-        for (x0 = *points++, y0 = *points++, i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
+        for (x2 = y2 = 0, x0 = *points++, y0 = *points++, i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
             do {
-                dst.emplace_back(x0), dst.emplace_back(y0);
+                quadratics.push_back(x0), quadratics.push_back(y0);
                 dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
                 t = precision / std::abs(dx01 * dy02 - dy01 * dx02) * std::sqrt(dx02 * dx02 + dy02 * dy02);
                 if (t >= 1)
-                    dst.emplace_back(x1), dst.emplace_back(y1);
+                    quadratics.push_back(x1), quadratics.push_back(y1);
                 else {
                     t = 1.0 / std::ceil(1.0 / std::sqrt(t));
                     x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
                     y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
-                    dst.emplace_back(x01), dst.emplace_back(y01);
+                    quadratics.push_back(x01), quadratics.push_back(y01);
                     x0 = x012, y0 = y012, x1 = x12, y1 = y12;
                 }
             } while (t < 1);
         }
-        dst.emplace_back(x2), dst.emplace_back(y2);
-        return Memory<float>(& dst[0], dst.size());
+        quadratics.push_back(x2), quadratics.push_back(y2);
+        return quadratics;
     }
     
     Memory<float>               _points;
