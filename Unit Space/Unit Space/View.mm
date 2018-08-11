@@ -449,9 +449,9 @@ using namespace std;
             float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
             call.state.CTM = AffineTransformConcat(m, CTM);
             for (SubPath& s : _scene._paths[p]._subPaths) {
-                float *points = s._quadratics.get() ?: s._points.get();
-                int npoints = s._quadratics.get() ? (int)s._quadratics.count() / 2 :  s._npoints;
-                int stride = s._quadratics.get() ? 2 : 1;
+                float *points = s._quadratics.get();
+                int npoints = (int)s._quadratics.count() / 2;
+                int stride = 2;
                 for (int j = 0; j < npoints; j += stride) {
                     if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
                         _calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);

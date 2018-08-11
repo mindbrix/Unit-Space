@@ -29,12 +29,8 @@ struct libTess {
     
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
-            if (s._npoints > 2) {
-                if (s._quadratics.get())
-                    tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
-                else
-                    tessAddContour(dst, 2, s._points.get(), kPointStride, s._npoints);
-            }
+            if (s._npoints > 2)
+                tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
     }
     
     static void addTessContours(TESStesselator *dst, TESStesselator *tess, Edge *edge) {
@@ -53,9 +49,6 @@ struct libTess {
     }
     
     static void writeQuadratics(Mesh& mesh, Path& path, int p) {
-        for (SubPath& s : path._subPaths)
-            if (s._quadratics.get() == nullptr)
-                return;
         float *points, sx, sy, x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, l2, a, b;
         int npoints, i;
         for (SubPath& s : path._subPaths) {

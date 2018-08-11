@@ -133,20 +133,22 @@ struct SubPath {
             if ((_npoints = npoints) > 4)
                 _quadratics = flattenQuadratics(points, _npoints, precision);
         } else {
-            _npoints = npoints;
-            _points.alloc(_npoints * 2);
-            memcpy(_points.get(), points, npoints * kPointStride);
-            if (dx == 0 && dy == 0)
-                _npoints--;
+            float x0, y0, x1, y1;
+            _npoints = dx == 0 && dy == 0 ? npoints - 1 : npoints;
+            _quadratics.alloc(8);
+            x0 = points[0], y0 = points[1];
+            _quadratics.push_back(x0), _quadratics.push_back(y0);
+            for (int i = 1; i < _npoints; i++, x0 = x1, y0 = y1) {
+                x1 = points[i * 2], y1 = points[i * 2 + 1];
+                _quadratics.push_back((x0 + x1) * 0.5), _quadratics.push_back((y0 + y1) * 0.5);
+                _quadratics.push_back(x1), _quadratics.push_back(y1);
+            }
         }
     }
     
     int pointWinding(float x, float y) {
         float p[2] = { x, y };
-        if (_quadratics.get())
-            return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4 + 1, kPointStride * 2);
-        else
-            return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
+        return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4 + 1, kPointStride * 2);
     }
     
     Memory<float> flattenQuadratics(const float *points, int npoints, const float precision) {
@@ -174,7 +176,6 @@ struct SubPath {
         return quadratics;
     }
     
-    Memory<float>               _points;
     Memory<float>               _quadratics;
     int                         _npoints;
     float                       _area;
