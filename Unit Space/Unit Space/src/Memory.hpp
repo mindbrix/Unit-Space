@@ -19,8 +19,6 @@ struct Memory {
             free(header->memory), free(header);
     }
     void alloc(size_t count) {
-        if (count == 0)
-            return;
         if (header)
             header->memory = ::realloc(header->memory, count * sizeof(T));
         else {
