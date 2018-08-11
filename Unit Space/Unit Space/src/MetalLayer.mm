@@ -158,17 +158,17 @@
         switch (call->type) {
             case kCallTypeArcs:
                 [commandEncoder setRenderPipelineState:_arcPipelineState];
-                [commandEncoder setVertexBytes:&call->arcs length:sizeof(Arcs) atIndex:10];
+                [commandEncoder setVertexBytes:& call->arcs length:sizeof(Arcs) atIndex:10];
                 instanceCount = std::ceil(1.0 / call->state.flatness) * call->arcs.count;
                 break;
             case kCallTypeCircles:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
-                [commandEncoder setVertexBytes:&call->circles length:sizeof(Circles) atIndex:10];
+                [commandEncoder setVertexBytes:& call->circles length:sizeof(Circles) atIndex:10];
                 instanceCount = call->circles.count;
                 break;
             case kCallTypeFlags:
                 [commandEncoder setRenderPipelineState:_flagPipelineState];
-                [commandEncoder setVertexBytes:&call->flags length:sizeof(Flags) atIndex:10];
+                [commandEncoder setVertexBytes:& call->flags length:sizeof(Flags) atIndex:10];
                 instanceCount = call->instanceCount;
                 break;
            case kCallTypeMeshInterior:
@@ -198,9 +198,9 @@
         
         State state = call->state;
         state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-        [commandEncoder setVertexBytes:&state length:sizeof(State) atIndex:0];
+        [commandEncoder setVertexBytes:& state length:sizeof(State) atIndex:0];
         [commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
-        [commandEncoder setFragmentBytes:&state length:sizeof(State) atIndex:0];
+        [commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
         
         if (drawQuads)
             [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
