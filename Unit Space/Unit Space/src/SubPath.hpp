@@ -12,7 +12,8 @@ constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.5;
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
-static int splitCubics(vector<float>& dst, const float *src, int npoints, const float prec) {
+static Memory<float> splitCubics(const float *src, int npoints, const float precision) {
+    Memory<float> quadratics(16);
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23, n012, n123, n0123;
@@ -64,11 +65,11 @@ static int splitCubics(vector<float>& dst, const float *src, int npoints, const 
         do {
             xD01 = x3 + 3.f * (x1 - x2) - x0, yD01 = y3 + 3.f * (y1 - y2) - y0;
             D01 = std::sqrt(xD01 * xD01 + yD01 * yD01);
-            tcubed = D01 == 0 ? 1 : prec * multiplier / D01;
+            tcubed = D01 == 0 ? 1 : precision * multiplier / D01;
             if (tcubed > 0.999999)
                 break;
             
-            dst.emplace_back(x0), dst.emplace_back(y0);
+            quadratics.push_back(x0), quadratics.push_back(y0);
             t = 1.0 / std::ceil(1.0 / cbrt(tcubed));
             n01 = lerp(t, x0, x1), n12 = lerp(t, x1, x2), n23 = lerp(t, x2, x3);
             n012 = lerp(t, n01, n12), n123 = lerp(t, n12, n23);
@@ -81,18 +82,16 @@ static int splitCubics(vector<float>& dst, const float *src, int npoints, const 
             n0123 = lerp(t, n012, n123);
             cpy = (3.0 * (n012 + n01) - y0 - n0123) * 0.25;
             y0 = n0123, y1 = n123, y2 = n23;
-            dst.emplace_back(cpx), dst.emplace_back(cpy);
+            quadratics.push_back(cpx), quadratics.push_back(cpy);
         } while (1);
         
         cpx = (3.0 * (x2 + x1) - x0 - x3) * 0.25, cpy = (3.0 * (y2 + y1) - y0 - y3) * 0.25;
         if (cpx != x0 || cpy != y0)
-            dst.emplace_back(x0), dst.emplace_back(y0), dst.emplace_back(cpx), dst.emplace_back(cpy);
+            quadratics.push_back(x0), quadratics.push_back(y0), quadratics.push_back(cpx), quadratics.push_back(cpy);
     }
-    dst.emplace_back(x3), dst.emplace_back(y3);
-    return (int)dst.size() / 2;
+    quadratics.push_back(x3), quadratics.push_back(y3);
+    return quadratics;
 }
-
-
 
 static inline float isLeft(const float *P0, const float *P1, const float *P2) {
     return (P1[0] - P0[0]) * (P2[1] - P0[1]) - (P2[0] -  P0[0]) * (P1[1] - P0[1]);
@@ -124,12 +123,12 @@ struct SubPath {
         dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
         
         if (type == kCubic) {
-            vector<float> split;
-            _npoints = splitCubics(split, points, npoints, kSplitCubicPrecision);
+            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision);
+            _npoints = (int)quadratics.count() / 2;
             if (_npoints > 2) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
-                    split[_npoints * 2 - 2] = split[0], split[_npoints * 2 - 1] = split[1];
-                _quadratics = flattenQuadratics(& split[0], (int)split.size() / 2, precision);
+                    quadratics[_npoints * 2 - 2] = quadratics[0], quadratics[_npoints * 2 - 1] = quadratics[1];
+                _quadratics = flattenQuadratics(& quadratics[0], _npoints, precision);
             }
         } else if (type == kQuadratic) {
             if ((_npoints = npoints) > 4)
@@ -151,7 +150,7 @@ struct SubPath {
             return (int)pointInPolygon(p, _points.get(), _npoints, kPointStride);
     }
     
-    Memory<float> flattenQuadratics(const float *points, int npoints, float precision) {
+    Memory<float> flattenQuadratics(const float *points, int npoints, const float precision) {
         Memory<float> quadratics(16);
         float x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, t, x01, x12, x012, y01, y12, y012;
         int i;

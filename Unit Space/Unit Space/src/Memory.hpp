@@ -18,6 +18,7 @@ struct Memory {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
     }
+    inline T &operator[] (const size_t index) { return ((T *)header->memory)[index]; }
     void alloc(size_t count) {
         if (count == 0)
             return;
