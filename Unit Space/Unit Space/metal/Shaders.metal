@@ -153,8 +153,6 @@ vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], const
         float a = as[idx], b = bs[idx];
         float dx02 = p1.x - p0.x, dy02 = p1.y - p0.y;
         float2 cp = { dx02 * a + dy02 * -b + p0.x, dx02 * b + dy02 * a + p0.y };
-//        float s = bs[idx];
-//        float2 cp = { (p0.x + p1.x) * 0.5 + -s * (p1.y - p0.y), (p0.y + p1.y) * 0.5 + s * (p1.x - p0.x)};
         float dt = 1.0 / float(meshState.subdivisionCount), t0 = float(iid % meshState.subdivisionCount) * dt, t1 = t0 + dt;
         float s0 = 1.0 - t0, s1 = 1.0 - t1;
         float2 tp0 = s0 * s0 * p0 + 2.0 * s0 * t0 * cp + t0 * t0 * p1;
