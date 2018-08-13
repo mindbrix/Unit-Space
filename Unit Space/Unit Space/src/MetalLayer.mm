@@ -203,15 +203,11 @@
         [commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
         
         if (drawQuads)
-            [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                       indexCount:6
-                                        indexType:MTLIndexTypeUInt16
-                                      indexBuffer:_indexBuffer
-                                indexBufferOffset:0
-                                    instanceCount:instanceCount
-                                       baseVertex:0
-                                     baseInstance:baseInstance
-             ];
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                               vertexStart:0
+                               vertexCount:4
+                             instanceCount:instanceCount
+                              baseInstance:baseInstance];
         else
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
