@@ -13,7 +13,6 @@
 
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
-@property (nonatomic, strong) id <MTLBuffer> indexBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
@@ -101,10 +100,6 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    static const uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
-    self.indexBuffer = [self.device newBufferWithBytes:indices
-                                                length:sizeof(indices)
-                                               options:MTLResourceOptionCPUCacheModeDefault];
     return self;
 }
 
@@ -202,18 +197,11 @@
         [commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
         [commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
         
-        if (drawQuads)
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-                               vertexStart:0
-                               vertexCount:4
-                             instanceCount:instanceCount
-                              baseInstance:baseInstance];
-        else
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
-                               vertexStart:0
-                               vertexCount:3
-                             instanceCount:instanceCount
-                              baseInstance:baseInstance];
+        [commandEncoder drawPrimitives:drawQuads ? MTLPrimitiveTypeTriangleStrip : MTLPrimitiveTypeTriangle
+                           vertexStart:0
+                           vertexCount:drawQuads ? 4 : 3
+                         instanceCount:instanceCount
+                          baseInstance:baseInstance];
     }
     [commandEncoder endEncoding];
 
