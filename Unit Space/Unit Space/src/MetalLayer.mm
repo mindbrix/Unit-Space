@@ -185,7 +185,7 @@
                 [commandEncoder setVertexBytes:& mesh->_ps[call->baseInstance] length:sizeof(int) * (call->instanceCount + 1) atIndex:12];
                 [commandEncoder setVertexBytes:& mesh->_as[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:13];
                 [commandEncoder setVertexBytes:& mesh->_bs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:14];
-                instanceCount = call->instanceCount * call->meshState.subdivisionCount, baseInstance = 0;
+                instanceCount = call->instanceCount * call->meshState.subdivisionCount;
                 break;
         }
         if (instanceCount == 0)
