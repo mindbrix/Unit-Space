@@ -103,8 +103,9 @@ struct Scene {
             printf("size: %f x %f\n", image->width, image->height);            
             int limit = 60000;
             for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next, limit--) {
-                if (shape->fill.type == NSVG_PAINT_COLOR /*&& shape->stroke.type == NSVG_PAINT_NONE*/) {
-                    RGBA8 color = RGBA8((unsigned char)((shape->fill.color ) & 0xFF), (unsigned char)((shape->fill.color >> 8) & 0xFF), (unsigned char)((shape->fill.color >> 16) & 0xFF), (unsigned char)(shape->fill.color >> 24));
+                if (shape->fill.type != NSVG_PAINT_NONE) {
+                    unsigned int rgba = shape->fill.type == NSVG_PAINT_COLOR ? shape->fill.color : shape->fill.gradient->stops[0].color;
+                    RGBA8 color = RGBA8((unsigned char)(rgba & 0xFF), (unsigned char)((rgba >> 8) & 0xFF), (unsigned char)((rgba >> 16) & 0xFF), (unsigned char)(rgba >> 24));
                     Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                     
                     for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
