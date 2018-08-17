@@ -217,11 +217,12 @@
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     Call *call;
     if (mesh._points.size()) {
-        bool opaques[mesh._paths.size()], visibles[mesh._paths.size()];
+        bool opaques[mesh._paths.size()], visibles[mesh._paths.size()], smalls[mesh._paths.size()];
         AffineTransform units[mesh._paths.size()];
         for (p = 0; p < mesh._paths.size(); p++) {
             units[p] = ctm = AffineTransformMakeUnit(mesh._bounds[p], AffineTransformConcat(mesh._paths[p].ctm, state.CTM));
-            opaques[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400 || mesh._paths[p].color.a == 255;
+            opaques[p] = mesh._paths[p].color.a == 255;
+            smalls[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400;
         }
         for (p = 0; p < mesh._paths.size(); p += 8) {
             bool set = false;
@@ -271,7 +272,7 @@
                         base = mesh._paths[p].idx;
                         end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
                         count = end - base;
-                        if (opaques[p]) {
+                        if (opaques[p] || smalls[p]) {
                             if (call == nullptr) {
                                 calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
                                 call = & calls.back();
