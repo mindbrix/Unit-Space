@@ -104,8 +104,21 @@ struct Scene {
             int limit = 60000;
             for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next, limit--) {
                 if (shape->fill.type != NSVG_PAINT_NONE) {
-                    unsigned int rgba = shape->fill.type == NSVG_PAINT_COLOR ? shape->fill.color : shape->fill.gradient->stops[0].color;
-                    RGBA8 color = RGBA8((unsigned char)(rgba & 0xFF), (unsigned char)((rgba >> 8) & 0xFF), (unsigned char)((rgba >> 16) & 0xFF), (unsigned char)(rgba >> 24));
+                    int r, g, b, a, nstops, i;
+                    unsigned int rgba;
+                    
+                    if (shape->fill.type == NSVG_PAINT_COLOR) {
+                        rgba = shape->fill.color;
+                        r = rgba & 0xFF, g = (rgba >> 8) & 0xFF, b = (rgba >> 16) & 0xFF, a = rgba >> 24;
+                    } else {
+                        nstops = 1;// shape->fill.gradient->nstops;
+                        for (r = b = g = a = i = 0; i < nstops; i++) {
+                            rgba = shape->fill.gradient->stops[i].color;
+                            r += rgba & 0xFF, g += (rgba >> 8) & 0xFF, b += (rgba >> 16) & 0xFF, a += rgba >> 24;
+                        }
+                        r /= nstops, g /= nstops, b /= nstops, a /= nstops;
+                    }
+                    RGBA8 color(r, g, b, a);
                     Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
                     
                     for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {

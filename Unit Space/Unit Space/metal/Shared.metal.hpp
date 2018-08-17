@@ -56,6 +56,7 @@ struct RGBA8 {
     RGBA8() {}
     RGBA8(RGBA rgba) : r(rgba.r * 255), g(rgba.g * 255), b(rgba.b * 255), a(rgba.a * 255) {}
     RGBA8(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
+    RGBA8(int r, int g, int b, int a) : r(r), g(g), b(b), a(a) {}
     
     unsigned char r, g, b, a;
 };
