@@ -28,7 +28,6 @@ using namespace std;
 @property(nonatomic) MetalLayer *metalLayer;
 @property(nonatomic) VGAffineTransform *transform;
 @property(nonatomic) CGPoint mouseLocation;
-@property(nonatomic) vector<Call> calls;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) uint64_t pathBitmask;
 @property(nonatomic) BOOL showCurves;
@@ -400,7 +399,7 @@ using namespace std;
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
     
-    _calls.resize(0);
+    _mesh._calls.resize(0);
     int p = -1;
     
     float ux = float(user.x), uy = float(user.y);
@@ -413,19 +412,19 @@ using namespace std;
         _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
     
     if (_flags & 1) {
-        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms showPolygons:YES];
+        [self.metalLayer renderMesh:_mesh calls:_mesh._calls meshState:meshState state:uniforms showPolygons:YES];
     }
     if (_flags & 2) {}
     if (_flags & 4) {}
     if (_flags & 8) {
-        [self.metalLayer renderMesh:_mesh calls:_calls meshState:meshState state:uniforms showPolygons:NO];
+        [self.metalLayer renderMesh:_mesh calls:_mesh._calls meshState:meshState state:uniforms showPolygons:NO];
     }
     if (_flags & 16) {}
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
-        _calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
-        Call& call = _calls.back();
+        _mesh._calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
+        Call& call = _mesh._calls.back();
         Circles *circles = & call.circles;
         circles->empty();
         
@@ -454,8 +453,8 @@ using namespace std;
                 int stride = 2;
                 for (int j = 0; j < npoints; j += stride) {
                     if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
-                        _calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
-                        Call& call = _calls.back();
+                        _mesh._calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
+                        Call& call = _mesh._calls.back();
                         call.state.CTM = AffineTransformConcat(m, CTM);
                         circles = & call.circles;
                         circles->empty();
@@ -493,9 +492,9 @@ using namespace std;
 #pragma mark - LayerDelegate
 
 - (Call *)drawCallsWithCount:(size_t *)count forLayer:(CALayer *)layer fromMesh:(Mesh **)mesh {
-    *count = _calls.size();
+    *count = _mesh._calls.size();
     *mesh = & _mesh;
-    return & _calls[0];
+    return & _mesh._calls[0];
 }
 
 #pragma mark - Properties
