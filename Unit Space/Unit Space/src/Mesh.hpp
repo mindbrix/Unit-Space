@@ -111,12 +111,11 @@ struct Mesh {
         }
     }
     
-    struct Circles {
-        Memory<float>                   _xs, _ys, _rs;
-        void add(float x, float y, float r) {
-            _xs.push_back(x), _ys.push_back(y), _rs.push_back(r);
-        }
-        void empty() { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>();}
+    struct CirclesSOA {
+        void add(float x, float y, float r)     { _xs.push_back(x), _ys.push_back(y), _rs.push_back(r); }
+        void empty()                            { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(); }
+        
+        Memory<float>                           _xs, _ys, _rs;
     };
     
     vector<MeshPath>                    _paths;
@@ -126,7 +125,7 @@ struct Mesh {
     vector<int>                         _ps;
     
     vector<Call>                        _calls;
-    Circles                             _circles;
+    CirclesSOA                          _circles;
     
     void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
 };
