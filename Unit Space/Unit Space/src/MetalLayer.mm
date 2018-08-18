@@ -167,7 +167,7 @@
                 [commandEncoder setVertexBytes:& call->flags length:sizeof(Flags) atIndex:10];
                 instanceCount = call->instanceCount;
                 break;
-           case kCallTypeMeshInterior:
+            case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
             case kCallTypeMeshTriangles:
                 if (call->meshState.hideTriangles)
