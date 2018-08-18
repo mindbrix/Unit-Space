@@ -172,7 +172,7 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
-    kCallTypeLinesAOS,
+    kCallTypeLinesSOA,
 };
 
 struct Call {

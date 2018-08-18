@@ -140,7 +140,7 @@ struct LineVertex
     float4 color;
 };
 
-vertex LineVertex lineAOS_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant int *ps [[buffer(12)]], constant float *as [[buffer(13)]], constant float *bs [[buffer(14)]], constant MeshPath *paths [[buffer(9)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant int *ps [[buffer(12)]], constant float *as [[buffer(13)]], constant float *bs [[buffer(14)]], constant MeshPath *paths [[buffer(9)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint idx = iid / meshState.subdivisionCount;
     int p = max(0, ps[idx]);

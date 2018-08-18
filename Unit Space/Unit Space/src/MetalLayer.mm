@@ -18,7 +18,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> lineAOSPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -90,10 +90,10 @@
     descriptor.label = @"Circle";
     self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineAOS_vertex_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
-    descriptor.label = @"lineAOSPipelineState";
-    self.lineAOSPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.label = @"lineSOAPipelineState";
+    self.lineSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
@@ -178,8 +178,8 @@
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
-            case kCallTypeLinesAOS:
-                [commandEncoder setRenderPipelineState:_lineAOSPipelineState];
+            case kCallTypeLinesSOA:
+                [commandEncoder setRenderPipelineState:_lineSOAPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
