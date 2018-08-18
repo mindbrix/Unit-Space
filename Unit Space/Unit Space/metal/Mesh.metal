@@ -98,18 +98,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     RGBA8 color = paths[c].color;
     AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
     
-    float2 p0 = {
-        x0 * CTM.a + y0 * CTM.c + CTM.tx,
-        x0 * CTM.b + y0 * CTM.d + CTM.ty
-    };
-    float2 p1 = {
-        x1 * CTM.a + y1 * CTM.c + CTM.tx,
-        x1 * CTM.b + y1 * CTM.d + CTM.ty
-    };
-    float2 p2 = {
-        x2 * CTM.a + y2 * CTM.c + CTM.tx,
-        x2 * CTM.b + y2 * CTM.d + CTM.ty
-    };
+    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
+    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
+    float2 p2 = { x2 * CTM.a + y2 * CTM.c + CTM.tx, x2 * CTM.b + y2 * CTM.d + CTM.ty };
     
     const float dilation = -0.5, hmin = 0.1;
     float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
