@@ -19,7 +19,7 @@
 
 @property(weak) id <LayerDelegate> layerDelegate;
 
-- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons;
+- (void)renderMesh:(Mesh &)mesh meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons;
 - (void)uploadMesh:(Mesh &)mesh;
 
 @end

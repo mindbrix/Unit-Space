@@ -212,8 +212,9 @@
 
 #pragma mark - Public
 
-- (void)renderMesh:(Mesh &)mesh calls:(vector<Call> &)calls meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons {
+- (void)renderMesh:(Mesh &)mesh meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons {
     int base, end, count, p, i, j;
+    vector<Call> & calls = mesh._calls;
     AffineTransform ctm;
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     Call *call;
