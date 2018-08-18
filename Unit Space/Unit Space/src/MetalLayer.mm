@@ -111,11 +111,12 @@
 }
 
 - (void)draw {
-    Call *calls = nullptr;
-    size_t count = 0;
     Mesh *mesh = nullptr;
-    if ([self.layerDelegate respondsToSelector:@selector(drawCallsWithCount:forLayer:fromMesh:)])
-        calls = [self.layerDelegate drawCallsWithCount:&count forLayer:self fromMesh:& mesh];
+    if ([self.layerDelegate respondsToSelector:@selector(meshForLayer:)])
+        mesh = [self.layerDelegate meshForLayer:self];
+    Call *calls = mesh ? & mesh->_calls[0] : nullptr;
+    size_t count = mesh ? mesh->_calls.size() : 0;
+    
     if (calls == nullptr || count == 0)
         return;
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
