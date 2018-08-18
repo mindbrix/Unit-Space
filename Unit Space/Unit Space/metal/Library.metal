@@ -11,12 +11,12 @@
 
 using namespace metal;
 
-float ellipseDistance(float2 unitPoint) {
+float ellipseDistance(float2 unitPoint, float dilation) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
     
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+    return (0.5 + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
 }
 
 float ellipseStrokeDistance(float2 unitPoint, float w) {

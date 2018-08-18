@@ -94,12 +94,13 @@ vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], cons
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    vert.unitWidth = min(0.25, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
     return vert;
 }
 
 fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float alpha = saturate(ellipseDistance(vert.unitPoint));
+    float alpha = saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
 
