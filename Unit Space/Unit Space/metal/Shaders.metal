@@ -78,7 +78,7 @@ vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], cons
 {
     Circle circle = { xs[iid], ys[iid], rs[iid] };
     float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
-    float dilation = 1.0 / scale;
+    float dilation = 0.7071 / scale;
     float r = circle.r + dilation;
     
     float2 up = { circle.x + r * select(-1.0, 1.0, vid & 1), circle.y + r * select(-1.0, 1.0, vid & 2) };
