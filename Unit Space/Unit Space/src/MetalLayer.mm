@@ -217,6 +217,7 @@
     Mesh::renderMesh(mesh, clipBounds, meshState, state, showPolygons);
     [self syncMesh:mesh];
 }
+
 - (void)syncMesh:(Mesh &)mesh {
     memcpy(_pathsBuffer.contents, & mesh._paths[0], _pathsBuffer.length);
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
