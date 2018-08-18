@@ -423,46 +423,33 @@ using namespace std;
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
-        _mesh._calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
-        Call& call = _mesh._calls.back();
-        Circles *circles = & call.circles;
-        circles->empty();
+        _mesh._circles.empty();
         
         if (_svgData == nullptr && _fontData  == nullptr) {
             if (self.pathBitmask & kPathBitmaskTriangle)
                 for (int j = 0; j < _triangle.size(); j++)
-                    if (!circles->add(_triangle[j].x, _triangle[j].y, radius))
-                        break;
+                    _mesh._circles.add(_triangle[j].x, _triangle[j].y, radius);
             
             if (self.pathBitmask & kPathBitmaskLozenge)
                 for (int j = 0; j < _lozenge.size(); j++)
-                    if (!circles->add(_lozenge[j].x, _lozenge[j].y, radius))
-                        break;
+                    _mesh._circles.add(_lozenge[j].x, _lozenge[j].y, radius);
             
             if (self.pathBitmask & kPathBitmaskQuad)
                 for (int j = 0; j < _quad.size(); j++)
-                    if (!circles->add(_quad[j].x, _quad[j].y, radius))
-                        break;
+                    _mesh._circles.add(_quad[j].x, _quad[j].y, radius);
         } else if (p != -1) {
             AffineTransform m = _mesh._paths[p].ctm;
             float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
-            call.state.CTM = AffineTransformConcat(m, CTM);
+            uniforms.CTM = AffineTransformConcat(m, CTM);
             for (SubPath& s : _scene._paths[p]._subPaths) {
                 float *points = s._quadratics.get();
                 int npoints = (int)s._quadratics.count() / 2;
                 int stride = 2;
-                for (int j = 0; j < npoints; j += stride) {
-                    if (!circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale)) {
-                        _mesh._calls.emplace_back(kCallTypeCircles, 0, 0, uniforms, meshState);
-                        Call& call = _mesh._calls.back();
-                        call.state.CTM = AffineTransformConcat(m, CTM);
-                        circles = & call.circles;
-                        circles->empty();
-                        circles->add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
-                    }
-                }
+                for (int j = 0; j < npoints; j += stride)
+                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
             }
         }
+        Mesh::writeCircleCalls(_mesh, uniforms, meshState);
     }
 }
 

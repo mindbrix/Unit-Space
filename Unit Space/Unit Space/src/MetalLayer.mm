@@ -157,10 +157,12 @@
                 [commandEncoder setVertexBytes:& call->arcs length:sizeof(Arcs) atIndex:10];
                 instanceCount = std::ceil(1.0 / call->state.flatness) * call->arcs.count;
                 break;
-            case kCallTypeCircles:
+            case kCallTypeCirclesSOA:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
-                [commandEncoder setVertexBytes:& call->circles length:sizeof(Circles) atIndex:10];
-                instanceCount = call->circles.count;
+                [commandEncoder setVertexBytes:& mesh->_circles._xs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_circles._ys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_circles._rs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:12];
+                instanceCount = call->instanceCount;
                 break;
             case kCallTypeFlags:
                 [commandEncoder setRenderPipelineState:_flagPipelineState];

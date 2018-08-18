@@ -74,10 +74,11 @@ fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State
 
 #pragma mark - Circle
 
-vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Circles &circles [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                       constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant float *rs [[buffer(12)]],
+                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    constant Circle& circle = circles.circles[iid];
-    
+    Circle circle = { xs[iid], ys[iid], rs[iid] };
     float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
     float dilation = 1.0 / scale;
     float r = circle.r + dilation;

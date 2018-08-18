@@ -101,26 +101,9 @@ struct Vector {
 
 struct _Size { float w, h; };
 
-struct Quadratic { float x0, y0, x1, y1, x2, y2; };
-
 struct Arcs {
     int         count;
     Arc         arcs[192];
-};
-
-#define kCirclesSize 340
-
-struct Circles {
-    bool add(float x, float y, float r) {
-        if (count == kCirclesSize)
-            return false;
-        circles[count++] = { x, y, r };
-        return true;
-    }
-    void empty() { count = 0; }
-    
-    int         count;
-    Circle      circles[kCirclesSize];
 };
 
 #define kFlagsSize 1022
@@ -168,7 +151,7 @@ struct State {
 
 enum CallType : unsigned int {
     kCallTypeArcs = 0,
-    kCallTypeCircles,
+    kCallTypeCirclesSOA,
     kCallTypeFlags,
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
@@ -186,7 +169,6 @@ struct Call {
     MeshState   meshState;
     union {
         Arcs        arcs;
-        Circles     circles;
         Flags       flags;
     };
 };
