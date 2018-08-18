@@ -412,12 +412,12 @@ using namespace std;
         _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
     
     if (_flags & 1) {
-        [self.metalLayer renderMesh:_mesh meshState:meshState state:uniforms showPolygons:YES];
+        [self.metalLayer renderMesh:_mesh state:uniforms meshState:meshState showPolygons:YES];
     }
     if (_flags & 2) {}
     if (_flags & 4) {}
     if (_flags & 8) {
-        [self.metalLayer renderMesh:_mesh meshState:meshState state:uniforms showPolygons:NO];
+        [self.metalLayer renderMesh:_mesh state:uniforms meshState:meshState showPolygons:NO];
     }
     if (_flags & 16) {}
     

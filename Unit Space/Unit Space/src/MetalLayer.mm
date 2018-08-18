@@ -212,9 +212,9 @@
 
 #pragma mark - Public
 
-- (void)renderMesh:(Mesh &)mesh meshState:(MeshState)meshState state:(State)state showPolygons:(BOOL)showPolygons {
+- (void)renderMesh:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState showPolygons:(BOOL)showPolygons {
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
-    Mesh::renderMesh(mesh, clipBounds, meshState, state, showPolygons);
+    Mesh::renderMesh(mesh, clipBounds, state, meshState, showPolygons);
     [self syncMesh:mesh];
 }
 

@@ -11,7 +11,7 @@ using namespace std;
 #pragma clang diagnostic ignored "-Wcomma"
 
 struct Mesh {
-    static void renderMesh(Mesh& mesh, Bounds clipBounds, MeshState meshState, State state, bool showPolygons) {
+    static void renderMesh(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState, bool showPolygons) {
         int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
         AffineTransform ctm;
