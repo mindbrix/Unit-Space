@@ -94,7 +94,7 @@ vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], cons
     StrokeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    vert.unitWidth = min(0.25, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
+    vert.unitWidth = min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
     return vert;
 }
 
