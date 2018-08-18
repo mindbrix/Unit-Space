@@ -45,18 +45,12 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     
     RGBA8 color = paths[c].color;
     AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
-    float2 devicePoint = {
-        pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx,
-        pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty
-    };
+    float2 devicePoint = { pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx, pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty };
     
     if (!meshState.disableInteriorVector) {
         float scale = sqrt(abs(CTM.d * CTM.a - CTM.b * CTM.c));
         Vector interiorVector = pts[i + 1];
-        float2 iv = {
-            interiorVector.x * CTM.a + interiorVector.y * CTM.c,
-            interiorVector.x * CTM.b + interiorVector.y * CTM.d
-        };
+        float2 iv = { interiorVector.x * CTM.a + interiorVector.y * CTM.c, interiorVector.x * CTM.b + interiorVector.y * CTM.d };
         devicePoint = select(devicePoint + iv / scale, 0, scale < t);
     }
     InteriorVertex vert;
