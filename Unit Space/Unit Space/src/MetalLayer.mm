@@ -214,7 +214,7 @@
 
 #pragma mark - Public
 
-- (void)renderMesh:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState {
+- (void)writePathCalls:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState {
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     Mesh::writePathCalls(mesh, clipBounds, state, meshState);
     [self syncMesh:mesh];

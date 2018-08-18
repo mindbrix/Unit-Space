@@ -19,7 +19,7 @@
 
 @property(weak) id <LayerDelegate> layerDelegate;
 
-- (void)renderMesh:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState;
+- (void)writePathCalls:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState;
 - (void)uploadMesh:(Mesh &)mesh;
 
 @end

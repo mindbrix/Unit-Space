@@ -435,7 +435,7 @@ using namespace std;
     if (_flags & 8) {}
     if (_flags & 16) {}
     
-    [self.metalLayer renderMesh:_mesh state:uniforms meshState:meshState];
+    [self.metalLayer writePathCalls:_mesh state:uniforms meshState:meshState];
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
