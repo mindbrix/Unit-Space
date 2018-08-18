@@ -19,29 +19,10 @@ float ellipseDistance(float2 unitPoint) {
     return (0.25 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
 }
 
-float cirleStrokeDistance(float2 unitPoint, float w) {
-    unitPoint = unitPoint * 2.0 - 1.0;
-    float2 nu = normalize(unitPoint);
-    
-    //    float rad = acos(nu.x);
-    //    float t = rad / TWO_PI;
-    //    t = clamp(t, 0.20, 0.425);
-    //    float x = cos(t * TWO_PI);
-    //    float y = sin(t * TWO_PI);
-    //    float2 v = (unitPoint - float2(x, y)) / w;
-    
-    float2 v = (unitPoint - (nu)) / w;
-    
-    float fx = -2.0 * (v.x * dfdx(v.x) + v.y * dfdx(v.y));
-    float fy = -2.0 * (v.x * dfdy(v.x) + v.y * dfdy(v.y));
-    return (1.0 - (v.x * v.x + v.y * v.y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
-}
-
 float ellipseStrokeDistance(float2 unitPoint, float w) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
-
 
 float rectDistance(float2 unitPoint) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;

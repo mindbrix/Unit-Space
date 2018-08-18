@@ -11,7 +11,6 @@
 
 using namespace metal;
 
-float cirleStrokeDistance(float2 unitPoint, float w);
 float ellipseDistance(float2 unitPoint);
 float ellipseStrokeDistance(float2 unitPoint, float w);
 float det(float2 a, float2 b);
