@@ -415,15 +415,15 @@ using namespace std;
     if (_flags & 1)
         meshState.showPolygons = true;
     if (_flags & 2) {
-        int x, y, dimension = 330, r = 10, idx;
+        int x, y, dimension = 330, r = 10, g = 24, idx;
         _mesh._circles._xs = Memory<float>(dimension * dimension);
         _mesh._circles._ys = Memory<float>(dimension * dimension);
         _mesh._circles._rs = Memory<float>(dimension * dimension);
         for (y = 0; y < dimension; y++)
             for (x = 0; x < dimension; x++) {
                 idx = x + y * dimension;
-                _mesh._circles._xs[idx] = x * r * 2;
-                _mesh._circles._ys[idx] = y * r * 2;
+                _mesh._circles._xs[idx] = x * g;
+                _mesh._circles._ys[idx] = y * g;
                 _mesh._circles._rs[idx] = r;
             }
         Mesh::writeCircleCalls(_mesh, uniforms, meshState);
