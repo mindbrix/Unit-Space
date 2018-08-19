@@ -12,6 +12,7 @@
 #import "Algorithms.hpp"
 #import "Scene.hpp"
 #import "libTess.hpp"
+#import "Grid.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -314,31 +315,11 @@ using namespace std;
 - (void)reset {
     if (_svgData || _fontData) {
         libTess::triangulate(_mesh, _scene, self.useMask);
-        
         [self.metalLayer uploadMesh:_mesh];
     } else {
-//        _triangle = {
-//            { 0, 0 }, { 100.0 / 3, 100.0 / 3}, { 200.0 / 3, 200.0 / 3 }, { 100, 100 }, { 200.0 / 3, 100 }, { 100.0 / 3, 100 }, { 0, 100 }
-//        };
-        
-        _triangle = {
-            { 0, 0 }, { 100, 100 }, { 0, 100 }
-        };
-        
-//        _lozenge = {
-//            { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, { 0, 0 }
-//        };
-        _lozenge = {
-            { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-        };
-//        _lozenge = {
-//            { 0, 0 }, { 66.666, 0 }, { 100, 33.333 }, { 100, 100 }, { 33.333, 100 }, { 0, 66.666 }, { 0, 0 }
-//        };
-
-		_quad = {
-            { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }
-		};
-		
+        _triangle = { { 0, 0 }, { 100, 100 }, { 0, 100 } };
+        _lozenge = {  { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 } };
+		_quad = { { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 } };
         [self triangulate];
     }
 }
@@ -354,18 +335,17 @@ using namespace std;
     Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kQuadratic) });
     Path p2(false, red, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
 	
-    Scene scene;
+    _scene.empty();
     if (self.pathBitmask & kPathBitmaskTriangle)
-        scene.addPath(p0);
+        _scene.addPath(p0);
     
     if (self.pathBitmask & kPathBitmaskLozenge)
-        scene.addPath(p1);
+        _scene.addPath(p1);
     
     if (self.pathBitmask & kPathBitmaskQuad)
-        scene.addPath(p2);
+        _scene.addPath(p2);
     
-    libTess::triangulate(_mesh, scene, self.useMask);
-    
+    libTess::triangulate(_mesh, _scene, self.useMask);
     [self.metalLayer uploadMesh:_mesh];
 }
 
@@ -399,6 +379,11 @@ using namespace std;
     meshState.colorsSize = (int)_mesh._paths.size();
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
+    
+    if (_scene._paths.size()) {
+        Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
+        Grid::writePathCells(_scene._paths[0], CTM, clipBounds);
+    }
     
     _mesh._calls.resize(0);
     int p = -1;
