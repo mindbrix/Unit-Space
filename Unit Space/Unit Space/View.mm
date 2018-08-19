@@ -454,6 +454,7 @@ using namespace std;
 //                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
 //            }
 //        }
+        meshState.reverseCount = 0;// (int)_mesh._interiors._glxs.count();
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypePathInteriorSOA, _mesh._interiors._glxs.count());
        // Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
     }

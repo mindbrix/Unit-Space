@@ -126,14 +126,16 @@ vertex PathInteriorVertex pathInteriorSOA_vertex_main(constant State &state [[bu
                                       constant RGBA8 *colors [[buffer(13)]],
                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    float glx = glxs[iid], gux = guxs[iid], gy = gys[iid];
-    RGBA8 color = colors[iid];
+    uint idx = select(iid, meshState.reverseCount - 1 - iid, meshState.reverseCount);
+    float glx = glxs[idx], gux = guxs[idx], gy = gys[idx];
+    RGBA8 color = colors[idx];
     
     float2 devicePoint =  { select(gux, glx, vid & 1), select(gy, gy + kkGridPixelSize, vid & 2) };
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
+    float z = select(1.0, float(idx) / float(meshState.reverseCount), meshState.reverseCount);
     
     PathInteriorVertex vert;
-    vert.position = float4(ndcPoint, 1.0, 1.0);
+    vert.position = float4(ndcPoint, z, 1.0);
     vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
     return vert;
 }
