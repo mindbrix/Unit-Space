@@ -81,6 +81,10 @@ struct Grid {
             }
         }
         for (Sample sample : samples)
-            mesh._circles.add(float(sample.idx & 0xFFFF), float(sample.idx >> 16), sample.coverage);
+            mesh._circles.add(kGridPixelSize * 0.5 + float(sample.idx & 0xFFFF), kGridPixelSize * 0.5 + float(sample.idx >> 16), sample.coverage * 0.5);
+        sort(samples.begin(), samples.end());
+        for (Sample sample : samples) {
+            gx = sample.idx & 0xFFFF, gy = sample.idx >> 16;
+        }
     }
 };
