@@ -24,9 +24,10 @@ struct Grid {
         if (! Bounds::transformUnit(AffineTransformMakeUnit(path._bounds, ctm)).intersects(clipBounds))
             return;
         
-        float *points, *end, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx;
+        float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx;
         vector<Sample> samples;
         Bounds windingBounds = { -FLT_MAX, clipBounds.ly, clipBounds.ux, clipBounds.uy }, bounds;
+        gmax = std::ceil(clipBounds.ux * kGridPixelSizeRecip) * kGridPixelSize;
         for (SubPath& s : path._subPaths) {
             AffineTransform unit = AffineTransformMakeUnit(s._bounds, ctm);
             if (Bounds::transformUnit(unit).intersects(clipBounds)) {
@@ -57,8 +58,8 @@ struct Grid {
                                 glx = std::floor(clx * kGridPixelSizeRecip) * kGridPixelSize;
                                 gux = std::ceil(cux * kGridPixelSizeRecip) * kGridPixelSize;
                                 
-                                glx = glx < 0 ? 0 : glx;
-                                gux = gux < 0 ? 0 : gux;
+                                glx = glx < 0 ? 0 : glx > gmax ? gmax : glx;
+                                gux = gux < 0 ? 0 : gux > gmax ? gmax : gux;
                                 
                                 if (glx == gux)
                                     mesh._circles.add(glx, gy, 4);
