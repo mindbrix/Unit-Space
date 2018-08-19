@@ -80,14 +80,21 @@ struct Grid {
                 } while (true);
             }
         }        
-        RGBA8 color = path._color;
+        RGBA8 color = path._color, black = { 0, 0, 0, 255 };
         sort(samples.begin(), samples.end());
         coverage = 0, gx = gy = FLT_MAX;
         for (Sample sample : samples) {
             glx = (sample.idx & 0xFFFF) - kGridPixelSize, gly = sample.idx >> 16;
-            if (gy != gly)
+            if (gy != gly) {
+                if (gly > 0)
+                    mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
+                
                 gx = glx, gy = gly, coverage = 0;
+            }
             if (gx != glx) {
+                if (gx >= 0)
+                    mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
+                
                 if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
                     for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
                         mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5, color);
