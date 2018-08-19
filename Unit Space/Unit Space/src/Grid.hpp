@@ -12,10 +12,10 @@ constexpr float kGridPixelSize = 8, kGridPixelSizeRecip = 1 / kGridPixelSize;
 
 struct Grid {
     struct Sample {
-        Sample(int idx, int edge, float coverage) : idx(idx), edge(edge), coverage(coverage) {}
+        Sample(float gx, float gy, unsigned int edge, float coverage) : idx(((unsigned int)gy << 16) | (unsigned int)gx), edge(edge), coverage(coverage) {}
         inline bool operator< (const Sample& other) const { return idx < other.idx; }
         
-        int idx, edge;
+        unsigned int idx, edge;
         float coverage;
     };
     
@@ -65,14 +65,12 @@ struct Grid {
                                 gy2 = dy2 < gy ? gy : dy2 > gy + kGridPixelSize ? gy + kGridPixelSize : dy2;
                                 coverage = gy2 - gy0;
                                 
-                                if (glx == gux)
-                                    mesh._circles.add(glx, gy, coverage);
-                                else
-                                    for (gx = glx; gx < gux; gx += kGridPixelSize) {
-                                        mesh._circles.add(gx, gy, coverage), coverage = 4;
-                                    }
+                                if (glx == gux) {
+                                    samples.emplace_back(glx, gy, 0, coverage);
+                                } else
+                                    for (gx = glx; gx < gux; gx += kGridPixelSize)
+                                        samples.emplace_back(gx, gy, 0, coverage), coverage = 0;
                             }
-                            samples.emplace_back(0, 0, 0);
                         }
                     }
                     if (points >= end)
@@ -82,5 +80,7 @@ struct Grid {
                 } while (true);
             }
         }
+        for (Sample sample : samples)
+            mesh._circles.add(float(sample.idx & 0xFFFF), float(sample.idx >> 16), sample.coverage);
     }
 };
