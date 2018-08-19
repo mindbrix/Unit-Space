@@ -380,11 +380,6 @@ using namespace std;
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
     
-    if (_scene._paths.size()) {
-        Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
-        Grid::writePathCells(_scene._paths[0], CTM, clipBounds);
-    }
-    
     _mesh._calls.resize(0);
     int p = -1;
     
@@ -426,30 +421,36 @@ using namespace std;
         uniforms.fillColor = { 1, 0, 0, 1 };
         _mesh._circles.empty();
         
-        if (_svgData == nullptr && _fontData  == nullptr) {
-            if (self.pathBitmask & kPathBitmaskTriangle)
-                for (int j = 0; j < _triangle.size(); j++)
-                    _mesh._circles.add(_triangle[j].x, _triangle[j].y, radius);
-            
-            if (self.pathBitmask & kPathBitmaskLozenge)
-                for (int j = 0; j < _lozenge.size(); j++)
-                    _mesh._circles.add(_lozenge[j].x, _lozenge[j].y, radius);
-            
-            if (self.pathBitmask & kPathBitmaskQuad)
-                for (int j = 0; j < _quad.size(); j++)
-                    _mesh._circles.add(_quad[j].x, _quad[j].y, radius);
-        } else if (p != -1) {
-            AffineTransform m = _mesh._paths[p].ctm;
-            float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
-            uniforms.CTM = AffineTransformConcat(m, CTM);
-            for (SubPath& s : _scene._paths[p]._subPaths) {
-                float *points = s._quadratics.get();
-                int npoints = (int)s._quadratics.count() / 2;
-                int stride = 2;
-                for (int j = 0; j < npoints; j += stride)
-                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
-            }
+        if (_scene._paths.size()) {
+            Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
+            Grid::writePathCells(_mesh, _scene._paths[0], CTM, clipBounds);
+            uniforms.CTM = { 1, 0, 0, 1, 0, 1 };
         }
+        
+//        if (_svgData == nullptr && _fontData  == nullptr) {
+//            if (self.pathBitmask & kPathBitmaskTriangle)
+//                for (int j = 0; j < _triangle.size(); j++)
+//                    _mesh._circles.add(_triangle[j].x, _triangle[j].y, radius);
+//
+//            if (self.pathBitmask & kPathBitmaskLozenge)
+//                for (int j = 0; j < _lozenge.size(); j++)
+//                    _mesh._circles.add(_lozenge[j].x, _lozenge[j].y, radius);
+//
+//            if (self.pathBitmask & kPathBitmaskQuad)
+//                for (int j = 0; j < _quad.size(); j++)
+//                    _mesh._circles.add(_quad[j].x, _quad[j].y, radius);
+//        } else if (p != -1) {
+//            AffineTransform m = _mesh._paths[p].ctm;
+//            float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
+//            uniforms.CTM = AffineTransformConcat(m, CTM);
+//            for (SubPath& s : _scene._paths[p]._subPaths) {
+//                float *points = s._quadratics.get();
+//                int npoints = (int)s._quadratics.count() / 2;
+//                int stride = 2;
+//                for (int j = 0; j < npoints; j += stride)
+//                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
+//            }
+//        }
         Mesh::writeCircleCalls(_mesh, uniforms, meshState);
     }
 }
