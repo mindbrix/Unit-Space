@@ -112,7 +112,7 @@ struct Mesh {
     }
     
     struct CirclesSOA {
-        void add(float x, float y, float r)     { _xs.push_back(x), _ys.push_back(y), _rs.push_back(r); }
+        void add(float x, float y, float r)     { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)); }
         void empty()                            { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(); }
         
         Memory<float>                           _xs, _ys, _rs;
