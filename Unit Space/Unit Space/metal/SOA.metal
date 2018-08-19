@@ -111,3 +111,35 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State 
     * saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
     * saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
 }
+
+#pragma mark - Path interior
+
+struct PathInteriorVertex
+{
+    float4 position [[position]];
+    float4 color;
+};
+
+vertex PathInteriorVertex pathInteriorSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                      constant unsigned short *glxs [[buffer(10)]], constant unsigned short *guxs [[buffer(11)]],
+                                      constant unsigned short *gys [[buffer(12)]],
+                                      constant RGBA8 *colors [[buffer(13)]],
+                                      uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    float glx = glxs[iid], gux = guxs[iid], gy = gys[iid];
+    RGBA8 color = colors[iid];
+    
+    float2 devicePoint =  { select(gux, glx, vid & 1), select(gy, gy + kkGridPixelSize, vid & 2) };
+    float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
+    
+    PathInteriorVertex vert;
+    vert.position = float4(ndcPoint, 1.0, 1.0);
+    vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
+    return vert;
+}
+
+fragment float4 pathInteriorSOA_fragment_main(PathInteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+{
+    return vert.color;
+}
+
