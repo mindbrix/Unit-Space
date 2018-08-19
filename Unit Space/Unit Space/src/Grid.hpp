@@ -8,7 +8,7 @@
 
 #import "Scene.hpp"
 
-constexpr float kGridPixelSize = 8, kGridPixelSizeRecip = 1 / kGridPixelSize;
+constexpr float kGridPixelSize = 64, kGridPixelSizeRecip = 1 / kGridPixelSize;
 
 struct Grid {
     struct Sample {
@@ -24,7 +24,7 @@ struct Grid {
         if (! Bounds::transformUnit(AffineTransformMakeUnit(path._bounds, ctm)).intersects(clipBounds))
             return;
         
-        float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx, gy0, gy2, coverage;
+        float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx, gy0, gy2, coverage, x;
         vector<Sample> samples;
         Bounds windingBounds = { -FLT_MAX, clipBounds.ly, FLT_MAX, clipBounds.uy }, bounds;
         gmax = std::ceil(clipBounds.ux * kGridPixelSizeRecip) * kGridPixelSize;
@@ -66,10 +66,10 @@ struct Grid {
                                 coverage = gy2 - gy0;
                                 
                                 if (glx == gux) {
-                                    samples.emplace_back(glx, gy, 0, coverage);
+                                    samples.emplace_back(glx == 0 ? 0 : glx + kGridPixelSize, gy, 0, coverage);
                                 } else
                                     for (gx = glx; gx < gux; gx += kGridPixelSize)
-                                        samples.emplace_back(gx, gy, 0, coverage), coverage = 0;
+                                        samples.emplace_back(gx + kGridPixelSize, gy, 0, coverage), coverage = 0;
                             }
                         }
                     }
@@ -80,11 +80,23 @@ struct Grid {
                 } while (true);
             }
         }
-        for (Sample sample : samples)
-            mesh._circles.add(kGridPixelSize * 0.5 + float(sample.idx & 0xFFFF), kGridPixelSize * 0.5 + float(sample.idx >> 16), sample.coverage * 0.5);
+//        for (Sample sample : samples)
+//            mesh._circles.add(kGridPixelSize * 0.5 + float(sample.idx & 0xFFFF), kGridPixelSize * 0.5 + float(sample.idx >> 16), sample.coverage * 0.5);
+        
         sort(samples.begin(), samples.end());
+        coverage = 0, gx = gy = FLT_MAX;
         for (Sample sample : samples) {
-            gx = sample.idx & 0xFFFF, gy = sample.idx >> 16;
+            glx = (sample.idx & 0xFFFF) - kGridPixelSize, gly = sample.idx >> 16;
+            if (gy != gly)
+                gx = glx, gy = gly, coverage = 0;
+            if (gx != glx) {
+                if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
+                    for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
+                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 +  gy, coverage * 0.5);
+                }
+                gx = glx;
+            }
+            coverage += sample.coverage;
         }
     }
 };
