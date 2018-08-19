@@ -8,7 +8,7 @@
 
 #import "Scene.hpp"
 
-constexpr float kGridPixelSize = 64, kGridPixelSizeRecip = 1 / kGridPixelSize;
+constexpr float kGridPixelSize = 16, kGridPixelSizeRecip = 1 / kGridPixelSize;
 
 struct Grid {
     struct Sample {
@@ -92,7 +92,7 @@ struct Grid {
             if (gx != glx) {
                 if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
                     for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
-                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 +  gy, coverage * 0.5);
+                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5);
                 }
                 gx = glx;
             }
