@@ -76,7 +76,7 @@ struct Grid {
         RGBA8 color = path._color, black = { 0, 0, 0, 255 };
     
         sort(samples.begin(), samples.end());
-        coverage = 0, gx = gy = FLT_MAX;
+        coverage = 0, gx = gy = glx = gly = FLT_MAX;
         for (Mesh::Sample sample : samples) {
             glx = (sample.idx & 0xFFFF) - kGridPixelSize, gly = sample.idx >> 16;
             if (gy != gly) {
@@ -99,5 +99,6 @@ struct Grid {
             }
             coverage += sample.coverage;
         }
+        mesh._circles.add(kGridPixelSize * 0.5 + glx, kGridPixelSize * 0.5 + gly, kGridPixelSize * 0.5, black);
     }
 };
