@@ -79,11 +79,8 @@ struct Grid {
                     x0 = x2, y0 = y2, x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
                 } while (true);
             }
-        }
-//        for (Sample sample : samples)
-//            mesh._circles.add(kGridPixelSize * 0.5 + float(sample.idx & 0xFFFF), kGridPixelSize * 0.5 + float(sample.idx >> 16), sample.coverage * 0.5);
-        
-        RGBA8 color(0, 255, 0, 255);
+        }        
+        RGBA8 color = path._color;
         sort(samples.begin(), samples.end());
         coverage = 0, gx = gy = FLT_MAX;
         for (Sample sample : samples) {

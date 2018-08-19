@@ -424,11 +424,10 @@ using namespace std;
         uniforms.fillColor = { 1, 0, 0, 1 };
         _mesh._circles.empty();
         
-        if (_scene._paths.size()) {
-            Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
-            Grid::writePathCells(_mesh, _scene._paths[0], CTM, clipBounds);
-            uniforms.CTM = { 1, 0, 0, 1, 0, 1 };
-        }
+        Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
+        for (int i = 0; i < _scene._paths.size(); i++)
+            Grid::writePathCells(_mesh, _scene._paths[i], AffineTransformConcat(_mesh._paths[i].ctm, CTM), clipBounds);
+        uniforms.CTM = { 1, 0, 0, 1, 0, 1 };
         
 //        if (_svgData == nullptr && _fontData  == nullptr) {
 //            if (self.pathBitmask & kPathBitmaskTriangle)
