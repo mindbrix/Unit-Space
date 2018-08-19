@@ -411,7 +411,7 @@ using namespace std;
         for (idx = 0; idx < count; idx++)
             _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
         
-        Mesh::writeCircleCalls(_mesh, uniforms, meshState);
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;
     }
     if (_flags & 4) {}
@@ -454,7 +454,7 @@ using namespace std;
 //                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
 //            }
 //        }
-        Mesh::writeCircleCalls(_mesh, uniforms, meshState);
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
     }
 }
 

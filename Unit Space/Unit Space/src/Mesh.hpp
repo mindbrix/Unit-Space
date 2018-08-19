@@ -103,11 +103,12 @@ struct Mesh {
             }
         }
     }
-    static void writeCircleCalls(Mesh& mesh, State state, MeshState meshState) {
+    
+    static void writeSOACalls(Mesh& mesh, State state, MeshState meshState, CallType type, size_t count) {
         int i, end;
-        for (i = 0; i < mesh._circles._xs.count(); i += 1024) {
-            end = i + 1024 > mesh._circles._xs.count() ? (int)mesh._circles._xs.count() : i + 1024;
-            mesh._calls.emplace_back(kCallTypeCirclesSOA, end - i, i, state, meshState);
+        for (i = 0; i < count; i += 1024) {
+            end = i + 1024 > count ? (int)count : i + 1024;
+            mesh._calls.emplace_back(type, end - i, i, state, meshState);
         }
     }
     
@@ -120,7 +121,7 @@ struct Mesh {
     };
     
     struct PathInteriorSOA {
-        void add(float lx, float ux, float y, RGBA8 c)    { _glxs.push_back((unsigned short)lx), _guxs.push_back((unsigned short)ux), _gys.push_back((unsigned short)y), _colors.push_back(c); }
+        void add(float lx, float ux, float y, RGBA8 c)  { _glxs.push_back((unsigned short)lx), _guxs.push_back((unsigned short)ux), _gys.push_back((unsigned short)y), _colors.push_back(c); }
         void empty()                                    { _glxs = Memory<unsigned short>(), _guxs = Memory<unsigned short>(), _gys = Memory<unsigned short>(), _colors = Memory<RGBA8>(); }
         
         Memory<unsigned short>                  _glxs, _guxs, _gys;
