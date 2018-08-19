@@ -71,44 +71,6 @@ fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State
 }
 
 
-#pragma mark - Circle
-
-vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                       constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]],
-                                       constant float *rs [[buffer(12)]], constant RGBA8 *colors [[buffer(13)]],
-                                       uint vid [[vertex_id]], uint iid [[instance_id]])
-{
-    Circle circle = { xs[iid], ys[iid], rs[iid] };
-    RGBA8 color = colors[iid];
-    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
-    float dilation = 0.7071 / scale;
-    float r = circle.r + dilation;
-    
-    float2 up = { circle.x + r * select(-1.0, 1.0, vid & 1), circle.y + r * select(-1.0, 1.0, vid & 2) };
-
-    AffineTransform unit = { circle.r * 2.0, 0.0, 0.0, circle.r * 2.0, circle.x - circle.r, circle.y - circle.r };
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
-    
-    float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
-    float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
-    
-    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
-    
-    StrokeVertex vert;
-    vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
-    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    vert.unitWidth = min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
-    vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
-    
-    return vert;
-}
-
-fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
-{
-    return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
-}
-
-
 #pragma mark - Flags
 
 vertex StrokeVertex flags_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Flags &flags [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
@@ -132,52 +94,4 @@ fragment float4 flags_fragment_main(StrokeVertex vert [[stage_in]], constant Sta
 {
     float alpha = 1;
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
-}
-
-
-#pragma mark - Line
-
-struct LineVertex
-{
-    float4 position [[position]];
-    float u, v;
-    float4 color;
-};
-
-vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant int *ps [[buffer(12)]], constant float *as [[buffer(13)]], constant float *bs [[buffer(14)]], constant MeshPath *paths [[buffer(9)]], uint vid [[vertex_id]], uint iid [[instance_id]])
-{
-    uint idx = iid / meshState.subdivisionCount;
-    int p = max(0, ps[idx]);
-    float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
-    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
-    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-    
-    if (meshState.subdivisionCount > 1) {
-        float a = as[idx], b = bs[idx];
-        float dx02 = p1.x - p0.x, dy02 = p1.y - p0.y;
-        float2 cp = { dx02 * a + dy02 * -b + p0.x, dx02 * b + dy02 * a + p0.y };
-        float dt = 1.0 / float(meshState.subdivisionCount), t0 = float(iid % meshState.subdivisionCount) * dt, t1 = t0 + dt;
-        float s0 = 1.0 - t0, s1 = 1.0 - t1;
-        float2 tp0 = s0 * s0 * p0 + 2.0 * s0 * t0 * cp + t0 * t0 * p1;
-        float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
-        p0 = tp0, p1 = tp1;
-    }
-    float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = select(state.width + 1.0, 0.0, ps[idx] == -1);
-    float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
-    float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
-    
-    LineVertex vert;
-    vert.position = float4(ndcPoint, 1.0, 1.0);
-    vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
-    vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
-    return vert;
-}
-
-fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
-{
-    return vert.color
-    * saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
-    * saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
 }

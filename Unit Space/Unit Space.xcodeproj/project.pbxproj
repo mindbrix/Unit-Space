@@ -13,6 +13,7 @@
 		E97D7609211498610015388A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7605211498600015388A /* Shaders.metal */; };
 		E97D76152114995A0015388A /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97D76112114995A0015388A /* MetalLayer.mm */; };
 		E97D7618211499E20015388A /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E97D7617211499E20015388A /* VGAffineTransform.m */; };
+		E9B31328212A0223008EC18E /* SOA.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9B31327212A0223008EC18E /* SOA.metal */; };
 		E9C24949211724470019B25C /* Nu.icns in Resources */ = {isa = PBXBuildFile; fileRef = E9C24948211724470019B25C /* Nu.icns */; };
 		E9EE5F9220851100005823F7 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7B20851100005823F7 /* bucketalloc.c */; };
 		E9EE5F9320851100005823F7 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7D20851100005823F7 /* dict.c */; };
@@ -49,6 +50,7 @@
 		E97D7616211499E20015388A /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E97D7617211499E20015388A /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
 		E9B313262128DB37008EC18E /* Grid.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Grid.hpp; sourceTree = "<group>"; };
+		E9B31327212A0223008EC18E /* SOA.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SOA.metal; sourceTree = "<group>"; };
 		E9C24948211724470019B25C /* Nu.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Nu.icns; path = ../../Designs/Nu.icns; sourceTree = "<group>"; };
 		E9EBC19B20F79EBF0045D338 /* stb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_truetype.h; path = ../../../../stb/stb_truetype.h; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				E97D7604211498600015388A /* Mesh.metal */,
 				E97D7605211498600015388A /* Shaders.metal */,
 				E97D760A2114989D0015388A /* Shared.metal.hpp */,
+				E9B31327212A0223008EC18E /* SOA.metal */,
 			);
 			path = metal;
 			sourceTree = "<group>";
@@ -309,6 +312,7 @@
 				E97D7607211498610015388A /* Library.metal in Sources */,
 				E97D7606211498610015388A /* Headers.metal in Sources */,
 				E9EEAD85200BC63400F2BFB2 /* main.m in Sources */,
+				E9B31328212A0223008EC18E /* SOA.metal in Sources */,
 				E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */,
 				E9EE5F9420851100005823F7 /* geom.c in Sources */,
 			);
