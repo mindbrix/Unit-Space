@@ -11,6 +11,17 @@
 
 using namespace metal;
 
+float sRGB(float x) {
+    return x;
+    
+    return pow(x, 2.2);
+    
+    if (x <= 0.00031308)
+        return 12.92 * x;
+    else
+        return 1.055*pow(x,(1.0 / 2.4) ) - 0.055;
+}
+
 float ellipseDistance(float2 unitPoint, float dilation) {
     float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
     

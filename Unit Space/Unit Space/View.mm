@@ -409,7 +409,7 @@ using namespace std;
         for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
             *dst++ = r;
         for (idx = 0; idx < count; idx++)
-            _mesh._circles._colors[idx] = uniforms.fillColor;
+            _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
         
         Mesh::writeCircleCalls(_mesh, uniforms, meshState);
         return;

@@ -11,6 +11,7 @@
 
 using namespace metal;
 
+float sRGB(float x);
 float ellipseDistance(float2 unitPoint, float dilation);
 float ellipseStrokeDistance(float2 unitPoint, float w);
 float det(float2 a, float2 b);
