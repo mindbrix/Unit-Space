@@ -112,10 +112,11 @@ struct Mesh {
     }
     
     struct CirclesSOA {
-        void add(float x, float y, float r)     { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)); }
-        void empty()                            { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(); }
+        void add(float x, float y, float r, RGBA8 c)    { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)), _colors.push_back(c); }
+        void empty()                                    { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(), _colors = Memory<RGBA8>(); }
         
         Memory<float>                           _xs, _ys, _rs;
+        Memory<RGBA8>                           _colors;
     };
     
     vector<MeshPath>                    _paths;

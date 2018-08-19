@@ -83,6 +83,7 @@ struct Grid {
 //        for (Sample sample : samples)
 //            mesh._circles.add(kGridPixelSize * 0.5 + float(sample.idx & 0xFFFF), kGridPixelSize * 0.5 + float(sample.idx >> 16), sample.coverage * 0.5);
         
+        RGBA8 color(0, 255, 0, 255);
         sort(samples.begin(), samples.end());
         coverage = 0, gx = gy = FLT_MAX;
         for (Sample sample : samples) {
@@ -92,7 +93,7 @@ struct Grid {
             if (gx != glx) {
                 if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
                     for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
-                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5);
+                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5, color);
                 }
                 gx = glx;
             }

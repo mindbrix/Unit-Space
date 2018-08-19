@@ -18,6 +18,7 @@ using namespace metal;
 struct StrokeVertex
 {
     float4 position [[position]];
+    float4 color;
     
     float2 unitPoint;
     float unitWidth;
@@ -73,10 +74,12 @@ fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State
 #pragma mark - Circle
 
 vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                       constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]], constant float *rs [[buffer(12)]],
+                                       constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]],
+                                       constant float *rs [[buffer(12)]], constant RGBA8 *colors [[buffer(13)]],
                                        uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     Circle circle = { xs[iid], ys[iid], rs[iid] };
+    RGBA8 color = colors[iid];
     float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
     float dilation = 0.7071 / scale;
     float r = circle.r + dilation;
@@ -95,14 +98,13 @@ vertex StrokeVertex circle_vertex_main(constant State &state [[buffer(0)]], cons
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     vert.unitWidth = min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
+    vert.color = vert.color = { float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0 };
     return vert;
 }
 
 fragment float4 circle_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    //float alpha = saturate(unitRoundedRectDistance(vert.unitPoint, 0.25) + 0.5);
-    float alpha = saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+    return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
 }
 
 

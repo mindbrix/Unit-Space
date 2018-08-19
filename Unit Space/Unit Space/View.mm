@@ -400,6 +400,7 @@ using namespace std;
         _mesh._circles._xs = Memory<float>(count);
         _mesh._circles._ys = Memory<float>(count);
         _mesh._circles._rs = Memory<float>(count);
+        _mesh._circles._colors = Memory<RGBA8>(count);
         
         for (dst = &_mesh._circles._xs[0], idx = 0; idx < count; idx++)
             *dst++ = (idx % dimension) * g;
@@ -407,6 +408,8 @@ using namespace std;
             *dst++ = idx / dimension * g;
         for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
             *dst++ = r;
+        for (idx = 0; idx < count; idx++)
+            _mesh._circles._colors[idx] = uniforms.fillColor;
         
         Mesh::writeCircleCalls(_mesh, uniforms, meshState);
         return;
