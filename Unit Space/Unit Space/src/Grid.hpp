@@ -11,21 +11,14 @@
 constexpr float kGridPixelSize = 16, kGridPixelSizeRecip = 1 / kGridPixelSize;
 
 struct Grid {
-    struct Sample {
-        Sample(float gx, float gy, unsigned int edge, float coverage) : idx(((unsigned int)gy << 16) | (unsigned int)gx), edge(edge), coverage(coverage) {}
-        inline bool operator< (const Sample& other) const { return idx < other.idx; }
-        
-        unsigned int idx, edge;
-        float coverage;
-    };
-    
-    
     static void writePathCells(Mesh& mesh, Path& path, AffineTransform ctm, Bounds clipBounds) {
         if (! Bounds::transformUnit(AffineTransformMakeUnit(path._bounds, ctm)).intersects(clipBounds))
             return;
         
         float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx, gy0, gy2, coverage, x;
-        vector<Sample> samples;
+        vector<Mesh::Sample>& samples = mesh._samples;
+        samples.resize(0);
+        
         Bounds windingBounds = { -FLT_MAX, std::floor(clipBounds.ly * kGridPixelSizeRecip) * kGridPixelSize, FLT_MAX, std::ceil(clipBounds.uy * kGridPixelSizeRecip) * kGridPixelSize }, bounds;
         gmax = std::ceil(clipBounds.ux * kGridPixelSizeRecip) * kGridPixelSize;
         for (SubPath& s : path._subPaths) {
@@ -81,9 +74,10 @@ struct Grid {
             }
         }        
         RGBA8 color = path._color, black = { 0, 0, 0, 255 };
+    
         sort(samples.begin(), samples.end());
         coverage = 0, gx = gy = FLT_MAX;
-        for (Sample sample : samples) {
+        for (Mesh::Sample sample : samples) {
             glx = (sample.idx & 0xFFFF) - kGridPixelSize, gly = sample.idx >> 16;
             if (gy != gly) {
                 if (gly > 0)
@@ -95,10 +89,10 @@ struct Grid {
                 if (gx >= 0)
                     mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
                 
-                if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
-                    for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
-                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5, color);
-                }
+//                if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
+//                    for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
+//                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5, color);
+//                }
                 gx = glx;
             }
             coverage += sample.coverage;

@@ -12,6 +12,15 @@ using namespace std;
 #pragma clang diagnostic ignored "-Wcomma"
 
 struct Mesh {
+    struct Sample {
+        Sample() {}
+        Sample(float gx, float gy, unsigned int edge, float coverage) : idx(((unsigned int)gy << 16) | (unsigned int)gx), edge(edge), coverage(coverage) {}
+        inline bool operator< (const Sample& other) const { return idx < other.idx; }
+        
+        unsigned int idx, edge;
+        float coverage;
+    };
+    
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
         int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
@@ -127,6 +136,7 @@ struct Mesh {
     
     vector<Call>                        _calls;
     CirclesSOA                          _circles;
+    vector<Sample>                      _samples;
     
     void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
 };
