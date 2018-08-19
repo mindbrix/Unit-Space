@@ -8,7 +8,7 @@
 
 #import "Scene.hpp"
 
-constexpr float kGridPixelSize = 16, kGridPixelSizeRecip = 1 / kGridPixelSize;
+constexpr float kGridPixelSize = kkGridPixelSize, kGridPixelSizeRecip = 1 / kGridPixelSize;
 
 struct Grid {
     static void writePathCells(Mesh& mesh, Path& path, AffineTransform ctm, Bounds clipBounds) {
