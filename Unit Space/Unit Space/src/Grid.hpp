@@ -8,6 +8,8 @@
 
 #import "Scene.hpp"
 
+constexpr float kGridPixelSize = 8, kGridPixelSizeRecip = 1 / kGridPixelSize;
+
 struct Grid {
     struct Sample {
         Sample(int idx, int edge, float coverage) : idx(idx), edge(edge), coverage(coverage) {}
@@ -22,7 +24,7 @@ struct Grid {
         if (! Bounds::transformUnit(AffineTransformMakeUnit(path._bounds, ctm)).intersects(clipBounds))
             return;
         
-        float *points, *end, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2;
+        float *points, *end, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx;
         vector<Sample> samples;
         Bounds windingBounds = { -FLT_MAX, clipBounds.ly, clipBounds.ux, clipBounds.uy }, bounds;
         for (SubPath& s : path._subPaths) {
@@ -42,13 +44,28 @@ struct Grid {
                         cy2 = dy2 < windingBounds.ly ? windingBounds.ly : dy2 > windingBounds.uy ? windingBounds.uy : dy2;
                         
                         if (cy0 != cy2) {
-                            t0 = (cy0 - dy0) / (dy2 - dy0), t0 = t0 < 0 ? 0 : t0 > 1 ? 1 : t0;
-                            t2 = (cy2 - dy0) / (dy2 - dy0), t2 = t2 < 0 ? 0 : t2 > 1 ? 1 : t2;
-                            cx0 = lerp(t0, dx0, dx2), cx2 = lerp(t2, dx0, dx2);
+                            cly = cy0 < cy2 ? cy0 : cy2, cuy = cy0 > cy2 ? cy0 : cy2;
+                            gly = std::floor(cly * kGridPixelSizeRecip) * kGridPixelSize;
+                            guy = std::ceil(cuy * kGridPixelSizeRecip) * kGridPixelSize;
                             
-                            mesh._circles.add(cx0, cy0, 8);
-                            mesh._circles.add(cx2, cy2, 8);
-                            
+                            for (gy = gly; gy < guy; gy += kGridPixelSize) {
+                                t0 = (gy - dy0) / (dy2 - dy0), t0 = t0 < 0 ? 0 : t0 > 1 ? 1 : t0;
+                                t2 = (gy + kGridPixelSize - dy0) / (dy2 - dy0), t2 = t2 < 0 ? 0 : t2 > 1 ? 1 : t2;
+                                cx0 = lerp(t0, dx0, dx2), cx2 = lerp(t2, dx0, dx2);
+                                
+                                clx = cx0 < cx2 ? cx0 : cx2, cux = cx0 > cx2 ? cx0 : cx2;
+                                glx = std::floor(clx * kGridPixelSizeRecip) * kGridPixelSize;
+                                gux = std::ceil(cux * kGridPixelSizeRecip) * kGridPixelSize;
+                                
+                                glx = glx < 0 ? 0 : glx;
+                                gux = gux < 0 ? 0 : gux;
+                                
+                                if (glx == gux)
+                                    mesh._circles.add(glx, gy, 4);
+                                else
+                                    for (gx = glx; gx < gux; gx += kGridPixelSize)
+                                        mesh._circles.add(gx, gy, 4);
+                            }
                             samples.emplace_back(0, 0, 0);
                         }
                     }
