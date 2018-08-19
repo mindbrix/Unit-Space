@@ -24,7 +24,7 @@ struct Grid {
         if (! Bounds::transformUnit(AffineTransformMakeUnit(path._bounds, ctm)).intersects(clipBounds))
             return;
         
-        float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx;
+        float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx, gy0, gy2, coverage;
         vector<Sample> samples;
         Bounds windingBounds = { -FLT_MAX, clipBounds.ly, clipBounds.ux, clipBounds.uy }, bounds;
         gmax = std::ceil(clipBounds.ux * kGridPixelSizeRecip) * kGridPixelSize;
@@ -61,11 +61,17 @@ struct Grid {
                                 glx = glx < 0 ? 0 : glx > gmax ? gmax : glx;
                                 gux = gux < 0 ? 0 : gux > gmax ? gmax : gux;
                                 
+                                gy0 = dy0 < gy ? gy : dy0 > gy + kGridPixelSize ? gy + kGridPixelSize : dy0;
+                                gy2 = dy2 < gy ? gy : dy2 > gy + kGridPixelSize ? gy + kGridPixelSize : dy2;
+                                coverage = gy2 - gy0;
+                                
                                 if (glx == gux)
                                     mesh._circles.add(glx, gy, 4);
                                 else
-                                    for (gx = glx; gx < gux; gx += kGridPixelSize)
+                                    for (gx = glx; gx < gux; gx += kGridPixelSize) {
+                                        
                                         mesh._circles.add(gx, gy, 4);
+                                    }
                             }
                             samples.emplace_back(0, 0, 0);
                         }
