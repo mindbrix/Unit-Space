@@ -26,7 +26,7 @@ struct Grid {
         
         float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx, gy0, gy2, coverage, x;
         vector<Sample> samples;
-        Bounds windingBounds = { -FLT_MAX, clipBounds.ly, FLT_MAX, clipBounds.uy }, bounds;
+        Bounds windingBounds = { -FLT_MAX, std::floor(clipBounds.ly * kGridPixelSizeRecip) * kGridPixelSize, FLT_MAX, std::ceil(clipBounds.uy * kGridPixelSizeRecip) * kGridPixelSize }, bounds;
         gmax = std::ceil(clipBounds.ux * kGridPixelSizeRecip) * kGridPixelSize;
         for (SubPath& s : path._subPaths) {
             AffineTransform unit = AffineTransformMakeUnit(s._bounds, ctm);
