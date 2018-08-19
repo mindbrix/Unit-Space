@@ -89,10 +89,12 @@ struct Grid {
                 if (gx >= 0)
                     mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
                 
-//                if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
+                if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
+                    mesh._interiors.add(gx + kGridPixelSize, glx, gy, color);
+                    
 //                    for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
 //                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5, color);
-//                }
+                }
                 gx = glx;
             }
             coverage += sample.coverage;

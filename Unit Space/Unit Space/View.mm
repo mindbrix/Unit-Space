@@ -423,6 +423,7 @@ using namespace std;
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
         _mesh._circles.empty();
+        _mesh._interiors.empty();
         
         Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
         for (int i = 0; i < _scene._paths.size(); i++)

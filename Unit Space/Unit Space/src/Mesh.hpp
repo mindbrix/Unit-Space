@@ -12,15 +12,6 @@ using namespace std;
 #pragma clang diagnostic ignored "-Wcomma"
 
 struct Mesh {
-    struct Sample {
-        Sample() {}
-        Sample(float gx, float gy, unsigned int edge, float coverage) : idx(((unsigned int)gy << 16) | (unsigned int)gx), edge(edge), coverage(coverage) {}
-        inline bool operator< (const Sample& other) const { return idx < other.idx; }
-        
-        unsigned int idx, edge;
-        float coverage;
-    };
-    
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
         int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
@@ -128,6 +119,27 @@ struct Mesh {
         Memory<RGBA8>                           _colors;
     };
     
+    struct PathInteriorSOA {
+        void add(float lx, float ux, float y, RGBA8 c)    { _glxs.push_back((unsigned short)lx), _guxs.push_back((unsigned short)ux), _gys.push_back((unsigned short)y), _colors.push_back(c); }
+        void empty()                                    { _glxs = Memory<unsigned short>(), _guxs = Memory<unsigned short>(), _gys = Memory<unsigned short>(), _colors = Memory<RGBA8>(); }
+        
+        Memory<unsigned short>                  _glxs, _guxs, _gys;
+        Memory<RGBA8>                           _colors;
+    };
+    struct PathSOA {
+        Memory<float>                           _xs, _ys;
+        Memory<unsigned short>                  _gxs, _gys, _begins, _ends, _idxs;
+    };
+    
+    struct Sample {
+        Sample() {}
+        Sample(float gx, float gy, unsigned int edge, float coverage) : idx(((unsigned int)gy << 16) | (unsigned int)gx), edge(edge), coverage(coverage) {}
+        inline bool operator< (const Sample& other) const { return idx < other.idx; }
+        
+        unsigned int idx, edge;
+        float coverage;
+    };
+    
     vector<MeshPath>                    _paths;
     vector<Vector>                      _points;
     vector<Bounds>                      _bounds;
@@ -136,6 +148,7 @@ struct Mesh {
     
     vector<Call>                        _calls;
     CirclesSOA                          _circles;
+    PathInteriorSOA                     _interiors;
     vector<Sample>                      _samples;
     
     void empty() { _paths.resize(0), _points.resize(0), _bounds.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
