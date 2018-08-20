@@ -19,6 +19,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> triangleSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -94,6 +95,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
     descriptor.label = @"lineSOAPipelineState";
     self.lineSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_fragment_main"];
+    descriptor.label = @"triangleSOAPipelineState";
+    self.triangleSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
@@ -183,7 +189,7 @@
                 break;
             case kCallTypeLinesSOA:
             case kCallTypeTrianglesSOA:
-                [commandEncoder setRenderPipelineState:_lineSOAPipelineState];
+                [commandEncoder setRenderPipelineState:call->type == kCallTypeLinesSOA ? _lineSOAPipelineState : _triangleSOAPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
@@ -191,6 +197,7 @@
                 [commandEncoder setVertexBytes:& mesh->_as[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:13];
                 [commandEncoder setVertexBytes:& mesh->_bs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:14];
                 instanceCount = call->instanceCount * call->meshState.subdivisionCount;
+                drawQuads = call->type == kCallTypeLinesSOA;
                 break;
         }
         if (instanceCount == 0)

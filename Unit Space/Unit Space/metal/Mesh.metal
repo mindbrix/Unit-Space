@@ -6,25 +6,10 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 #include "Shared.metal.hpp"
+#include "Headers.metal"
 #include <metal_stdlib>
 
 using namespace metal;
-
-#pragma mark - Library
-
-float edgeWinding(float2 p0, float2 p1) {
-    float y0 = saturate(p0.y), y1 = saturate(p1.y);
-    float coverage = y1 - y0;
-    if (coverage == 0.0 || saturate(p0.x) + saturate(p1.x) == 0.0)
-        return coverage;
-    
-    float dxdy = (p1.x - p0.x) / (p1.y - p0.y);
-    float x0 = fma(y0 - p0.y, dxdy, p0.x), x1 = fma(y1 - p0.y, dxdy, p0.x);
-    float minx = min(x0, x1), range = abs(x1 - x0);
-    float t0 = saturate(-minx / range), t1 = saturate((1.0 - minx) / range);
-    float area = (saturate(x0) + saturate(x1)) * 0.5;
-    return coverage * (t1 - ((t1 - t0) * area));
-}
 
 #pragma mark - Interior
 
