@@ -119,6 +119,7 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.colorAttachments[0].writeMask = MTLColorWriteMaskNone;
     descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
