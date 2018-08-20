@@ -121,6 +121,14 @@ struct TriangleSOAVertex
     float4 color;
 };
 
+struct MyFragmentOutput {
+    // color attachment 0
+    float4 color [[ color(0) ]];
+    
+    // color attachment 1
+    float4 winding [[ color(1) ]];
+};
+
 vertex TriangleSOAVertex triangleSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                       device MeshPath *paths [[buffer(9)]],
                                       constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]],
@@ -163,7 +171,12 @@ vertex TriangleSOAVertex triangleSOA_vertex_main(constant State &state [[buffer(
     return vert;
 }
 
-fragment float4 triangleSOA_fragment_main(TriangleSOAVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment MyFragmentOutput triangleSOA_fragment_main(TriangleSOAVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    return vert.color * abs(edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0));
+    MyFragmentOutput f;
+    float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
+    f.color = vert.color * abs(winding);
+    f.winding = winding;
+    return f;
+    //return vert.color * abs(edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0));
 }

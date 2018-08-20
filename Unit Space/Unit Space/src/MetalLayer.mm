@@ -25,6 +25,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
+@property (nonatomic, strong) id <MTLTexture> accumulationTexture;
 
 @end
 
@@ -59,6 +60,9 @@
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[0].blendingEnabled = NO;
+    descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR16Float;
+    descriptor.colorAttachments[1].blendingEnabled = YES;
+    descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskNone;
     descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
@@ -101,6 +105,7 @@
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_vertex_main"];
@@ -141,12 +146,22 @@
         desc.usage = MTLTextureUsageRenderTarget;
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
+        
+        desc.pixelFormat = MTLPixelFormatR16Float;
+        self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
+        [self.accumulationTexture setLabel:@"accumulationTexture"];
     }
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+    
+    descriptor.colorAttachments[1].texture = _accumulationTexture;
+    descriptor.colorAttachments[2].storeAction = MTLStoreActionDontCare;
+    descriptor.colorAttachments[1].loadAction = MTLLoadActionClear;
+    descriptor.colorAttachments[1].clearColor = MTLClearColorMake(0, 0, 0, 0);
+    
     descriptor.depthAttachment.texture = _depthTexture;
     descriptor.depthAttachment.loadAction = MTLLoadActionClear;
     descriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
