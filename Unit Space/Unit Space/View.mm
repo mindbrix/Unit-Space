@@ -12,7 +12,6 @@
 #import "Algorithms.hpp"
 #import "Scene.hpp"
 #import "libTess.hpp"
-#import "Grid.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -423,40 +422,33 @@ using namespace std;
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
         _mesh._circles.empty();
-        _mesh._interiors.empty();
+        RGBA8 red(255, 0, 0, 255);
         
-        Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
-        for (int i = 0; i < _scene._paths.size(); i++)
-            Grid::writePathCells(_mesh, _scene._paths[i], AffineTransformConcat(_mesh._paths[i].ctm, CTM), clipBounds);
-        uniforms.CTM = { 1, 0, 0, 1, 0, 1 };
-        
-//        if (_svgData == nullptr && _fontData  == nullptr) {
-//            if (self.pathBitmask & kPathBitmaskTriangle)
-//                for (int j = 0; j < _triangle.size(); j++)
-//                    _mesh._circles.add(_triangle[j].x, _triangle[j].y, radius);
-//
-//            if (self.pathBitmask & kPathBitmaskLozenge)
-//                for (int j = 0; j < _lozenge.size(); j++)
-//                    _mesh._circles.add(_lozenge[j].x, _lozenge[j].y, radius);
-//
-//            if (self.pathBitmask & kPathBitmaskQuad)
-//                for (int j = 0; j < _quad.size(); j++)
-//                    _mesh._circles.add(_quad[j].x, _quad[j].y, radius);
-//        } else if (p != -1) {
-//            AffineTransform m = _mesh._paths[p].ctm;
-//            float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
-//            uniforms.CTM = AffineTransformConcat(m, CTM);
-//            for (SubPath& s : _scene._paths[p]._subPaths) {
-//                float *points = s._quadratics.get();
-//                int npoints = (int)s._quadratics.count() / 2;
-//                int stride = 2;
-//                for (int j = 0; j < npoints; j += stride)
-//                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale);
-//            }
-//        }
-        meshState.reverseCount = 0;// (int)_mesh._interiors._glxs.count();
-        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypePathInteriorSOA, _mesh._interiors._glxs.count());
-       // Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
+        if (_svgData == nullptr && _fontData  == nullptr) {
+            if (self.pathBitmask & kPathBitmaskTriangle)
+                for (int j = 0; j < _triangle.size(); j++)
+                    _mesh._circles.add(_triangle[j].x, _triangle[j].y, radius, red);
+
+            if (self.pathBitmask & kPathBitmaskLozenge)
+                for (int j = 0; j < _lozenge.size(); j++)
+                    _mesh._circles.add(_lozenge[j].x, _lozenge[j].y, radius, red);
+
+            if (self.pathBitmask & kPathBitmaskQuad)
+                for (int j = 0; j < _quad.size(); j++)
+                    _mesh._circles.add(_quad[j].x, _quad[j].y, radius, red);
+        } else if (p != -1) {
+            AffineTransform m = _mesh._paths[p].ctm;
+            float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
+            uniforms.CTM = AffineTransformConcat(m, CTM);
+            for (SubPath& s : _scene._paths[p]._subPaths) {
+                float *points = s._quadratics.get();
+                int npoints = (int)s._quadratics.count() / 2;
+                int stride = 2;
+                for (int j = 0; j < npoints; j += stride)
+                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale, red);
+            }
+        }
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
     }
 }
 

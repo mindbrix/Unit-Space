@@ -22,7 +22,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> pathInteriorSOAPipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
 
@@ -66,12 +65,7 @@
     descriptor.label = @"flagPipelineState";
     self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 	
-	descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"pathInteriorSOA_vertex_main"];
-	descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"pathInteriorSOA_fragment_main"];
-	descriptor.label = @"pathInteriorSOAPipelineState";
-	self.pathInteriorSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
+	descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
     self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
@@ -196,14 +190,6 @@
                 [commandEncoder setVertexBytes:& mesh->_as[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:13];
                 [commandEncoder setVertexBytes:& mesh->_bs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:14];
                 instanceCount = call->instanceCount * call->meshState.subdivisionCount;
-                break;
-            case kCallTypePathInteriorSOA:
-                [commandEncoder setRenderPipelineState:_pathInteriorSOAPipelineState];
-                [commandEncoder setVertexBytes:& mesh->_interiors._glxs[call->baseInstance] length:sizeof(unsigned short) * (call->instanceCount) atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_interiors._guxs[call->baseInstance] length:sizeof(unsigned short) * (call->instanceCount) atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_interiors._gys[call->baseInstance] length:sizeof(unsigned short) * (call->instanceCount) atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_interiors._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:13];
-                instanceCount = call->instanceCount;
                 break;
         }
         if (instanceCount == 0)
