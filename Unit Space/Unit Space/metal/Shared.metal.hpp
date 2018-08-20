@@ -116,11 +116,12 @@ struct Flags {
 
 struct MeshPath {
     MeshPath() {}
-    MeshPath(RGBA8 color, int idx, int edge, AffineTransform ctm) : color(color), idx(idx), edge(edge), ctm(ctm) {}
+    MeshPath(RGBA8 color, int idx, int edge, AffineTransform ctm, Bounds bounds) : color(color), idx(idx), edge(edge), ctm(ctm), bounds(bounds) {}
     
     RGBA8               color;
     int                 idx, edge;
     AffineTransform     ctm;
+    Bounds              bounds;
 };
 
 struct MeshState {
@@ -158,6 +159,7 @@ enum CallType : unsigned int {
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
     kCallTypeLinesSOA,
+    kCallTypeTrianglesSOA,
 };
 
 struct Call {

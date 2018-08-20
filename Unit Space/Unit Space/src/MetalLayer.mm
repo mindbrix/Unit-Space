@@ -182,6 +182,7 @@
                 drawQuads = NO;
                 break;
             case kCallTypeLinesSOA:
+            case kCallTypeTrianglesSOA:
                 [commandEncoder setRenderPipelineState:_lineSOAPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];

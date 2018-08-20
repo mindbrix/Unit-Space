@@ -112,8 +112,8 @@
 				E97D7603211498600015388A /* Library.metal */,
 				E97D7604211498600015388A /* Mesh.metal */,
 				E97D7605211498600015388A /* Shaders.metal */,
-				E97D760A2114989D0015388A /* Shared.metal.hpp */,
 				E9B31327212A0223008EC18E /* SOA.metal */,
+				E97D760A2114989D0015388A /* Shared.metal.hpp */,
 			);
 			path = metal;
 			sourceTree = "<group>";
