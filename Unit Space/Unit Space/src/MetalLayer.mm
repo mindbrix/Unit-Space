@@ -19,6 +19,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> triangleSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
@@ -70,6 +71,11 @@
     descriptor.label = @"flagPipelineState";
     self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 	
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
+    descriptor.label = @"resolveSOAPipelineState";
+    self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
 	descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
@@ -147,6 +153,7 @@
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
         
+        desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
         desc.pixelFormat = MTLPixelFormatR16Float;
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
@@ -215,6 +222,10 @@
                 [commandEncoder setVertexBytes:& mesh->_bs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:14];
                 instanceCount = call->instanceCount * call->meshState.subdivisionCount;
                 drawQuads = call->type == kCallTypeLinesSOA;
+                break;
+            case kCallTypeResolveSOA:
+                [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
+                [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 break;
         }
         if (instanceCount == 0)

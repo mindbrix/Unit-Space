@@ -12,6 +12,32 @@
 
 using namespace metal;
 
+#pragma mark - Resolve
+
+struct ResolveVertex
+{
+    float4 position [[position]];
+    float2 uv;
+};
+
+vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                          uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    ResolveVertex vert;
+    vert.position = { select(-1.0, 1.0, vid & 1), select(1.0, -1.0, vid & 2), 1.0, 1.0 };
+    vert.uv = { select(0.0, 1.0, vid & 1), select(0.0, 1.0, vid & 2) };
+    return vert;
+}
+
+fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
+                texture2d<half> accumulation [[texture(1)]] )
+{
+    float winding = accumulation.sample(s, vert.uv).x;
+    float alpha = abs(winding);
+    
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+}
+
 #pragma mark - Circle
 
 struct CircleVertex

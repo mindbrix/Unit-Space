@@ -89,6 +89,10 @@ struct Mesh {
                 }
             }
             
+            if (meshState.showSOATriangles) 
+                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
+            
+            
             if (meshState.showVisibles) {
                 calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, state, meshState);
                 call = & calls.back();

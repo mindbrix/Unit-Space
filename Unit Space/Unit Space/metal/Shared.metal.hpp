@@ -161,6 +161,7 @@ enum CallType : unsigned int {
     kCallTypeMeshTriangles,
     kCallTypeLinesSOA,
     kCallTypeTrianglesSOA,
+    kCallTypeResolveSOA,
 };
 
 struct Call {
