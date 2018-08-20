@@ -350,7 +350,9 @@ using namespace std;
 
 - (void)writeDrawCalls {
     AffineTransform CTM = self.viewCTM;
-    CGPoint user = CGPointApplyAffineTransform(self.mouseLocation, CGAffineTransformInvert(self.transform.affineTransform));
+    AffineTransform inv = AffineTransformInvert(CTM);
+    float dx = self.mouseLocation.x * self.layer.contentsScale, dy = self.mouseLocation.y * self.layer.contentsScale;
+    float ux = dx * inv.a + dy * inv.c + inv.tx, uy = dx * inv.b + dy * inv.d + inv.ty;
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float largeRadius = kLargePointDeviceRadius / scale;
@@ -382,7 +384,6 @@ using namespace std;
     _mesh._calls.resize(0);
     int p = -1;
     
-    float ux = float(user.x), uy = float(user.y);
     for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
         AffineTransform inv = AffineTransformInvert(_mesh._paths[i].ctm);
         if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
@@ -520,7 +521,8 @@ using namespace std;
         float(viewCTM.c), float(viewCTM.d),
         float(viewCTM.tx), float(viewCTM.ty) };
     
-    return AffineTransformConcat(ctm, retina);
+    AffineTransform skew = { 1, 0, 0, 1, 9, 0 };
+    return AffineTransformConcat(skew, AffineTransformConcat(ctm, retina));
 }
 
 @end
