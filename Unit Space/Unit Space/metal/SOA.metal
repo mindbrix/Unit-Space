@@ -130,7 +130,7 @@ vertex PathInteriorVertex pathInteriorSOA_vertex_main(constant State &state [[bu
     float glx = glxs[idx], gux = guxs[idx], gy = gys[idx];
     RGBA8 color = colors[idx];
     
-    float2 devicePoint =  { select(gux, glx, vid & 1), select(gy, gy + kkGridPixelSize, vid & 2) };
+    float2 devicePoint =  { select(glx, gux, vid & 1), select(gy, gy + kkGridPixelSize, vid & 2) };
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     float z = select(1.0, float(idx) / float(meshState.reverseCount), meshState.reverseCount);
     

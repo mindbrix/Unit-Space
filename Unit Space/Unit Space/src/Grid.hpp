@@ -80,25 +80,30 @@ struct Grid {
         for (Mesh::Sample sample : samples) {
             glx = (sample.idx & 0xFFFF) - kGridPixelSize, gly = sample.idx >> 16;
             if (gy != gly) {
-                if (gly > 0)
-                    mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
-                
+//                if (gly > 0)
+//                    mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
+				
                 gx = glx, gy = gly, coverage = 0;
             }
             if (gx != glx) {
-                if (gx >= 0)
-                    mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
-                
+//                if (gx >= 0)
+//                    mesh._circles.add(kGridPixelSize * 0.5 + gx, kGridPixelSize * 0.5 + gy, kGridPixelSize * 0.5, black);
+				
                 if (glx - gx > kGridPixelSize && std::abs(coverage) >= kGridPixelSize) {
                     mesh._interiors.add(gx + kGridPixelSize, glx, gy, color);
-                    
+//
+//					float t = mesh._interiors._guxs[mesh._interiors._guxs.count() - 1];
+//					if (t > 32767) {
+//						glx = glx;
+//					}
 //                    for (x = gx + kGridPixelSize; x < glx; x += kGridPixelSize)
+//						mesh._interiors.add(x, x + kGridPixelSize, gy, color);
 //                        mesh._circles.add(kGridPixelSize * 0.5 + x, kGridPixelSize * 0.5 + gy, coverage * 0.5, color);
                 }
                 gx = glx;
             }
             coverage += sample.coverage;
         }
-        mesh._circles.add(kGridPixelSize * 0.5 + glx, kGridPixelSize * 0.5 + gly, kGridPixelSize * 0.5, black);
+//        mesh._circles.add(kGridPixelSize * 0.5 + glx, kGridPixelSize * 0.5 + gly, kGridPixelSize * 0.5, black);
     }
 };
