@@ -375,6 +375,7 @@ using namespace std;
     meshState.showColors = _showColors;
     meshState.showInterior = _showInterior;
     meshState.showPolygons = false;
+    meshState.showSOATriangles = false;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
@@ -394,7 +395,10 @@ using namespace std;
     
     if (_flags & 1)
         meshState.showPolygons = true;
-    if (_flags & 2) {
+    if (_flags & 2) 
+        meshState.showSOATriangles = true;
+    
+    if (_flags & 4) {
         int dimension = 330, r = 10, g = 24, count = dimension * dimension, idx;
         float *dst;
         _mesh._circles._xs = Memory<float>(count);
@@ -403,18 +407,17 @@ using namespace std;
         _mesh._circles._colors = Memory<RGBA8>(count);
         
         for (dst = &_mesh._circles._xs[0], idx = 0; idx < count; idx++)
-            *dst++ = (idx % dimension) * g;
+        *dst++ = (idx % dimension) * g;
         for (dst = &_mesh._circles._ys[0], idx = 0; idx < count; idx++)
-            *dst++ = idx / dimension * g;
+        *dst++ = idx / dimension * g;
         for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
-            *dst++ = r;
+        *dst++ = r;
         for (idx = 0; idx < count; idx++)
-            _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
+        _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;
     }
-    if (_flags & 4) {}
     if (_flags & 8) {}
     if (_flags & 16) {}
     

@@ -132,6 +132,7 @@ struct MeshState {
     bool                showColors;
     bool                showInterior;
     bool                showPolygons;
+    bool                showSOATriangles;
     bool                showVisibles;
     bool                useStrokeColor;
     int                 colorsSize;

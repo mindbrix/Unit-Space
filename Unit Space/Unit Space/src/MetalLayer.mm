@@ -96,15 +96,17 @@
     descriptor.label = @"lineSOAPipelineState";
     self.lineSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_fragment_main"];
-    descriptor.label = @"triangleSOAPipelineState";
-    self.triangleSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_fragment_main"];
+    descriptor.label = @"triangleSOAPipelineState";
+    self.triangleSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     return self;
 }
