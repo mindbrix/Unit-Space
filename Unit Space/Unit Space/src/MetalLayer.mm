@@ -61,9 +61,17 @@
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[0].blendingEnabled = NO;
+    
     descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR16Float;
     descriptor.colorAttachments[1].blendingEnabled = YES;
+    descriptor.colorAttachments[1].rgbBlendOperation = MTLBlendOperationAdd;
+    descriptor.colorAttachments[1].alphaBlendOperation = MTLBlendOperationAdd;
+    descriptor.colorAttachments[1].sourceRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[1].sourceAlphaBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[1].destinationRGBBlendFactor = MTLBlendFactorOne;
+    descriptor.colorAttachments[1].destinationAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskNone;
+    
     descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
@@ -224,6 +232,7 @@
                 drawQuads = call->type == kCallTypeLinesSOA;
                 break;
             case kCallTypeResolveSOA:
+                [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 break;
