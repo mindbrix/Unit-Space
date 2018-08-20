@@ -128,30 +128,42 @@ vertex TriangleSOAVertex triangleSOA_vertex_main(constant State &state [[buffer(
                                       constant float *as [[buffer(13)]], constant float *bs [[buffer(14)]],
                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
+    const float kBloatLength = -0.7071;
+    
     uint idx = iid / meshState.subdivisionCount;
     int p = max(0, ps[idx]);
     float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
     float cx = (paths[p].bounds.lx + paths[p].bounds.ux) * 0.5, cy = (paths[p].bounds.ly + paths[p].bounds.uy) * 0.5;
     
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
-    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-    float2 p2 = { cx * CTM.a + cy * CTM.c + CTM.tx, cx * CTM.b + cy * CTM.d + CTM.ty };
+    float2 triangle[3] = {
+        { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty },
+        { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty },
+        { cx * CTM.a + cy * CTM.c + CTM.tx, cx * CTM.b + cy * CTM.d + CTM.ty }
+    };
     
-    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
+    float2 devicePoint = triangle[vid];
+    float2 prev = triangle[(vid + 2) % 3];
+    float2 next = triangle[(vid + 1) % 3];
+    
+    float2 prevVector = normalize(prev - devicePoint);
+    float2 nextVector = normalize(next - devicePoint);
+    float2 bisector = normalize(prevVector + nextVector);
+    float scale = kBloatLength / abs(dot(bisector, float2(-nextVector.y, nextVector.x)));
+    
+    devicePoint += bisector * scale;
+    
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
     TriangleSOAVertex vert;
     vert.position = float4(select(ndcPoint, 0, ps[idx] == -1), 1.0, 1.0);
     devicePoint -= 0.5;
-    vert.p0 = p0 - devicePoint, vert.p1 = p1 - devicePoint, vert.p2 = p2 - devicePoint;
+    vert.p0 = triangle[0] - devicePoint, vert.p1 = triangle[1] - devicePoint, vert.p2 = triangle[2] - devicePoint;
     vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
     return vert;
 }
 
 fragment float4 triangleSOA_fragment_main(TriangleSOAVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
-    return vert.color * abs(winding);
+    return vert.color * abs(edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0));
 }
-
