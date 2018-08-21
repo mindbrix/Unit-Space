@@ -419,7 +419,7 @@ using namespace std;
         for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
             *dst++ = r;
         for (idx = 0; idx < count; idx++)
-            _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
+            _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;
