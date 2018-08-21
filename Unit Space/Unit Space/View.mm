@@ -12,6 +12,7 @@
 #import "Algorithms.hpp"
 #import "Scene.hpp"
 #import "libTess.hpp"
+#import "Accumulator.hpp"
 
 constexpr float kPointDeviceRadius = 8;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
@@ -314,6 +315,8 @@ using namespace std;
 - (void)reset {
     if (_svgData || _fontData) {
         libTess::triangulate(_mesh, _scene, self.useMask);
+        for (Path& path : _scene._paths)
+            Accumulator::writePathAccumulations(_mesh, path);
         [self.metalLayer uploadMesh:_mesh];
     } else {
         _triangle = { { 0, 0 }, { 100, 100 }, { 0, 100 } };
@@ -345,6 +348,9 @@ using namespace std;
         _scene.addPath(p2);
     
     libTess::triangulate(_mesh, _scene, self.useMask);
+    for (Path& path : _scene._paths)
+        Accumulator::writePathAccumulations(_mesh, path);
+    
     [self.metalLayer uploadMesh:_mesh];
 }
 
