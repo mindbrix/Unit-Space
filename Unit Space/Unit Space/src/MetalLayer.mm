@@ -238,7 +238,6 @@
                 [commandEncoder setVertexBytes:& mesh->_as[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:13];
                 [commandEncoder setVertexBytes:& mesh->_bs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:14];
                 instanceCount = call->instanceCount * call->meshState.subdivisionCount;
-                //drawQuads = call->type == kCallTypeLinesSOA;
                 break;
             case kCallTypeAccumulate:
                 [commandEncoder setRenderPipelineState:_accumulatePipelineState];
@@ -250,6 +249,14 @@
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
+                break;
+            case kCallTypePrefixSum:
+                [commandEncoder endEncoding];
+            
+                id <MTLComputeCommandEncoder> computeEncoder = [commandBuffer computeCommandEncoder];
+                [computeEncoder setComputePipelineState:_prefixSumPipelineState];
+            
+                commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
                 break;
         }
         if (instanceCount == 0)

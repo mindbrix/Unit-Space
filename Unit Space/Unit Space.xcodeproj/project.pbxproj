@@ -111,13 +111,13 @@
 		E97D7601211498600015388A /* metal */ = {
 			isa = PBXGroup;
 			children = (
+				E989404E212C33E000E73C64 /* Compute.metal */,
 				E97D7602211498600015388A /* Headers.metal */,
 				E97D7603211498600015388A /* Library.metal */,
 				E97D7604211498600015388A /* Mesh.metal */,
 				E97D7605211498600015388A /* Shaders.metal */,
 				E9B31327212A0223008EC18E /* SOA.metal */,
 				E97D760A2114989D0015388A /* Shared.metal.hpp */,
-				E989404E212C33E000E73C64 /* Compute.metal */,
 			);
 			path = metal;
 			sourceTree = "<group>";
