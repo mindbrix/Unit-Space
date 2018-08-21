@@ -167,7 +167,7 @@ vertex AccumulateSOAVertex accumulateSOA_vertex_main(constant State &state [[buf
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = 1.0 + 1.0;
+    float deviceWidth = 1.41;
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
@@ -188,6 +188,7 @@ struct AccumulateSOAFragment {
 fragment AccumulateSOAFragment accumulateSOA_fragment_main(AccumulateSOAVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     AccumulateSOAFragment f;
-    f.winding = edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1));// - edgeWinding(float2(vert.x0 + 1.0, vert.y0), float2(vert.x1 + 1.0, vert.y1));
+	f.winding = edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1)) - edgeWinding(float2(vert.x0 + 1.0, vert.y0), float2(vert.x1 + 1.0, vert.y1));
+	//f.winding = edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1));
     return f;
 }
