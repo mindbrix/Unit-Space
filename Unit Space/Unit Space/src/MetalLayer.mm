@@ -239,6 +239,8 @@
                 break;
             case kCallTypeAccumulate:
                 [commandEncoder setRenderPipelineState:_accumulatePipelineState];
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+                [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
                 break;
             case kCallTypeResolveSOA:
                 [commandEncoder textureBarrier];

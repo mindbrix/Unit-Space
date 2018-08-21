@@ -42,13 +42,20 @@ struct Mesh {
                         ranges.emplace_back(p), ranges.emplace_back(end);
                 }
             }
-            if (meshState.showPolygons || meshState.showSOATriangles) {
+            if (meshState.showSOATriangles) {
+                for (i = 0; i < ranges.size(); i += 2) {
+                    base = mesh._accumulationIndices[ranges[i]];
+                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, state, meshState);
+                }
+                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
+            } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._paths[ranges[i]].edge;
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._paths[ranges[i + 1]].edge;
                     for (j = base; j < end; j += 1023) {
                         count = (j + 1024 < end ? j + 1024 : end) - j;
-                        calls.emplace_back(meshState.showPolygons ? kCallTypeLinesSOA : kCallTypeTrianglesSOA, count - 1, j, state, meshState);
+                        calls.emplace_back(kCallTypeLinesSOA, count - 1, j, state, meshState);
                     }
                 }
             } else {
@@ -88,10 +95,6 @@ struct Mesh {
                         }
                 }
             }
-            
-            if (meshState.showSOATriangles) 
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
-            
             
             if (meshState.showVisibles) {
                 calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, state, meshState);

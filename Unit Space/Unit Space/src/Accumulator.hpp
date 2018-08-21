@@ -27,7 +27,6 @@ struct Accumulator {
                     accumulation = & mesh._accumulations.back();
                     accumulation->p = p, accumulation->s = s;
                     pts = & accumulation->x0, ptsend = pts + 12;
-                    memset(pts, 0, sizeof(float) * 12);
                     
                     if (first)
                         *pts++ = x0, *pts++ = y0;
@@ -44,6 +43,9 @@ struct Accumulator {
                 
                 x0 = x2, y0 = y2, x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
             } while (1);
+            
+            while (pts < ptsend)
+                *pts = *(pts - 2), pts++, *pts = *(pts - 2), pts++;
         }
     }
 };
