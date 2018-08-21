@@ -168,7 +168,7 @@ enum CallType : unsigned int {
     kCallTypeMeshTriangles,
     kCallTypeLinesSOA,
     kCallTypeAccumulate,
-    kCallTypeTrianglesSOA,
+    kCallTypeAccumulateSOA,
     kCallTypeResolveSOA,
 };
 
