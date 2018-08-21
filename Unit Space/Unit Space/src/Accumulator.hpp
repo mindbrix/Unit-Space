@@ -44,7 +44,7 @@ struct Accumulator {
                 x0 = x2, y0 = y2, x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
             } while (1);
             
-            while (pts < ptsend)
+            while (accumulation && pts < ptsend)
                 *pts = *(pts - 2), pts++, *pts = *(pts - 2), pts++;
         }
     }
