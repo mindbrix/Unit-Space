@@ -12,6 +12,8 @@
 
 using namespace metal;
 
+constexpr sampler s = sampler(coord::normalized, address::clamp_to_zero, mag_filter::linear, min_filter::linear, mip_filter::linear);
+
 #pragma mark - Resolve
 
 struct ResolveVertex
