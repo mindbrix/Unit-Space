@@ -125,6 +125,8 @@ struct Mesh {
     };
     
     vector<Accumulation>                _accumulations;
+    vector<int>                         _accumulationIndices;
+    
     vector<MeshPath>                    _paths;
     vector<Vector>                      _points;
     vector<float>                       _xs, _ys, _as, _bs;
@@ -133,5 +135,5 @@ struct Mesh {
     vector<Call>                        _calls;
     CirclesSOA                          _circles;
     
-    void empty() { _accumulations.resize(0), _paths.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
+    void empty() { _accumulations.resize(0), _accumulationIndices.resize(0), _paths.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
 };
