@@ -315,8 +315,8 @@ using namespace std;
 - (void)reset {
     if (_svgData || _fontData) {
         libTess::triangulate(_mesh, _scene, self.useMask);
-        for (Path& path : _scene._paths)
-            Accumulator::writePathAccumulations(_mesh, path);
+        for (int i = 0; i < _scene._paths.size(); i++)
+            Accumulator::writePathAccumulations(_mesh, _scene._paths[i], i);
         [self.metalLayer uploadMesh:_mesh];
     } else {
         _triangle = { { 0, 0 }, { 100, 100 }, { 0, 100 } };
@@ -348,8 +348,8 @@ using namespace std;
         _scene.addPath(p2);
     
     libTess::triangulate(_mesh, _scene, self.useMask);
-    for (Path& path : _scene._paths)
-        Accumulator::writePathAccumulations(_mesh, path);
+    for (int i = 0; i < _scene._paths.size(); i++)
+        Accumulator::writePathAccumulations(_mesh, _scene._paths[i], i);
     
     [self.metalLayer uploadMesh:_mesh];
 }
@@ -413,13 +413,13 @@ using namespace std;
         _mesh._circles._colors = Memory<RGBA8>(count);
         
         for (dst = &_mesh._circles._xs[0], idx = 0; idx < count; idx++)
-        *dst++ = (idx % dimension) * g;
+            *dst++ = (idx % dimension) * g;
         for (dst = &_mesh._circles._ys[0], idx = 0; idx < count; idx++)
-        *dst++ = idx / dimension * g;
+            *dst++ = idx / dimension * g;
         for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
-        *dst++ = r;
+            *dst++ = r;
         for (idx = 0; idx < count; idx++)
-        _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
+            _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx & 0xFF, idx & 0xFF, 255);
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;

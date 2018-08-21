@@ -9,8 +9,8 @@
 
 
 struct Accumulator {
-    static void writePathAccumulations(Mesh& mesh, Path& path) {
-        float *points, *end, gmax, x0, y0, x1, y1, x2, y2, dx0, dy0, dx1, dy1, dx2, dy2, cy0, cy2, t0, t2, cx0, cx2, cly, cuy, gly, guy, gy, clx, cux, glx, gux, gx, gy0, gy2, coverage;
+    static void writePathAccumulations(Mesh& mesh, Path& path, int p) {
+        float *points, *end, x0, y0, x1, y1, x2, y2;
         
         mesh._accumulationIndices.emplace_back((int)mesh._accumulations.size());
         
