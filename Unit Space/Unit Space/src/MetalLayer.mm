@@ -13,12 +13,14 @@
 
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
+@property (nonatomic, strong) id <MTLBuffer> accumulationsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> triangleSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
@@ -121,12 +123,15 @@
     
     descriptor.colorAttachments[0].writeMask = MTLColorWriteMaskNone;
     descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
-    descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangleSOA_fragment_main"];
     descriptor.label = @"triangleSOAPipelineState";
     self.triangleSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
+    descriptor.label = @"accumulatePipelineState";
+    self.accumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     return self;
 }
@@ -232,6 +237,9 @@
                 instanceCount = call->instanceCount * call->meshState.subdivisionCount;
                 drawQuads = call->type == kCallTypeLinesSOA;
                 break;
+            case kCallTypeAccumulate:
+                [commandEncoder setRenderPipelineState:_accumulatePipelineState];
+                break;
             case kCallTypeResolveSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
@@ -273,6 +281,10 @@
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
+    if (mesh._accumulations.size())
+        _accumulationsBuffer = [self.device newBufferWithBytes:(void *)& mesh._accumulations[0]
+                                                        length:mesh._accumulations.size() * sizeof(Accumulation)
+                                                       options:MTLResourceStorageModeShared];
     if (mesh._paths.size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._paths[0]
                                                  length:mesh._paths.size() * sizeof(MeshPath)
