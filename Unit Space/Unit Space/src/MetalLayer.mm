@@ -22,6 +22,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulateSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
+@property (nonatomic, strong) id <MTLComputePipelineState> prefixSumPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
@@ -54,6 +55,8 @@
     
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
+    
+    self.prefixSumPipelineState = [self.device newComputePipelineStateWithFunction:[self.defaultLibrary newFunctionWithName:@"parsum"] error:nil];
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
     depthStencilDescriptor.depthWriteEnabled = YES;
