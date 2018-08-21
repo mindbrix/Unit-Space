@@ -186,6 +186,6 @@ struct AccumulateSOAFragment {
 fragment AccumulateSOAFragment accumulateSOA_fragment_main(AccumulateSOAVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     AccumulateSOAFragment f;
-    f.winding = edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1));
+    f.winding = edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1)) - edgeWinding(float2(vert.x0 + 1.0, vert.y0), float2(vert.x1 + 1.0, vert.y1));
     return f;
 }
