@@ -14,6 +14,17 @@ using namespace metal;
 float edgeWinding(float2 p0, float2 p1) {
     float y0 = saturate(p0.y), y1 = saturate(p1.y);
     float coverage = y1 - y0;
+    
+    /*
+    float ax, ay, bx, by, adot, A, d, t;
+    ax = p1.x - p0.x, ay = p1.y - p0.y, bx = 0.5 - p0.x, by = 0.5 - p0.y;
+    adot = ax * ax + ay * ay;
+    A = ax * by - ay * bx;
+    d = A * A / adot;
+    t = (ax * bx + ay * by) / adot;
+    if (!(adot < 1 || (t >= 0 && t <= 1 && d < 1)))
+        return select(coverage, 0.0, coverage * A > 0);
+    */
     if (coverage == 0.0 || saturate(p0.x) + saturate(p1.x) == 0.0)
         return coverage;
     
@@ -26,7 +37,7 @@ float edgeWinding(float2 p0, float2 p1) {
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float dx12, dy12, dx20, dy20, area, u, v, w, f, t, x01, y01, x12, y12;
+    float dx12, dy12, dx20, dy20, area, u, v, w, f, d, t, x01, y01, x12, y12;
     dx12 = x2 - x1, dy12 = y2 - y1;
     dx20 = x0 - x2, dy20 = y0 - y2;
     area = dx12 * dy20 - dy12 * dx20;
@@ -34,16 +45,25 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     v = (dx20 * (0.5 - y2) - dy20 * (0.5 - x2)) / area;
     w = 1 - u - v;
     f = 4.0 * u * w - v * v;
+    d = f * rsqrt(dfdx(f) * dfdx(f) + dfdy(f) * dfdy(f));
     
+    /*
+    if (abs(area) < 1e-3 || !(v > 0 && abs(d) < 0.7071))
+        return 0.1666;// saturate(y2) - saturate(y0);
+    */
     t = saturate(w / (w + v * 0.5));
     t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
     t = select(t, 0.5, f < -0.333);
     
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     
+   
+    return edgeWinding(float2(x0, y0), float2(x1, y1))
+    + edgeWinding(float2(x1, y1), float2(x2, y2));
+    /*
     return edgeWinding(float2(x0, y0), float2(x01, y01))
     + edgeWinding(float2(x01, y01), float2(x12, y12))
-    + edgeWinding(float2(x12, y12), float2(x2, y2));
+    + edgeWinding(float2(x12, y12), float2(x2, y2)); */
 }
 
 
@@ -105,9 +125,11 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
 {
     AccumulateFragment frag;
     
-    //frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
-    //+ quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+    frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
+    + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4)
+    ;
     
+    /*
     frag.winding =
     edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
     + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
@@ -115,6 +137,7 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
     + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4))
 //    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5))
     ;
+     */
     return frag;
 }
 
