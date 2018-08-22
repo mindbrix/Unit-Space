@@ -67,14 +67,42 @@ struct AccumulateFragment {
 
 fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    AccumulateFragment f;
-    f.winding =
-    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
-    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
+    float dx12, dy12, dx20, dy20, area, u, v, w, f, t, x01, y01, x12, y12;
+    dx12 = vert.x2 - vert.x1, dy12 = vert.y2 - vert.y1;
+    dx20 = vert.x0 - vert.x2, dy20 = vert.y0 - vert.y2;
+    area = dx12 * dy20 - dy12 * dx20;
+    u = (dx12 * (0.5 - vert.y1) - dy12 * (0.5 - vert.x1)) / area;
+    v = (dx20 * (0.5 - vert.y2) - dy20 * (0.5 - vert.x2)) / area;
+    w = 1 - u - v;
+    f = 4.0 * u * w - v * v;
+    
+    t = saturate(w / (w + v * 0.5));
+    t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
+    t = select(t, 0.5, f < -0.333);
+    
+    x01 = mix(vert.x0, vert.x1, t), y01 = mix(vert.y0, vert.y1, t), x12 = mix(vert.x1, vert.x2, t), y12 = mix(vert.y1, vert.y2, t);
+    
+    AccumulateFragment frag;
+    
+    frag.winding = edgeWinding(float2(vert.x0, vert.y0), float2(x01, y01))
+    + edgeWinding(float2(x01, y01), float2(x12, y12))
+    + edgeWinding(float2(x12, y12), float2(vert.x2, vert.y2))
     + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
     + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4))
-    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5));
-    return f;
+    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5))
+    ;
+    
+    /* */
+//    f.winding = t;
+//    f.winding = step(0, u) * step(0, v) * step(0, w);
+    //f.winding = step(0, u)* u * v * w;// select(0.333, 0.666, u < 0 && u < 1 && v < 0 && v < 1 && w < 0 && w < 1);
+//    f.winding =
+//    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
+//    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
+//    + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
+//    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4))
+//    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5));
+    return frag;
 }
 
 #pragma mark - Interior
