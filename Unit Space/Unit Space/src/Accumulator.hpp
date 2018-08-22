@@ -8,7 +8,7 @@
 #import "Scene.hpp"
 
 struct Accumulator {
-    static constexpr int kAccumulationPointCount = 6;
+    static constexpr int kAccumulationPointCount = 5;
     
     static void writePathAccumulations(Mesh& mesh, Path& path, int p) {
         mesh._accumulationIndices.emplace_back((int)mesh._accumulations.size());

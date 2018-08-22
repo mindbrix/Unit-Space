@@ -37,7 +37,7 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     dx3 = acc.x3 * CTM.a + acc.y3 * CTM.c + CTM.tx, dy3 = acc.x3 * CTM.b + acc.y3 * CTM.d + CTM.ty;
     dx4 = acc.x4 * CTM.a + acc.y4 * CTM.c + CTM.tx, dy4 = acc.x4 * CTM.b + acc.y4 * CTM.d + CTM.ty;
     dx5 = acc.x5 * CTM.a + acc.y5 * CTM.c + CTM.tx, dy5 = acc.x5 * CTM.b + acc.y5 * CTM.d + CTM.ty;
-    
+    dx5 = dx4, dy5 = dy4;
     lx = min(min(min(dx0, dx1), dx2), min(min(dx3, dx4), dx5));
     ly = min(min(min(dy0, dy1), dy2), min(min(dy3, dy4), dy5));
     ux = max(max(max(dx0, dx1), dx2), max(max(dx3, dx4), dx5));
@@ -90,18 +90,16 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
 {
     AccumulateFragment frag;
     
-    frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
+    //frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
+    //+ quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+    
+    frag.winding =
+    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
+    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
     + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
     + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4))
-    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5))
+//    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5))
     ;
-    
-//    f.winding =
-//    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
-//    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
-//    + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
-//    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4))
-//    + edgeWinding(float2(vert.x4, vert.y4), float2(vert.x5, vert.y5));
     return frag;
 }
 
