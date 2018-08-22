@@ -7,17 +7,17 @@
 //
 #import "Scene.hpp"
 
-
 struct Accumulator {
+    static constexpr int kAccumulationPointCount = 6;
+    
     static void writePathAccumulations(Mesh& mesh, Path& path, int p) {
         float *points, *end, x0, y0, x1, y1, x2, y2, *pts, *ptsend;
         Accumulation *accumulation;
-        bool first;
         
         mesh._accumulationIndices.emplace_back((int)mesh._accumulations.size());
         
         for (int s = 0; s < path._subPaths.size(); s++) {
-            accumulation = nullptr, pts = ptsend = nullptr, first = true;
+            accumulation = nullptr, pts = ptsend = nullptr;
             points = path._subPaths[s]._quadratics.get(), end = points + path._subPaths[s]._quadratics.count();
             x0 = *(end - 2), y0 = *(end - 1), x2 = *points++, y2 = *points++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
             
@@ -26,17 +26,13 @@ struct Accumulator {
                     mesh._accumulations.emplace_back();
                     accumulation = & mesh._accumulations.back();
                     accumulation->p = p, accumulation->s = s;
-                    pts = & accumulation->x0, ptsend = pts + 12;
-                    
-                    if (first)
-                        *pts++ = x0, *pts++ = y0;
-                    else
-                        *pts++ = (accumulation - 1)->x5, *pts++ = (accumulation - 1)->y5;
+                    pts = & accumulation->x0, ptsend = pts + kAccumulationPointCount * 2;
+                    *pts++ = x0, *pts++ = y0;
                 }
                 
                 *pts++ = x2, *pts++ = y2;
                 if (pts == ptsend)
-                    accumulation = nullptr, first = false;
+                    accumulation = nullptr;
                 
                 if (points >= end)
                     break;
