@@ -44,7 +44,7 @@ struct Mesh {
             }
             if (meshState.showSOATriangles) {
                 for (i = 0; i < ranges.size(); i += 2) {
-                   for (i = 0; i < ranges.size(); i += 2) {
+                  /* for (i = 0; i < ranges.size(); i += 2) {
                         base = mesh._paths[ranges[i]].edge;
                         end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._paths[ranges[i + 1]].edge;
                         for (j = base; j < end; j += 1024) {
@@ -52,11 +52,11 @@ struct Mesh {
                             calls.emplace_back(kCallTypeAccumulateSOA, count - 1, j, state, meshState);
                         }
                     }
-					/* 
+					*/
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
                     calls.emplace_back(kCallTypeAccumulate, end - base, base, state, meshState);
-                    */
+                    
                 }
                 calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
             } else if (meshState.showPolygons) {
