@@ -20,7 +20,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> accumulateSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLComputePipelineState> prefixSumPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
@@ -129,11 +128,6 @@
     
     descriptor.colorAttachments[0].writeMask = MTLColorWriteMaskNone;
     descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulateSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulateSOA_fragment_main"];
-    descriptor.label = @"accumulateSOAPipelineState";
-    self.accumulateSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
     descriptor.label = @"accumulatePipelineState";
@@ -232,8 +226,7 @@
                 drawQuads = NO;
                 break;
             case kCallTypeLinesSOA:
-            case kCallTypeAccumulateSOA:
-                [commandEncoder setRenderPipelineState:call->type == kCallTypeLinesSOA ? _lineSOAPipelineState : _accumulateSOAPipelineState];
+                [commandEncoder setRenderPipelineState:_lineSOAPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
