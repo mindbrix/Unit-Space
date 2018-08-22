@@ -201,26 +201,3 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
     return vert.color * abs(winding);
 }
-
-//fragment float4 curve_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
-//{
-//    float w = 1.0 - vert.u - vert.v, f = 4.0 * vert.u * vert.v - w * w;
-//    float dfx = dfdx(f), dfy = dfdy(f);
-//    float dist = f * rsqrt(dfx * dfx + dfy * dfy);
-//
-//    if (!vert.showInterior)
-//        return vert.color * (1.0 - abs(min(dist, vert.distance.z) - 0.7071));
-//
-//    if (dist < -0.7071)
-//        return 0;
-//
-//    if (dist > 1.41 && vert.distance.z > 0.7071)
-//        return vert.color;
-//
-//    float t = saturate(vert.u / (vert.u + w * 0.5));
-//    t = select(t, 1.0 - saturate(vert.v / (vert.v + w * 0.5)), t < 0.5);
-//    float2 p01 = mix(vert.p0, vert.p1, t), p12 = mix(vert.p1, vert.p2, t);
-//
-//    float winding = edgeWinding(vert.p0, p01) + edgeWinding(p01, p12) + edgeWinding(p12, vert.p2) + edgeWinding(vert.p2, vert.p0);
-//    return vert.color * abs(winding);
-//}
