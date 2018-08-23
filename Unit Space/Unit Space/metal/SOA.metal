@@ -100,6 +100,7 @@ struct LineVertex
 {
     float4 position [[position]];
     float u, v;
+	float x0, y0, x1, y1;
     float4 color;
 };
 
@@ -136,12 +137,16 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     vert.position = float4(ndcPoint, 1.0, 1.0);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
     vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
+	devicePoint -= 0.5;
+	vert.x0 = p0.x - devicePoint.x, vert.y0 = p0.y - devicePoint.y, vert.x1 = p1.x - devicePoint.x, vert.y1 = p1.y - devicePoint.y;
     return vert;
 }
 
 fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    return vert.color
+//	float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
+//	return float4(select(float3(1, 0, 0), float3(0), delta < 0), abs(delta));
+	return vert.color
     * saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
     * saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
 }

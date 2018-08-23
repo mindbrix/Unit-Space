@@ -11,6 +11,7 @@
 
 using namespace metal;
 
+float edgeWinding(float x0, float y0, float x1, float y1);
 float sRGB(float x);
 float ellipseDistance(float2 unitPoint, float dilation);
 float ellipseStrokeDistance(float2 unitPoint, float w);
