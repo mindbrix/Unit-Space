@@ -172,6 +172,9 @@
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
     }
+	NSUInteger w = NSUInteger(std::ceil(self.drawableSize.width / 8.0)), h = NSUInteger(std::ceil(self.drawableSize.height / 8.0));
+	MTLScissorRect scissorRect = { 0, NSUInteger(self.drawableSize.height) - h, w, h };
+	
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
@@ -190,7 +193,7 @@
     
     id <MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
     [commandEncoder setDepthStencilState:_depthState];
-    
+	
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = 1, baseInstance = 0;
@@ -239,6 +242,7 @@
                 [commandEncoder setRenderPipelineState:_accumulatePipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
+				[commandEncoder setScissorRect:scissorRect];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
             case kCallTypeResolveSOA:
