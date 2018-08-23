@@ -91,7 +91,6 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
 }
 
 struct AccumulateFragment {
-    float4 color [[ color(0) ]];
     float4 winding [[ color(1) ]];
 };
 
