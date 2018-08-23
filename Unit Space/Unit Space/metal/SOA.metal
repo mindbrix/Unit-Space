@@ -12,7 +12,7 @@
 
 using namespace metal;
 
-constexpr sampler s = sampler(coord::normalized, address::clamp_to_zero, mag_filter::linear, min_filter::linear, mip_filter::linear);
+constexpr sampler s = sampler(coord::normalized, address::clamp_to_zero, mag_filter::nearest, min_filter::nearest, mip_filter::linear);
 
 #pragma mark - Resolve
 
@@ -26,8 +26,8 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
                                           uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     ResolveVertex vert;
-    vert.position = { select(-1.0, 1.0, vid & 1), select(1.0, -1.0, vid & 2), 1.0, 1.0 };
-    vert.uv = { select(0.0, 1.0, vid & 1), select(0.0, 1.0, vid & 2) };
+    vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 1.0, 1.0 };
+    vert.uv = { select(0.0, 1.0, vid & 1) * 0.125, 1.0 - select(0.0, 1.0, vid & 2) * 0.125 };
     return vert;
 }
 
@@ -41,7 +41,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     float EO = 1.0 - abs(fmod(absolute, 2.0) - 1.0);
     float alpha =  select(NZ, EO, true);
     
-   // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
+    return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
     
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
