@@ -11,17 +11,9 @@
 
 using namespace metal;
 
-float edgeDistance(float x0, float y0, float x1, float y1) {
-    float ax = x1 - x0, ay = y1 - y0, bx = 0.5 - x0, by = 0.5 - y0;
-    return (ax * by - ay * bx) * rsqrt(ax * ax + ay * ay);
-}
-
-float edgeWinding(float2 p0, float2 p1, float d = 0) {
+float edgeWinding(float2 p0, float2 p1) {
     float y0 = saturate(p0.y), y1 = saturate(p1.y);
     float coverage = y1 - y0;
-    
-    if (abs(d) > 1)
-        return select(coverage, 0.0, coverage * d > 0);
     
     if (coverage == 0.0 || saturate(p0.x) + saturate(p1.x) == 0.0)
         return coverage;
@@ -69,7 +61,6 @@ struct AccumulateVertex
 {
     float4 position [[position]];
     float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
-    float d0, d1, d2, d3;
 };
 
 vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
@@ -110,12 +101,7 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     vert.x2 = dx2 - dx, vert.y2 = dy2 - dy;
     vert.x3 = dx3 - dx, vert.y3 = dy3 - dy;
     vert.x4 = dx4 - dx, vert.y4 = dy4 - dy;
-    
-    vert.d0 = edgeDistance(vert.x0, vert.y0, vert.x1, vert.y1);
-    vert.d1 = edgeDistance(vert.x1, vert.y1, vert.x2, vert.y2);
-    vert.d2 = edgeDistance(vert.x2, vert.y2, vert.x3, vert.y3);
-    vert.d3 = edgeDistance(vert.x3, vert.y3, vert.x4, vert.y4);
-    
+	
     return vert;
 }
 
@@ -127,22 +113,14 @@ struct AccumulateFragment {
 fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     AccumulateFragment frag;
-    
-   // frag.winding = saturate(1 - abs(vert.d0)) + saturate(1 - abs(vert.d1)) + saturate(1 - abs(vert.d2)) + saturate(1 - abs(vert.d3));
-    
-    frag.winding =
-    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1), vert.d0)
-    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2), vert.d1)
-    + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3), vert.d2)
-    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4), vert.d3) ;
+	
+	frag.winding =
+    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
+    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
+    + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
+    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4));
     
     /*
-     frag.winding =
-     edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
-     + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
-     + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
-     + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4)) ;
-     
      frag.winding = 0.1666;
     frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
     + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
