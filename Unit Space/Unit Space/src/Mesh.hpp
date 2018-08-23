@@ -42,7 +42,7 @@ struct Mesh {
                         ranges.emplace_back(p), ranges.emplace_back(end);
                 }
             }
-            if (meshState.showSOATriangles) {
+            if (meshState.showAccumulations) {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];

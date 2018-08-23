@@ -381,7 +381,7 @@ using namespace std;
     meshState.showColors = _showColors;
     meshState.showInterior = _showInterior;
     meshState.showPolygons = false;
-    meshState.showSOATriangles = false;
+    meshState.showAccumulations = false;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
@@ -402,7 +402,7 @@ using namespace std;
     if (_flags & 1)
         meshState.showPolygons = true;
     if (_flags & 2) 
-        meshState.showSOATriangles = true;
+        meshState.showAccumulations = true;
     
     if (_flags & 4) {
         int dimension = 330, r = 10, g = 24, count = dimension * dimension, idx;
