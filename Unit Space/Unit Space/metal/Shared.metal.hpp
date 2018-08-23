@@ -157,6 +157,7 @@ struct State {
     float               width;
     float               cap;
     float               scaleFactor;
+    bool                evenOdd;
 };
 
 

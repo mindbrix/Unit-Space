@@ -46,7 +46,7 @@ fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]
     float absolute = abs(winding);
     float NZ = min(absolute, 1.0);
     float EO = 1.0 - abs(fmod(absolute, 2.0) - 1.0);
-    float alpha = select(NZ, EO, true);
+    float alpha = select(NZ, EO, state.evenOdd);
     
     ResolveFragment f;
     f.depth = float(alpha < kPrecision);// || alpha + kPrecision >= 1);

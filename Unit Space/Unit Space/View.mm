@@ -372,6 +372,7 @@ using namespace std;
     uniforms.width = 1;
     uniforms.cap = 8;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
+    uniforms.evenOdd = _useMask;
     
     MeshState meshState;
     meshState.disableInteriorVector = false;
