@@ -48,8 +48,10 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     d = f * rsqrt(dfdx(f) * dfdx(f) + dfdy(f) * dfdy(f));
     
     /*
-    if (abs(area) < 1e-3 || !(v > 0 && abs(d) < 0.7071))
-        return 0.1666;// saturate(y2) - saturate(y0);
+    if (abs(area) > 1e-3 && !(v > 0 && abs(d) < 0.7071))
+        return step(0.0, d) * (saturate( min(min(y0, y1), y2)  ) - saturate( max(max(y0, y1), y2) )) + max(0.0, (saturate(y2) - saturate(y0)));
+        //return copysign(step(0.0, d), -area) + max(0.0, (saturate(y2) - saturate(y0)));
+        //return select(0.1, step(0.0, d) * (saturate(y1) - saturate(y0)), y2 < y0);
     */
     t = saturate(w / (w + v * 0.5));
     t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
@@ -57,13 +59,13 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     
-   
+   /**/
     return edgeWinding(float2(x0, y0), float2(x1, y1))
     + edgeWinding(float2(x1, y1), float2(x2, y2));
-    /*
+    
     return edgeWinding(float2(x0, y0), float2(x01, y01))
     + edgeWinding(float2(x01, y01), float2(x12, y12))
-    + edgeWinding(float2(x12, y12), float2(x2, y2)); */
+    + edgeWinding(float2(x12, y12), float2(x2, y2));
 }
 
 

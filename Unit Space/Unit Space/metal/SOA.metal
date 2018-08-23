@@ -41,6 +41,8 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     float EO = 1.0 - abs(fmod(absolute, 2.0) - 1.0);
     float alpha =  select(NZ, EO, true);
     
+   // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
+    
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
 }
 
