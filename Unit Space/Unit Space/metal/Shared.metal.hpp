@@ -65,7 +65,7 @@ struct RGBA8 {
 struct Accumulation {
     Accumulation() {};
     
-    float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;
+    float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
     int p, s;
 };
 

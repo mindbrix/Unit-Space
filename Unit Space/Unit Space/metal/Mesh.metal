@@ -74,14 +74,14 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
 struct AccumulateVertex
 {
     float4 position [[position]];
-    float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;
+    float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
 };
 
 vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                              device MeshPath *paths [[buffer(9)]], device Accumulation *accumulations [[buffer(10)]],
                                              uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, dx5, dy5, lx, ly, ux, uy, dx, dy;
+    float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, ux, uy, dx, dy;
     
     device Accumulation& acc = accumulations[iid];
     
@@ -94,17 +94,14 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     dx2 = acc.x2 * CTM.a + acc.y2 * CTM.c + CTM.tx, dy2 = acc.x2 * CTM.b + acc.y2 * CTM.d + CTM.ty;
     dx3 = acc.x3 * CTM.a + acc.y3 * CTM.c + CTM.tx, dy3 = acc.x3 * CTM.b + acc.y3 * CTM.d + CTM.ty;
     dx4 = acc.x4 * CTM.a + acc.y4 * CTM.c + CTM.tx, dy4 = acc.x4 * CTM.b + acc.y4 * CTM.d + CTM.ty;
-    dx5 = acc.x5 * CTM.a + acc.y5 * CTM.c + CTM.tx, dy5 = acc.x5 * CTM.b + acc.y5 * CTM.d + CTM.ty;
     
     dx1 = dx2, dy1 = dy2;
     dx3 = dx2, dy3 = dy2;
     
-    dx5 = dx4, dy5 = dy4;
-    
-    lx = min(min(min(dx0, dx1), dx2), min(min(dx3, dx4), dx5));
-    ly = min(min(min(dy0, dy1), dy2), min(min(dy3, dy4), dy5));
-    ux = max(max(max(dx0, dx1), dx2), max(max(dx3, dx4), dx5));
-    uy = max(max(max(dy0, dy1), dy2), max(max(dy3, dy4), dy5));
+    lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
+    ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
+    ux = max(max(max(dx0, dx1), dx2), max(dx3, dx4));
+    uy = max(max(max(dy0, dy1), dy2), max(dy3, dy4));
     ux = max(ux, bounds.ux);
     
     dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
@@ -118,7 +115,6 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     vert.x2 = dx2 - dx, vert.y2 = dy2 - dy;
     vert.x3 = dx3 - dx, vert.y3 = dy3 - dy;
     vert.x4 = dx4 - dx, vert.y4 = dy4 - dy;
-    vert.x5 = dx5 - dx, vert.y5 = dy5 - dy;
     
     return vert;
 }
