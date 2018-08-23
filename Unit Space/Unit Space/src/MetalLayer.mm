@@ -174,6 +174,7 @@
     }
 	NSUInteger w = NSUInteger(std::ceil(self.drawableSize.width / 8.0)), h = NSUInteger(std::ceil(self.drawableSize.height / 8.0));
 	MTLScissorRect scissorRect = { 0, NSUInteger(self.drawableSize.height) - h, w, h };
+	MTLScissorRect noScissorRect = { 0, 0,  NSUInteger(self.drawableSize.width),  NSUInteger(self.drawableSize.height) };
 	
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
@@ -273,6 +274,7 @@
                            vertexCount:drawQuads ? 4 : 3
                          instanceCount:instanceCount
                           baseInstance:baseInstance];
+		[commandEncoder setScissorRect:noScissorRect];
     }
     [commandEncoder endEncoding];
 
