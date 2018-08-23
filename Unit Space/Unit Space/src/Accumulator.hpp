@@ -10,33 +10,37 @@
 struct Accumulator {
     static constexpr int kAccumulationPointCount = 5;
     
+    static void writeQuadraticAccumulations(vector<Accumulation>& accumulations, float *points, size_t nfloats, int p, int s) {
+        float *end, x0, y0, x1, y1, x2, y2, *pts, *ptsend;
+        
+        pts = ptsend = nullptr;
+        end = points + nfloats;
+        x0 = *(end - 2), y0 = *(end - 1), x2 = *points++, y2 = *points++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
+        
+        do {
+            if (pts == ptsend) {
+                accumulations.emplace_back();
+                Accumulation& back = accumulations.back();
+                back.p = p, back.s = s, pts = & back.x0, ptsend = pts + kAccumulationPointCount * 2;
+                *pts++ = x0, *pts++ = y0;
+            }
+            *pts++ = x2, *pts++ = y2;
+            
+            if (points >= end)
+                break;
+            
+            x0 = x2, y0 = y2, x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
+        } while (1);
+        
+        while (pts < ptsend)
+            *pts = *(pts - 2), pts++, *pts = *(pts - 2), pts++;
+    }
+    
     static void writePathAccumulations(Mesh& mesh, Path& path, int p) {
         mesh._accumulationIndices.emplace_back((int)mesh._accumulations.size());
         
-        float *points, *end, x0, y0, x1, y1, x2, y2, *pts, *ptsend;
-
-        for (int s = 0; s < path._subPaths.size(); s++) {
-            pts = ptsend = nullptr;
-            points = path._subPaths[s]._quadratics.get(), end = points + path._subPaths[s]._quadratics.count();
-            x0 = *(end - 2), y0 = *(end - 1), x2 = *points++, y2 = *points++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
-            
-            do {
-                if (pts == ptsend) {
-                    mesh._accumulations.emplace_back();
-                    Accumulation& back = mesh._accumulations.back();
-                    back.p = p, back.s = s, pts = & back.x0, ptsend = pts + kAccumulationPointCount * 2;
-                    *pts++ = x0, *pts++ = y0;
-                }
-                *pts++ = x2, *pts++ = y2;
-                
-                if (points >= end)
-                    break;
-                
-                x0 = x2, y0 = y2, x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
-            } while (1);
-            
-            while (pts < ptsend)
-                *pts = *(pts - 2), pts++, *pts = *(pts - 2), pts++;
-        }
+        for (int s = 0; s < path._subPaths.size(); s++)
+            writeQuadraticAccumulations(mesh._accumulations, path._subPaths[s]._quadratics.get(), path._subPaths[s]._quadratics.count(), p, s);
+        
     }
 };
