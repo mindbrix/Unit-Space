@@ -406,7 +406,7 @@ using namespace std;
         meshState.showAccumulations = true;
     
     if (_flags & 4) {
-        int dimension = 330, r = 10, g = 24, count = dimension * dimension, idx;
+        int dimension = 330, r = 10, g = 20.0 / 0.618, count = dimension * dimension, idx;
         float *dst;
         _mesh._circles._xs = Memory<float>(count);
         _mesh._circles._ys = Memory<float>(count);
