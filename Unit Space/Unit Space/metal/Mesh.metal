@@ -59,11 +59,7 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     
-   /**/
-    return edgeWinding(float2(x0, y0), float2(x1, y1))
-    + edgeWinding(float2(x1, y1), float2(x2, y2));
-    
-    return edgeWinding(float2(x0, y0), float2(x01, y01))
+   return edgeWinding(float2(x0, y0), float2(x01, y01))
     + edgeWinding(float2(x01, y01), float2(x12, y12))
     + edgeWinding(float2(x12, y12), float2(x2, y2));
 }
@@ -95,8 +91,8 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     dx3 = acc.x3 * CTM.a + acc.y3 * CTM.c + CTM.tx, dy3 = acc.x3 * CTM.b + acc.y3 * CTM.d + CTM.ty;
     dx4 = acc.x4 * CTM.a + acc.y4 * CTM.c + CTM.tx, dy4 = acc.x4 * CTM.b + acc.y4 * CTM.d + CTM.ty;
     
-    dx1 = dx2, dy1 = dy2;
-    dx3 = dx2, dy3 = dy2;
+   // dx1 = dx2, dy1 = dy2;
+   // dx3 = dx2, dy3 = dy2;
     
     lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
     ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
@@ -129,21 +125,18 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
     AccumulateFragment frag;
     
     frag.winding =
-    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x2, vert.y2))
-    + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x4, vert.y4));
-    /*
-     frag.winding = 0.1666;
-    frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
-    + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4)
-    ;
-    
-    
-    frag.winding =
     edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
     + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
     + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
-    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4))
-    ;
+    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4)) ;
+    /*
+     frag.winding = 0.1666;
+    frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
+    + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+    
+     frag.winding =
+     edgeWinding(float2(vert.x0, vert.y0), float2(vert.x2, vert.y2))
+     + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x4, vert.y4));
      */
     return frag;
 }

@@ -21,7 +21,7 @@ struct Accumulator {
                 back.p = p, back.s = s, pts = & back.x0, ptsend = pts + kAccumulationFloatCount;
                 *pts++ = x0, *pts++ = y0;
             }
-            *pts++ = x1, *pts++ = y1;
+            //*pts++ = x1, *pts++ = y1;
             *pts++ = x2, *pts++ = y2;
             
             if (points >= end)
