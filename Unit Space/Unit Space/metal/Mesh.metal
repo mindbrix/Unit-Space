@@ -11,21 +11,6 @@
 
 using namespace metal;
 
-float edgeWinding(float2 p0, float2 p1) {
-    float y0 = saturate(p0.y), y1 = saturate(p1.y);
-    float coverage = y1 - y0;
-    
-    if (coverage == 0.0 || saturate(p0.x) + saturate(p1.x) == 0.0)
-        return coverage;
-    
-    float dxdy = (p1.x - p0.x) / (p1.y - p0.y);
-    float x0 = fma(y0 - p0.y, dxdy, p0.x), x1 = fma(y1 - p0.y, dxdy, p0.x);
-    float minx = min(x0, x1), range = abs(x1 - x0);
-    float t0 = saturate(-minx / range), t1 = saturate((1.0 - minx) / range);
-    float area = (saturate(x0) + saturate(x1)) * 0.5;
-    return coverage * (t1 - ((t1 - t0) * area));
-}
-
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
     float dx12, dy12, dx20, dy20, area, u, v, w, f, d, t, x01, y01, x12, y12;
     dx12 = x2 - x1, dy12 = y2 - y1;
@@ -49,9 +34,9 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     
-   return edgeWinding(float2(x0, y0), float2(x01, y01))
-    + edgeWinding(float2(x01, y01), float2(x12, y12))
-    + edgeWinding(float2(x12, y12), float2(x2, y2));
+   return edgeWinding(x0, y0, x01, y01)
+    + edgeWinding(x01, y01, x12, y12)
+    + edgeWinding(x12, y12, x2, y2);
 }
 
 
@@ -115,10 +100,10 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
     AccumulateFragment frag;
 	
 	frag.winding =
-    edgeWinding(float2(vert.x0, vert.y0), float2(vert.x1, vert.y1))
-    + edgeWinding(float2(vert.x1, vert.y1), float2(vert.x2, vert.y2))
-    + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x3, vert.y3))
-    + edgeWinding(float2(vert.x3, vert.y3), float2(vert.x4, vert.y4));
+    edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1)
+    + edgeWinding(vert.x1, vert.y1, vert.x2, vert.y2)
+    + edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
+    + edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
     
     /*
      frag.winding = 0.1666;
@@ -227,6 +212,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    float winding = edgeWinding(vert.p0, vert.p1) + edgeWinding(vert.p1, vert.p2) + edgeWinding(vert.p2, vert.p0);
+    float winding = edgeWinding(vert.p0.x, vert.p0.y, vert.p1.x, vert.p1.y)
+	+ edgeWinding(vert.p1.x, vert.p1.y, vert.p2.x, vert.p2.y)
+	+ edgeWinding(vert.p2.x, vert.p2.y, vert.p0.x, vert.p0.y);
     return vert.color * abs(winding);
 }
