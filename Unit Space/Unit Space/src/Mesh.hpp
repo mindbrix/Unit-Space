@@ -138,5 +138,7 @@ struct Mesh {
     vector<Call>                        _calls;
     CirclesSOA                          _circles;
     
+ //   vector<Vector>                      _quadratics;
+    
     void empty() { _accumulations.resize(0), _accumulationIndices.resize(0), _paths.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
 };
