@@ -46,7 +46,10 @@ struct Mesh {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeAccumulate, end - base, base, state, meshState);
+					State newState = state;
+					AffineTransform cell = { 1.0 / 8.0, 0, 0, 1.0 / 8.0, 0, 0 };
+					newState.CTM = AffineTransformConcat(state.CTM, cell);
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, newState, meshState);
                 }
                 calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
             } else if (meshState.showPolygons) {
