@@ -78,7 +78,7 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
     
     AccumulateVertex vert;
-    vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 1.0, 1.0);
+    vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     
     dx -= 0.5, dy -= 0.5;
     vert.x0 = dx0 - dx, vert.y0 = dy0 - dy;
