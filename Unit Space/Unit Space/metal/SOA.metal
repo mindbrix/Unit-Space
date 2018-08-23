@@ -27,7 +27,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
 {
     ResolveVertex vert;
     vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 1.0, 1.0 };
-    vert.uv = { select(0.0, 1.0, vid & 1) * 0.125, 1.0 - select(0.0, 1.0, vid & 2) * 0.125 };
+    vert.uv = { select(0.0, 1.0, vid & 1) / kCellSize, 1.0 - select(0.0, 1.0, vid & 2) / kCellSize };
     return vert;
 }
 

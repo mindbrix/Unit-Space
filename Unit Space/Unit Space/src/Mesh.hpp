@@ -47,7 +47,7 @@ struct Mesh {
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
 					State newState = state;
-					AffineTransform cell = { 1.0 / 8.0, 0, 0, 1.0 / 8.0, 0, 0 };
+					AffineTransform cell = { 1.0 / kCellSize, 0, 0, 1.0 / kCellSize, 0, 0 };
 					newState.CTM = AffineTransformConcat(state.CTM, cell);
                     calls.emplace_back(kCallTypeAccumulate, end - base, base, newState, meshState);
                 }

@@ -172,7 +172,7 @@
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
     }
-	NSUInteger w = NSUInteger(std::ceil(self.drawableSize.width / 8.0)), h = NSUInteger(std::ceil(self.drawableSize.height / 8.0));
+	NSUInteger w = NSUInteger(std::ceil(self.drawableSize.width / kCellSize)), h = NSUInteger(std::ceil(self.drawableSize.height / kCellSize));
 	MTLScissorRect scissorRect = { 0, NSUInteger(self.drawableSize.height) - h, w, h };
 	MTLScissorRect noScissorRect = { 0, 0,  NSUInteger(self.drawableSize.width),  NSUInteger(self.drawableSize.height) };
 	

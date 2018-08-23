@@ -12,6 +12,7 @@
 #define TWO_PI 6.2831853072
 #define kMeshTriangleSize  7
 #define kkGridPixelSize 16
+#define kCellSize 4.0
 
 #pragma clang diagnostic ignored "-Wcomma"
 
