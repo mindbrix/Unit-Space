@@ -40,7 +40,7 @@ using namespace std;
 @property(nonatomic) BOOL showTriangle;
 @property(nonatomic) BOOL showVisibles;
 @property(nonatomic) BOOL useDelaunay;
-@property(nonatomic) BOOL useMask;
+@property(nonatomic) BOOL useEvenOdd;
 @property(nonatomic) BOOL useStrokeColor;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
@@ -70,7 +70,7 @@ using namespace std;
     self.showColors = YES;
     self.showInterior = YES;
     self.showTriangle = YES;
-    self.useMask = NO;
+    self.useEvenOdd = YES;
     self.pathBitmask = kPathBitmaskTriangle;
     
     self.f = 20;
@@ -295,7 +295,7 @@ using namespace std;
     [self redraw];
 }
 - (IBAction)toggleUseMask:(id)sender {
-    _useMask = !_useMask;
+    _useEvenOdd = !_useEvenOdd;
     [self redraw];
 }
 - (IBAction)toggleUseStrokeColor:(id)sender {
@@ -314,7 +314,7 @@ using namespace std;
 
 - (void)reset {
     if (_svgData || _fontData) {
-        libTess::triangulate(_mesh, _scene, self.useMask);
+        libTess::triangulate(_mesh, _scene, self.useEvenOdd);
         for (int i = 0; i < _scene._paths.size(); i++)
             Accumulator::writePathAccumulations(_mesh, _scene._paths[i], i);
         [self.metalLayer uploadMesh:_mesh];
@@ -347,7 +347,7 @@ using namespace std;
     if (self.pathBitmask & kPathBitmaskQuad)
         _scene.addPath(p2);
     
-    libTess::triangulate(_mesh, _scene, self.useMask);
+    libTess::triangulate(_mesh, _scene, self.useEvenOdd);
     for (int i = 0; i < _scene._paths.size(); i++)
         Accumulator::writePathAccumulations(_mesh, _scene._paths[i], i);
     
@@ -372,7 +372,7 @@ using namespace std;
     uniforms.width = 1;
     uniforms.cap = 8;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
-    uniforms.evenOdd = _useMask;
+    uniforms.evenOdd = _useEvenOdd;
     
     MeshState meshState;
     meshState.disableInteriorVector = false;
