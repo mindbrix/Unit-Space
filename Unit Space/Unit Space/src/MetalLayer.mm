@@ -67,10 +67,8 @@
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
-    descriptor.colorAttachments[0].blendingEnabled = NO;
-    
-    descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR16Float;
     descriptor.colorAttachments[1].blendingEnabled = YES;
+    descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR16Float;
     descriptor.colorAttachments[1].rgbBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[1].alphaBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[1].sourceRGBBlendFactor = MTLBlendFactorOne;
@@ -81,17 +79,18 @@
     
     descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
-    descriptor.label = @"flagPipelineState";
-    self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-	
+    descriptor.colorAttachments[0].blendingEnabled = NO;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
     descriptor.label = @"resolveSOAPipelineState";
     self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-	descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
+    descriptor.label = @"flagPipelineState";
+    self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+	
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
     self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
@@ -174,7 +173,7 @@
     }
 	NSUInteger w = NSUInteger(std::ceil(self.drawableSize.width / kCellSize)), h = NSUInteger(std::ceil(self.drawableSize.height / kCellSize));
 	MTLScissorRect scissorRect = { 0, NSUInteger(self.drawableSize.height) - h, w, h };
-	MTLScissorRect noScissorRect = { 0, 0,  NSUInteger(self.drawableSize.width),  NSUInteger(self.drawableSize.height) };
+	MTLScissorRect noScissorRect = { 0, 0, NSUInteger(self.drawableSize.width),  NSUInteger(self.drawableSize.height) };
 	
     MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
