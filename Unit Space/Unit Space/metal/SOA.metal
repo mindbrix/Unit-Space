@@ -40,16 +40,18 @@ struct ResolveFragment
 fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                 texture2d<half> accumulation [[texture(1)]] )
 {
+    const float kPrecision = 1e-2;
     float winding = accumulation.sample(s, vert.uv).x;
     
     float absolute = abs(winding);
     float NZ = min(absolute, 1.0);
     float EO = 1.0 - abs(fmod(absolute, 2.0) - 1.0);
-    float alpha = select(NZ, EO, true);
+    float alpha = select(NZ, EO, false);
     
     ResolveFragment f;
-    f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
-    f.depth = select(0.0, 1.0, alpha < 1e-3 || alpha > 0.999);
+//    f.depth = select(0.0, 1.0, abs(absolute - floor(absolute)) < 1e-3);
+    f.depth = select(0.0, 1.0, NZ < kPrecision || NZ + kPrecision > 1);
+    f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha * f.depth;
     return f;
 }
 
