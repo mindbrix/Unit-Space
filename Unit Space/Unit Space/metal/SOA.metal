@@ -184,18 +184,13 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
 fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
 								   constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    if (meshState.showLineWinding) {
-		float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
-        return vert.color * abs(delta);
-	} else {
-        float w = rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
-        float h = rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
-        float dx = (1.0 - abs(vert.u)) * w;
-        float dy = (1.0 - abs(vert.v)) * h;
-        float x = w - dx, y = max(0.0, w - dy);
-        float rounded = saturate(w - sqrt(x * x + y * y));
-        return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap);
-	}
+    float w = rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
+    float h = rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
+    float dx = (1.0 - abs(vert.u)) * w;
+    float dy = (1.0 - abs(vert.v)) * h;
+    float x = w - dx, y = max(0.0, w - dy);
+    float rounded = saturate(w - sqrt(x * x + y * y));
+    return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap);
 }
 
 struct LineFragment
