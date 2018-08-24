@@ -140,7 +140,7 @@
     self.accumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_winding_fragment_main"];
     descriptor.label = @"lineWindingSOAPipelineState";
     self.lineWindingSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     return self;
