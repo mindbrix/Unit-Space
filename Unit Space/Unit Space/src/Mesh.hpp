@@ -52,11 +52,13 @@ struct Mesh {
                     calls.emplace_back(kCallTypeAccumulate, end - base, base, newState, meshState);
                 }
                 calls.emplace_back(kCallTypeResolveCellsSOA, 1, 0, state, meshState);
-                
+				
+				MeshState windingState = meshState;
+				//windingState.winding = 0.333;
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeAccumulate, end - base, base, state, meshState);
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, state, windingState);
                 }
                 
                 State newState = state;
