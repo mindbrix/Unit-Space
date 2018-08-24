@@ -63,7 +63,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
 fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a);// * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
 }
 
 

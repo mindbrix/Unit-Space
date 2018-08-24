@@ -53,9 +53,15 @@ struct Mesh {
                 }
                 calls.emplace_back(kCallTypeResolveCellsSOA, 1, 0, state, meshState);
                 
+                for (i = 0; i < ranges.size(); i += 2) {
+                    base = mesh._accumulationIndices[ranges[i]];
+                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, state, meshState);
+                }
+                
                 State newState = state;
                 newState.fillColor = { 1, 0, 0, 1 };
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, newState, meshState);
+                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
                 
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {

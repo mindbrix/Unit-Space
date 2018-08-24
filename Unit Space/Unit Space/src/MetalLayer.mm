@@ -248,7 +248,7 @@
                 [commandEncoder setRenderPipelineState:_accumulatePipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
-				[commandEncoder setScissorRect:scissorRect];
+				//[commandEncoder setScissorRect:scissorRect];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
             case kCallTypeResolveSOA:
