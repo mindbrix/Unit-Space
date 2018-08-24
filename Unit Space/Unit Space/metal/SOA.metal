@@ -63,6 +63,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
 fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
+    //return float4(select(float3(1, 0, 0), float3(1, 0, 0), delta < 0), abs(delta));
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
 }
 
@@ -167,17 +168,23 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     return vert;
 }
 
-fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
+struct LineFragment
+{
+    float4 color [[ color(0) ]];
+    //float winding [[ color(1) ]];
+};
+
+fragment LineFragment line_fragment_main(LineVertex vert [[stage_in]],
 								   constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
+    LineFragment f;
 	if (meshState.showLineWinding) {
 		float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
-        return vert.color * abs(delta);
-        //return float4(select(float3(1, 0, 0), float3(1, 0, 0), delta < 0), abs(delta));
+        f.color = vert.color * abs(delta);
 	} else {
-		return vert.color
+		f.color = vert.color
 		* saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
 		* saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
-
 	}
+    return f;
 }
