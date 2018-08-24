@@ -171,20 +171,18 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
 struct LineFragment
 {
     float4 color [[ color(0) ]];
-    //float winding [[ color(1) ]];
+    float winding [[ color(1) ]];
 };
 
-fragment LineFragment line_fragment_main(LineVertex vert [[stage_in]],
+fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
 								   constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    LineFragment f;
-	if (meshState.showLineWinding) {
+    if (meshState.showLineWinding) {
 		float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
-        f.color = vert.color * abs(delta);
+        return vert.color * abs(delta);
 	} else {
-		f.color = vert.color
+		return vert.color
 		* saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
 		* saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
 	}
-    return f;
 }
