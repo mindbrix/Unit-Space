@@ -66,7 +66,7 @@ struct Mesh {
                 
                 State newState = state;
                 newState.fillColor = { 1, 0, 0, 1 };
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
+                calls.emplace_back(kCallTypeResolveSOA, 1, 0, newState, meshState);
                 
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {
