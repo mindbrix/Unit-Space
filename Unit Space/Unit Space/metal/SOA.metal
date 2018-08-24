@@ -136,6 +136,8 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     int p = max(0, ps[idx]);
     float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
+    float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+    
     float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
@@ -149,8 +151,10 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
         float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
         p0 = tp0, p1 = tp1;
     }
+    float userWidth = select(state.width, 1.0 / scale, state.width == 0);
+    float deviceWidth = select(userWidth * scale, 0.7071 - 0.5, meshState.showLineWinding) + 1;
+    deviceWidth = select(deviceWidth, 0.0, ps[idx] == -1);
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = select(select(state.width, 0.7071 - 0.5, meshState.showLineWinding) + 1.0, 0.0, ps[idx] == -1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
