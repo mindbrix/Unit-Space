@@ -94,17 +94,22 @@ struct AccumulateFragment {
     float4 winding [[ color(1) ]];
 };
 
-fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[stage_in]],
+													 constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     AccumulateFragment frag;
 	
-	frag.winding =
-    edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1)
-    + edgeWinding(vert.x1, vert.y1, vert.x2, vert.y2)
-    + edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
-    + edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
-    
-    /*
+	if (meshState.winding != 0)
+		frag.winding = meshState.winding;
+	else {
+		frag.winding =
+		edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1)
+		+ edgeWinding(vert.x1, vert.y1, vert.x2, vert.y2)
+		+ edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
+		+ edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
+	}
+	
+	/*
      frag.winding = 0.1666;
     frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
     + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);

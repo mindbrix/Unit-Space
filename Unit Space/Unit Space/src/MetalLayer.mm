@@ -278,7 +278,8 @@
         [commandEncoder setVertexBytes:& state length:sizeof(State) atIndex:0];
         [commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
         [commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
-        
+		[commandEncoder setFragmentBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
+		
         [commandEncoder drawPrimitives:drawQuads ? MTLPrimitiveTypeTriangleStrip : MTLPrimitiveTypeTriangle
                            vertexStart:0
                            vertexCount:drawQuads ? 4 : 3

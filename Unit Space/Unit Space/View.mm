@@ -388,7 +388,8 @@ using namespace std;
     meshState.colorsSize = (int)_mesh._paths.size();
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
-    
+	meshState.winding = 0;
+	
     _mesh._calls.resize(0);
     int p = -1;
     
