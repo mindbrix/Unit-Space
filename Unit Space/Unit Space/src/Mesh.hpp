@@ -74,8 +74,13 @@ struct Mesh {
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._paths[ranges[i + 1]].edge;
                     for (j = base; j < end; j += 1023) {
                         count = (j + 1024 < end ? j + 1024 : end) - j;
-                        calls.emplace_back(kCallTypeLinesSOA, count - 1, j, state, meshState);
+                        calls.emplace_back(meshState.showLineWinding ? kCallTypeLinesWindingSOA : kCallTypeLinesSOA, count - 1, j, state, meshState);
                     }
+                }
+                if (meshState.showLineWinding) {
+                    State newState = state;
+                    newState.fillColor = { 1, 0, 0, 1 };
+                    calls.emplace_back(kCallTypeResolveSOA, 1, 0, newState, meshState);
                 }
             } else {
                 call = nullptr;

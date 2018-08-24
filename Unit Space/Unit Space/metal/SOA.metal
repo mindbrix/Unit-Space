@@ -47,7 +47,6 @@ fragment ResolveFragment resolveCellsSOA_fragment_main(ResolveVertex vert [[stag
     ResolveFragment f;
     f.color = select( float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), 0, alpha + kPrecision < 1);
     f.depth = float(alpha < kPrecision || alpha + kPrecision >= 1);
-   // f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
     return f;
 }
 
@@ -55,7 +54,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
                                                  uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     ResolveVertex vert;
-    vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 0.0, 1.0 };
+    vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 1.0, 1.0 };
     vert.uv = { select(0.0, 1.0, vid & 1), 1.0 - select(0.0, 1.0, vid & 2) };
     return vert;
 }
@@ -63,8 +62,9 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
 fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
-    //return float4(select(float3(1, 0, 0), float3(1, 0, 0), delta < 0), abs(delta));
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
+    float winding = accumulation.sample(s, vert.uv).x;
+    return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
+    //return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
 }
 
 
