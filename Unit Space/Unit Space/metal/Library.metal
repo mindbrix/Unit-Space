@@ -26,6 +26,13 @@ float edgeWinding(float x0, float y0, float x1, float y1) {
 	return coverage * (t1 - ((t1 - t0) * area));
 }
 
+float windingToAlpha(float winding, bool evenOdd) {
+    float absolute = abs(winding);
+    float NZ = min(absolute, 1.0);
+    float EO = 1.0 - abs(fmod(absolute, 2.0) - 1.0);
+    return select(NZ, EO, evenOdd);
+}
+
 float sRGB(float x) {
     return x;
     

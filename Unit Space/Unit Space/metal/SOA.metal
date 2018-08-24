@@ -41,12 +41,8 @@ fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]
                 texture2d<float> accumulation [[texture(1)]] )
 {
     const float kPrecision = 1e-2;
-    float winding = accumulation.sample(s, vert.uv).x;
     
-    float absolute = abs(winding);
-    float NZ = min(absolute, 1.0);
-    float EO = 1.0 - abs(fmod(absolute, 2.0) - 1.0);
-    float alpha = select(NZ, EO, state.evenOdd);
+    float alpha = windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
     
     ResolveFragment f;
     f.color = select( float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), 0, alpha + kPrecision < 1);
@@ -54,6 +50,13 @@ fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]
    // f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
     return f;
 }
+
+fragment float4 resolveColorSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
+                                                 texture2d<float> accumulation [[texture(1)]] )
+{
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
+}
+
 
 #pragma mark - Circle
 
