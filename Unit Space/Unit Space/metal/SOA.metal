@@ -150,7 +150,7 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
         p0 = tp0, p1 = tp1;
     }
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    float deviceWidth = select(state.width + 1.0, 0.0, ps[idx] == -1);
+    float deviceWidth = select(select(state.width, 0.7071 - 0.5, meshState.showLineWinding) + 1.0, 0.0, ps[idx] == -1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
@@ -163,11 +163,16 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     return vert;
 }
 
-fragment float4 line_fragment_main(LineVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
+								   constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-//	float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
-//	return float4(select(float3(1, 0, 0), float3(0), delta < 0), abs(delta));
-	return vert.color
-    * saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
-    * saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
+	if (meshState.showLineWinding) {
+		float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
+		return float4(select(float3(1, 0, 0), float3(0), delta < 0), abs(delta));
+	} else {
+		return vert.color
+		* saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
+		* saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
+
+	}
 }

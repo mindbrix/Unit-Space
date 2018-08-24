@@ -144,6 +144,7 @@ struct MeshState {
     bool                showVisibles;
     bool                useStrokeColor;
 	float				winding;
+	bool				showLineWinding;
     int                 colorsSize;
     int                 reverseCount;
     unsigned int        subdivisionCount;

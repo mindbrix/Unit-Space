@@ -369,7 +369,7 @@ using namespace std;
     uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 0, 0, 0, 1 };
     uniforms.flatness = 0.03125;
-    uniforms.width = 1;
+	uniforms.width = 1;
     uniforms.cap = 8;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     uniforms.evenOdd = _useEvenOdd;
@@ -389,6 +389,7 @@ using namespace std;
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
+	meshState.showLineWinding = false;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
 	
     _mesh._calls.resize(0);
