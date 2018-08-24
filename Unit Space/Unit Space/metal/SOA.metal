@@ -62,9 +62,18 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
 fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
+    
     float winding = accumulation.sample(s, vert.uv).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 1.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 2.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 3.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 4.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 5.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 6.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 7.0, vert.uv.y)).x;
+    
     return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
-    //return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * saturate(abs(winding));// windingToAlpha(winding, state.evenOdd);
 }
 
 
@@ -152,10 +161,14 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
         float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
         p0 = tp0, p1 = tp1;
     }
-    float userWidth = select(state.width, 1.0 / scale, state.width == 0);
-    float deviceWidth = select(userWidth * scale, 0.7071 - 0.5, meshState.showLineWinding) + 1;
-    deviceWidth = select(deviceWidth, 0.0, ps[idx] == -1);
+    
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
+    
+    float t = saturate((max(abs(nv.x), abs(nv.y)) - 0.7071067812) * 3.4142135625);
+    float dilation = mix(1.4142135624, 1, t);
+    float userWidth = select(state.width, 1.0 / scale, state.width == 0);
+    float deviceWidth = select(userWidth * scale, 0.0, meshState.showLineWinding) + dilation;
+    deviceWidth = select(deviceWidth, 0.0, ps[idx] == -1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
@@ -175,9 +188,9 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
 		float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
         return vert.color * abs(delta);
 	} else {
-		return vert.color
-		* saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
-		* saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
+        return vert.color
+        * saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
+        * saturate((1.0 - abs(vert.v)) * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v)) / 1.74);
 	}
 }
 
