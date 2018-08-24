@@ -40,7 +40,7 @@ struct ResolveFragment
 fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                 texture2d<float> accumulation [[texture(1)]] )
 {
-    const float kPrecision = 1e-3;
+    const float kPrecision = 1e-2;
     float winding = accumulation.sample(s, vert.uv).x;
     
     float absolute = abs(winding);
@@ -49,21 +49,9 @@ fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]
     float alpha = select(NZ, EO, state.evenOdd);
     
     ResolveFragment f;
-    f.depth = float(alpha < kPrecision);// || alpha + kPrecision >= 1);
-    
-    /*
-    f.color = float4(1, 0, 0, 1);
-    if (f.depth == 1)
-        f.color = float4(0.333, 0.333, 0.333, 1);
-//    else {
-//        if (alpha + kPrecision >= 1)
-//            f.color = float4(0, 1, 0, 1);
-//    }
-    
-//    f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), NZ < kPrecision) * alpha * f.depth;
-    */
-    
-    f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
+    f.color = select( float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), 0, alpha + kPrecision < 1);
+    f.depth = float(alpha < kPrecision || alpha + kPrecision >= 1);
+   // f.color = select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * alpha;
     return f;
 }
 
