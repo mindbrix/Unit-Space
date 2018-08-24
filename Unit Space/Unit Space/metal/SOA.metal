@@ -26,7 +26,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
                                           uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     ResolveVertex vert;
-    vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 1.0, 1.0 };
+    vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 0.0, 1.0 };
     vert.uv = { select(0.0, 1.0, vid & 1) / kCellSize, 1.0 - select(0.0, 1.0, vid & 2) / kCellSize };
     return vert;
 }
@@ -34,7 +34,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
 struct ResolveFragment
 {
     float4 color [[ color(0) ]];
-    float depth [[depth(any)]];
+    float depth [[ depth(any) ]];
 };
 
 fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
