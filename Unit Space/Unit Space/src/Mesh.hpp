@@ -51,7 +51,7 @@ struct Mesh {
 					newState.CTM = AffineTransformConcat(state.CTM, cell);
                     calls.emplace_back(kCallTypeAccumulate, end - base, base, newState, meshState);
                 }
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
+                calls.emplace_back(kCallTypeResolveCellsSOA, 1, 0, state, meshState);
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._paths[ranges[i]].edge;

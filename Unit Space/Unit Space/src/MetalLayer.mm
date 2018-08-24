@@ -245,7 +245,7 @@
 				[commandEncoder setScissorRect:scissorRect];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
-            case kCallTypeResolveSOA:
+            case kCallTypeResolveCellsSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
