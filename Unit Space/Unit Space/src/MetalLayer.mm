@@ -177,11 +177,7 @@
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
     }
-	NSUInteger w = NSUInteger(std::ceil(self.drawableSize.width / kCellSize)), h = NSUInteger(std::ceil(self.drawableSize.height / kCellSize));
-	MTLScissorRect scissorRect = { 0, NSUInteger(self.drawableSize.height) - h, w, h };
-	MTLScissorRect noScissorRect = { 0, 0, NSUInteger(self.drawableSize.width),  NSUInteger(self.drawableSize.height) };
-	
-    MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
@@ -248,8 +244,7 @@
                 [commandEncoder setRenderPipelineState:_accumulatePipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
-				//[commandEncoder setScissorRect:scissorRect];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
+				instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
             case kCallTypeResolveSOA:
                 [commandEncoder textureBarrier];
@@ -285,7 +280,6 @@
                            vertexCount:drawQuads ? 4 : 3
                          instanceCount:instanceCount
                           baseInstance:baseInstance];
-		[commandEncoder setScissorRect:noScissorRect];
     }
     [commandEncoder endEncoding];
 
