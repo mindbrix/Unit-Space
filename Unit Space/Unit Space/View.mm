@@ -389,6 +389,7 @@ using namespace std;
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
+	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
 	
     _mesh._calls.resize(0);
     int p = -1;

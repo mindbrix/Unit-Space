@@ -76,7 +76,10 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     ux = max(ux, bounds.ux);
     
     dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
-    
+	
+	dx = clamp(dx, meshState.clipBounds.lx, meshState.clipBounds.ux);
+	dy = clamp(dy, meshState.clipBounds.ly, meshState.clipBounds.uy);
+	
     AccumulateVertex vert;
     vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
     
