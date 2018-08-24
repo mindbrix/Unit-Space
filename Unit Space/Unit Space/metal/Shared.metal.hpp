@@ -161,6 +161,7 @@ struct State {
     float               cap;
     float               scaleFactor;
     bool                evenOdd;
+    bool                roundCap;
 };
 
 
