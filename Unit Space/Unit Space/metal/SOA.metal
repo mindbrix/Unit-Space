@@ -168,7 +168,8 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
 {
 	if (meshState.showLineWinding) {
 		float delta = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
-		return float4(select(float3(1, 0, 0), float3(0), delta < 0), abs(delta));
+        return vert.color * abs(delta);
+        //return float4(select(float3(1, 0, 0), float3(1, 0, 0), delta < 0), abs(delta));
 	} else {
 		return vert.color
 		* saturate((1.0 - abs(vert.u)) * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u)))
