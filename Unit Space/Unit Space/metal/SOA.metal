@@ -51,10 +51,19 @@ fragment ResolveFragment resolveCellsSOA_fragment_main(ResolveVertex vert [[stag
     return f;
 }
 
-fragment float4 resolveColorSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
+vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                                 uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    ResolveVertex vert;
+    vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 0.0, 1.0 };
+    vert.uv = { select(0.0, 1.0, vid & 1), 1.0 - select(0.0, 1.0, vid & 2) };
+    return vert;
+}
+
+fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a);// * windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
 }
 
 

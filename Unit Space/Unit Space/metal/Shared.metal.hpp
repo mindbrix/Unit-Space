@@ -171,6 +171,7 @@ enum CallType : unsigned int {
     kCallTypeLinesSOA,
     kCallTypeAccumulate,
     kCallTypePrefixSum,
+    kCallTypeResolveSOA,
     kCallTypeResolveCellsSOA,
 };
 
