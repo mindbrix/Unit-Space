@@ -22,7 +22,7 @@ struct ResolveVertex
     float2 uv;
 };
 
-vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+vertex ResolveVertex resolveCellsSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                           uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     ResolveVertex vert;
@@ -37,7 +37,7 @@ struct ResolveFragment
     float depth [[ depth(any) ]];
 };
 
-fragment ResolveFragment resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
+fragment ResolveFragment resolveCellsSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
                 texture2d<float> accumulation [[texture(1)]] )
 {
     const float kPrecision = 1e-2;
