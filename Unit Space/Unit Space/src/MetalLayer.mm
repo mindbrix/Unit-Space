@@ -23,7 +23,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineWindingSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> resolveCellsSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -79,10 +78,10 @@
     descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     
     descriptor.colorAttachments[0].blendingEnabled = NO;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveCellsSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveCellsSOA_fragment_main"];
-    descriptor.label = @"resolveCellsSOAPipelineState";
-    self.resolveCellsSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
+    descriptor.label = @"resolveSOAPipelineState";
+    self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
@@ -123,11 +122,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
-    descriptor.label = @"resolveSOAPipelineState";
-    self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.colorAttachments[0].writeMask = MTLColorWriteMaskNone;
     descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
@@ -252,11 +246,6 @@
             case kCallTypeResolveSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
-                [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
-                break;
-            case kCallTypeResolveCellsSOA:
-                [commandEncoder textureBarrier];
-                [commandEncoder setRenderPipelineState:_resolveCellsSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 break;
         }

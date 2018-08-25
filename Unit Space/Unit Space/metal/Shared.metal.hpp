@@ -176,7 +176,6 @@ enum CallType : unsigned int {
     kCallTypeLinesWindingSOA,
     kCallTypeAccumulate,
     kCallTypeResolveSOA,
-    kCallTypeResolveCellsSOA,
 };
 
 struct Call {
