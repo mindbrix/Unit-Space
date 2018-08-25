@@ -31,25 +31,6 @@ vertex ResolveVertex resolveCellsSOA_vertex_main(constant State &state [[buffer(
     return vert;
 }
 
-struct ResolveFragment
-{
-    float4 color [[ color(0) ]];
-    float depth [[ depth(any) ]];
-};
-
-fragment ResolveFragment resolveCellsSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
-                texture2d<float> accumulation [[texture(1)]] )
-{
-    const float kPrecision = 1e-2;
-    
-    float alpha = windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd);
-    
-    ResolveFragment f;
-    f.color = select( float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a), 0, alpha + kPrecision < 1);
-    f.depth = float(alpha < kPrecision || alpha + kPrecision >= 1);
-    return f;
-}
-
 vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                  uint vid [[vertex_id]], uint iid [[instance_id]])
 {
