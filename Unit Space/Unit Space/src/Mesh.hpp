@@ -43,6 +43,7 @@ struct Mesh {
                 }
             }
             if (meshState.showAccumulations) {
+				/*
 				MeshState clipState = meshState;
 				clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / kCellSize), std::ceil(clipBounds.uy / kCellSize) };
 				State cellState = state;
@@ -55,6 +56,7 @@ struct Mesh {
 					calls.emplace_back(kCallTypeAccumulate, end - base, base, cellState, clipState);
                 }
                 calls.emplace_back(kCallTypeResolveCellsSOA, 1, 0, state, meshState);
+				*/
 				
 				MeshState windingState = meshState;
 				//windingState.winding = 0.333;
