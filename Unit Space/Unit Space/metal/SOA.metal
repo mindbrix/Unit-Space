@@ -72,7 +72,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 5.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 6.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 7.0, vert.uv.y)).x;
-    */
+	*/
 //    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 8.0, vert.uv.y)).x;
 //    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 9.0, vert.uv.y)).x;
 //    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 10.0, vert.uv.y)).x;
@@ -214,6 +214,6 @@ fragment LineFragment line_winding_fragment_main(LineVertex vert [[stage_in]],
                                                  constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     LineFragment f;
-    f.winding = 0.333;// edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
+    f.winding = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
     return f;
 }
