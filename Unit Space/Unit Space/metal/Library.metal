@@ -15,6 +15,11 @@ float verticalWinding(float x, float y0, float y1) {
     return (1.0 - saturate(x)) * (saturate(y1) - saturate(y0));
 }
 
+float edgeCoverage(float x0, float y0, float x1, float y1) {
+    float det = (x1 - x0) * (0.5 - y0) - (y1 - y0) * (0.5 - x0);
+    return select(0.0, saturate(y1) - saturate(y0), (y1 > y0) == (det < 0));
+}
+
 float edgeWinding(float x0, float y0, float x1, float y1) {
     float sy0 = saturate(y0), sy1 = saturate(y1);
     float coverage = sy1 - sy0;
@@ -35,6 +40,9 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     dx12 = x2 - x1, dy12 = y2 - y1;
     dx20 = x0 - x2, dy20 = y0 - y2;
     area = dx12 * dy20 - dy12 * dx20;
+    if (abs(area) < 1e-3)
+        return edgeWinding(x0, y0, x2, y2);
+    
     u = (dx12 * (0.5 - y1) - dy12 * (0.5 - x1)) / area;
     v = (dx20 * (0.5 - y2) - dy20 * (0.5 - x2)) / area;
     w = 1 - u - v;
@@ -45,18 +53,24 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
     //t = select(t, 0.5, d > 1);
     //t = select(t, 0.5, abs(d) > 1);
-//    t = select(t, 0.5, f < -0.333);
+    t = select(t, 0.5, f < -0.333);
     
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     
-    return
-//    edgeWinding(x0, y0, x01, y01)
-//    + edgeWinding(x01, y01, x12, y12)
-//    + edgeWinding(x12, y12, x2, y2);
+    if (abs(d) < 1e9) {
+        return edgeWinding(x0, y0, x01, y01)
+        + edgeWinding(x01, y01, x12, y12)
+        + edgeWinding(x12, y12, x2, y2);
+    } else {
+        return edgeCoverage(x0, y0, x01, y01)
+        + edgeCoverage(x01, y01, x12, y12)
+        + edgeCoverage(x12, y12, x2, y2);
+    }
     
-    verticalWinding((x0 + x01) * 0.5, y0, y01)
-    + edgeWinding(x01, y01, x12, y12)
-    + verticalWinding((x12 + x2) * 0.5, y12, y2)
+    
+//    verticalWinding((x0 + x01) * 0.5, y0, y01)
+//    + edgeWinding(x01, y01, x12, y12)
+//    + verticalWinding((x12 + x2) * 0.5, y12, y2)
     
 //    verticalWinding(select(max(x0, x01), min(x0, x01), x0 < x2), y0, y01)
 //    + edgeWinding(x01, y01, x12, y12)
