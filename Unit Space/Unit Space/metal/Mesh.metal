@@ -22,12 +22,6 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     f = 4.0 * u * w - v * v;
     d = f * rsqrt(dfdx(f) * dfdx(f) + dfdy(f) * dfdy(f));
     
-    /*
-    if (abs(area) > 1e-3 && !(v > 0 && abs(d) < 0.7071))
-        return step(0.0, d) * (saturate( min(min(y0, y1), y2)  ) - saturate( max(max(y0, y1), y2) )) + max(0.0, (saturate(y2) - saturate(y0)));
-        //return copysign(step(0.0, d), -area) + max(0.0, (saturate(y2) - saturate(y0)));
-        //return select(0.1, step(0.0, d) * (saturate(y1) - saturate(y0)), y2 < y0);
-    */
     t = saturate(w / (w + v * 0.5));
     t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
     t = select(t, 0.5, f < -0.333);
@@ -66,8 +60,7 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     dx3 = acc.x3 * CTM.a + acc.y3 * CTM.c + CTM.tx, dy3 = acc.x3 * CTM.b + acc.y3 * CTM.d + CTM.ty;
     dx4 = acc.x4 * CTM.a + acc.y4 * CTM.c + CTM.tx, dy4 = acc.x4 * CTM.b + acc.y4 * CTM.d + CTM.ty;
     
-   // dx1 = dx2, dy1 = dy2;
-   // dx3 = dx2, dy3 = dy2;
+   // dx1 = dx2, dy1 = dy2, dx3 = dx2, dy3 = dy2;
     
     lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
     ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
@@ -111,16 +104,7 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
 		+ edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
 		+ edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
 	}
-	
-	/*
-     frag.winding = 0.1666;
-    frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2)
-    + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
-    
-     frag.winding =
-     edgeWinding(float2(vert.x0, vert.y0), float2(vert.x2, vert.y2))
-     + edgeWinding(float2(vert.x2, vert.y2), float2(vert.x4, vert.y4));
-     */
+    // frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
     return frag;
 }
 
