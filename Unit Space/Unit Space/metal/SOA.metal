@@ -64,11 +64,11 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
 {
     
     float winding = accumulation.sample(s, vert.uv).x;
-	
+	/*
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 1.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 2.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 3.0, vert.uv.y)).x;
-	 /*
+	 
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 4.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 5.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 6.0, vert.uv.y)).x;

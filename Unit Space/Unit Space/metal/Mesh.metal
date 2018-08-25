@@ -11,29 +11,6 @@
 
 using namespace metal;
 
-float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float dx12, dy12, dx20, dy20, area, u, v, w, f, d, t, x01, y01, x12, y12;
-    dx12 = x2 - x1, dy12 = y2 - y1;
-    dx20 = x0 - x2, dy20 = y0 - y2;
-    area = dx12 * dy20 - dy12 * dx20;
-    u = (dx12 * (0.5 - y1) - dy12 * (0.5 - x1)) / area;
-    v = (dx20 * (0.5 - y2) - dy20 * (0.5 - x2)) / area;
-    w = 1 - u - v;
-    f = 4.0 * u * w - v * v;
-    d = f * rsqrt(dfdx(f) * dfdx(f) + dfdy(f) * dfdy(f));
-    
-    t = saturate(w / (w + v * 0.5));
-    t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
-    t = select(t, 0.5, f < -0.333);
-    
-    x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
-    
-   return edgeWinding(x0, y0, x01, y01)
-    + edgeWinding(x01, y01, x12, y12)
-    + edgeWinding(x12, y12, x2, y2);
-}
-
-
 #pragma mark - Accumulate
 
 struct AccumulateVertex
@@ -98,13 +75,16 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
 	if (meshState.winding != 0)
 		frag.winding = meshState.winding;
 	else {
-		frag.winding =
-		edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1)
-		+ edgeWinding(vert.x1, vert.y1, vert.x2, vert.y2)
-		+ edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
-		+ edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
+        
+        frag.winding =
+        edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1)
+        + edgeWinding(vert.x1, vert.y1, vert.x2, vert.y2)
+        + edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
+        + edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
+        /*
+        frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2);// + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+        */
 	}
-    // frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
     return frag;
 }
 

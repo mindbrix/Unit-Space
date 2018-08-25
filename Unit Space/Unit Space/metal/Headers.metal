@@ -12,6 +12,7 @@
 using namespace metal;
 
 float edgeWinding(float x0, float y0, float x1, float y1);
+float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2);
 float windingToAlpha(float winding, bool evenOdd);
 float sRGB(float x);
 float ellipseDistance(float2 unitPoint, float dilation);

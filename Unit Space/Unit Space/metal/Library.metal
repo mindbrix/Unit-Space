@@ -11,12 +11,16 @@
 
 using namespace metal;
 
+float verticalWinding(float x, float y0, float y1) {
+    return (1.0 - saturate(x)) * (saturate(y1) - saturate(y0));
+}
+
 float edgeWinding(float x0, float y0, float x1, float y1) {
-	float sy0 = saturate(y0), sy1 = saturate(y1);
-	float coverage = sy1 - sy0;
-	
-	if (coverage == 0.0 || saturate(x0) + saturate(x1) == 0.0)
-		return coverage;
+    float sy0 = saturate(y0), sy1 = saturate(y1);
+    float coverage = sy1 - sy0;
+    
+    if (coverage == 0.0 || saturate(x0) + saturate(x1) == 0.0)
+        return coverage;
 	
 	float dxdy = (x1 - x0) / (y1 - y0);
 	float sx0 = fma(sy0 - y0, dxdy, x0), sx1 = fma(sy1 - y0, dxdy, x0);
@@ -24,6 +28,40 @@ float edgeWinding(float x0, float y0, float x1, float y1) {
 	float t0 = saturate(-minx / range), t1 = saturate((1.0 - minx) / range);
 	float area = (saturate(sx0) + saturate(sx1)) * 0.5;
 	return coverage * (t1 - ((t1 - t0) * area));
+}
+
+float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
+    float dx12, dy12, dx20, dy20, area, u, v, w, f, d, t, x01, y01, x12, y12;
+    dx12 = x2 - x1, dy12 = y2 - y1;
+    dx20 = x0 - x2, dy20 = y0 - y2;
+    area = dx12 * dy20 - dy12 * dx20;
+    u = (dx12 * (0.5 - y1) - dy12 * (0.5 - x1)) / area;
+    v = (dx20 * (0.5 - y2) - dy20 * (0.5 - x2)) / area;
+    w = 1 - u - v;
+    f = 4.0 * u * w - v * v;
+    d = f * rsqrt(dfdx(f) * dfdx(f) + dfdy(f) * dfdy(f));
+    
+    t = saturate(w / (w + v * 0.5));
+    t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
+    //t = select(t, 0.5, d > 1);
+    //t = select(t, 0.5, abs(d) > 1);
+//    t = select(t, 0.5, f < -0.333);
+    
+    x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
+    
+    return
+//    edgeWinding(x0, y0, x01, y01)
+//    + edgeWinding(x01, y01, x12, y12)
+//    + edgeWinding(x12, y12, x2, y2);
+    
+    verticalWinding((x0 + x01) * 0.5, y0, y01)
+    + edgeWinding(x01, y01, x12, y12)
+    + verticalWinding((x12 + x2) * 0.5, y12, y2)
+    
+//    verticalWinding(select(max(x0, x01), min(x0, x01), x0 < x2), y0, y01)
+//    + edgeWinding(x01, y01, x12, y12)
+//    + verticalWinding(select(min(x12, x2), max(x12, x2), x0 < x2), y12, y2)
+    ;
 }
 
 float windingToAlpha(float winding, bool evenOdd) {
