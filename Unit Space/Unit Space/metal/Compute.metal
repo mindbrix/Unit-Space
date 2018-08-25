@@ -7,7 +7,29 @@
 //
 
 #include <metal_stdlib>
+#include "Shared.metal.hpp"
+
 using namespace metal;
+
+kernel void prefix_sum_kernel(texture2d<half, access::read> inTexture [[texture(0)]],
+                              texture2d<half, access::write> outTexture [[texture(1)]],
+                              constant State &state [[buffer(0)]],
+                              ushort2 gid [[thread_position_in_grid]],
+                              ushort2 size [[threads_per_grid]])
+{
+    if (gid.x > 0)
+        return;
+    
+    half sum = 0.0;
+    ushort width = state.drawableSize.w;
+    
+    for (ushort x = 0; x < width; x++) {
+        uint2 pos = uint2(x, gid.y);
+        half4 inColor = inTexture.read(pos);
+        sum += inColor.x;
+        outTexture.write(half4(sum), pos);
+    }
+}
 
 // Data type, has to be the same as in the Swift file
 typedef float DataType;

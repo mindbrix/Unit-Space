@@ -71,9 +71,16 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 5.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 6.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 7.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 8.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 9.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 10.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 11.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 12.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 13.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 14.0, vert.uv.y)).x;
     
-    return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * saturate(abs(winding));// windingToAlpha(winding, state.evenOdd);
+   // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
+    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
 }
 
 
@@ -167,7 +174,7 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     float t = saturate((max(abs(nv.x), abs(nv.y)) - 0.7071067812) * 3.4142135625);
     float dilation = mix(1.4142135624, 1, t);
     float userWidth = select(state.width, 1.0 / scale, state.width == 0);
-    float deviceWidth = select(userWidth * scale, 0.0, meshState.showLineWinding) + dilation;
+    float deviceWidth = select(userWidth * scale, 2.0, meshState.showLineWinding) + dilation;
     deviceWidth = select(deviceWidth, 0.0, ps[idx] == -1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };

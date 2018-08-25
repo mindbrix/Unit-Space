@@ -60,7 +60,7 @@
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
     
-    self.prefixSumPipelineState = [self.device newComputePipelineStateWithFunction:[self.defaultLibrary newFunctionWithName:@"parsum"] error:nil];
+    self.prefixSumPipelineState = [self.device newComputePipelineStateWithFunction:[self.defaultLibrary newFunctionWithName:@"prefix_sum_kernel"] error:nil];
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
     depthStencilDescriptor.depthWriteEnabled = YES;
