@@ -53,6 +53,7 @@
     self.device = MTLCreateSystemDefaultDevice();
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
     self.magnificationFilter = kCAFilterNearest;
+    self.framebufferOnly = NO;
     CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
     self.colorspace = rgb;
     CGColorSpaceRelease(rgb);
@@ -177,7 +178,7 @@
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
         
-        desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+        desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         desc.pixelFormat = MTLPixelFormatR32Float;
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
@@ -267,6 +268,19 @@
             
                 id <MTLComputeCommandEncoder> computeEncoder = [commandBuffer computeCommandEncoder];
                 [computeEncoder setComputePipelineState:_prefixSumPipelineState];
+                State state = call->state;
+                state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
+                [computeEncoder setBytes:& state length:sizeof(State) atIndex:0];
+                [computeEncoder setTexture:_accumulationTexture atIndex:0];
+                [computeEncoder setTexture:_accumulationTexture atIndex:1];
+                NSUInteger w = _prefixSumPipelineState.threadExecutionWidth;
+                NSUInteger h = _prefixSumPipelineState.maxTotalThreadsPerThreadgroup / w;
+                MTLSize threadsPerThreadgroup = MTLSizeMake(w, h, 1);
+                //MTLSize threadsPerGrid = MTLSizeMake(_accumulationTexture.width, _accumulationTexture.height, 1);
+                MTLSize threadgroupsPerGrid = MTLSizeMake((_accumulationTexture.width + w - 1) / w, (_accumulationTexture.height + h - 1) / h, 1);
+                [computeEncoder dispatchThreadgroups: threadgroupsPerGrid threadsPerThreadgroup: threadsPerThreadgroup];
+                [computeEncoder endEncoding];
+                instanceCount = 0;
             
                 commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
                 break;

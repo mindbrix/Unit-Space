@@ -11,8 +11,8 @@
 
 using namespace metal;
 
-kernel void prefix_sum_kernel(texture2d<half, access::read> inTexture [[texture(0)]],
-                              texture2d<half, access::write> outTexture [[texture(1)]],
+kernel void prefix_sum_kernel(texture2d<float, access::read> inTexture [[texture(0)]],
+                              texture2d<float, access::write> outTexture [[texture(1)]],
                               constant State &state [[buffer(0)]],
                               ushort2 gid [[thread_position_in_grid]],
                               ushort2 size [[threads_per_grid]])
@@ -25,9 +25,9 @@ kernel void prefix_sum_kernel(texture2d<half, access::read> inTexture [[texture(
     
     for (ushort x = 0; x < width; x++) {
         uint2 pos = uint2(x, gid.y);
-        half4 inColor = inTexture.read(pos);
+        float4 inColor = inTexture.read(pos);
         sum += inColor.x;
-        outTexture.write(half4(sum), pos);
+        outTexture.write(float(sum), pos);
     }
 }
 

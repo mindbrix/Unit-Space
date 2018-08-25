@@ -64,6 +64,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
 {
     
     float winding = accumulation.sample(s, vert.uv).x;
+    /*
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 1.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 2.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 3.0, vert.uv.y)).x;
@@ -78,6 +79,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 12.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 13.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 14.0, vert.uv.y)).x;
+    */
     
    // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
