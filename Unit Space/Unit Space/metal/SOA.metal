@@ -174,12 +174,12 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
     
-    float t = saturate((max(abs(nv.x), abs(nv.y)) - 0.7071067812) * 3.4142135625);
-    float dilation = mix(1.4142135624, 1, t);
     float userWidth = select(state.width, 1.0 / scale, state.width == 0);
-    float deviceWidth = select(userWidth * scale, 2.0, meshState.showLineWinding) + dilation;
+    float t = saturate((max(abs(nv.x), abs(nv.y)) - 0.7071067812) * 3.4142135625);
+    float dilation = mix(0.7071067812, 0.5, t);
+    float deviceWidth = select(userWidth * scale * 0.5, 0.0, meshState.showLineWinding) + dilation;
     deviceWidth = select(deviceWidth, 0.0, ps[idx] == -1);
-    float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * 0.5 * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
+    float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
     LineVertex vert;
@@ -213,6 +213,6 @@ fragment LineFragment line_winding_fragment_main(LineVertex vert [[stage_in]],
                                                  constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     LineFragment f;
-    f.winding = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
+    f.winding = 0.333;// edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
     return f;
 }
