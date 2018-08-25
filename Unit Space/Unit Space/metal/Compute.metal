@@ -20,14 +20,15 @@ kernel void prefix_sum_kernel(texture2d<float, access::read> inTexture [[texture
     if (gid.x > 0)
         return;
     
-    half sum = 0.0;
+    float sum = 0.0;
     ushort width = state.drawableSize.w;
     
     for (ushort x = 0; x < width; x++) {
         uint2 pos = uint2(x, gid.y);
         float4 inColor = inTexture.read(pos);
         sum += inColor.x;
-        outTexture.write(float(sum), pos);
+       // sum = select(sum, floor(sum), floor(abs(sum)) < 1e-2);
+        outTexture.write(sum, pos);
     }
 }
 

@@ -272,13 +272,17 @@
                 state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
                 [computeEncoder setBytes:& state length:sizeof(State) atIndex:0];
                 [computeEncoder setTexture:_accumulationTexture atIndex:0];
+//                [computeEncoder setTexture:drawable.texture atIndex:1];
                 [computeEncoder setTexture:_accumulationTexture atIndex:1];
+                MTLSize threadsPerThreadgroup = MTLSizeMake(1, 1, 1);
+                MTLSize threadgroupsPerGrid = MTLSizeMake(1, _accumulationTexture.height, 1);
+            
                 NSUInteger w = _prefixSumPipelineState.threadExecutionWidth;
                 NSUInteger h = _prefixSumPipelineState.maxTotalThreadsPerThreadgroup / w;
-                MTLSize threadsPerThreadgroup = MTLSizeMake(w, h, 1);
-                //MTLSize threadsPerGrid = MTLSizeMake(_accumulationTexture.width, _accumulationTexture.height, 1);
-                MTLSize threadgroupsPerGrid = MTLSizeMake((_accumulationTexture.width + w - 1) / w, (_accumulationTexture.height + h - 1) / h, 1);
-                [computeEncoder dispatchThreadgroups: threadgroupsPerGrid threadsPerThreadgroup: threadsPerThreadgroup];
+//                MTLSize threadsPerThreadgroup = MTLSizeMake(w, h, 1);
+//                MTLSize threadsPerGrid = MTLSizeMake(_accumulationTexture.width, _accumulationTexture.height, 1);
+//                MTLSize threadgroupsPerGrid = MTLSizeMake((_accumulationTexture.width + w - 1) / w, (_accumulationTexture.height + h - 1) / h, 1);
+                [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
                 [computeEncoder endEncoding];
                 instanceCount = 0;
             
