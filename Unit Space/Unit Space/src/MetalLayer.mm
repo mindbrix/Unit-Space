@@ -22,7 +22,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineWindingSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
-@property (nonatomic, strong) id <MTLComputePipelineState> prefixSumPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveCellsSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
@@ -53,15 +52,12 @@
     self.device = MTLCreateSystemDefaultDevice();
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
     self.magnificationFilter = kCAFilterNearest;
-    self.framebufferOnly = NO;
     CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
     self.colorspace = rgb;
     CGColorSpaceRelease(rgb);
     
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
-    
-    self.prefixSumPipelineState = [self.device newComputePipelineStateWithFunction:[self.defaultLibrary newFunctionWithName:@"prefix_sum_kernel"] error:nil];
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
     depthStencilDescriptor.depthWriteEnabled = YES;
@@ -262,31 +258,6 @@
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveCellsSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
-                break;
-            case kCallTypePrefixSum:
-                [commandEncoder endEncoding];
-            
-                id <MTLComputeCommandEncoder> computeEncoder = [commandBuffer computeCommandEncoder];
-                [computeEncoder setComputePipelineState:_prefixSumPipelineState];
-                State state = call->state;
-                state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-                [computeEncoder setBytes:& state length:sizeof(State) atIndex:0];
-                [computeEncoder setTexture:_accumulationTexture atIndex:0];
-//                [computeEncoder setTexture:drawable.texture atIndex:1];
-                [computeEncoder setTexture:_accumulationTexture atIndex:1];
-                MTLSize threadsPerThreadgroup = MTLSizeMake(1, 1, 1);
-                MTLSize threadgroupsPerGrid = MTLSizeMake(1, _accumulationTexture.height, 1);
-            
-                NSUInteger w = _prefixSumPipelineState.threadExecutionWidth;
-                NSUInteger h = _prefixSumPipelineState.maxTotalThreadsPerThreadgroup / w;
-//                MTLSize threadsPerThreadgroup = MTLSizeMake(w, h, 1);
-//                MTLSize threadsPerGrid = MTLSizeMake(_accumulationTexture.width, _accumulationTexture.height, 1);
-//                MTLSize threadgroupsPerGrid = MTLSizeMake((_accumulationTexture.width + w - 1) / w, (_accumulationTexture.height + h - 1) / h, 1);
-                [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
-                [computeEncoder endEncoding];
-                instanceCount = 0;
-            
-                commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
                 break;
         }
         if (instanceCount == 0)

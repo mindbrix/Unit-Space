@@ -78,8 +78,6 @@ struct Mesh {
                     }
                 }
                 if (meshState.showLineWinding) {
-                    calls.emplace_back(kCallTypePrefixSum, 1, 0, state, meshState);
-                    
                     State newState = state;
                     newState.fillColor = { 1, 0, 0, 1 };
                     calls.emplace_back(kCallTypeResolveSOA, 1, 0, newState, meshState);

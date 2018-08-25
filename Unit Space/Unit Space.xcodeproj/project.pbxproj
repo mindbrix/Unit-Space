@@ -13,7 +13,6 @@
 		E97D7609211498610015388A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7605211498600015388A /* Shaders.metal */; };
 		E97D76152114995A0015388A /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97D76112114995A0015388A /* MetalLayer.mm */; };
 		E97D7618211499E20015388A /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E97D7617211499E20015388A /* VGAffineTransform.m */; };
-		E989404F212C33E000E73C64 /* Compute.metal in Sources */ = {isa = PBXBuildFile; fileRef = E989404E212C33E000E73C64 /* Compute.metal */; };
 		E9B31328212A0223008EC18E /* SOA.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9B31327212A0223008EC18E /* SOA.metal */; };
 		E9C24949211724470019B25C /* Nu.icns in Resources */ = {isa = PBXBuildFile; fileRef = E9C24948211724470019B25C /* Nu.icns */; };
 		E9EE5F9220851100005823F7 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7B20851100005823F7 /* bucketalloc.c */; };
@@ -50,7 +49,6 @@
 		E97D76142114995A0015388A /* SubPath.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SubPath.hpp; sourceTree = "<group>"; };
 		E97D7616211499E20015388A /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E97D7617211499E20015388A /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
-		E989404E212C33E000E73C64 /* Compute.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Compute.metal; sourceTree = "<group>"; };
 		E9B31327212A0223008EC18E /* SOA.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SOA.metal; sourceTree = "<group>"; };
 		E9B31329212C02D3008EC18E /* Accumulator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Accumulator.hpp; sourceTree = "<group>"; };
 		E9C24948211724470019B25C /* Nu.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Nu.icns; path = ../../Designs/Nu.icns; sourceTree = "<group>"; };
@@ -111,7 +109,6 @@
 		E97D7601211498600015388A /* metal */ = {
 			isa = PBXGroup;
 			children = (
-				E989404E212C33E000E73C64 /* Compute.metal */,
 				E97D7602211498600015388A /* Headers.metal */,
 				E97D7603211498600015388A /* Library.metal */,
 				E97D7604211498600015388A /* Mesh.metal */,
@@ -300,7 +297,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E989404F212C33E000E73C64 /* Compute.metal in Sources */,
 				E97D7609211498610015388A /* Shaders.metal in Sources */,
 				E9EE5F9320851100005823F7 /* dict.c in Sources */,
 				E9EE5F9720851100005823F7 /* sweep.c in Sources */,
