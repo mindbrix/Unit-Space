@@ -82,7 +82,7 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
         + edgeWinding(vert.x2, vert.y2, vert.x3, vert.y3)
         + edgeWinding(vert.x3, vert.y3, vert.x4, vert.y4);
         /*
-        frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2);// + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+        frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
         */
 	}
     return frag;

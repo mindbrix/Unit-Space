@@ -43,21 +43,6 @@ struct Mesh {
                 }
             }
             if (meshState.showAccumulations) {
-				/*
-				MeshState clipState = meshState;
-				clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / kCellSize), std::ceil(clipBounds.uy / kCellSize) };
-				State cellState = state;
-				AffineTransform cell = { 1.0 / kCellSize, 0, 0, 1.0 / kCellSize, 0, 0 };
-				cellState.CTM = AffineTransformConcat(state.CTM, cell);
-
-                for (i = 0; i < ranges.size(); i += 2) {
-                    base = mesh._accumulationIndices[ranges[i]];
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-					calls.emplace_back(kCallTypeAccumulate, end - base, base, cellState, clipState);
-                }
-                calls.emplace_back(kCallTypeResolveCellsSOA, 1, 0, state, meshState);
-				*/
-				
 				MeshState windingState = meshState;
 				//windingState.winding = 0.333;
                 for (i = 0; i < ranges.size(); i += 2) {
@@ -65,10 +50,7 @@ struct Mesh {
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
                     calls.emplace_back(kCallTypeAccumulate, end - base, base, state, windingState);
                 }
-                
-                State newState = state;
-                newState.fillColor = { 1, 0, 0, 1 };
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, newState, meshState);
+                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
                 
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {

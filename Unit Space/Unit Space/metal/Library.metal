@@ -51,31 +51,13 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     
     t = saturate(w / (w + v * 0.5));
     t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
-    //t = select(t, 0.5, d > 1);
-    //t = select(t, 0.5, abs(d) > 1);
     t = select(t, 0.5, f < -0.333);
     
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     
-    if (abs(d) < 1e9) {
-        return edgeWinding(x0, y0, x01, y01)
-        + edgeWinding(x01, y01, x12, y12)
-        + edgeWinding(x12, y12, x2, y2);
-    } else {
-        return edgeCoverage(x0, y0, x01, y01)
-        + edgeCoverage(x01, y01, x12, y12)
-        + edgeCoverage(x12, y12, x2, y2);
-    }
-    
-    
-//    verticalWinding((x0 + x01) * 0.5, y0, y01)
-//    + edgeWinding(x01, y01, x12, y12)
-//    + verticalWinding((x12 + x2) * 0.5, y12, y2)
-    
-//    verticalWinding(select(max(x0, x01), min(x0, x01), x0 < x2), y0, y01)
-//    + edgeWinding(x01, y01, x12, y12)
-//    + verticalWinding(select(min(x12, x2), max(x12, x2), x0 < x2), y12, y2)
-    ;
+    return edgeWinding(x0, y0, x01, y01)
+    + edgeWinding(x01, y01, x12, y12)
+    + edgeWinding(x12, y12, x2, y2);
 }
 
 float windingToAlpha(float winding, bool evenOdd) {
