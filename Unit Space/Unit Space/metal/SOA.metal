@@ -174,10 +174,9 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     
     float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
     
-    float uw, t, dilation, dw, dh;
+    float uw, dilation, dw, dh;
     uw = select(state.width, 1.0 / scale, state.width == 0);
-    t = saturate((max(abs(nv.x), abs(nv.y)) - 0.7071067812) * 3.4142135625);
-    dilation = mix(0.7071067812, 0.5, t);
+    dilation = (abs(nv.x) + abs(nv.y)) * 0.5;
     dh = dw = select(uw * scale * 0.5, 0.0, meshState.showLineWinding) + dilation;
     float2 devicePoint = select(p0, p1, vid & 2) + dh * select(-nv, nv, vid & 2) + dw * select(-lnv, lnv, vid & 1);
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
@@ -186,7 +185,7 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     vert.position = float4(ndcPoint, 1.0, 1.0) * float(ps[idx] != -1);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
     vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
-	devicePoint -= 0.5;
+    devicePoint -= 0.5;
 	vert.x0 = p0.x - devicePoint.x, vert.y0 = p0.y - devicePoint.y, vert.x1 = p1.x - devicePoint.x, vert.y1 = p1.y - devicePoint.y;
     return vert;
 }
