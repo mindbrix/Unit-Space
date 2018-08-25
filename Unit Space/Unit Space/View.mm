@@ -370,7 +370,7 @@ using namespace std;
     uniforms.strokeColor = { 0, 0, 0, 1 };
     uniforms.flatness = 0.03125;
     uniforms.width = 0;
-    uniforms.cap = 8;
+    uniforms.cap = 1;
     uniforms.scaleFactor = (float)self.metalLayer.contentsScale;
     uniforms.evenOdd = _useEvenOdd;
     uniforms.roundCap = false;
