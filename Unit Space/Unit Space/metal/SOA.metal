@@ -178,12 +178,11 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     float t = saturate((max(abs(nv.x), abs(nv.y)) - 0.7071067812) * 3.4142135625);
     float dilation = mix(0.7071067812, 0.5, t);
     float deviceWidth = select(userWidth * scale * 0.5, 0.0, meshState.showLineWinding) + dilation;
-    deviceWidth = select(deviceWidth, 0.0, ps[idx] == -1);
     float2 devicePoint = select(p0, p1, vid & 2) + deviceWidth * (select(-nv, nv, vid & 2) + select(-lnv, lnv, vid & 1));
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
     LineVertex vert;
-    vert.position = float4(ndcPoint, 1.0, 1.0);
+    vert.position = float4(ndcPoint, 1.0, 1.0) * float(ps[idx] != -1);
     vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
     vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
 	devicePoint -= 0.5;
