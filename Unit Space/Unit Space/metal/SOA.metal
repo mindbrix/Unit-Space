@@ -64,7 +64,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
 {
     
     float winding = accumulation.sample(s, vert.uv).x;
-    /*
+    /**/
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 1.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 2.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 3.0, vert.uv.y)).x;
@@ -72,15 +72,15 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 5.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 6.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 7.0, vert.uv.y)).x;
-	*/
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 8.0, vert.uv.y)).x;
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 9.0, vert.uv.y)).x;
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 10.0, vert.uv.y)).x;
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 11.0, vert.uv.y)).x;
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 12.0, vert.uv.y)).x;
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 13.0, vert.uv.y)).x;
-//    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 14.0, vert.uv.y)).x;
-    
+	
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 8.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 9.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 10.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 11.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 12.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 13.0, vert.uv.y)).x;
+    winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 14.0, vert.uv.y)).x;
+	
     
    // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
@@ -179,7 +179,7 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
     dilation = (abs(nv.x) + abs(nv.y)) * 0.5;
     dh = dw = uw * scale * 0.5;
     dw = select(dw, select(0.0, 1.0, (vid & 1) == (v.y < 0)), meshState.showLineWinding);
-    dh = select(dh, select(0.0, 0.0, (vid >> 1) == (v.x > 0)), meshState.showLineWinding);
+    dh = select(dh, select(0.0, 1.0, (vid >> 1) == (v.x > 0)), meshState.showLineWinding);
     float2 devicePoint = select(p0, p1, vid & 2) + (dh + dilation) * select(-nv, nv, vid & 2) + (dw + dilation) * select(-lnv, lnv, vid & 1);
     float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
     
