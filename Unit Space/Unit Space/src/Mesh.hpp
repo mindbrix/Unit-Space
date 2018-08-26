@@ -68,11 +68,8 @@ struct Mesh {
                         calls.emplace_back(meshState.showLineWinding ? kCallTypeLinesWindingSOA : kCallTypeLinesSOA, count - 1, j, state, meshState);
                     }
                 }
-                if (meshState.showLineWinding) {
-                    State newState = state;
-                    newState.fillColor = { 1, 0, 0, 1 };
-                    calls.emplace_back(kCallTypeResolveSOA, 1, 0, newState, meshState);
-                }
+                if (meshState.showLineWinding)
+                    calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
             } else {
                 call = nullptr;
                 for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
