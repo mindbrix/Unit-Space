@@ -31,12 +31,19 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
     return vert;
 }
 
-fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]],
+fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
     
     float winding = accumulation.sample(s, vert.uv).x;
-	
+    
+    if (meshState.cellSize > 1) {
+        float alpha = (abs(winding) - floor(abs(winding))) - 0.5;
+        alpha = saturate(alpha / max(1e-9, fwidth(winding)) + 0.5);
+        return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+    }
+    
+	/*
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 1.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 2.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 3.0, vert.uv.y)).x;
@@ -53,7 +60,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 12.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 13.0, vert.uv.y)).x;
     winding += accumulation.sample(s, float2(vert.uv.x - dfdx(vert.uv.x) * 14.0, vert.uv.y)).x;
-	/**/
+	*/
     
    // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
