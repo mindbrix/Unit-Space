@@ -156,6 +156,9 @@ struct SubPath {
         int i;
         for (x2 = y2 = 0, x0 = *points++, y0 = *points++, i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
             x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
+            
+            testQuadraticLength(x0, y0, x1, y1, x2, y2);
+            
             do {
                 quadratics.push_back(x0), quadratics.push_back(y0);
                 dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
@@ -168,6 +171,8 @@ struct SubPath {
                     y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
                     quadratics.push_back(x01), quadratics.push_back(y01);
                     x0 = x012, y0 = y012, x1 = x12, y1 = y12;
+                    
+                    testQuadraticLength(x0, y0, x1, y1, x2, y2);
                 }
             } while (t < 1);
         }
