@@ -100,6 +100,22 @@ static void radixSort(T *begin, T *end) {
     free(mem1);
 }
 
+// https://math.stackexchange.com/questions/12186/arc-length-of-bézier-curves
+//
+static inline float quadraticLength(float x0, float y0, float x1, float y1, float x2, float y2, float t) {
+    float dx1, dy1, dx2, dy2, a, b, c, l;
+    
+    dx1 = x1 - x0, dy1 = y1 - y0, dx2 = x2 - x1, dy2 = y2 - y1;
+    if (dx1 * dy2 - dy1 * dx2 == 0)
+        return t * std::sqrt((x2 - x0) * (x2 - x0) + (y2 - y0) * (y2 - y0));
+    
+    a = (dx2 - dx1) * (dx2 - dx1) + (dy2 - dy1) * (dy2 - dy1);
+    b = dx1 * (dx2 - dx1) + dy1 * (dy2 - dy1);
+    c = dx1 * dx1 + dy1 * dy1;
+    l = (t + b / a) * std::sqrt(c + 2.0 * b * t + a * t * t) + ((a * c - b * b) / std::pow(a, 1.5f)) * std::asinh((a * t + b) / std::sqrt(a * c - b * b));
+    return l;
+}
+
 static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
     *t0 = -C / B, *t1 = -1;
     if (abs(A) > 1e-3) {
