@@ -122,13 +122,15 @@ static inline float quadraticLength(float x0, float y0, float x1, float y1, floa
 }
 
 static inline void testQuadraticLength(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float d0, d1, d;
+    float d0, d1, d, hull, ratio;
     
     d0 = quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
     d1 = quadraticLength(x0, y0, x1, y1, x2, y2, 1.0);
     d = d1 - d0;
+    hull = std::sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)) + std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    ratio = d / hull;
     if (d)
-        assert(d < std::sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)) + std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)));
+        assert(d < hull);
 }
 
 static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
