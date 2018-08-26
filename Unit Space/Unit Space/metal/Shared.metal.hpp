@@ -124,10 +124,9 @@ struct Flags {
 
 struct MeshPath {
     MeshPath() {}
-    MeshPath(RGBA8 color, int idx, int edge, AffineTransform ctm, Bounds bounds) : color(color), idx(idx), edge(edge), ctm(ctm), bounds(bounds) {}
+    MeshPath(RGBA8 color, AffineTransform ctm, Bounds bounds) : color(color), ctm(ctm), bounds(bounds) {}
     
     RGBA8               color;
-    int                 idx, edge;
     AffineTransform     ctm;
     Bounds              bounds;
 };

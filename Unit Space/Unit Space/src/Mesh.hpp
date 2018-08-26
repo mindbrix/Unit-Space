@@ -54,8 +54,8 @@ struct Mesh {
                 
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {
-                    base = mesh._paths[ranges[i]].edge;
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._paths[ranges[i + 1]].edge;
+                    base = mesh._edges[ranges[i]];
+                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._edges[ranges[i + 1]];
                     for (j = base; j < end; j += 1023) {
                         count = (j + 1024 < end ? j + 1024 : end) - j;
                         calls.emplace_back(meshState.showLineWinding ? kCallTypeLinesWindingSOA : kCallTypeLinesSOA, count - 1, j, state, meshState);
@@ -69,7 +69,7 @@ struct Mesh {
             } else {
                 call = nullptr;
                 for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
-                    base = mesh._paths[p].idx;
+                    base = mesh._idxs[p];
                     if (visibles[p] && opaques[p]) {
                         count = end - base;
                         if (call == nullptr || call->baseInstance != end) {
@@ -85,8 +85,8 @@ struct Mesh {
                 if (!meshState.showEdges) {
                     for (i = 0; i < ranges.size(); i += 2)
                         for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
-                            base = mesh._paths[p].idx;
-                            end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._paths[p + 1].idx;
+                            base = mesh._idxs[p];
+                            end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._idxs[p + 1];
                             count = end - base;
                             if (opaques[p] || smalls[p]) {
                                 if (call == nullptr) {
@@ -139,6 +139,7 @@ struct Mesh {
     vector<int>                         _accumulationIndices;
     
     vector<MeshPath>                    _paths;
+    vector<int>                         _idxs, _edges;
     vector<Vector>                      _points;
     vector<float>                       _xs, _ys, _as, _bs;
     vector<int>                         _ps;
@@ -146,5 +147,5 @@ struct Mesh {
     vector<Call>                        _calls;
     CirclesSOA                          _circles;
     
-    void empty() { _accumulations.resize(0), _accumulationIndices.resize(0), _paths.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
+    void empty() { _accumulations.resize(0), _accumulationIndices.resize(0), _paths.resize(0), _idxs.resize(0), _edges.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
 };
