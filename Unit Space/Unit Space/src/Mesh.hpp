@@ -45,13 +45,16 @@ struct Mesh {
             if (meshState.showAccumulations) {
                 MeshState resolveMeshState = meshState;
                 resolveMeshState.cellSize = 8;
+                MeshState clipState = resolveMeshState;
+                clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / resolveMeshState.cellSize), std::ceil(clipBounds.uy / resolveMeshState.cellSize) };
+                
 				State windingState = state;
                 AffineTransform cell = { 1.0f / resolveMeshState.cellSize, 0, 0, 1.0f / resolveMeshState.cellSize, 0, 0 };
                 windingState.CTM = AffineTransformConcat(state.CTM, cell);
 				for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, meshState);
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, clipState);
                 }
                 
                 calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, resolveMeshState);
