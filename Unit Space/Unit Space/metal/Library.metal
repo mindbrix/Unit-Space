@@ -11,6 +11,10 @@
 
 using namespace metal;
 
+float adjustedT(float t) {
+    return select(2 * t * (t - 1) + 1, 2 * t * (1 - t), t < 0.5);
+}
+
 float verticalWinding(float x, float y0, float y1) {
     return (1.0 - saturate(x)) * (saturate(y1) - saturate(y0));
 }

@@ -11,6 +11,7 @@
 
 using namespace metal;
 
+float adjustedT(float t);
 float edgeWinding(float x0, float y0, float x1, float y1);
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2);
 float windingToAlpha(float winding, bool evenOdd);
