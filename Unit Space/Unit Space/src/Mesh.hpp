@@ -43,14 +43,18 @@ struct Mesh {
                 }
             }
             if (meshState.showAccumulations) {
-				MeshState windingState = meshState;
-				//windingState.winding = 0.333;
-                for (i = 0; i < ranges.size(); i += 2) {
+                MeshState resolveMeshState = meshState;
+                resolveMeshState.cellSize = 8;
+				State windingState = state;
+                AffineTransform cell = { 1.0f / resolveMeshState.cellSize, 0, 0, 1.0f / resolveMeshState.cellSize, 0, 0 };
+                windingState.CTM = AffineTransformConcat(state.CTM, cell);
+				for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeAccumulate, end - base, base, state, windingState);
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, meshState);
                 }
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
+                
+                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, resolveMeshState);
                 
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {

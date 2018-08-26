@@ -392,7 +392,8 @@ using namespace std;
 	meshState.winding = 0;
 	meshState.showLineWinding = _useEvenOdd;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
-	
+    meshState.cellSize = 1;
+    
     _mesh._calls.resize(0);
     int p = -1;
     

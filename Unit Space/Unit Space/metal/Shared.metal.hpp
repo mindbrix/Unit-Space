@@ -11,8 +11,6 @@
 #define PI 3.1415926536
 #define TWO_PI 6.2831853072
 #define kMeshTriangleSize  7
-#define kkGridPixelSize 16
-#define kCellSize 4.0f
 
 #pragma clang diagnostic ignored "-Wcomma"
 
@@ -148,6 +146,7 @@ struct MeshState {
     int                 reverseCount;
     unsigned int        subdivisionCount;
 	Bounds				clipBounds;
+    float               cellSize;
 };
 
 struct State {
