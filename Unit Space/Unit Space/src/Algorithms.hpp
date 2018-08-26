@@ -108,11 +108,11 @@ static inline float quadraticLength(float x0, float y0, float x1, float y1, floa
     dx1 = x1 - x0, dy1 = y1 - y0, dx2 = x2 - x1, dy2 = y2 - y1;
     l1 = dx1 * dx1 + dy1 * dy1, l2 = dx2 * dx2 + dy2 * dy2;
     if (l1 == 0 && l2 == 0)
-        return FLT_MAX;
+        return 0;
     
     a = (dx1 * dx2 + dy1 * dy2) / l2 * std::sqrt(l2 / l1);
     if (std::abs(a) > 0.999)
-        return FLT_MAX;//t * std::sqrt((x2 - x0) * (x2 - x0) + (y2 - y0) * (y2 - y0));
+        return t * std::sqrt((x2 - x0) * (x2 - x0) + (y2 - y0) * (y2 - y0));
     
     a = (dx2 - dx1) * (dx2 - dx1) + (dy2 - dy1) * (dy2 - dy1);
     b = dx1 * (dx2 - dx1) + dy1 * (dy2 - dy1);
@@ -130,7 +130,7 @@ static inline void testQuadraticLength(float x0, float y0, float x1, float y1, f
     hull = std::sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)) + std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     ratio = d / hull;
     if (d)
-        assert(d < hull);
+        assert(ratio < 1.001);
 }
 
 static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
