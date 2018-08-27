@@ -94,7 +94,6 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
-    bool showInterior;
     float4 color;
 };
 
@@ -120,18 +119,17 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
-    vert.showInterior = meshState.showInterior;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
 
-fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     float w = 1.0 - vert.u - vert.v;
     float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
     float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
     float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    return select(vert.color * max(eu, max(ev, ew)), vert.color, vert.showInterior);
+    return select(vert.color * max(eu, max(ev, ew)), vert.color, meshState.showInterior);
 }
 
 #pragma mark - Triangle
