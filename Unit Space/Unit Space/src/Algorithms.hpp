@@ -103,15 +103,15 @@ static void radixSort(T *begin, T *end) {
 // https://math.stackexchange.com/questions/12186/arc-length-of-bézier-curves
 //
 static inline float quadraticLength(float x0, float y0, float x1, float y1, float x2, float y2, float t) {
-    float dx1, dy1, dx2, dy2, a, b, c, l, l1, l2;
+    float dx1, dy1, dx2, dy2, l1, l2, cosine, a, b, c, l;
     
     dx1 = x1 - x0, dy1 = y1 - y0, dx2 = x2 - x1, dy2 = y2 - y1;
     l1 = dx1 * dx1 + dy1 * dy1, l2 = dx2 * dx2 + dy2 * dy2;
     if (l1 == 0 && l2 == 0)
         return 0;
     
-    a = (dx1 * dx2 + dy1 * dy2) / l2 * std::sqrt(l2 / l1);
-    if (std::abs(a) > 0.999)
+    cosine = (dx1 * dx2 + dy1 * dy2) / l2 * std::sqrt(l2 / l1);
+    if (std::abs(cosine) > 0.999)
         return t * std::sqrt((x2 - x0) * (x2 - x0) + (y2 - y0) * (y2 - y0));
     
     a = (dx2 - dx1) * (dx2 - dx1) + (dy2 - dy1) * (dy2 - dy1);
