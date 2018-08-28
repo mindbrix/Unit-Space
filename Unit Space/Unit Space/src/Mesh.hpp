@@ -50,10 +50,13 @@ struct Mesh {
                 int *ps, *idxs, base;
                 for (i = 0; i < ranges.size(); i += 2) {
                     count = ranges[i + 1] - ranges[i];
-                    Bounds bounds[count];
-                    for (j = 0; j < count; j++)
-                        bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
-                    
+                    Bounds bounds[count], tb, ib;
+                    for (j = 0; j < count; j++) {
+                        tb = Bounds::transformUnit(units[j + ranges[i]]);
+                        ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
+                        bounds[j] = ib.intersected(clipBounds);
+                        //bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
+                    }
                     size = 0;
                     for (j = 0; j < count; j++)
                         size += std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight);
@@ -178,8 +181,8 @@ struct Mesh {
         }
         void empty() {
             _count = 0,
-            _lxs = Memory<short>(1), _uxs = Memory<short>(1), _lys = Memory<short>(1), _txs = Memory<short>(1),
-            _ps = Memory<int>(1), _idxs = Memory<int>(1);
+            _lxs = Memory<short>(1024), _uxs = Memory<short>(1024), _lys = Memory<short>(1024), _txs = Memory<short>(1024), _tys = Memory<short>(1024),
+            _ps = Memory<int>(1024), _idxs = Memory<int>(1024);
         }
     };
 
