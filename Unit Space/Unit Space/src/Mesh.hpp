@@ -46,7 +46,7 @@ struct Mesh {
                 mesh._accumulationsSOA.empty();
                 mesh._resolutionsSOA.empty();
                 
-                short *lxs, *uxs, *lys, *txs, *tys, y, w;
+                short *lxs, *uxs, *lys, *txs, *tys, y, w, ax, ay, tx, ty;
                 int *ps, *idxs, base, rows;
                 rows = (int)(clipBounds.uy / kFatScanlineHeight);
                 short allocations[rows], *allocation = allocations, *aend = allocation + rows;
@@ -76,12 +76,17 @@ struct Mesh {
                             w = (short)(bounds[j].ux - bounds[j].lx);
                             while (allocation < aend && *allocation + w > clipBounds.ux)
                                 allocation++;
-                            if (allocation < aend)
-                                *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y, *allocation += w;
-                            else
-                                *lxs++ = *uxs++ =  *lys++ = 0;
+                            if (allocation < aend) {
+                                ax = *allocation, ay = (short)(allocation - allocations) * kFatScanlineHeight;
+                                tx = ax - (short)bounds[j].lx, ty = ay - y;
+                                tx = ty = 0;
+                                *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y;
+                                *txs++ = tx, *tys++ = ty;
+                                
+                                *allocation += w;
+                            } else
+                                *lxs++ = *uxs++ = *lys++, *txs++ = *tys++ = 0;
                             
-                            *txs++ = 0, *tys++ = 0;
                             *ps++ = p, *idxs++ = 0;
                         }
                     }
