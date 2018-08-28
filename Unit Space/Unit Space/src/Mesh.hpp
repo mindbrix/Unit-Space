@@ -57,7 +57,7 @@ struct Mesh {
                     calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, clipState);
                 }
                 
-                calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, resolveMeshState);
+                calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
                 
             } else if (meshState.showPolygons) {
                 for (i = 0; i < ranges.size(); i += 2) {
@@ -69,7 +69,7 @@ struct Mesh {
                     }
                 }
                 if (meshState.showLineWinding)
-                    calls.emplace_back(kCallTypeResolveSOA, 1, 0, state, meshState);
+                    calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, meshState);
             } else {
                 call = nullptr;
                 for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {

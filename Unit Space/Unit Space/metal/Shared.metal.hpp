@@ -68,6 +68,11 @@ struct Accumulation {
     int p, s;
 };
 
+struct FatScanline {
+    short lx, ux, ly, ox, oy;
+    int p, idx;
+};
+
 struct AffineTransform { float a, b, c, d, tx, ty; };
 
 struct Bounds {
@@ -173,7 +178,9 @@ enum CallType : unsigned int {
     kCallTypeLinesSOA,
     kCallTypeLinesWindingSOA,
     kCallTypeAccumulate,
+    kCallTypeAccumulateSOA,
     kCallTypeResolveSOA,
+    kCallTypeResolveQuadSOA,
 };
 
 struct Call {

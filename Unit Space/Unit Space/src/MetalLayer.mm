@@ -243,10 +243,19 @@
                 [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
 				instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
-            case kCallTypeResolveSOA:
+            case kCallTypeAccumulateSOA:
+                [commandEncoder setRenderPipelineState:_accumulatePipelineState];
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+            
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
+                break;
+            case kCallTypeResolveQuadSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
+                break;
+            case kCallTypeResolveSOA:
+                [commandEncoder textureBarrier];
                 break;
         }
         if (instanceCount == 0)
