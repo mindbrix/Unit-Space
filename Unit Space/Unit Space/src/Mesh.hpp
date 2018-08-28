@@ -168,7 +168,11 @@ struct Mesh {
                 _lxs.alloc(size), _uxs.alloc(size), _lys.alloc(size), _txs.alloc(size), _tys.alloc(size), _ps.alloc(size), _idxs.alloc(size);
             }
         }
-        void empty()                            { _count = 0, _lxs = Memory<short>(1), _uxs = Memory<short>(1), _lys = Memory<short>(1), _txs = Memory<short>(1), _ps = Memory<int>(1), _idxs = Memory<int>(1); }
+        void empty() {
+            _count = 0,
+            _lxs = Memory<short>(1), _uxs = Memory<short>(1), _lys = Memory<short>(1), _txs = Memory<short>(1),
+            _ps = Memory<int>(1), _idxs = Memory<int>(1);
+        }
     };
 
     struct CirclesSOA {
