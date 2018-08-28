@@ -107,7 +107,7 @@ static inline float quadraticLength(float x0, float y0, float x1, float y1, floa
     
     dx1 = x1 - x0, dy1 = y1 - y0, dx2 = x2 - x1, dy2 = y2 - y1;
     l1 = dx1 * dx1 + dy1 * dy1, l2 = dx2 * dx2 + dy2 * dy2;
-    if (l1 == 0 && l2 == 0)
+    if (l1 < 1e-6 && l2 < 1e-6)
         return 0;
     
     dot = dx1 * dx2 + dy1 * dy2;
