@@ -140,13 +140,13 @@ struct MeshPath {
 
 struct MeshState {
     bool                disableInteriorVector;
-    bool                hideCurves;
     bool                hideTriangles;
     bool                showEdges;
     bool                showColors;
     bool                showInterior;
     bool                showPolygons;
     bool                showAccumulations;
+    bool                showAccumulationsSOA;
     bool                showVisibles;
     bool                useStrokeColor;
 	float				winding;

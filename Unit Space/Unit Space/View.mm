@@ -31,7 +31,6 @@ using namespace std;
 @property(nonatomic) CGPoint mouseLocation;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) uint64_t pathBitmask;
-@property(nonatomic) BOOL showCurves;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEdges;
 @property(nonatomic) BOOL showEllipse;
@@ -257,7 +256,7 @@ using namespace std;
     [self redraw];
 }
 - (IBAction)toggleCurves:(id)sender {
-    _showCurves = !_showCurves;
+    
     [self redraw];
 }
 - (IBAction)toggleShowColors:(id)sender {
@@ -377,13 +376,13 @@ using namespace std;
     
     MeshState meshState;
     meshState.disableInteriorVector = false;
-    meshState.hideCurves = !_showCurves;
     meshState.hideTriangles = !_showTriangle;
     meshState.showEdges = _showEdges;
     meshState.showColors = _showColors;
     meshState.showInterior = _showInterior;
     meshState.showPolygons = false;
     meshState.showAccumulations = false;
+    meshState.showAccumulationsSOA = false;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
