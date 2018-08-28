@@ -16,7 +16,7 @@ using namespace metal;
 
 struct AccumulateVertex
 {
-    void write(AffineTransform CTM, float _ux, uint vid, device float *points, constant State &state, constant MeshState& meshState) {
+    void write(AffineTransform CTM, float _ux, uint vid, device float *points, constant State &state, Bounds clipBounds) {
         float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, ux, uy, dx, dy;
         
         dx0 = points[0] * CTM.a + points[1] * CTM.c + CTM.tx, dy0 = points[0] * CTM.b + points[1] * CTM.d + CTM.ty;
@@ -33,8 +33,8 @@ struct AccumulateVertex
         
         dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
         
-        dx = clamp(dx, meshState.clipBounds.lx, meshState.clipBounds.ux);
-        dy = clamp(dy, meshState.clipBounds.ly, meshState.clipBounds.uy);
+        dx = clamp(dx, clipBounds.lx, clipBounds.ux);
+        dy = clamp(dy, clipBounds.ly, clipBounds.uy);
         
         position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
         
@@ -49,6 +49,28 @@ struct AccumulateVertex
     float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
 };
 
+vertex AccumulateVertex accumulateSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                                  device float *quadratics [[buffer(8)]], device MeshPath *paths [[buffer(9)]],
+                                                  constant short *lxs [[buffer(10)]], constant short *uxs [[buffer(11)]], constant short *lys [[buffer(12)]],
+                                                  constant short *txs [[buffer(13)]], constant short *tys [[buffer(14)]],
+                                                  constant int *ps [[buffer(15)]], constant int *idxs [[buffer(16)]],
+                                               uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+{
+    
+    AffineTransform CTM = AffineTransformConcat(paths[ps[iid]].ctm, state.CTM);
+    CTM.tx += float(txs[iid]), CTM.ty += float(tys[iid]);
+    AffineTransform unit = AffineTransformMakeUnit(paths[ps[iid]].bounds, CTM);
+    Bounds bounds = Bounds::transformUnit(unit);
+    Bounds clipBounds = {
+        float(lxs[iid] + txs[iid]), float(lys[iid] + tys[iid]),
+        float(uxs[iid] + txs[iid]), float(lys[iid] + tys[iid]) + kFatScanlineHeight };
+    
+    AccumulateVertex vert;
+    vert.write(CTM, bounds.ux, vid, & quadratics[idxs[iid] * 4 * 2], state, clipBounds);
+    return vert;
+}
+
+
 vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                              device MeshPath *paths [[buffer(9)]], device Accumulation *accumulations [[buffer(10)]],
                                              uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
@@ -60,7 +82,7 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     Bounds bounds = Bounds::transformUnit(unit);
     
     AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & acc.x0, state, meshState);
+    vert.write(CTM, bounds.ux, vid, & acc.x0, state, meshState.clipBounds);
     return vert;
 }
 

@@ -137,7 +137,7 @@
     descriptor.label = @"accumulatePipelineState";
     self.accumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_vertex_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulateSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
     descriptor.label = @"accumulateSOAPipelineState";
     self.accumulateSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
