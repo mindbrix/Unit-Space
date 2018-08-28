@@ -46,8 +46,11 @@ struct Mesh {
                 mesh._accumulationsSOA.empty();
                 mesh._resolutionsSOA.empty();
                 
-                short *lxs, *uxs, *lys, *txs, *tys, y;
-                int *ps, *idxs, base;
+                short *lxs, *uxs, *lys, *txs, *tys, y, w;
+                int *ps, *idxs, base, rows;
+                rows = (int)(clipBounds.uy / kFatScanlineHeight);
+                short allocations[rows], *allocation = allocations, *aend = allocation + rows;
+                memset(allocations, 0, sizeof(allocations));
                 for (i = 0; i < ranges.size(); i += 2) {
                     count = ranges[i + 1] - ranges[i];
                     Bounds bounds[count], tb, ib;
@@ -70,7 +73,14 @@ struct Mesh {
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
                         for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
-                            *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y;
+                            w = (short)(bounds[j].ux - bounds[j].lx);
+                            while (allocation < aend && *allocation + w > clipBounds.ux)
+                                allocation++;
+                            if (allocation < aend)
+                                *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y, *allocation += w;
+                            else
+                                *lxs++ = *uxs++ =  *lys++ = 0;
+                            
                             *txs++ = 0, *tys++ = 0;
                             *ps++ = p, *idxs++ = 0;
                         }
