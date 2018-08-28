@@ -155,10 +155,11 @@ struct Mesh {
     }
     
     struct AccumulationSOA {
+        int                                     _count;
         Memory<short>                           _lxs, _uxs, _lys, _txs, _tys;
         Memory<int>                             _ps, _idxs;
         
-        void empty()                            { _lxs = Memory<short>(), _uxs = Memory<short>(), _lys = Memory<short>(), _txs = Memory<short>(), _ps = Memory<int>(), _idxs = Memory<int>(); }
+        void empty()                            { _count = 0, _lxs = Memory<short>(), _uxs = Memory<short>(), _lys = Memory<short>(), _txs = Memory<short>(), _ps = Memory<int>(), _idxs = Memory<int>(); }
     };
 
     struct CirclesSOA {
