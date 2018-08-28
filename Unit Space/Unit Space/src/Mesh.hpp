@@ -59,6 +59,8 @@ struct Mesh {
                         size += std::ceil((uy - ly) / kFatScanlineHeight);
                     }
                     
+                    mesh._resolutionsSOA.alloc(size);
+                    
                     for (j = 0; j < count; j++) {
                         ly = std::floor(bounds[j].ly), uy = std::ceil(bounds[j].uy);
                         for (y = ly; y < uy; y += kFatScanlineHeight)
@@ -159,7 +161,14 @@ struct Mesh {
         Memory<short>                           _lxs, _uxs, _lys, _txs, _tys;
         Memory<int>                             _ps, _idxs;
         
-        void empty()                            { _count = 0, _lxs = Memory<short>(), _uxs = Memory<short>(), _lys = Memory<short>(), _txs = Memory<short>(), _ps = Memory<int>(), _idxs = Memory<int>(); }
+        void alloc(int allocation) {
+            _count += allocation;
+            if (_count > _lxs.count()) {
+                size_t size = 1 << int(std::ceil(log2f(_count)));
+                _lxs.alloc(size), _uxs.alloc(size), _lys.alloc(size), _txs.alloc(size), _tys.alloc(size), _ps.alloc(size), _idxs.alloc(size);
+            }
+        }
+        void empty()                            { _count = 0, _lxs = Memory<short>(1), _uxs = Memory<short>(1), _lys = Memory<short>(1), _txs = Memory<short>(1), _ps = Memory<int>(1), _idxs = Memory<int>(1); }
     };
 
     struct CirclesSOA {
