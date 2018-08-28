@@ -131,6 +131,14 @@ struct Mesh {
         }
     }
     
+    struct AccumulationSOA {
+        Memory<short>                           _lxs, _uxs, _lys, _txs, _tys;
+        Memory<int>                             _ps, _idxs;
+        
+        void empty()                            { _lxs = Memory<short>(), _uxs = Memory<short>(), _lys = Memory<short>(), _txs = Memory<short>(), _ps = Memory<int>(), _idxs = Memory<int>(); }
+    };
+
+    
     struct CirclesSOA {
         void add(float x, float y, float r, RGBA8 c)    { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)), _colors.push_back(c); }
         void empty()                                    { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(), _colors = Memory<RGBA8>(); }
@@ -150,6 +158,7 @@ struct Mesh {
     
     vector<Call>                        _calls;
     CirclesSOA                          _circles;
+    AccumulationSOA                     _accumulationsSOA;
     
     void empty() { _accumulations.resize(0), _accumulationIndices.resize(0), _paths.resize(0), _idxs.resize(0), _edges.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
 };
