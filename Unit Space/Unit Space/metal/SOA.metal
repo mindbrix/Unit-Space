@@ -31,7 +31,8 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
                                                   uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     float dx = select(float(lxs[iid]), float(uxs[iid]), vid & 1), dy = select(float(lys[iid]), float(lys[iid]) + kFatScanlineHeight, vid & 2);
-    dx += float(txs[iid]), dy += float(tys[iid]);
+    if (meshState.showAccumulationsAllocations)
+        dx += float(txs[iid]), dy += float(tys[iid]);
                 
     ResolveVertex vert;
     vert.position = { dx / state.drawableSize.w * 2.0 - 1.0, dy / state.drawableSize.h * 2.0 - 1.0, 0.0, 1.0 };
