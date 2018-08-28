@@ -81,7 +81,7 @@
     
     descriptor.colorAttachments[0].blendingEnabled = NO;
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveQuadSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveQuadSOA_fragment_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
     descriptor.label = @"resolveSOAPipelineState";
     self.resolveQuadSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
@@ -120,8 +120,8 @@
     descriptor.label = @"lineSOAPipelineState";
     self.lineSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
     descriptor.label = @"resolveSOAPipelineState";
     self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
