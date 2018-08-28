@@ -41,6 +41,7 @@ using namespace std;
 @property(nonatomic) BOOL useDelaunay;
 @property(nonatomic) BOOL useEvenOdd;
 @property(nonatomic) BOOL useStrokeColor;
+@property(nonatomic) BOOL showAccumulationsAllocations;
 @property(nonatomic) vector<Vector> triangle;
 @property(nonatomic) vector<Vector> lozenge;
 @property(nonatomic) vector<Vector> quad;
@@ -256,7 +257,7 @@ using namespace std;
     [self redraw];
 }
 - (IBAction)toggleCurves:(id)sender {
-    
+    _showAccumulationsAllocations = !_showAccumulationsAllocations;
     [self redraw];
 }
 - (IBAction)toggleShowColors:(id)sender {
@@ -383,6 +384,7 @@ using namespace std;
     meshState.showPolygons = false;
     meshState.showAccumulations = false;
     meshState.showAccumulationsSOA = false;
+    meshState.showAccumulationsAllocations = _showAccumulationsAllocations;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();

@@ -81,7 +81,9 @@ struct Mesh {
                             if (allocation < aend) {
                                 ax = *allocation, ay = (short)(allocation - allocations) * kFatScanlineHeight;
                                 tx = ax - (short)bounds[j].lx, ty = ay - y;
-                                tx = ty = 0;
+                                
+                                if (!meshState.showAccumulationsAllocations)
+                                    tx = ty = 0;
                                 *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y;
                                 *txs++ = tx, *tys++ = ty;
                                 

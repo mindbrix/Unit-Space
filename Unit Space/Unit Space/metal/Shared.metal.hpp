@@ -150,6 +150,7 @@ struct MeshState {
     bool                showPolygons;
     bool                showAccumulations;
     bool                showAccumulationsSOA;
+    bool                showAccumulationsAllocations;
     bool                showVisibles;
     bool                useStrokeColor;
 	float				winding;
