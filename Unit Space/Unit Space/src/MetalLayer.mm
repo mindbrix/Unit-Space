@@ -269,6 +269,14 @@
             case kCallTypeResolveSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lxs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._uxs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lys[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:12];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._txs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:13];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._tys[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:14];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._ps[call->baseInstance] length:sizeof(int) * (call->instanceCount) atIndex:15];
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
         }
         if (instanceCount == 0)

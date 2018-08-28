@@ -46,27 +46,35 @@ struct Mesh {
                 mesh._accumulationsSOA.empty();
                 mesh._resolutionsSOA.empty();
                 
-                float ly, uy, y;
+                short *lxs, *uxs, *lys, *txs, *tys, y;
+                int *ps, *idxs, base;
                 for (i = 0; i < ranges.size(); i += 2) {
                     count = ranges[i + 1] - ranges[i];
                     Bounds bounds[count];
                     for (j = 0; j < count; j++)
-                        bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).intersected(clipBounds);
+                        bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
                     
                     size = 0;
-                    for (j = 0; j < count; j++) {
-                        ly = std::floor(bounds[j].ly), uy = std::ceil(bounds[j].uy);
-                        size += std::ceil((uy - ly) / kFatScanlineHeight);
-                    }
+                    for (j = 0; j < count; j++)
+                        size += std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight);
                     
+                    base = mesh._resolutionsSOA._count;
                     mesh._resolutionsSOA.alloc(size);
+                    lxs = & mesh._resolutionsSOA._lxs[base], uxs = & mesh._resolutionsSOA._uxs[base], lys = & mesh._resolutionsSOA._lys[base];
+                    txs = & mesh._resolutionsSOA._txs[base], tys = & mesh._resolutionsSOA._tys[base];
+                    ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
                     for (j = 0; j < count; j++) {
-                        ly = std::floor(bounds[j].ly), uy = std::ceil(bounds[j].uy);
-                        for (y = ly; y < uy; y += kFatScanlineHeight)
-                            ;
+                        p = j + ranges[i];
+                        for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
+                            *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y;
+                            *txs++ = 0, *tys++ = 0;
+                            *ps++ = p, *idxs++ = 0;
+                        }
                     }
                 }
+                writeSOACalls(mesh, state, meshState, kCallTypeResolveSOA, mesh._resolutionsSOA._count);
+                
             } else if (meshState.showAccumulations) {
                 MeshState resolveMeshState = meshState;
                 resolveMeshState.cellSize = 1;

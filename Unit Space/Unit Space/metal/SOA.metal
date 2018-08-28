@@ -30,14 +30,10 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
                                                   constant int *ps [[buffer(15)]],
                                                   uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    Bounds bounds = {
-        float(lxs[iid]), float(lys[iid]),
-        float(uxs[iid]), float(lys[iid]) + kFatScanlineHeight };
-    
     float dx = select(float(lxs[iid]), float(uxs[iid]), vid & 1), dy = select(float(lys[iid]), float(lys[iid]) + kFatScanlineHeight, vid & 2);
     ResolveVertex vert;
     vert.position = { dx / state.drawableSize.w * 2.0 - 1.0, dy / state.drawableSize.h * 2.0 - 1.0, 0.0, 1.0 };
-    vert.uv = { (dx + float(txs[iid])) / state.drawableSize.w, (dy + float(tys[iid])) / state.drawableSize.h };
+    vert.uv = -1;// { (dx + float(txs[iid])) / state.drawableSize.w, (dy + float(tys[iid])) / state.drawableSize.h };
     vert.color = {
         float(paths[ps[iid]].color.r) / 255.0,
         float(paths[ps[iid]].color.g) / 255.0,
