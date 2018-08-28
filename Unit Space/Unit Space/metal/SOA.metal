@@ -22,7 +22,7 @@ struct ResolveVertex
     float2 uv;
 };
 
-vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+vertex ResolveVertex resolveQuadSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                  uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     ResolveVertex vert;
@@ -31,7 +31,7 @@ vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]],
     return vert;
 }
 
-fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+fragment float4 resolveQuadSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
     
