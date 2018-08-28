@@ -13,7 +13,7 @@ using namespace std;
 
 struct Mesh {
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
-        int base, end, count, p, i, j;
+        int base, end, count, p, i, j, size;
         vector<Call> & calls = mesh._calls;
         AffineTransform ctm;
         Call *call;
@@ -42,7 +42,30 @@ struct Mesh {
                         ranges.emplace_back(p), ranges.emplace_back(end);
                 }
             }
-            if (meshState.showAccumulations) {
+            if (meshState.showAccumulationsSOA) {
+                mesh._accumulationsSOA.empty();
+                mesh._resolutionsSOA.empty();
+                
+                float ly, uy, y;
+                for (i = 0; i < ranges.size(); i += 2) {
+                    count = ranges[i + 1] - ranges[i];
+                    Bounds bounds[count];
+                    for (j = 0; j < count; j++)
+                        bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).intersected(clipBounds);
+                    
+                    size = 0;
+                    for (j = 0; j < count; j++) {
+                        ly = std::floor(bounds[j].ly), uy = std::ceil(bounds[j].uy);
+                        size += std::ceil((uy - ly) / kFatScanlineHeight);
+                    }
+                    
+                    for (j = 0; j < count; j++) {
+                        ly = std::floor(bounds[j].ly), uy = std::ceil(bounds[j].uy);
+                        for (y = ly; y < uy; y += kFatScanlineHeight)
+                            ;
+                    }
+                }
+            } else if (meshState.showAccumulations) {
                 MeshState resolveMeshState = meshState;
                 resolveMeshState.cellSize = 1;
                 MeshState clipState = resolveMeshState;
