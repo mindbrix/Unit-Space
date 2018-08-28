@@ -80,6 +80,14 @@ struct Bounds {
     bool contains(Bounds other) const {
         return lx <= other.lx && ux >= other.ux && ly <= other.ly && uy >= other.uy;
     }
+    Bounds intersected(Bounds other) {
+        return {
+            lx < other.lx ? other.lx : lx > other.ux ? other.ux : lx,
+            ly < other.ly ? other.ly : ly > other.uy ? other.uy : ly,
+            ux < other.lx ? other.lx : ux > other.ux ? other.ux : ux,
+            uy < other.ly ? other.ly : uy > other.uy ? other.uy : uy,
+        };
+    }
     inline bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
