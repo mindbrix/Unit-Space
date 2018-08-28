@@ -23,6 +23,8 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> lineWindingSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> accumulateSOAPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -118,6 +120,11 @@
     descriptor.label = @"lineSOAPipelineState";
     self.lineSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
+    descriptor.label = @"resolveSOAPipelineState";
+    self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
@@ -129,6 +136,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
     descriptor.label = @"accumulatePipelineState";
     self.accumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
+    descriptor.label = @"accumulateSOAPipelineState";
+    self.accumulateSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_winding_fragment_main"];
@@ -256,6 +268,7 @@
                 break;
             case kCallTypeResolveSOA:
                 [commandEncoder textureBarrier];
+                [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
                 break;
         }
         if (instanceCount == 0)
