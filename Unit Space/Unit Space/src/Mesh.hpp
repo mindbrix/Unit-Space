@@ -58,6 +58,8 @@ struct Mesh {
                         tb = Bounds::transformUnit(units[j + ranges[i]]);
                         ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
                         bounds[j] = ib.intersected(clipBounds);
+                        if (std::abs(AffineTransformArea(units[j + ranges[i]])) > 4096)
+                            bounds[j].ux = bounds[j].lx + kFatScanlineHeight;
                         //bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
                     }
                     size = 0;

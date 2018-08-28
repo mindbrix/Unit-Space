@@ -204,6 +204,10 @@ struct Call {
     };
 };
 
+inline float AffineTransformArea(const AffineTransform t) {
+    return t.a * t.d - t.b * t.c;
+}
+
 inline AffineTransform AffineTransformConcat(const AffineTransform t0, const AffineTransform t1) {
     return {
         t0.a * t1.a + t0.b * t1.c,              t0.a * t1.b + t0.b * t1.d,
