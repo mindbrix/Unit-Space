@@ -276,6 +276,7 @@
                 [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._txs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:13];
                 [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._tys[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:14];
                 [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._ps[call->baseInstance] length:sizeof(int) * (call->instanceCount) atIndex:15];
+				[commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 instanceCount = call->instanceCount;
                 break;
         }
