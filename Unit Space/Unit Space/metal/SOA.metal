@@ -53,6 +53,7 @@ vertex ResolveVertex resolveQuadSOA_vertex_main(constant State &state [[buffer(0
     ResolveVertex vert;
     vert.position = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2), 1.0, 1.0 };
     vert.uv = { select(0.0, 1.0, vid & 1) / meshState.cellSize, 1.0 - select(0.0, 1.0, vid & 2) / meshState.cellSize };
+    vert.color = { state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a };
     return vert;
 }
 
@@ -65,7 +66,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
     if (meshState.cellSize > 1) {
         float alpha = (abs(winding) - floor(abs(winding))) - 0.5;
         alpha = saturate(alpha / max(1e-9, fwidth(winding)) + 0.5);
-        return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
+        return vert.color * alpha;
     }
     
 	/*
@@ -88,7 +89,7 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
 	*/
     
    // return select(float4(1, 0, 0, 1), float4(0, 0, 0, 1), winding < 0) * windingToAlpha(winding, false);
-    return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * windingToAlpha(winding, state.evenOdd);
+    return vert.color * windingToAlpha(winding, state.evenOdd);
 }
 
 
