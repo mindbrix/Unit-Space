@@ -13,8 +13,38 @@ using namespace metal;
 
 #pragma mark - Accumulate
 
+
 struct AccumulateVertex
 {
+    void write(AffineTransform CTM, float _ux, uint vid, device float *points, constant State &state, constant MeshState& meshState) {
+        float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, ux, uy, dx, dy;
+        
+        dx0 = points[0] * CTM.a + points[1] * CTM.c + CTM.tx, dy0 = points[0] * CTM.b + points[1] * CTM.d + CTM.ty;
+        dx1 = points[2] * CTM.a + points[3] * CTM.c + CTM.tx, dy1 = points[2] * CTM.b + points[3] * CTM.d + CTM.ty;
+        dx2 = points[4] * CTM.a + points[5] * CTM.c + CTM.tx, dy2 = points[4] * CTM.b + points[5] * CTM.d + CTM.ty;
+        dx3 = points[6] * CTM.a + points[7] * CTM.c + CTM.tx, dy3 = points[6] * CTM.b + points[7] * CTM.d + CTM.ty;
+        dx4 = points[8] * CTM.a + points[9] * CTM.c + CTM.tx, dy4 = points[8] * CTM.b + points[9] * CTM.d + CTM.ty;
+        
+        lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
+        ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
+        ux = max(max(max(dx0, dx1), dx2), max(dx3, dx4));
+        uy = max(max(max(dy0, dy1), dy2), max(dy3, dy4));
+        ux = max(ux, _ux);
+        
+        dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
+        
+        dx = clamp(dx, meshState.clipBounds.lx, meshState.clipBounds.ux);
+        dy = clamp(dy, meshState.clipBounds.ly, meshState.clipBounds.uy);
+        
+        position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
+        
+        dx -= 0.5, dy -= 0.5;
+        x0 = dx0 - dx, y0 = dy0 - dy;
+        x1 = dx1 - dx, y1 = dy1 - dy;
+        x2 = dx2 - dx, y2 = dy2 - dy;
+        x3 = dx3 - dx, y3 = dy3 - dy;
+        x4 = dx4 - dx, y4 = dy4 - dy;
+    }
     float4 position [[position]];
     float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
 };
@@ -23,43 +53,14 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
                                              device MeshPath *paths [[buffer(9)]], device Accumulation *accumulations [[buffer(10)]],
                                              uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, ux, uy, dx, dy;
-    
     device Accumulation& acc = accumulations[iid];
     
     AffineTransform CTM = AffineTransformConcat(paths[acc.p].ctm, state.CTM);
     AffineTransform unit = AffineTransformMakeUnit(paths[acc.p].bounds, CTM);
     Bounds bounds = Bounds::transformUnit(unit);
     
-    dx0 = acc.x0 * CTM.a + acc.y0 * CTM.c + CTM.tx, dy0 = acc.x0 * CTM.b + acc.y0 * CTM.d + CTM.ty;
-    dx1 = acc.x1 * CTM.a + acc.y1 * CTM.c + CTM.tx, dy1 = acc.x1 * CTM.b + acc.y1 * CTM.d + CTM.ty;
-    dx2 = acc.x2 * CTM.a + acc.y2 * CTM.c + CTM.tx, dy2 = acc.x2 * CTM.b + acc.y2 * CTM.d + CTM.ty;
-    dx3 = acc.x3 * CTM.a + acc.y3 * CTM.c + CTM.tx, dy3 = acc.x3 * CTM.b + acc.y3 * CTM.d + CTM.ty;
-    dx4 = acc.x4 * CTM.a + acc.y4 * CTM.c + CTM.tx, dy4 = acc.x4 * CTM.b + acc.y4 * CTM.d + CTM.ty;
-    
-   // dx1 = dx2, dy1 = dy2, dx3 = dx2, dy3 = dy2;
-    
-    lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
-    ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
-    ux = max(max(max(dx0, dx1), dx2), max(dx3, dx4));
-    uy = max(max(max(dy0, dy1), dy2), max(dy3, dy4));
-    ux = max(ux, bounds.ux);
-    
-    dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
-	
-	dx = clamp(dx, meshState.clipBounds.lx, meshState.clipBounds.ux);
-	dy = clamp(dy, meshState.clipBounds.ly, meshState.clipBounds.uy);
-	
     AccumulateVertex vert;
-    vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
-    
-    dx -= 0.5, dy -= 0.5;
-    vert.x0 = dx0 - dx, vert.y0 = dy0 - dy;
-    vert.x1 = dx1 - dx, vert.y1 = dy1 - dy;
-    vert.x2 = dx2 - dx, vert.y2 = dy2 - dy;
-    vert.x3 = dx3 - dx, vert.y3 = dy3 - dy;
-    vert.x4 = dx4 - dx, vert.y4 = dy4 - dy;
-	
+    vert.write(CTM, bounds.ux, vid, & acc.x0, state, meshState);
     return vert;
 }
 
