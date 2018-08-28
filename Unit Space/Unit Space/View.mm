@@ -408,8 +408,11 @@ using namespace std;
         meshState.showPolygons = true;
     if (_flags & 2) 
         meshState.showAccumulations = true;
+    if (_flags & 4)
+        meshState.showAccumulationsSOA = true;
     
-    if (_flags & 4) {
+    if (_flags & 8) {}
+    if (_flags & 16) {
         int dimension = 330, r = 10, g = 20.0 / 0.618, count = dimension * dimension, idx;
         float *dst;
         _mesh._circles._xs = Memory<float>(count);
@@ -418,19 +421,17 @@ using namespace std;
         _mesh._circles._colors = Memory<RGBA8>(count);
         
         for (dst = &_mesh._circles._xs[0], idx = 0; idx < count; idx++)
-            *dst++ = (idx % dimension) * g;
+        *dst++ = (idx % dimension) * g;
         for (dst = &_mesh._circles._ys[0], idx = 0; idx < count; idx++)
-            *dst++ = idx / dimension * g;
+        *dst++ = idx / dimension * g;
         for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
-            *dst++ = r;
+        *dst++ = r;
         for (idx = 0; idx < count; idx++)
-            _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
+        _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;
     }
-    if (_flags & 8) {}
-    if (_flags & 16) {}
     
     [self.metalLayer writePathCalls:_mesh state:uniforms meshState:meshState];
     
