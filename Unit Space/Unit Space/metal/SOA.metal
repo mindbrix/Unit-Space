@@ -60,8 +60,8 @@ vertex ResolveVertex resolveQuadSOA_vertex_main(constant State &state [[buffer(0
 fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                  texture2d<float> accumulation [[texture(1)]] )
 {
-    float winding = accumulation.sample(s, vert.uv).x;
-    return vert.color * windingToAlpha(winding, state.evenOdd);
+    float alpha = select(windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd), 1.0, vert.uv.x < 0);
+    return vert.color * alpha;
 }
 
 
