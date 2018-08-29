@@ -68,7 +68,7 @@
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
     descriptor.colorAttachments[1].blendingEnabled = YES;
-    descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR32Float;
+    descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR16Float;
     descriptor.colorAttachments[1].rgbBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[1].alphaBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[1].sourceRGBBlendFactor = MTLBlendFactorOne;
@@ -181,7 +181,7 @@
         [self.depthTexture setLabel:@"depthTexture"];
         
         desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
-        desc.pixelFormat = MTLPixelFormatR32Float;
+        desc.pixelFormat = MTLPixelFormatR16Float;
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
     }
