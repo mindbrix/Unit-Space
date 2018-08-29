@@ -13,7 +13,7 @@ using namespace std;
 
 struct Mesh {
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
-        int base, end, count, p, i, j, size;
+        int base, end, count, p, i, j, k, l, size;
         vector<Call> & calls = mesh._calls;
         AffineTransform ctm;
         Call *call;
@@ -72,8 +72,32 @@ struct Mesh {
                     txs = & mesh._resolutionsSOA._txs[base], tys = & mesh._resolutionsSOA._tys[base];
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
+                    
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
+                        
+                        /*
+                        rows = std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight) + 1;
+                        if (rows > 2) {
+                            float mins[rows], maxs[rows];
+                            for (k = 0; k < rows; k++)
+                                mins[k] = FLT_MAX, maxs[k] = -FLT_MAX;
+                            
+                            float x0, y0, x1, y1, iy, t, x, pts[8] { 0, 0, units[p].a, units[p].b, units[p].a + units[p].c, units[p].b + units[p].d, units[p].c, units[p].d };
+                            for (x0 = pts[6], y0 = pts[7], k = 0; k < 6; k += 2, x0 = x1, y0 = y1) {
+                                x1 = pts[k], y1 = pts[k + 1];
+                                if (y0 == y1)
+                                    continue;
+                                for (iy = bounds[j].ly, l = 0; l < rows; l++, iy += kFatScanlineHeight) {
+                                    t = (iy - y0) / (y1 - y0);
+                                    t = t < 0 ? 0 : t > 1 ? 1 : t;
+                                    x = x0 * (1 - t) + x1 * t;
+                                    mins[l] = x < mins[l] ? x : mins[l];
+                                    maxs[l] = x > maxs[l] ? x : maxs[l];
+                                }
+                            }
+                        }*/
+                        
                         for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
                             w = (short)(bounds[j].ux - bounds[j].lx);
                             while (allocation < aend && *allocation + w > clipBounds.ux)
