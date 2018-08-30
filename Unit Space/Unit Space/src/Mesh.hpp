@@ -54,15 +54,19 @@ struct Mesh {
                 for (i = 0; i < ranges.size(); i += 2) {
                     count = ranges[i + 1] - ranges[i];
                     Bounds bounds[count], tb, ib;
+                    bool smalls[count];
                     for (j = 0; j < count; j++) {
-                        tb = Bounds::transformUnit(units[j + ranges[i]]);
+                        p = j + ranges[i];
+                        tb = Bounds::transformUnit(units[p]);
                         ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
                         bounds[j] = ib.intersected(clipBounds);
+                        smalls[j] = std::abs(AffineTransformArea(units[p])) < 4096;
                         //bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
                     }
                     size = 0;
                     for (j = 0; j < count; j++)
-                        size += std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight);
+                        if (smalls[j])
+                            size += std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight);
                     
                     base = mesh._resolutionsSOA._count;
                     mesh._resolutionsSOA.alloc(size);
@@ -72,6 +76,8 @@ struct Mesh {
                     
                     float m0, abx0, abx1, m1, cdx0, cdx1, dx0, dx1, lx0, ux0, lx1, ux1, ilx, iux;
                     for (j = 0; j < count; j++) {
+                        if (!smalls[j])
+                            continue;
                         p = j + ranges[i];
                         AffineTransform& u = units[p];
                         
