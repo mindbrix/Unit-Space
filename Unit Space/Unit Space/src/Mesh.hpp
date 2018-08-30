@@ -13,7 +13,7 @@ using namespace std;
 
 struct Mesh {
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
-        int base, end, count, p, i, j, k, l, size;
+        int base, end, count, p, i, j, size;
         vector<Call> & calls = mesh._calls;
         AffineTransform ctm;
         Call *call;
@@ -58,8 +58,6 @@ struct Mesh {
                         tb = Bounds::transformUnit(units[j + ranges[i]]);
                         ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
                         bounds[j] = ib.intersected(clipBounds);
-                        if (std::abs(AffineTransformArea(units[j + ranges[i]])) > 4096)
-                            bounds[j].ux = bounds[j].lx + kFatScanlineHeight;
                         //bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
                     }
                     size = 0;
@@ -73,39 +71,35 @@ struct Mesh {
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
                     
+                    float lx0, ux0, m0, b0, dx0, lx1, ux1, m1, b1, dx1, lx, ux;
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
-                        
-                        /*
-                        rows = std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight) + 1;
-                        if (rows > 2) {
-                            float mins[rows], maxs[rows];
-                            for (k = 0; k < rows; k++)
-                                mins[k] = FLT_MAX, maxs[k] = -FLT_MAX;
-                            
-                            float x0, y0, x1, y1, iy, t, x, pts[8] { 0, 0, units[p].a, units[p].b, units[p].a + units[p].c, units[p].b + units[p].d, units[p].c, units[p].d };
-                            for (x0 = pts[6], y0 = pts[7], k = 0; k < 6; k += 2, x0 = x1, y0 = y1) {
-                                x1 = pts[k], y1 = pts[k + 1];
-                                if (y0 == y1)
-                                    continue;
-                                for (iy = bounds[j].ly, l = 0; l < rows; l++, iy += kFatScanlineHeight) {
-                                    t = (iy - y0) / (y1 - y0);
-                                    t = t < 0 ? 0 : t > 1 ? 1 : t;
-                                    x = x0 * (1 - t) + x1 * t;
-                                    mins[l] = x < mins[l] ? x : mins[l];
-                                    maxs[l] = x > maxs[l] ? x : maxs[l];
-                                }
+                        AffineTransform& u = units[p];
+                        m0 = -u.b / u.a, b0 = u.tx - u.ty * m0;
+                        lx0 = bounds[j].ly * m0 + b0, ux0 = bounds[j].ly * m0 + ((u.tx + u.a) - (u.ty + u.b) * m0);
+                        if (lx0 > ux0) std::swap(lx0, ux0);
+                        m1 = -u.d / u.c, b1 = u.tx - u.ty * m1;
+                        lx1 = bounds[j].ly * m1 + b1, ux1 =  bounds[j].ly * m1 + ((u.tx + u.c) - (u.ty + u.d) * m1);
+                        if (lx1 > ux1) std::swap(lx1, ux1);
+//                        if (std::abs(AffineTransformArea(u)) > 4096)
+//                            ux0 = lx0 + kFatScanlineHeight, ux1 = lx1 + kFatScanlineHeight;
+                        dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
+                        for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight, lx0 += dx0, ux0 += dx0, lx1 += dx1, ux1 += dx1) {
+                            if (u.a == 0 || u.c == 0)
+                                lx = bounds[j].lx, ux = bounds[j].ux;
+                            else {
+//                                lx = lx1, ux = ux1;
+//                                lx = lx0, ux = ux0;
+                                lx = std::floor(lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0);
+                                ux = std::ceil(ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0);
                             }
-                        }*/
-                        
-                        for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
-                            w = (short)(bounds[j].ux - bounds[j].lx);
+                            w = (short)(ux - lx);
                             while (allocation < aend && *allocation + w > clipBounds.ux)
                                 allocation++;
                             if (allocation < aend) {
                                 ax = *allocation, ay = (short)(allocation - allocations) * kFatScanlineHeight;
-                                tx = ax - (short)bounds[j].lx, ty = ay - y;
-                                *lxs++ = (short)bounds[j].lx, *uxs++ = (short)bounds[j].ux, *lys++ = y;
+                                tx = ax - (short)lx, ty = ay - y;
+                                *lxs++ = (short)lx, *uxs++ = (short)ux, *lys++ = y;
                                 *txs++ = tx, *tys++ = ty;
                                 
                                 *allocation += w;
