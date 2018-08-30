@@ -48,6 +48,7 @@ struct Mesh {
                 
                 short *lxs, *uxs, *lys, *txs, *tys, y, w, ax, ay;
                 int *ps, *idxs, base, rows;
+                float wa, wc;
                 rows = (int)(clipBounds.uy / kFatScanlineHeight);
                 short allocations[rows], *allocation = allocations, *aend = allocation + rows;
                 memset(allocations, 0, sizeof(allocations));
@@ -63,11 +64,8 @@ struct Mesh {
                         ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
                         bounds[j] = ib.intersected(clipBounds);
                         smalls[j] = bounds[j].lx != bounds[j].ux && bounds[j].ly != bounds[j].uy && std::abs(AffineTransformArea(u)) < 4096;
-                        
-                        float wa = u.a < 0 ? 1 : 0, wc = u.c < 0 ? 1 : 0;
-                        float lxy = u.ty + wa * u.b + wc * u.d;
-                        float uxy = u.ty + (1 - wa) * u.b + (1 - wc) * u.d;
-                        lxys[j] = (short)lxy, uxys[j] = (short)uxy;
+                        wa = u.a < 0 ? 1 : 0, wc = u.c < 0 ? 1 : 0;
+                        lxys[j] = (short)(u.ty + wa * u.b + wc * u.d), uxys[j] = (short)(u.ty + (1 - wa) * u.b + (1 - wc) * u.d);
                     }
                     size = 0;
                     for (j = 0; j < count; j++)
