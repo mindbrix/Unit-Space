@@ -70,29 +70,29 @@ struct Mesh {
                     txs = & mesh._resolutionsSOA._txs[base], tys = & mesh._resolutionsSOA._tys[base];
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
-                    float m0, lxab, uxab, m1, lxcd, uxcd, dx0, dx1, lx0, ux0, lx1, ux1, ilx, iux;
+                    float m0, abx0, abx1, m1, cdx0, cdx1, dx0, dx1, lx0, ux0, lx1, ux1, ilx, iux;
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
                         AffineTransform& u = units[p];
                         
-                        lxab = uxab = lxcd = uxcd = FLT_MAX;
+                        abx0 = abx1 = cdx0 = cdx1 = dx0 = dx1 = FLT_MAX;
                         if (!(u.a == 0 || u.c == 0) && bounds[j].uy - bounds[j].ly > kFatScanlineHeight) {
-                            m0 = -u.b / u.a, lxab = (bounds[j].ly - u.ty) * m0 + u.tx, uxab = lxab + u.a - u.b * m0;
-                            if (lxab > uxab)
-                                std::swap(lxab, uxab);
-                            m1 = -u.d / u.c, lxcd = (bounds[j].ly - u.ty) * m1 + u.tx, uxcd = lxcd + u.c - u.d * m1;
-                            if (lxcd > uxcd)
-                                std::swap(lxcd, uxcd);
+                            m0 = -u.b / u.a, abx0 = (bounds[j].ly - u.ty) * m0 + u.tx, abx1 = abx0 + u.a - u.b * m0;
+                            if (abx0 > abx1)
+                                std::swap(abx0, abx1);
+                            m1 = -u.d / u.c, cdx0 = (bounds[j].ly - u.ty) * m1 + u.tx, cdx1 = cdx0 + u.c - u.d * m1;
+                            if (cdx0 > cdx1)
+                                std::swap(cdx0, cdx1);
                             dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
                         }
                         for (lx0 = FLT_MAX, ux0 = -FLT_MAX, y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
                             ilx = bounds[j].lx, iux = bounds[j].ux;
-                            if (lxab != FLT_MAX) {
+                            if (abx0 != FLT_MAX) {
                                 if (y + kFatScanlineHeight < bounds[j].uy)
-                                    lxab += dx0, uxab += dx0, lxcd += dx1, uxcd += dx1;
+                                    abx0 += dx0, abx1 += dx0, cdx0 += dx1, cdx1 += dx1;
                                 
-                                lx1 = lxab < lxcd ? lxcd : lxab > uxcd ? uxcd : lxab;
-                                ux1 = uxab < lxcd ? lxcd : uxab > uxcd ? uxcd : uxab;
+                                lx1 = abx0 < cdx0 ? cdx0 : abx0 > cdx1 ? cdx1 : abx0;
+                                ux1 = abx1 < cdx0 ? cdx0 : abx1 > cdx1 ? cdx1 : abx1;
                                 
                                 ilx = std::floor(lx0 < lx1 ? lx0 : lx1), iux = std::ceil(ux0 > ux1 ? ux0 : ux1);
                                 lx0 = lx1, ux0 = ux1;
