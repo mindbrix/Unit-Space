@@ -76,20 +76,19 @@ struct Mesh {
                         p = j + ranges[i];
                         AffineTransform& u = units[p];
                         m0 = -u.b / u.a, b0 = u.tx - u.ty * m0;
-                        lx0 = bounds[j].ly * m0 + b0, ux0 = bounds[j].ly * m0 + ((u.tx + u.a) - (u.ty + u.b) * m0);
+                        lx0 = bounds[j].ly * m0 + b0, ux0 = lx0 + u.a - u.b * m0;
                         if (lx0 > ux0) std::swap(lx0, ux0);
                         m1 = -u.d / u.c, b1 = u.tx - u.ty * m1;
-                        lx1 = bounds[j].ly * m1 + b1, ux1 =  bounds[j].ly * m1 + ((u.tx + u.c) - (u.ty + u.d) * m1);
+                        lx1 = bounds[j].ly * m1 + b1, ux1 = lx1 + u.c - u.d * m1;
                         if (lx1 > ux1) std::swap(lx1, ux1);
+                        dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
+                        
 //                        if (std::abs(AffineTransformArea(u)) > 4096)
 //                            ux0 = lx0 + kFatScanlineHeight, ux1 = lx1 + kFatScanlineHeight;
-                        dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
                         for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight, lx0 += dx0, ux0 += dx0, lx1 += dx1, ux1 += dx1) {
                             if (u.a == 0 || u.c == 0)
                                 lx = bounds[j].lx, ux = bounds[j].ux;
                             else {
-//                                lx = lx1, ux = ux1;
-//                                lx = lx0, ux = ux0;
                                 lx = std::floor(lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0);
                                 ux = std::ceil(ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0);
                             }
