@@ -70,24 +70,24 @@ struct Mesh {
                     txs = & mesh._resolutionsSOA._txs[base], tys = & mesh._resolutionsSOA._tys[base];
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
-                    
                     float m0, lxab, uxab, m1, lxcd, uxcd, dx0, dx1, lx0, ux0, lx1, ux1, ilx, iux;
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
-                        
                         AffineTransform& u = units[p];
-//                        if (std::abs(AffineTransformArea(u)) > 4096)
-//                            u.a *= 0.01, u.b *= 0.01;
-                        m0 = -u.b / u.a, lxab = (bounds[j].ly - u.ty) * m0 + u.tx, uxab = lxab + u.a - u.b * m0;
-                        if (lxab > uxab)
-                            std::swap(lxab, uxab);
-                        m1 = -u.d / u.c, lxcd = (bounds[j].ly - u.ty) * m1 + u.tx, uxcd = lxcd + u.c - u.d * m1;
-                        if (lxcd > uxcd)
-                            std::swap(lxcd, uxcd);
-                        dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
+                        
+                        lxab = uxab = lxcd = uxcd = FLT_MAX;
+                        if (!(u.a == 0 || u.c == 0) && bounds[j].uy - bounds[j].ly > kFatScanlineHeight) {
+                            m0 = -u.b / u.a, lxab = (bounds[j].ly - u.ty) * m0 + u.tx, uxab = lxab + u.a - u.b * m0;
+                            if (lxab > uxab)
+                                std::swap(lxab, uxab);
+                            m1 = -u.d / u.c, lxcd = (bounds[j].ly - u.ty) * m1 + u.tx, uxcd = lxcd + u.c - u.d * m1;
+                            if (lxcd > uxcd)
+                                std::swap(lxcd, uxcd);
+                            dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
+                        }
                         for (lx0 = FLT_MAX, ux0 = -FLT_MAX, y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
                             ilx = bounds[j].lx, iux = bounds[j].ux;
-                            if (!(u.a == 0 || u.c == 0) && bounds[j].uy - bounds[j].ly > kFatScanlineHeight) {
+                            if (lxab != FLT_MAX) {
                                 if (y + kFatScanlineHeight < bounds[j].uy)
                                     lxab += dx0, uxab += dx0, lxcd += dx1, uxcd += dx1;
                                 
