@@ -55,13 +55,19 @@ struct Mesh {
                     count = ranges[i + 1] - ranges[i];
                     Bounds bounds[count], tb, ib;
                     bool smalls[count];
+                    short lxys[count], uxys[count];
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
-                        tb = Bounds::transformUnit(units[p]);
+                        AffineTransform& u = units[p];
+                        tb = Bounds::transformUnit(u);
                         ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
                         bounds[j] = ib.intersected(clipBounds);
-                        smalls[j] = std::abs(AffineTransformArea(units[p])) < 4096;
-                        //bounds[j] = Bounds::transformUnit(units[j + ranges[i]]).integral().intersected(clipBounds);
+                        smalls[j] = bounds[j].lx != bounds[j].ux && bounds[j].ly != bounds[j].uy && std::abs(AffineTransformArea(u)) < 4096;
+                        
+                        float wa = u.a < 0 ? 1 : 0, wc = u.c < 0 ? 1 : 0;
+                        float lxy = u.ty + wa * u.b + wc * u.d;
+                        float uxy = u.ty + (1 - wa) * u.b + (1 - wc) * u.d;
+                        lxys[j] = (short)lxy, uxys[j] = (short)uxy;
                     }
                     size = 0;
                     for (j = 0; j < count; j++)
@@ -80,27 +86,31 @@ struct Mesh {
                             continue;
                         p = j + ranges[i];
                         AffineTransform& u = units[p];
-                        
+                        Bounds& b =  bounds[j];
                         abx0 = abx1 = cdx0 = cdx1 = dx0 = dx1 = FLT_MAX;
-                        if (!(u.a == 0 || u.c == 0) && bounds[j].uy - bounds[j].ly > kFatScanlineHeight) {
-                            m0 = -u.b / u.a, abx0 = (bounds[j].ly - u.ty) * m0 + u.tx, abx1 = abx0 + u.a - u.b * m0;
+                        if (!(u.a == 0 || u.c == 0) && b.uy - b.ly > kFatScanlineHeight) {
+                            m0 = -u.b / u.a, abx0 = (b.ly - u.ty) * m0 + u.tx, abx1 = abx0 + u.a - u.b * m0;
                             if (abx0 > abx1)
                                 std::swap(abx0, abx1);
-                            m1 = -u.d / u.c, cdx0 = (bounds[j].ly - u.ty) * m1 + u.tx, cdx1 = cdx0 + u.c - u.d * m1;
+                            m1 = -u.d / u.c, cdx0 = (b.ly - u.ty) * m1 + u.tx, cdx1 = cdx0 + u.c - u.d * m1;
                             if (cdx0 > cdx1)
                                 std::swap(cdx0, cdx1);
                             dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
                         }
-                        for (lx0 = FLT_MAX, ux0 = -FLT_MAX, y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
-                            ilx = bounds[j].lx, iux = bounds[j].ux;
+                        for (lx0 = FLT_MAX, ux0 = -FLT_MAX, y = (short)b.ly; y < b.uy; y += kFatScanlineHeight) {
+                            ilx = b.lx, iux = b.ux;
                             if (abx0 != FLT_MAX) {
-                                if (y + kFatScanlineHeight < bounds[j].uy)
+                                if (y + kFatScanlineHeight < b.uy)
                                     abx0 += dx0, abx1 += dx0, cdx0 += dx1, cdx1 += dx1;
                                 
                                 lx1 = abx0 < cdx0 ? cdx0 : abx0 > cdx1 ? cdx1 : abx0;
                                 ux1 = abx1 < cdx0 ? cdx0 : abx1 > cdx1 ? cdx1 : abx1;
                                 
                                 ilx = std::floor(lx0 < lx1 ? lx0 : lx1), iux = std::ceil(ux0 > ux1 ? ux0 : ux1);
+                                if (lxys[j] >= y && lxys[j] < y + kFatScanlineHeight)
+                                    ilx = b.lx;
+                                if (uxys[j] >= y && uxys[j] < y + kFatScanlineHeight)
+                                    iux = b.ux;
                                 lx0 = lx1, ux0 = ux1;
                             }
                             w = (short)(iux - ilx);
