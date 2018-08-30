@@ -46,7 +46,7 @@ struct Mesh {
                 mesh._accumulationsSOA.empty();
                 mesh._resolutionsSOA.empty();
                 
-                short *lxs, *uxs, *lys, *txs, *tys, y, w, ax, ay, tx, ty;
+                short *lxs, *uxs, *lys, *txs, *tys, y, w, ax, ay;
                 int *ps, *idxs, base, rows;
                 rows = (int)(clipBounds.uy / kFatScanlineHeight);
                 short allocations[rows], *allocation = allocations, *aend = allocation + rows;
@@ -71,7 +71,7 @@ struct Mesh {
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
                     
-                    float m0, lx0, ux0, m1, lx1, ux1, dx0, dx1, lx, ux;
+                    float m0, lx0, ux0, m1, lx1, ux1, dx0, dx1, x0, x1, lx, ux, ilx, iux;
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
                         
@@ -86,23 +86,30 @@ struct Mesh {
                         
 //                        if (std::abs(AffineTransformArea(u)) > 4096)
 //                            ux0 = lx0 + kFatScanlineHeight, ux1 = lx1 + kFatScanlineHeight;
-                        for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight, lx0 += dx0, ux0 += dx0, lx1 += dx1, ux1 += dx1) {
-                            if (u.a == 0 || u.c == 0)
-                                lx = bounds[j].lx, ux = bounds[j].ux;
-                            else {
-                                lx = std::floor(lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0);
-                                ux = std::ceil(ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0);
+                        for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
+                            ilx = bounds[j].lx, iux = bounds[j].ux;
+                            if (!(u.a == 0 || u.c == 0)) {
+                                lx = lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0;
+                                ux = ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0;
+                                
+                                lx0 += dx0, ux0 += dx0, lx1 += dx1, ux1 += dx1;
+                                
+                                x0 = lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0;
+                                x1 = ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0;
+                                
+                                lx = lx < x0 ? lx : x0;
+                                ux = ux > x1 ? ux : x1;
+                                
+                                ilx = std::floor(lx), iux = std::ceil(ux);
                             }
-                            w = (short)(ux - lx);
+                            w = (short)(iux - ilx);
                             while (allocation < aend && *allocation + w > clipBounds.ux)
                                 allocation++;
                             if (allocation < aend) {
+                                *lxs++ = (short)ilx, *uxs++ = (short)iux, *lys++ = y;
                                 ax = *allocation, ay = (short)(allocation - allocations) * kFatScanlineHeight;
-                                tx = ax - (short)lx, ty = ay - y;
-                                *lxs++ = (short)lx, *uxs++ = (short)ux, *lys++ = y;
-                                *txs++ = tx, *tys++ = ty;
-                                
                                 *allocation += w;
+                                *txs++ = ax - (short)ilx, *tys++ = ay - y;
                             } else
                                 *lxs++ = *uxs++ = *lys++, *txs++ = *tys++ = 0;
                             
