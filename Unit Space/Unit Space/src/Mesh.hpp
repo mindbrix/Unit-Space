@@ -71,36 +71,31 @@ struct Mesh {
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
                     
-                    float m0, lx0, ux0, m1, lx1, ux1, dx0, dx1, x0, x1, lx, ux, ilx, iux;
+                    float m0, lxab, uxab, m1, lxcd, uxcd, dx0, dx1, lx0, ux0, lx1, ux1, ilx, iux;
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
                         
                         AffineTransform& u = units[p];
-                        m0 = -u.b / u.a, lx0 = (bounds[j].ly - u.ty) * m0 + u.tx, ux0 = lx0 + u.a - u.b * m0;
-                        if (lx0 > ux0)
-                            std::swap(lx0, ux0);
-                        m1 = -u.d / u.c, lx1 = (bounds[j].ly - u.ty) * m1 + u.tx, ux1 = lx1 + u.c - u.d * m1;
-                        if (lx1 > ux1)
-                            std::swap(lx1, ux1);
-                        dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
-                        
 //                        if (std::abs(AffineTransformArea(u)) > 4096)
-//                            ux0 = lx0 + kFatScanlineHeight, ux1 = lx1 + kFatScanlineHeight;
-                        for (y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
+//                            u.a *= 0.01, u.b *= 0.01;
+                        m0 = -u.b / u.a, lxab = (bounds[j].ly - u.ty) * m0 + u.tx, uxab = lxab + u.a - u.b * m0;
+                        if (lxab > uxab)
+                            std::swap(lxab, uxab);
+                        m1 = -u.d / u.c, lxcd = (bounds[j].ly - u.ty) * m1 + u.tx, uxcd = lxcd + u.c - u.d * m1;
+                        if (lxcd > uxcd)
+                            std::swap(lxcd, uxcd);
+                        dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
+                        for (lx0 = FLT_MAX, ux0 = -FLT_MAX, y = (short)bounds[j].ly; y < bounds[j].uy; y += kFatScanlineHeight) {
                             ilx = bounds[j].lx, iux = bounds[j].ux;
-                            if (!(u.a == 0 || u.c == 0)) {
-                                lx = lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0;
-                                ux = ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0;
+                            if (!(u.a == 0 || u.c == 0) && bounds[j].uy - bounds[j].ly > kFatScanlineHeight) {
+                                if (y + kFatScanlineHeight < bounds[j].uy)
+                                    lxab += dx0, uxab += dx0, lxcd += dx1, uxcd += dx1;
                                 
-                                lx0 += dx0, ux0 += dx0, lx1 += dx1, ux1 += dx1;
+                                lx1 = lxab < lxcd ? lxcd : lxab > uxcd ? uxcd : lxab;
+                                ux1 = uxab < lxcd ? lxcd : uxab > uxcd ? uxcd : uxab;
                                 
-                                x0 = lx0 < lx1 ? lx1 : lx0 > ux1 ? ux1 : lx0;
-                                x1 = ux0 < lx1 ? lx1 : ux0 > ux1 ? ux1 : ux0;
-                                
-                                lx = lx < x0 ? lx : x0;
-                                ux = ux > x1 ? ux : x1;
-                                
-                                ilx = std::floor(lx), iux = std::ceil(ux);
+                                ilx = std::floor(lx0 < lx1 ? lx0 : lx1), iux = std::ceil(ux0 > ux1 ? ux0 : ux1);
+                                lx0 = lx1, ux0 = ux1;
                             }
                             w = (short)(iux - ilx);
                             while (allocation < aend && *allocation + w > clipBounds.ux)
@@ -112,7 +107,6 @@ struct Mesh {
                                 *txs++ = ax - (short)ilx, *tys++ = ay - y;
                             } else
                                 *lxs++ = *uxs++ = *lys++, *txs++ = *tys++ = 0;
-                            
                             *ps++ = p, *idxs++ = 0;
                         }
                     }
