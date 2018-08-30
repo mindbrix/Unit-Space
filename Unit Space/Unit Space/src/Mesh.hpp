@@ -71,16 +71,17 @@ struct Mesh {
                     ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
                     
                     
-                    float lx0, ux0, m0, b0, dx0, lx1, ux1, m1, b1, dx1, lx, ux;
+                    float m0, lx0, ux0, m1, lx1, ux1, dx0, dx1, lx, ux;
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
+                        
                         AffineTransform& u = units[p];
-                        m0 = -u.b / u.a, b0 = u.tx - u.ty * m0;
-                        lx0 = bounds[j].ly * m0 + b0, ux0 = lx0 + u.a - u.b * m0;
-                        if (lx0 > ux0) std::swap(lx0, ux0);
-                        m1 = -u.d / u.c, b1 = u.tx - u.ty * m1;
-                        lx1 = bounds[j].ly * m1 + b1, ux1 = lx1 + u.c - u.d * m1;
-                        if (lx1 > ux1) std::swap(lx1, ux1);
+                        m0 = -u.b / u.a, lx0 = (bounds[j].ly - u.ty) * m0 + u.tx, ux0 = lx0 + u.a - u.b * m0;
+                        if (lx0 > ux0)
+                            std::swap(lx0, ux0);
+                        m1 = -u.d / u.c, lx1 = (bounds[j].ly - u.ty) * m1 + u.tx, ux1 = lx1 + u.c - u.d * m1;
+                        if (lx1 > ux1)
+                            std::swap(lx1, ux1);
                         dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
                         
 //                        if (std::abs(AffineTransformArea(u)) > 4096)
