@@ -106,11 +106,9 @@ struct Mesh {
                                 lx1 = abx0 < cdx0 ? cdx0 : abx0 > cdx1 ? cdx1 : abx0;
                                 ux1 = abx1 < cdx0 ? cdx0 : abx1 > cdx1 ? cdx1 : abx1;
                                 
-                                ilx = std::floor(lx0 < lx1 ? lx0 : lx1), iux = std::ceil(ux0 > ux1 ? ux0 : ux1);
-                                if (lxy >= sy0 && lxy < sy1)
-                                    ilx = b.lx;
-                                if (uxy >= sy0 && uxy < sy1)
-                                    iux = b.ux;
+                                ilx = lxy >= sy0 && lxy < sy1 ? b.lx : std::floor(lx0 < lx1 ? lx0 : lx1);
+                                iux = uxy >= sy0 && uxy < sy1 ? b.ux : std::ceil(ux0 > ux1 ? ux0 : ux1);
+                                
                                 lx0 = lx1, ux0 = ux1;
                             }
                             w = (short)(iux - ilx);
