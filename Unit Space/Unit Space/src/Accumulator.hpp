@@ -10,6 +10,13 @@
 struct Accumulator {
     static constexpr int kAccumulationFloatCount = 10;
     
+    static int subPathFloatCount(SubPath& s) {
+        float *points = s._quadratics.get();
+        int nfloats = s._npoints * 2;
+        bool closed = points[0] == points[nfloats - 2] && points[1] == points[nfloats - 1];
+        return ((nfloats + (closed ? 0 : 4)) + kAccumulationFloatCount - 1) / kAccumulationFloatCount * kAccumulationFloatCount;
+    }
+    
     static void writeQuadraticAccumulations(vector<Accumulation>& accumulations, float *points, size_t nfloats, int p, int s) {
         float *end = points + nfloats, x0, y0, x1, y1, x2, y2, *pts = nullptr, *ptsend = nullptr;
         
