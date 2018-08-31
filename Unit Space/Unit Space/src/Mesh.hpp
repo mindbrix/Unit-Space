@@ -242,6 +242,8 @@ struct Mesh {
         Memory<RGBA8>                   _colors;
     };
     
+    Memory<float>                       _quadratics;
+    Memory<int>                         _quadraticsIndices;
     
     vector<Accumulation>                _accumulations;
     vector<int>                         _accumulationIndices;

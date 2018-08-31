@@ -41,4 +41,9 @@ struct Accumulator {
             writeQuadraticAccumulations(mesh._accumulations, path._subPaths[s]._quadratics.get(), path._subPaths[s]._quadratics.count(), p, s);
         
     }
+    
+    static void writeScene(Mesh& mesh, Scene& scene) {
+        for (int i = 0; i < scene._paths.size(); i++)
+            writePathAccumulations(mesh, scene._paths[i], i);
+    }
 };
