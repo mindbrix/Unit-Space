@@ -13,7 +13,7 @@ constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.5;
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
 static Memory<float> splitCubics(const float *src, int npoints, const float precision) {
-    Memory<float> quadratics(16);
+    Memory<float> quadratics;
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23, n012, n123, n0123;
@@ -151,7 +151,7 @@ struct SubPath {
     }
     
     Memory<float> flattenQuadratics(const float *points, int npoints, const float precision) {
-        Memory<float> quadratics(16);
+        Memory<float> quadratics;
         float x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, det, dot, t, x01, x12, x012, y01, y12, y012;
         int i;
         for (x2 = y2 = 0, x0 = *points++, y0 = *points++, i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
