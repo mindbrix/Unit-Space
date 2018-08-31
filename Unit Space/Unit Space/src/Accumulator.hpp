@@ -86,7 +86,7 @@ struct Accumulator {
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 begin = bases[base++];
                 end = base == nsubpaths ? (int)mesh._quadraticFloats.count() : bases[base];
-                memset(& mesh._quadraticPs[base / kQuadraticFloatCount], p, (end - base) / kQuadraticFloatCount * sizeof(p));
+                memset(& mesh._quadraticPs[begin / kQuadraticFloatCount], p, (end - begin) / kQuadraticFloatCount * sizeof(p));
                 writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
             }
     }
