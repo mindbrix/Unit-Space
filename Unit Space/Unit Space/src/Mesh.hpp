@@ -217,10 +217,6 @@ struct Mesh {
     }
     
     struct AccumulationSOA {
-        int                                     _count;
-        Memory<short>                           _lxs, _uxs, _lys, _txs, _tys;
-        Memory<int>                             _ps, _idxs;
-        
         void alloc(int allocation) {
             _count += allocation;
             if (_count > _lxs.count()) {
@@ -230,18 +226,22 @@ struct Mesh {
         }
         void empty() {
             _count = 0,
-            _lxs = Memory<short>(1024), _uxs = Memory<short>(1024), _lys = Memory<short>(1024), _txs = Memory<short>(1024), _tys = Memory<short>(1024),
+            _lxs = Memory<short>(1024), _uxs = Memory<short>(1024), _lys = Memory<short>(1024), _txs = Memory<short>(1024), _tys = Memory<short>(1024);
             _ps = Memory<int>(1024), _idxs = Memory<int>(1024);
         }
+        int                             _count;
+        Memory<short>                   _lxs, _uxs, _lys, _txs, _tys;
+        Memory<int>                     _ps, _idxs;
     };
 
     struct CirclesSOA {
         void add(float x, float y, float r, RGBA8 c)    { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)), _colors.push_back(c); }
         void empty()                                    { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(), _colors = Memory<RGBA8>(); }
         
-        Memory<float>                           _xs, _ys, _rs;
-        Memory<RGBA8>                           _colors;
+        Memory<float>                   _xs, _ys, _rs;
+        Memory<RGBA8>                   _colors;
     };
+    
     
     vector<Accumulation>                _accumulations;
     vector<int>                         _accumulationIndices;
