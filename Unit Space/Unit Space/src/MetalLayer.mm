@@ -16,6 +16,8 @@
 @property (nonatomic, strong) id <MTLBuffer> accumulationsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
@@ -316,6 +318,14 @@
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
+    if (mesh._quadraticFloats.size())
+        _quadraticFloatsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticFloats.get()
+                                                          length:mesh._quadraticFloats.size()
+                                                         options:MTLResourceStorageModeShared];
+    if (mesh._quadraticPs.size())
+        _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
+                                                      length:mesh._quadraticPs.size()
+                                                     options:MTLResourceStorageModeShared];
     if (mesh._accumulations.size())
         _accumulationsBuffer = [self.device newBufferWithBytes:(void *)& mesh._accumulations[0]
                                                         length:mesh._accumulations.size() * sizeof(Accumulation)
