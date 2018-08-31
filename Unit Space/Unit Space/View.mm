@@ -378,7 +378,6 @@ using namespace std;
     meshState.showEdges = _showEdges;
     meshState.showColors = _showColors;
     meshState.showInterior = _showInterior;
-    meshState.showPolygons = false;
     meshState.showQuadratics = false;
     meshState.showAccumulations = false;
     meshState.showAccumulationsSOA = false;
@@ -389,7 +388,6 @@ using namespace std;
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
-	meshState.showLineWinding = _useEvenOdd;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
     meshState.cellSize = 1;
     
@@ -405,7 +403,7 @@ using namespace std;
         _mesh._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
     
     if (_flags & 1)
-        meshState.showPolygons = true;
+        meshState.showQuadratics = true;
     if (_flags & 2) 
         meshState.showAccumulations = true;
     if (_flags & 4)
@@ -413,8 +411,6 @@ using namespace std;
     
     if (_flags & 8) {}
     if (_flags & 16) {
-        meshState.showQuadratics = true;
-        /*
         int dimension = 330, r = 10, g = 20.0 / 0.618, count = dimension * dimension, idx;
         float *dst;
         _mesh._circles._xs = Memory<float>(count);
@@ -433,7 +429,6 @@ using namespace std;
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;
-         */
     }
     
     [self.metalLayer writePathCalls:_mesh state:uniforms meshState:meshState];

@@ -147,7 +147,6 @@ struct MeshState {
     bool                showEdges;
     bool                showColors;
     bool                showInterior;
-    bool                showPolygons;
     bool                showQuadratics;
     bool                showAccumulations;
     bool                showAccumulationsSOA;
@@ -155,8 +154,7 @@ struct MeshState {
     bool                showVisibles;
     bool                useStrokeColor;
 	float				winding;
-	bool				showLineWinding;
-    int                 colorsSize;
+	int                 colorsSize;
     int                 reverseCount;
     unsigned int        subdivisionCount;
 	Bounds				clipBounds;
@@ -184,8 +182,6 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
-    kCallTypeLinesSOA,
-    kCallTypeLinesWindingSOA,
     kCallTypeAccumulate,
     kCallTypeAccumulateSOA,
     kCallTypeResolveSOA,

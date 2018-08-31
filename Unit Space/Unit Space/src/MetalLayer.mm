@@ -21,8 +21,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> lineSOAPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> lineWindingSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulateSOAPipelineState;
@@ -123,11 +121,6 @@
     descriptor.label = @"quadraticLinePipelineState";
     self.quadraticLinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
-    descriptor.label = @"lineSOAPipelineState";
-    self.lineSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
     descriptor.label = @"resolveSOAPipelineState";
@@ -150,10 +143,6 @@
     descriptor.label = @"accumulateSOAPipelineState";
     self.accumulateSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_winding_fragment_main"];
-    descriptor.label = @"lineWindingSOAPipelineState";
-    self.lineWindingSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     return self;
 }
 
@@ -245,17 +234,6 @@
                 [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
-                break;
-            case kCallTypeLinesSOA:
-            case kCallTypeLinesWindingSOA:
-                [commandEncoder setRenderPipelineState:call->type == kCallTypeLinesSOA ? _lineSOAPipelineState : _lineWindingSOAPipelineState];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBytes:& mesh->_xs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_ys[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_ps[call->baseInstance] length:sizeof(int)   * (call->instanceCount + 1) atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_as[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:13];
-                [commandEncoder setVertexBytes:& mesh->_bs[call->baseInstance] length:sizeof(float) * (call->instanceCount + 1) atIndex:14];
-                instanceCount = call->instanceCount * call->meshState.subdivisionCount;
                 break;
             case kCallTypeAccumulate:
                 [commandEncoder setRenderPipelineState:_accumulatePipelineState];

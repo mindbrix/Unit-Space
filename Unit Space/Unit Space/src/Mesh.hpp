@@ -151,17 +151,6 @@ struct Mesh {
                 
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
                 
-            } else if (meshState.showPolygons) {
-                for (i = 0; i < ranges.size(); i += 2) {
-                    base = mesh._edges[ranges[i]];
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._xs.size(): mesh._edges[ranges[i + 1]];
-                    for (j = base; j < end; j += 1023) {
-                        count = (j + 1024 < end ? j + 1024 : end) - j;
-                        calls.emplace_back(meshState.showLineWinding ? kCallTypeLinesWindingSOA : kCallTypeLinesSOA, count - 1, j, state, meshState);
-                    }
-                }
-                if (meshState.showLineWinding)
-                    calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, meshState);
             } else {
                 call = nullptr;
                 for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
@@ -263,9 +252,7 @@ struct Mesh {
     
     CirclesSOA                          _circles;
     
-    vector<int>                         _idxs, _edges;
-    vector<float>                       _xs, _ys, _as, _bs;
-    vector<int>                         _ps;
+    vector<int>                         _idxs;
     
     vector<Accumulation>                _accumulations;
     vector<int>                         _accumulationIndices;
@@ -274,8 +261,7 @@ struct Mesh {
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
         _accumulations.resize(0), _accumulationIndices.resize(0);
-        _paths.resize(0), _idxs.resize(0), _edges.resize(0);
+        _paths.resize(0), _idxs.resize(0);
         _points.resize(0);
-        _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0);
     }
 };

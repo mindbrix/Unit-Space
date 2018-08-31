@@ -48,36 +48,6 @@ struct libTess {
         }
     }
     
-    static void writeQuadratics(Mesh& mesh, Path& path, int p) {
-        float *points, sx, sy, x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, l2, a, b;
-        int npoints, i;
-        for (SubPath& s : path._subPaths) {
-            if (mesh._ps.size())  mesh._ps.back() = -1;
-            
-            points = s._quadratics.get();
-            sx = x0 = x2 = *points++, sy = y0 = y2 = *points++;
-            mesh._xs.emplace_back(x0), mesh._ys.emplace_back(y0);
-            mesh._ps.emplace_back(p);
-            
-            npoints = (int)s._quadratics.count() / 2;
-            for (i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
-                x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
-                
-                dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0, l2 = dx02 * dx02 + dy02 * dy02;
-                a = (dx01 * dx02 + dy01 * dy02) / l2, b = (dx02 * dy01 - dy02 * dx01) / l2;
-                
-                mesh._xs.emplace_back(x2), mesh._ys.emplace_back(y2);
-                mesh._as.emplace_back(a), mesh._bs.emplace_back(b), mesh._ps.emplace_back(p);
-            }
-            mesh._as.emplace_back(0.5), mesh._bs.emplace_back(0);
-            
-            if (!(sx == x2 && sy == y2)) {
-                mesh._xs.emplace_back(sx), mesh._ys.emplace_back(sy);
-                mesh._as.emplace_back(0.5), mesh._bs.emplace_back(0), mesh._ps.emplace_back(p);
-            }
-        }
-    }
-    
     static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2) {
         float limit = 5e-1;
         float px, py, nx, ny, x, y;
@@ -106,9 +76,7 @@ struct libTess {
             Path& path = scene._paths[p];
             mesh._paths.emplace_back(path._color, scene._CTMs[p], path._bounds);
             mesh._idxs.emplace_back((int)(mesh._points.size() / kMeshTriangleSize));
-            mesh._edges.emplace_back((int)mesh._xs.size());
             
-            writeQuadratics(mesh, path, p);
             addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess);

@@ -116,15 +116,15 @@ fragment float4 circle_fragment_main(CircleVertex vert [[stage_in]], constant St
 
 struct LineVertex
 {
-    void write(float2 p0, float2 p1, float scale, uint vid, constant State &state, RGBA8 rgba, bool showLineWinding) {
+    void write(float2 p0, float2 p1, float scale, uint vid, constant State &state, RGBA8 rgba) {
         float2 v01 = p1 - p0, nv = normalize(v01), lnv = { -nv.y, nv.x };
         
         float uw, dilation, dw, dh;
         uw = select(state.width, 1.0 / scale, state.width == 0);
         dilation = (abs(nv.x) + abs(nv.y)) * 0.5;
         dh = dw = uw * scale * 0.5;
-        dw = select(dw, select(0.0, 1.0, (vid & 1) == (v01.y < 0)), showLineWinding);
-        dh = select(dh, select(0.0, 1.0, (vid >> 1) == (v01.x > 0)), showLineWinding);
+        dw = select(dw, select(0.0, 1.0, (vid & 1) == (v01.y < 0)), false);
+        dh = select(dh, select(0.0, 1.0, (vid >> 1) == (v01.x > 0)), false);
         float2 devicePoint = select(p0, p1, vid & 2) + (dh + dilation) * select(-nv, nv, vid & 2) + (dw + dilation) * select(-lnv, lnv, vid & 1);
         float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
         
@@ -156,7 +156,7 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
     
     LineVertex vert;
-    vert.write(p0, p1, scale, vid, state, paths[p].color, meshState.showLineWinding);
+    vert.write(p0, p1, scale, vid, state, paths[p].color);
     vert.position *= float(visible);
     return vert;
 }
@@ -189,7 +189,7 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
         p0 = tp0, p1 = tp1;
     }
     LineVertex vert;
-    vert.write(p0, p1, scale, vid, state, paths[p].color, meshState.showLineWinding);
+    vert.write(p0, p1, scale, vid, state, paths[p].color);
     vert.position *= float(ps[idx] != -1);
     return vert;
 }
@@ -204,18 +204,4 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
     float x = w - dx, y = max(0.0, w - dy);
     float rounded = saturate(w - sqrt(x * x + y * y));
     return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap);
-}
-
-struct LineFragment
-{
-    float4 color [[ color(0) ]];
-    float winding [[ color(1) ]];
-};
-
-fragment LineFragment line_winding_fragment_main(LineVertex vert [[stage_in]],
-                                                 constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
-{
-    LineFragment f;
-    f.winding = edgeWinding(vert.x0, vert.y0, vert.x1, vert.y1) - edgeWinding(vert.x0 + 1, vert.y0, vert.x1 + 1, vert.y1);
-    return f;
 }
