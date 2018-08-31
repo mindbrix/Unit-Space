@@ -260,5 +260,11 @@ struct Mesh {
     AccumulationSOA                     _accumulationsSOA;
     AccumulationSOA                     _resolutionsSOA;
     
-    void empty() { _accumulations.resize(0), _accumulationIndices.resize(0), _paths.resize(0), _idxs.resize(0), _edges.resize(0), _points.resize(0), _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0); }
+    void empty() {
+        _quadratics = Memory<float>(), _quadraticsIndices = Memory<int>();
+        _accumulations.resize(0), _accumulationIndices.resize(0);
+        _paths.resize(0), _idxs.resize(0), _edges.resize(0);
+        _points.resize(0);
+        _xs.resize(0), _ys.resize(0), _as.resize(0), _bs.resize(0), _ps.resize(0);
+    }
 };
