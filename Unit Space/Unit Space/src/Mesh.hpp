@@ -243,6 +243,7 @@ struct Mesh {
     };
     
     Memory<float>                       _quadratics;
+    Memory<int>                         _quadraticsPs;
     Memory<int>                         _quadraticsIndices;
     
     vector<Accumulation>                _accumulations;
