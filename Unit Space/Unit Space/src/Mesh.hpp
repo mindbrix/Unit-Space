@@ -58,6 +58,10 @@ struct Mesh {
                     for (j = 0; j < count; j++) {
                         p = j + ranges[i];
                         AffineTransform& u = units[p];
+                        float scale = 63.0 / std::sqrt(std::abs(AffineTransformArea(u)));
+                        if (scale < 1) {
+                            u.a *= scale, u.b *= scale, u.c *= scale, u.d *= scale;
+                        }
                         tb = Bounds::transformUnit(u);
                         ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
                         bounds[j] = ib.intersected(clipBounds);
