@@ -140,6 +140,26 @@ struct LineVertex
     float4 color;
 };
 
+vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                      device MeshPath *paths [[buffer(9)]],
+                                      device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]],
+                                      uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    uint idx = iid * 2;
+    int p = ps[iid / 4];
+    float x0 = quadratics[idx], y0 = quadratics[idx + 1], x1 = quadratics[idx + 2], y1 = quadratics[idx + 3];
+    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
+    float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+    
+    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
+    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
+    
+    LineVertex vert;
+    vert.write(p0, p1, scale, vid, state, paths[p].color, meshState.showLineWinding);
+    vert.position *= float(x0 != x1 || y0 != y1);
+    return vert;
+}
+
 vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                       device MeshPath *paths [[buffer(9)]],
                                       constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]],

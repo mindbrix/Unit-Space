@@ -148,6 +148,7 @@ struct MeshState {
     bool                showColors;
     bool                showInterior;
     bool                showPolygons;
+    bool                showQuadratics;
     bool                showAccumulations;
     bool                showAccumulationsSOA;
     bool                showAccumulationsAllocations;

@@ -379,6 +379,7 @@ using namespace std;
     meshState.showColors = _showColors;
     meshState.showInterior = _showInterior;
     meshState.showPolygons = false;
+    meshState.showQuadratics = false;
     meshState.showAccumulations = false;
     meshState.showAccumulationsSOA = false;
     meshState.showAccumulationsAllocations = _showAccumulationsAllocations;
@@ -412,6 +413,8 @@ using namespace std;
     
     if (_flags & 8) {}
     if (_flags & 16) {
+        meshState.showQuadratics = true;
+        /*
         int dimension = 330, r = 10, g = 20.0 / 0.618, count = dimension * dimension, idx;
         float *dst;
         _mesh._circles._xs = Memory<float>(count);
@@ -430,6 +433,7 @@ using namespace std;
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
         return;
+         */
     }
     
     [self.metalLayer writePathCalls:_mesh state:uniforms meshState:meshState];

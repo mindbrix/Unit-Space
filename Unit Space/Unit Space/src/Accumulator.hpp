@@ -19,7 +19,7 @@ struct Accumulator {
     static void writeSubPath(float *q, float *qend, SubPath& s) {
         float x0, y0, x1, y1;
         int nfloats = s._npoints * 2;
-        memcpy(q, s._quadratics.get(), s._quadratics.size());
+        memcpy(q, s._quadratics.get(), nfloats * sizeof(float));
         q += nfloats;
         x0 = s._quadratics[nfloats - 2], y0 = s._quadratics[nfloats - 1], x1 = s._quadratics[0], y1 = s._quadratics[1];
         if (x0 != x1 || y0 != y1) {

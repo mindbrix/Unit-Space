@@ -118,7 +118,7 @@
     descriptor.label = @"Circle";
     self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_line_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
     descriptor.label = @"quadraticLinePipelineState";
     self.quadraticLinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
@@ -289,7 +289,10 @@
                 break;
             case kCallTypeQuadraticLines:
                 [commandEncoder setRenderPipelineState:_quadraticLinePipelineState];
-                instanceCount = 0;
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+                [commandEncoder setVertexBuffer:_quadraticFloatsBuffer offset:0 atIndex:10];
+                [commandEncoder setVertexBuffer:_quadraticPsBuffer offset:0 atIndex:11];
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
         }
         if (instanceCount == 0)
