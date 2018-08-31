@@ -8,12 +8,12 @@
 #import "Scene.hpp"
 
 struct Accumulator {
-    static constexpr int kAccumulationFloatCount = 10;
+    static constexpr int kAccumulationFloatCount = 10, kQuadraticFloatCount = 8;
     
     static int subPathFloatCount(SubPath& s) {
         int nfloats = s._npoints * 2;
         bool closed = s._quadratics[0] == s._quadratics[nfloats - 2] && s._quadratics[1] == s._quadratics[nfloats - 1];
-        return ((nfloats + (closed ? 0 : 4)) + kAccumulationFloatCount - 1) / kAccumulationFloatCount * kAccumulationFloatCount;
+        return ((nfloats + 4 + (closed ? 0 : 4)) + kQuadraticFloatCount - 1) / kQuadraticFloatCount * kQuadraticFloatCount;
     }
     
     static void writeSubPath(float *q, float *qend, SubPath& s) {
