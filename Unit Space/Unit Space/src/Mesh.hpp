@@ -46,7 +46,7 @@ struct Mesh {
                 mesh._accumulationsSOA.empty();
                 mesh._resolutionsSOA.empty();
                 
-                short *lxs, *uxs, *lys, *txs, *tys, y, w, ax, ay;
+                short *lxs, *uxs, *lys, *txs, *tys, sy0, sy1, w, ax, ay;
                 int *ps, *idxs, base, rows;
                 rows = (int)(clipBounds.uy / kFatScanlineHeight);
                 short allocations[rows], *allocation = allocations, *aend = allocation + rows;
@@ -97,19 +97,19 @@ struct Mesh {
                             wa = u.a < 0 ? 1 : 0, wc = u.c < 0 ? 1 : 0;
                             lxy = u.ty + wa * u.b + wc * u.d, uxy = u.ty + (1 - wa) * u.b + (1 - wc) * u.d;
                         }
-                        for (lx0 = FLT_MAX, ux0 = -FLT_MAX, y = (short)b.ly; y < b.uy; y += kFatScanlineHeight) {
+                        for (lx0 = FLT_MAX, ux0 = -FLT_MAX, sy0 = (short)b.ly, sy1 = sy0 + kFatScanlineHeight; sy0 < b.uy; sy0 = sy1, sy1 += kFatScanlineHeight) {
                             ilx = b.lx, iux = b.ux;
                             if (abx0 != FLT_MAX) {
-                                if (y + kFatScanlineHeight < b.uy)
+                                if (sy1 < b.uy)
                                     abx0 += dx0, abx1 += dx0, cdx0 += dx1, cdx1 += dx1;
                                 
                                 lx1 = abx0 < cdx0 ? cdx0 : abx0 > cdx1 ? cdx1 : abx0;
                                 ux1 = abx1 < cdx0 ? cdx0 : abx1 > cdx1 ? cdx1 : abx1;
                                 
                                 ilx = std::floor(lx0 < lx1 ? lx0 : lx1), iux = std::ceil(ux0 > ux1 ? ux0 : ux1);
-                                if (lxy >= y && lxy < y + kFatScanlineHeight)
+                                if (lxy >= sy0 && lxy < sy1)
                                     ilx = b.lx;
-                                if (uxy >= y && uxy < y + kFatScanlineHeight)
+                                if (uxy >= sy0 && uxy < sy1)
                                     iux = b.ux;
                                 lx0 = lx1, ux0 = ux1;
                             }
@@ -117,10 +117,10 @@ struct Mesh {
                             while (allocation < aend && *allocation + w > clipBounds.ux)
                                 allocation++;
                             if (allocation < aend) {
-                                *lxs++ = (short)ilx, *uxs++ = (short)iux, *lys++ = y;
+                                *lxs++ = (short)ilx, *uxs++ = (short)iux, *lys++ = sy0;
                                 ax = *allocation, ay = (short)(allocation - allocations) * kFatScanlineHeight;
                                 *allocation += w;
-                                *txs++ = ax - (short)ilx, *tys++ = ay - y;
+                                *txs++ = ax - (short)ilx, *tys++ = ay - sy0;
                             } else
                                 *lxs++ = *uxs++ = *lys++, *txs++ = *tys++ = 0;
                             *ps++ = p, *idxs++ = 0;
