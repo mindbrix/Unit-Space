@@ -17,7 +17,7 @@ struct Accumulator {
     }
     
     static void writeSubPath(float *q, float *qend, SubPath& s) {
-        float *qbegin = q, x0, y0, x1, y1;
+        float x0, y0, x1, y1;
         int nfloats = (int)s._quadratics.count();
         memcpy(q, s._quadratics.get(), nfloats * sizeof(float));
         q += nfloats;
@@ -28,8 +28,6 @@ struct Accumulator {
         }
         while (q < qend)
             *q = *(q - 2), q++, *q = *(q - 2), q++;
-        
-        q = q;
     }
     
     static void writeQuadraticAccumulations(vector<Accumulation>& accumulations, float *points, size_t nfloats, int p, int s) {
@@ -88,7 +86,8 @@ struct Accumulator {
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 begin = bases[base++];
                 end = base == nsubpaths ? (int)mesh._quadraticFloats.count() : bases[base];
-                memset(& mesh._quadraticPs[begin / kQuadraticFloatCount], p, (end - begin) / kQuadraticFloatCount * sizeof(p));
+                for (int i = begin / kQuadraticFloatCount; i < end / kQuadraticFloatCount; i++)
+                    mesh._quadraticPs[i] = p;
                 writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
             }
     }

@@ -146,7 +146,7 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint idx = iid * 2;
-    int p = ps[iid / 4];
+    int p = ps[idx / 8];
     float x0 = quadratics[idx], y0 = quadratics[idx + 1], x1 = quadratics[idx + 2], y1 = quadratics[idx + 3];
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
