@@ -242,24 +242,27 @@ struct Mesh {
         Memory<RGBA8>                   _colors;
     };
     
+    vector<Call>                        _calls;
+    
     Memory<float>                       _quadraticFloats;
     Memory<int>                         _quadraticPs;
     Memory<int>                         _quadraticIndices;
     
-    vector<Accumulation>                _accumulations;
-    vector<int>                         _accumulationIndices;
+    AccumulationSOA                     _accumulationsSOA;
+    AccumulationSOA                     _resolutionsSOA;
     
     vector<MeshPath>                    _paths;
-    vector<int>                         _idxs, _edges;
     vector<Vector>                      _points;
+    
+    CirclesSOA                          _circles;
+    
+    vector<int>                         _idxs, _edges;
     vector<float>                       _xs, _ys, _as, _bs;
     vector<int>                         _ps;
     
-    vector<Call>                        _calls;
-    CirclesSOA                          _circles;
+    vector<Accumulation>                _accumulations;
+    vector<int>                         _accumulationIndices;
     
-    AccumulationSOA                     _accumulationsSOA;
-    AccumulationSOA                     _resolutionsSOA;
     
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
