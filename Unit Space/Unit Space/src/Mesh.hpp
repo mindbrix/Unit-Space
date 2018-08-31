@@ -84,7 +84,7 @@ struct Mesh {
                             continue;
                         p = j + ranges[i];
                         AffineTransform& u = units[p];
-                        Bounds& b =  bounds[j];
+                        Bounds& b = bounds[j];
                         abx0 = abx1 = cdx0 = cdx1 = dx0 = dx1 = lxy = uxy = FLT_MAX;
                         if (!(u.a == 0 || u.c == 0) && b.uy - b.ly > kFatScanlineHeight) {
                             m0 = -u.b / u.a, abx0 = (b.ly - u.ty) * m0 + u.tx, abx1 = abx0 + u.a - u.b * m0;
