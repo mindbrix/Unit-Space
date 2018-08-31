@@ -16,6 +16,20 @@ struct Accumulator {
         return ((nfloats + (closed ? 0 : 4)) + kAccumulationFloatCount - 1) / kAccumulationFloatCount * kAccumulationFloatCount;
     }
     
+    static void writeSubPath(float *q, float *qend, SubPath& s) {
+        float x0, y0, x1, y1;
+        int nfloats = s._npoints * 2;
+        memcpy(q, s._quadratics.get(), s._quadratics.size());
+        q += nfloats;
+        x0 = s._quadratics[nfloats - 2], y0 = s._quadratics[nfloats - 1], x1 = s._quadratics[0], y1 = s._quadratics[1];
+        if (x0 != x1 || y0 != y1) {
+            *q++ = (x0 + x1) * 0.5, *q++ = (y0 + y1) * 0.5;
+            *q++ = x1, *q++ = y1;
+        }
+        while (q < qend)
+            *q = *(q - 2), q++, *q = *(q - 2), q++;
+    }
+    
     static void writeQuadraticAccumulations(vector<Accumulation>& accumulations, float *points, size_t nfloats, int p, int s) {
         float *end = points + nfloats, x0, y0, x1, y1, x2, y2, *pts = nullptr, *ptsend = nullptr;
         
@@ -48,25 +62,30 @@ struct Accumulator {
     }
     
     static void writeScene(Mesh& mesh, Scene& scene) {
-        int p, s, nfloats, *idx;
-        float *q;
+        int p, s, nsubpaths, nfloats, begin, end;
         
         for (p = 0; p < scene._paths.size(); p++)
             writePathAccumulations(mesh, scene._paths[p], p);
         
-        for (nfloats = p = 0; p < scene._paths.size(); p++)
-            for (s = 0; s < scene._paths[p]._subPaths.size(); s++)
-                nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
-        
-        mesh._quadratics = Memory<float>(nfloats);
-        q = mesh._quadratics.get();
+        for (nsubpaths = p = 0; p < scene._paths.size(); p++)
+            nsubpaths += (int)scene._paths[p]._subPaths.size();
+        int bases[nsubpaths], base;
         mesh._quadraticsIndices = Memory<int>(scene._paths.size());
-        idx = mesh._quadraticsIndices.get();
         
-        for (nfloats = p = 0; p < scene._paths.size(); p++) {
-            *idx++ = nfloats;
-            for (s = 0; s < scene._paths[p]._subPaths.size(); s++)
+        for (nfloats = base = p = 0; p < scene._paths.size(); p++) {
+            mesh._quadraticsIndices[p] = nfloats;
+            for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
+                bases[base++] = nfloats;
                 nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
+            }
         }
+        mesh._quadratics = Memory<float>(nfloats);
+        
+        for (base = p = 0; p < scene._paths.size(); p++)
+            for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
+                begin = bases[base++];
+                end = base == nsubpaths ? (int)mesh._quadratics.count() : bases[base];
+                writeSubPath(& mesh._quadratics[begin], & mesh._quadratics[end], scene._paths[p]._subPaths[s]);
+            }
     }
 };
