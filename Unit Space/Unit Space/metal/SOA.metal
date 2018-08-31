@@ -116,6 +116,24 @@ fragment float4 circle_fragment_main(CircleVertex vert [[stage_in]], constant St
 
 struct LineVertex
 {
+    void write(float2 p0, float2 p1, float scale, uint vid, constant State &state, RGBA8 rgba, bool showLineWinding) {
+        float2 v01 = p1 - p0, nv = normalize(v01), lnv = { -nv.y, nv.x };
+        
+        float uw, dilation, dw, dh;
+        uw = select(state.width, 1.0 / scale, state.width == 0);
+        dilation = (abs(nv.x) + abs(nv.y)) * 0.5;
+        dh = dw = uw * scale * 0.5;
+        dw = select(dw, select(0.0, 1.0, (vid & 1) == (v01.y < 0)), showLineWinding);
+        dh = select(dh, select(0.0, 1.0, (vid >> 1) == (v01.x > 0)), showLineWinding);
+        float2 devicePoint = select(p0, p1, vid & 2) + (dh + dilation) * select(-nv, nv, vid & 2) + (dw + dilation) * select(-lnv, lnv, vid & 1);
+        float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
+        
+        position = float4(ndcPoint, 1.0, 1.0);
+        u = select(-1, 1, vid & 1), v = select(-1, 1, vid & 2);
+        color = { float(rgba.r) / 255.0, float(rgba.g) / 255.0, float(rgba.b) / 255.0, float(rgba.a) / 255.0 };
+        devicePoint -= 0.5;
+        x0 = p0.x - devicePoint.x, y0 = p0.y - devicePoint.y, x1 = p1.x - devicePoint.x, y1 = p1.y - devicePoint.y;
+    }
     float4 position [[position]];
     float u, v;
 	float x0, y0, x1, y1;
@@ -149,24 +167,9 @@ vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], const
         float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
         p0 = tp0, p1 = tp1;
     }
-    
-    float2 v = p1 - p0, nv = normalize(v), lnv = { -nv.y, nv.x };
-    
-    float uw, dilation, dw, dh;
-    uw = select(state.width, 1.0 / scale, state.width == 0);
-    dilation = (abs(nv.x) + abs(nv.y)) * 0.5;
-    dh = dw = uw * scale * 0.5;
-    dw = select(dw, select(0.0, 1.0, (vid & 1) == (v.y < 0)), meshState.showLineWinding);
-    dh = select(dh, select(0.0, 1.0, (vid >> 1) == (v.x > 0)), meshState.showLineWinding);
-    float2 devicePoint = select(p0, p1, vid & 2) + (dh + dilation) * select(-nv, nv, vid & 2) + (dw + dilation) * select(-lnv, lnv, vid & 1);
-    float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
-    
     LineVertex vert;
-    vert.position = float4(ndcPoint, 1.0, 1.0) * float(ps[idx] != -1);
-    vert.u = select(-1, 1, vid & 1), vert.v = select(-1, 1, vid & 2);
-    vert.color = { float(paths[p].color.r) / 255.0, float(paths[p].color.g) / 255.0, float(paths[p].color.b) / 255.0, float(paths[p].color.a) / 255.0 };
-    devicePoint -= 0.5;
-	vert.x0 = p0.x - devicePoint.x, vert.y0 = p0.y - devicePoint.y, vert.x1 = p1.x - devicePoint.x, vert.y1 = p1.y - devicePoint.y;
+    vert.write(p0, p1, scale, vid, state, paths[p].color, meshState.showLineWinding);
+    vert.position *= float(ps[idx] != -1);
     return vert;
 }
 
