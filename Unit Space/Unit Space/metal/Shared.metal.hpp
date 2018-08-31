@@ -189,6 +189,7 @@ enum CallType : unsigned int {
     kCallTypeAccumulateSOA,
     kCallTypeResolveSOA,
     kCallTypeResolveQuadSOA,
+    kCallTypeQuadraticLines,
 };
 
 struct Call {

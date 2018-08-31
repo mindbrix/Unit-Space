@@ -30,6 +30,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> quadraticLinePipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
 @property (nonatomic, strong) id <MTLTexture> accumulationTexture;
@@ -116,6 +117,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
     descriptor.label = @"Circle";
     self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
+    descriptor.label = @"quadraticLinePipelineState";
+    self.quadraticLinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"lineSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
@@ -280,6 +286,10 @@
                 [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._ps[call->baseInstance] length:sizeof(int) * (call->instanceCount) atIndex:15];
 				[commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 instanceCount = call->instanceCount;
+                break;
+            case kCallTypeQuadraticLines:
+                [commandEncoder setRenderPipelineState:_quadraticLinePipelineState];
+                instanceCount = 0;
                 break;
         }
         if (instanceCount == 0)
