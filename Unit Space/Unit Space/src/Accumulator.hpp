@@ -70,24 +70,24 @@ struct Accumulator {
         for (nsubpaths = p = 0; p < scene._paths.size(); p++)
             nsubpaths += (int)scene._paths[p]._subPaths.size();
         int bases[nsubpaths], base;
-        mesh._quadraticsIndices = Memory<int>(scene._paths.size());
+        mesh._quadraticIndices = Memory<int>(scene._paths.size());
         
         for (nfloats = base = p = 0; p < scene._paths.size(); p++) {
-            mesh._quadraticsIndices[p] = nfloats;
+            mesh._quadraticIndices[p] = nfloats;
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 bases[base++] = nfloats;
                 nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
             }
         }
-        mesh._quadraticsPs = Memory<int>(nfloats / kQuadraticFloatCount);
-        mesh._quadratics = Memory<float>(nfloats);
+        mesh._quadraticPs = Memory<int>(nfloats / kQuadraticFloatCount);
+        mesh._quadraticFloats = Memory<float>(nfloats);
         
         for (base = p = 0; p < scene._paths.size(); p++)
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 begin = bases[base++];
-                end = base == nsubpaths ? (int)mesh._quadratics.count() : bases[base];
-                memset(& mesh._quadraticsPs[base / kQuadraticFloatCount], p, (end - base) / kQuadraticFloatCount * sizeof(p));
-                writeSubPath(& mesh._quadratics[begin], & mesh._quadratics[end], scene._paths[p]._subPaths[s]);
+                end = base == nsubpaths ? (int)mesh._quadraticFloats.count() : bases[base];
+                memset(& mesh._quadraticPs[base / kQuadraticFloatCount], p, (end - base) / kQuadraticFloatCount * sizeof(p));
+                writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
             }
     }
 };
