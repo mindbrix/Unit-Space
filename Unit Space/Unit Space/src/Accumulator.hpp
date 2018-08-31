@@ -11,14 +11,14 @@ struct Accumulator {
     static constexpr int kAccumulationFloatCount = 10, kQuadraticFloatCount = 8;
     
     static int subPathFloatCount(SubPath& s) {
-        int nfloats = s._npoints * 2;
+        int nfloats = (int)s._quadratics.count();
         bool closed = s._quadratics[0] == s._quadratics[nfloats - 2] && s._quadratics[1] == s._quadratics[nfloats - 1];
         return ((nfloats + 4 + (closed ? 0 : 4)) + kQuadraticFloatCount - 1) / kQuadraticFloatCount * kQuadraticFloatCount;
     }
     
     static void writeSubPath(float *q, float *qend, SubPath& s) {
-        float x0, y0, x1, y1;
-        int nfloats = s._npoints * 2;
+        float *qbegin = q, x0, y0, x1, y1;
+        int nfloats = (int)s._quadratics.count();
         memcpy(q, s._quadratics.get(), nfloats * sizeof(float));
         q += nfloats;
         x0 = s._quadratics[nfloats - 2], y0 = s._quadratics[nfloats - 1], x1 = s._quadratics[0], y1 = s._quadratics[1];
@@ -28,6 +28,8 @@ struct Accumulator {
         }
         while (q < qend)
             *q = *(q - 2), q++, *q = *(q - 2), q++;
+        
+        q = q;
     }
     
     static void writeQuadraticAccumulations(vector<Accumulation>& accumulations, float *points, size_t nfloats, int p, int s) {
