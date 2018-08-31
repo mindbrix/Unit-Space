@@ -27,7 +27,7 @@ struct Accumulator {
             *q++ = x1, *q++ = y1;
         }
         while (q < qend)
-            *q = *(q - 2), q++, *q = *(q - 2), q++;
+            *q++ = FLT_MAX;
     }
     
     static void writeQuadraticAccumulations(vector<Accumulation>& accumulations, float *points, size_t nfloats, int p, int s) {
