@@ -248,11 +248,10 @@ struct Mesh {
     AccumulationSOA                     _resolutionsSOA;
     
     vector<MeshPath>                    _paths;
+    vector<int>                         _idxs;
     vector<Vector>                      _points;
     
-    CirclesSOA                          _circles;
-    
-    vector<int>                         _idxs;
+    CirclesSOA                          _circlesSOA;
     
     vector<Accumulation>                _accumulations;
     vector<int>                         _accumulationIndices;
@@ -261,7 +260,6 @@ struct Mesh {
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
         _accumulations.resize(0), _accumulationIndices.resize(0);
-        _paths.resize(0), _idxs.resize(0);
-        _points.resize(0);
+        _paths.resize(0), _idxs.resize(0), _points.resize(0);
     }
 };

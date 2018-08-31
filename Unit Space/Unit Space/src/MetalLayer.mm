@@ -213,10 +213,10 @@
                 break;
             case kCallTypeCirclesSOA:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
-                [commandEncoder setVertexBytes:& mesh->_circles._xs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_circles._ys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_circles._rs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_circles._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:13];
+                [commandEncoder setVertexBytes:& mesh->_circlesSOA._xs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_circlesSOA._ys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_circlesSOA._rs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:12];
+                [commandEncoder setVertexBytes:& mesh->_circlesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:13];
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeFlags:

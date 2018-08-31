@@ -413,21 +413,21 @@ using namespace std;
     if (_flags & 16) {
         int dimension = 330, r = 10, g = 20.0 / 0.618, count = dimension * dimension, idx;
         float *dst;
-        _mesh._circles._xs = Memory<float>(count);
-        _mesh._circles._ys = Memory<float>(count);
-        _mesh._circles._rs = Memory<float>(count);
-        _mesh._circles._colors = Memory<RGBA8>(count);
+        _mesh._circlesSOA._xs = Memory<float>(count);
+        _mesh._circlesSOA._ys = Memory<float>(count);
+        _mesh._circlesSOA._rs = Memory<float>(count);
+        _mesh._circlesSOA._colors = Memory<RGBA8>(count);
         
-        for (dst = &_mesh._circles._xs[0], idx = 0; idx < count; idx++)
-        *dst++ = (idx % dimension) * g;
-        for (dst = &_mesh._circles._ys[0], idx = 0; idx < count; idx++)
-        *dst++ = idx / dimension * g;
-        for (dst = &_mesh._circles._rs[0], idx = 0; idx < count; idx++)
-        *dst++ = r;
+        for (dst = &_mesh._circlesSOA._xs[0], idx = 0; idx < count; idx++)
+            *dst++ = (idx % dimension) * g;
+        for (dst = &_mesh._circlesSOA._ys[0], idx = 0; idx < count; idx++)
+            *dst++ = idx / dimension * g;
+        for (dst = &_mesh._circlesSOA._rs[0], idx = 0; idx < count; idx++)
+            *dst++ = r;
         for (idx = 0; idx < count; idx++)
-        _mesh._circles._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
+            _mesh._circlesSOA._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         
-        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
         return;
     }
     
@@ -435,21 +435,21 @@ using namespace std;
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
-        _mesh._circles.empty();
+        _mesh._circlesSOA.empty();
         RGBA8 red(255, 0, 0, 255);
         
         if (_svgData == nullptr && _fontData  == nullptr) {
             if (self.pathBitmask & kPathBitmaskTriangle)
                 for (int j = 0; j < _triangle.size(); j++)
-                    _mesh._circles.add(_triangle[j].x, _triangle[j].y, radius, red);
+                    _mesh._circlesSOA.add(_triangle[j].x, _triangle[j].y, radius, red);
 
             if (self.pathBitmask & kPathBitmaskLozenge)
                 for (int j = 0; j < _lozenge.size(); j++)
-                    _mesh._circles.add(_lozenge[j].x, _lozenge[j].y, radius, red);
+                    _mesh._circlesSOA.add(_lozenge[j].x, _lozenge[j].y, radius, red);
 
             if (self.pathBitmask & kPathBitmaskQuad)
                 for (int j = 0; j < _quad.size(); j++)
-                    _mesh._circles.add(_quad[j].x, _quad[j].y, radius, red);
+                    _mesh._circlesSOA.add(_quad[j].x, _quad[j].y, radius, red);
         } else if (p != -1) {
             AffineTransform m = _mesh._paths[p].ctm;
             float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
@@ -459,10 +459,10 @@ using namespace std;
                 int npoints = (int)s._quadratics.count() / 2;
                 int stride = 2;
                 for (int j = 0; j < npoints; j += stride)
-                    _mesh._circles.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale, red);
+                    _mesh._circlesSOA.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale, red);
             }
         }
-        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circles._xs.count());
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
     }
 }
 
