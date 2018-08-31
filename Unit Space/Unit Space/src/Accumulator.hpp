@@ -11,9 +11,8 @@ struct Accumulator {
     static constexpr int kAccumulationFloatCount = 10;
     
     static int subPathFloatCount(SubPath& s) {
-        float *points = s._quadratics.get();
         int nfloats = s._npoints * 2;
-        bool closed = points[0] == points[nfloats - 2] && points[1] == points[nfloats - 1];
+        bool closed = s._quadratics[0] == s._quadratics[nfloats - 2] && s._quadratics[1] == s._quadratics[nfloats - 1];
         return ((nfloats + (closed ? 0 : 4)) + kAccumulationFloatCount - 1) / kAccumulationFloatCount * kAccumulationFloatCount;
     }
     
@@ -49,7 +48,25 @@ struct Accumulator {
     }
     
     static void writeScene(Mesh& mesh, Scene& scene) {
-        for (int i = 0; i < scene._paths.size(); i++)
-            writePathAccumulations(mesh, scene._paths[i], i);
+        int p, s, nfloats, *idx;
+        float *q;
+        
+        for (p = 0; p < scene._paths.size(); p++)
+            writePathAccumulations(mesh, scene._paths[p], p);
+        
+        for (nfloats = p = 0; p < scene._paths.size(); p++)
+            for (s = 0; s < scene._paths[p]._subPaths.size(); s++)
+                nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
+        
+        mesh._quadratics = Memory<float>(nfloats);
+        q = mesh._quadratics.get();
+        mesh._quadraticsIndices = Memory<int>(scene._paths.size());
+        idx = mesh._quadraticsIndices.get();
+        
+        for (nfloats = p = 0; p < scene._paths.size(); p++) {
+            *idx++ = nfloats;
+            for (s = 0; s < scene._paths[p]._subPaths.size(); s++)
+                nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
+        }
     }
 };
