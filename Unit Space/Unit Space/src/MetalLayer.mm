@@ -13,7 +13,6 @@
 
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
-@property (nonatomic, strong) id <MTLBuffer> accumulationsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
@@ -21,7 +20,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
@@ -139,11 +137,6 @@
     descriptor.label = @"quadraticAccumulatePipelineState";
     self.quadraticAccumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
-    descriptor.label = @"accumulatePipelineState";
-    self.accumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     return self;
 }
 
@@ -236,13 +229,7 @@
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
-            case kCallTypeAccumulate:
-                [commandEncoder setRenderPipelineState:_accumulatePipelineState];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
-				instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-                break;
-            case kCallTypeResolveQuadSOA:
+           case kCallTypeResolveQuadSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveQuadSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
@@ -313,10 +300,6 @@
         _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
                                                       length:mesh._quadraticPs.size()
                                                      options:MTLResourceStorageModeShared];
-    if (mesh._accumulations.size())
-        _accumulationsBuffer = [self.device newBufferWithBytes:(void *)& mesh._accumulations[0]
-                                                        length:mesh._accumulations.size() * sizeof(Accumulation)
-                                                       options:MTLResourceStorageModeShared];
     if (mesh._paths.size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._paths[0]
                                                  length:mesh._paths.size() * sizeof(MeshPath)

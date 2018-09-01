@@ -75,22 +75,6 @@ vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [
     return vert;
 }
 
-
-vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                             device MeshPath *paths [[buffer(9)]], device Accumulation *accumulations [[buffer(10)]],
-                                             uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
-{
-    device Accumulation& acc = accumulations[iid];
-    
-    AffineTransform CTM = AffineTransformConcat(paths[acc.p].ctm, state.CTM);
-    AffineTransform unit = AffineTransformMakeUnit(paths[acc.p].bounds, CTM);
-    Bounds bounds = Bounds::transformUnit(unit);
-    
-    AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & acc.x0, state, meshState.clipBounds, 2);
-    return vert;
-}
-
 struct AccumulateFragment {
     float4 winding [[ color(1) ]];
 };

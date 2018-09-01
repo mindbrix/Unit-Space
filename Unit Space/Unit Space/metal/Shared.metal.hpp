@@ -62,13 +62,6 @@ struct RGBA8 {
     unsigned char r, g, b, a;
 };
 
-struct Accumulation {
-    Accumulation() {};
-    
-    float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
-    int p, s;
-};
-
 struct AffineTransform { float a, b, c, d, tx, ty; };
 
 struct Bounds {
@@ -183,7 +176,6 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
-    kCallTypeAccumulate,
     kCallTypeResolveSOA,
     kCallTypeResolveQuadSOA,
     kCallTypeQuadraticLines,

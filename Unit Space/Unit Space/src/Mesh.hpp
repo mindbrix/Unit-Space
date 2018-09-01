@@ -147,12 +147,7 @@ struct Mesh {
                     base = mesh._quadraticIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
                     calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, state, meshState);
-                    /*
-                    base = mesh._accumulationIndices[ranges[i]];
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, clipState);*/
                 }
-                
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
                 
             } else {
@@ -257,13 +252,8 @@ struct Mesh {
     
     CirclesSOA                          _circlesSOA;
     
-    vector<Accumulation>                _accumulations;
-    vector<int>                         _accumulationIndices;
-    
-    
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
-        _accumulations.resize(0), _accumulationIndices.resize(0);
         _paths.resize(0), _idxs.resize(0), _points.resize(0);
     }
 };
