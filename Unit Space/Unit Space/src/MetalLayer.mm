@@ -28,6 +28,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticLinePipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> quadraticAccumulatePipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
 @property (nonatomic, strong) id <MTLTexture> accumulationTexture;
@@ -132,6 +133,12 @@
     
     descriptor.colorAttachments[0].writeMask = MTLColorWriteMaskNone;
     descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_accumulate_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
+    descriptor.label = @"quadraticAccumulatePipelineState";
+    self.quadraticAccumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
     descriptor.label = @"accumulatePipelineState";
@@ -235,12 +242,6 @@
                 [commandEncoder setVertexBuffer:_accumulationsBuffer offset:0 atIndex:10];
 				instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
-            case kCallTypeAccumulateSOA:
-                [commandEncoder setRenderPipelineState:_accumulatePipelineState];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-            
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-                break;
             case kCallTypeResolveQuadSOA:
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveQuadSOAPipelineState];
@@ -260,7 +261,8 @@
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeQuadraticLines:
-                [commandEncoder setRenderPipelineState:_quadraticLinePipelineState];
+            case kCallTypeQuadraticAccumulate:
+                [commandEncoder setRenderPipelineState:call->type == kCallTypeQuadraticLines ? _quadraticLinePipelineState : _quadraticAccumulatePipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_quadraticFloatsBuffer offset:0 atIndex:10];
                 [commandEncoder setVertexBuffer:_quadraticPsBuffer offset:0 atIndex:11];

@@ -184,10 +184,10 @@ enum CallType : unsigned int {
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
     kCallTypeAccumulate,
-    kCallTypeAccumulateSOA,
     kCallTypeResolveSOA,
     kCallTypeResolveQuadSOA,
     kCallTypeQuadraticLines,
+    kCallTypeQuadraticAccumulate,
 };
 
 struct Call {

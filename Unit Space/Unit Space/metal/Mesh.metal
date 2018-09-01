@@ -16,8 +16,8 @@ using namespace metal;
 
 struct AccumulateVertex
 {
-    void write(AffineTransform CTM, float _ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride) {
-        float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, ux, uy, dx, dy;
+    void write(AffineTransform CTM, float ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride) {
+        float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, uy, dx, dy;
         device float *px, *py;
         
         px = points, py = px + 1;
@@ -33,9 +33,7 @@ struct AccumulateVertex
         
         lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
         ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
-        ux = max(max(max(dx0, dx1), dx2), max(dx3, dx4));
         uy = max(max(max(dy0, dy1), dy2), max(dy3, dy4));
-        ux = max(ux, _ux);
         
         dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
         
@@ -54,6 +52,24 @@ struct AccumulateVertex
     float4 position [[position]];
     float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
 };
+
+vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                             device MeshPath *paths [[buffer(9)]],
+                                             device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]],
+                                             uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    uint idx = iid * meshState.quadraticStride;
+    int p = ps[idx / 8];
+    bool visible = quadratics[idx + 2] != FLT_MAX;
+    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
+    AffineTransform unit = AffineTransformMakeUnit(paths[p].bounds, CTM);
+    Bounds bounds = Bounds::transformUnit(unit);
+    
+    AccumulateVertex vert;
+    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, meshState.quadraticStride);
+    return vert;
+}
+
 
 vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                              device MeshPath *paths [[buffer(9)]], device Accumulation *accumulations [[buffer(10)]],
