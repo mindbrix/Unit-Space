@@ -29,8 +29,7 @@ struct libTess {
     
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
-            if (s._npoints > 2)
-                tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
+            tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
     }
     
     static void addTessContours(TESStesselator *dst, TESStesselator *tess, Edge *edge) {
