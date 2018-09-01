@@ -16,14 +16,20 @@ using namespace metal;
 
 struct AccumulateVertex
 {
-    void write(AffineTransform CTM, float _ux, uint vid, device float *points, constant State &state, Bounds clipBounds) {
+    void write(AffineTransform CTM, float _ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride) {
         float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, ux, uy, dx, dy;
+        device float *px, *py;
         
-        dx0 = points[0] * CTM.a + points[1] * CTM.c + CTM.tx, dy0 = points[0] * CTM.b + points[1] * CTM.d + CTM.ty;
-        dx1 = points[2] * CTM.a + points[3] * CTM.c + CTM.tx, dy1 = points[2] * CTM.b + points[3] * CTM.d + CTM.ty;
-        dx2 = points[4] * CTM.a + points[5] * CTM.c + CTM.tx, dy2 = points[4] * CTM.b + points[5] * CTM.d + CTM.ty;
-        dx3 = points[6] * CTM.a + points[7] * CTM.c + CTM.tx, dy3 = points[6] * CTM.b + points[7] * CTM.d + CTM.ty;
-        dx4 = points[8] * CTM.a + points[9] * CTM.c + CTM.tx, dy4 = points[8] * CTM.b + points[9] * CTM.d + CTM.ty;
+        px = points, py = px + 1;
+        dx0 = *px * CTM.a + *py * CTM.c + CTM.tx, dy0 = *px * CTM.b + *py * CTM.d + CTM.ty;
+        px += kStride, py += kStride;
+        dx1 = *px * CTM.a + *py * CTM.c + CTM.tx, dy1 = *px * CTM.b + *py * CTM.d + CTM.ty;
+        px += kStride, py += kStride;
+        dx2 = *px * CTM.a + *py * CTM.c + CTM.tx, dy2 = *px * CTM.b + *py * CTM.d + CTM.ty;
+        px += kStride, py += kStride;
+        dx3 = *px * CTM.a + *py * CTM.c + CTM.tx, dy3 = *px * CTM.b + *py * CTM.d + CTM.ty;
+        px += kStride, py += kStride;
+        dx4 = *px * CTM.a + *py * CTM.c + CTM.tx, dy4 = *px * CTM.b + *py * CTM.d + CTM.ty;
         
         lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
         ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
@@ -60,7 +66,7 @@ vertex AccumulateVertex accumulate_vertex_main(constant State &state [[buffer(0)
     Bounds bounds = Bounds::transformUnit(unit);
     
     AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & acc.x0, state, meshState.clipBounds);
+    vert.write(CTM, bounds.ux, vid, & acc.x0, state, meshState.clipBounds, 2);
     return vert;
 }
 
