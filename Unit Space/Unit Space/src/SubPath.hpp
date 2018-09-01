@@ -117,29 +117,26 @@ struct SubPath {
     
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type, float precision = kFlattenQuadraticPrecision) {
-        int _npoints;
-        
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         float dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
         
         if (type == kCubic) {
             Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision);
-            _npoints = (int)quadratics.count() / 2;
-            if (_npoints > 2) {
+            const int nfloats = (int)quadratics.count();
+            if (nfloats > 9) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
-                    quadratics[_npoints * 2 - 2] = quadratics[0], quadratics[_npoints * 2 - 1] = quadratics[1];
-                _quadratics = flattenQuadratics(& quadratics[0], _npoints, precision);
+                    quadratics[nfloats - 2] = quadratics[0], quadratics[nfloats - 1] = quadratics[1];
+                _quadratics = flattenQuadratics(& quadratics[0], nfloats / 2, precision);
             }
         } else if (type == kQuadratic) {
-            if ((_npoints = npoints) > 4)
-                _quadratics = flattenQuadratics(points, _npoints, precision);
+            if (npoints > 4)
+                _quadratics = flattenQuadratics(points, npoints, precision);
         } else {
             float x0, y0, x1, y1;
-            _npoints = dx == 0 && dy == 0 ? npoints - 1 : npoints;
             x0 = points[0], y0 = points[1];
             _quadratics.push_back(x0), _quadratics.push_back(y0);
-            for (int i = 1; i < _npoints; i++, x0 = x1, y0 = y1) {
+            for (int i = 1; i < npoints; i++, x0 = x1, y0 = y1) {
                 x1 = points[i * 2], y1 = points[i * 2 + 1];
                 _quadratics.push_back((x0 + x1) * 0.5), _quadratics.push_back((y0 + y1) * 0.5);
                 _quadratics.push_back(x1), _quadratics.push_back(y1);
