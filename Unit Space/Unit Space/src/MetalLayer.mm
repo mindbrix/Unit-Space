@@ -23,7 +23,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> accumulatePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> accumulateSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
@@ -137,11 +136,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
     descriptor.label = @"accumulatePipelineState";
     self.accumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"accumulateSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
-    descriptor.label = @"accumulateSOAPipelineState";
-    self.accumulateSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     return self;
 }
