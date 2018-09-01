@@ -163,9 +163,9 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
                                       device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]],
                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    uint idx = iid * 4;
+    uint idx = iid * meshState.quadraticStride;
     int p = ps[idx / 8];
-    float x0 = quadratics[idx], y0 = quadratics[idx + 1], x1 = quadratics[idx + 4], y1 = quadratics[idx + 5];
+    float x0 = quadratics[idx], y0 = quadratics[idx + 1], x1 = quadratics[idx + meshState.quadraticStride], y1 = quadratics[idx + meshState.quadraticStride + 1];
     bool visible = quadratics[idx + 2] != FLT_MAX;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));

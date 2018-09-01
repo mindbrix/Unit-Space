@@ -156,6 +156,7 @@ struct MeshState {
 	float				winding;
 	int                 colorsSize;
     int                 reverseCount;
+    unsigned int        quadraticStride;
     unsigned int        subdivisionCount;
 	Bounds				clipBounds;
     float               cellSize;

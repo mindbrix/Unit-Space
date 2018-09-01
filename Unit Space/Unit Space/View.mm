@@ -386,6 +386,7 @@ using namespace std;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
     scale /= uniforms.scaleFactor;
+    meshState.quadraticStride = 4;
     meshState.subdivisionCount = !_useDelaunay || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
