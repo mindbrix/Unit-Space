@@ -136,7 +136,7 @@ struct Mesh {
                 
             } else if (meshState.showAccumulations) {
                 MeshState resolveMeshState = meshState;
-                resolveMeshState.cellSize = 8;
+                resolveMeshState.cellSize = 1;
                 MeshState clipState = resolveMeshState;
                 clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / resolveMeshState.cellSize), std::ceil(clipBounds.uy / resolveMeshState.cellSize) };
                 
