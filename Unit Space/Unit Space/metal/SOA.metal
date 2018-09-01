@@ -12,7 +12,7 @@
 
 using namespace metal;
 
-constexpr sampler s = sampler(coord::normalized, address::clamp_to_zero, mag_filter::linear, min_filter::linear, mip_filter::linear);
+constexpr sampler s = sampler(coord::normalized, address::clamp_to_zero, mag_filter::nearest, min_filter::nearest, mip_filter::linear);
 
 #pragma mark - Resolve
 
@@ -56,9 +56,27 @@ vertex ResolveVertex resolveQuadSOA_vertex_main(constant State &state [[buffer(0
     return vert;
 }
 
-fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                                 texture2d<half> accumulation [[texture(1)]] )
+float textureGood(texture2d<float> tex, sampler sam, float2 uv, float2 res)
 {
+    float2 st = uv*res - 0.5;
+    
+    float2 iuv = floor( st );
+    float2 fuv = fract( st );
+    
+   // fuv.x = smoothstep(0, 1, fuv.x);
+   // fuv.y = smoothstep(0, 1, fuv.y);
+    float a = tex.sample( sam, (iuv+float2(0.5,0.5))/res ).x;
+    float b = tex.sample( sam, (iuv+float2(1.5,0.5))/res ).x;
+    float c = tex.sample( sam, (iuv+float2(0.5,1.5))/res ).x;
+    float d = tex.sample( sam, (iuv+float2(1.5,1.5))/res ).x;
+    
+    return mix( mix( a, b, fuv.x), mix( c, d, fuv.x), fuv.y );
+}
+
+fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                                 texture2d<float> accumulation [[texture(1)]] )
+{
+    //float winding = textureGood(accumulation, s, vert.uv, float2(state.drawableSize.w, state.drawableSize.h));
     float alpha = select(windingToAlpha(accumulation.sample(s, vert.uv).x, state.evenOdd), 1.0, vert.uv.x < 0);
     return vert.color * alpha;
 }
