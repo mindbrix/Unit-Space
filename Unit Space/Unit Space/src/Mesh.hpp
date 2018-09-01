@@ -47,7 +47,7 @@ struct Mesh {
                     base = mesh._quadraticIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count(): mesh._quadraticIndices[ranges[i + 1]];
                     
-                    calls.emplace_back(kCallTypeQuadraticLines, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, state, meshState);
+                    calls.emplace_back(kCallTypeQuadraticLines, ((end - base) / meshState.quadraticStride - 1) * meshState.subdivisionCount, base / meshState.quadraticStride * meshState.subdivisionCount, state, meshState);
                 }
             } else if (meshState.showAccumulationsSOA) {
                 mesh._accumulationsSOA.empty();

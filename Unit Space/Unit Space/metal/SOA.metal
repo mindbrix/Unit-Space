@@ -163,7 +163,7 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
                                       device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]],
                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
-    uint idx = iid * meshState.quadraticStride;
+    uint idx = iid / meshState.subdivisionCount * meshState.quadraticStride;
     int p = ps[idx / 8];
     float x0 = quadratics[idx], y0 = quadratics[idx + 1], x1 = quadratics[idx + meshState.quadraticStride], y1 = quadratics[idx + meshState.quadraticStride + 1];
     bool visible = quadratics[idx + 2] != FLT_MAX;
@@ -172,6 +172,16 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
     
     float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
+    
+    if (meshState.subdivisionCount > 1) {
+        float cpx = quadratics[idx + 2], cpy = quadratics[idx + 3];
+        float2 cp = { cpx * CTM.a + cpy * CTM.c + CTM.tx, cpx * CTM.b + cpy * CTM.d + CTM.ty };
+        float dt = 1.0 / float(meshState.subdivisionCount), t0 = float(iid % meshState.subdivisionCount) * dt, t1 = t0 + dt;
+        float s0 = 1.0 - t0, s1 = 1.0 - t1;
+        float2 tp0 = s0 * s0 * p0 + 2.0 * s0 * t0 * cp + t0 * t0 * p1;
+        float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
+        p0 = tp0, p1 = tp1;
+    }
     
     LineVertex vert;
     vert.write(p0, p1, scale, vid, state, paths[p].color);
