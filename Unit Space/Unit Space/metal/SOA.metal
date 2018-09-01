@@ -189,39 +189,6 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
     return vert;
 }
 
-vertex LineVertex lineSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                      device MeshPath *paths [[buffer(9)]],
-                                      constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]],
-                                      constant int *ps [[buffer(12)]],
-                                      constant float *as [[buffer(13)]], constant float *bs [[buffer(14)]],
-                                      uint vid [[vertex_id]], uint iid [[instance_id]])
-{
-    uint idx = iid / meshState.subdivisionCount;
-    int p = max(0, ps[idx]);
-    float x0 = xs[idx], y0 = ys[idx], x1 = xs[idx + 1], y1 = ys[idx + 1];
-    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
-    
-    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
-    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-    
-    if (meshState.subdivisionCount > 1) {
-        float a = as[idx], b = bs[idx];
-        float dx02 = p1.x - p0.x, dy02 = p1.y - p0.y;
-        float2 cp = { dx02 * a + dy02 * -b + p0.x, dx02 * b + dy02 * a + p0.y };
-        float dt = 1.0 / float(meshState.subdivisionCount), t0 = float(iid % meshState.subdivisionCount) * dt, t1 = t0 + dt;
-       // t0 = adjustedT(t0), t1 = adjustedT(t1);
-        float s0 = 1.0 - t0, s1 = 1.0 - t1;
-        float2 tp0 = s0 * s0 * p0 + 2.0 * s0 * t0 * cp + t0 * t0 * p1;
-        float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
-        p0 = tp0, p1 = tp1;
-    }
-    LineVertex vert;
-    vert.write(p0, p1, scale, vid, state, paths[p].color);
-    vert.position *= float(ps[idx] != -1);
-    return vert;
-}
-
 fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
 								   constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
