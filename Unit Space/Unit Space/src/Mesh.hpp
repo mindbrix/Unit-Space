@@ -136,7 +136,7 @@ struct Mesh {
                 
             } else if (meshState.showAccumulations) {
                 MeshState resolveMeshState = meshState;
-                resolveMeshState.cellSize = 1;
+                resolveMeshState.cellSize = 8;
                 MeshState clipState = resolveMeshState;
                 clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / resolveMeshState.cellSize), std::ceil(clipBounds.uy / resolveMeshState.cellSize) };
                 
@@ -146,7 +146,7 @@ struct Mesh {
 				for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, state, meshState);
+                    calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
                 }
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
                 
