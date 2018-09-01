@@ -146,6 +146,7 @@ struct MeshState {
     bool                showAccumulationsAllocations;
     bool                showVisibles;
     bool                useStrokeColor;
+    bool                useQuadraticWinding;
 	float				winding;
 	int                 colorsSize;
     int                 reverseCount;

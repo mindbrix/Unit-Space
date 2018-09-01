@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="13529" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14113" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="13529"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14113"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -689,11 +689,6 @@
                                     <action selector="toggleEdges:" target="-1" id="XZr-WB-bvI"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Ellipse" keyEquivalent="e" id="EYR-b5-kdc">
-                                <connections>
-                                    <action selector="toggleEllipse:" target="-1" id="B02-Dr-4Pi"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Toggle Points" keyEquivalent="p" id="FEL-y9-7ve">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -728,6 +723,12 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="toggleUseStrokeColor:" target="-1" id="e9r-mh-avO"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Use Quadratic Winding" keyEquivalent="q" id="9nd-3F-nzD">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleUseQuadraticsWinding:" target="-1" id="rKt-xE-DYy"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle Show Visibles" keyEquivalent="v" id="3ZK-tU-5yv">

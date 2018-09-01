@@ -33,7 +33,7 @@ using namespace std;
 @property(nonatomic) uint64_t pathBitmask;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEdges;
-@property(nonatomic) BOOL showEllipse;
+@property(nonatomic) BOOL useQuadraticsWinding;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
@@ -266,8 +266,8 @@ using namespace std;
     [self redraw];
 }
 
-- (IBAction)toggleEllipse:(id)sender {
-    _showEllipse = !_showEllipse;
+- (IBAction)toggleUseQuadraticsWinding:(id)sender {
+    _useQuadraticsWinding = !_useQuadraticsWinding;
     [self redraw];
 }
 
@@ -382,6 +382,7 @@ using namespace std;
     meshState.showAccumulations = false;
     meshState.showAccumulationsSOA = false;
     meshState.showAccumulationsAllocations = _showAccumulationsAllocations;
+    meshState.useQuadraticWinding = _useQuadraticsWinding;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
