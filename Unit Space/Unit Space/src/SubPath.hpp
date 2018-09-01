@@ -117,6 +117,8 @@ struct SubPath {
     
     SubPath() {}
     SubPath(const float *points, const int npoints, Type type, float precision = kFlattenQuadraticPrecision) {
+        int _npoints;
+        
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         float dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
@@ -182,7 +184,6 @@ struct SubPath {
     }
     
     Memory<float>               _quadratics;
-    int                         _npoints;
     float                       _area;
     Bounds                      _bounds;
 };
