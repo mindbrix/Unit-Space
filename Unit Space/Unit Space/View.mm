@@ -405,8 +405,10 @@ using namespace std;
     
     if (_flags & 1)
         meshState.showQuadratics = true;
-    if (_flags & 2) 
+    if (_flags & 2)  {
+        meshState.quadraticStride = 8;
         meshState.showAccumulations = true;
+    }
     if (_flags & 4)
         meshState.showAccumulationsSOA = true;
     

@@ -143,14 +143,14 @@ struct Mesh {
 				State windingState = state;
                 AffineTransform cell = { 1.0f / resolveMeshState.cellSize, 0, 0, 1.0f / resolveMeshState.cellSize, 0, 0 };
                 windingState.CTM = AffineTransformConcat(state.CTM, cell);
-				for (i = 0; i < ranges.size(); i += 2) {/*
+				for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
                     calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, state, meshState);
-                    */
+                    /*
                     base = mesh._accumulationIndices[ranges[i]];
                     end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._accumulations.size(): mesh._accumulationIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, clipState);
+                    calls.emplace_back(kCallTypeAccumulate, end - base, base, windingState, clipState);*/
                 }
                 
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);

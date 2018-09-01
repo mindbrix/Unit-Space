@@ -23,13 +23,19 @@ struct AccumulateVertex
         px = points, py = px + 1;
         dx0 = *px * CTM.a + *py * CTM.c + CTM.tx, dy0 = *px * CTM.b + *py * CTM.d + CTM.ty;
         px += kStride, py += kStride;
-        dx1 = *px * CTM.a + *py * CTM.c + CTM.tx, dy1 = *px * CTM.b + *py * CTM.d + CTM.ty;
-        px += kStride, py += kStride;
-        dx2 = *px * CTM.a + *py * CTM.c + CTM.tx, dy2 = *px * CTM.b + *py * CTM.d + CTM.ty;
-        px += kStride, py += kStride;
-        dx3 = *px * CTM.a + *py * CTM.c + CTM.tx, dy3 = *px * CTM.b + *py * CTM.d + CTM.ty;
-        px += kStride, py += kStride;
-        dx4 = *px * CTM.a + *py * CTM.c + CTM.tx, dy4 = *px * CTM.b + *py * CTM.d + CTM.ty;
+        if (*px != FLT_MAX) {
+            dx1 = *px * CTM.a + *py * CTM.c + CTM.tx, dy1 = *px * CTM.b + *py * CTM.d + CTM.ty;
+            px += kStride, py += kStride;
+            dx2 = *px * CTM.a + *py * CTM.c + CTM.tx, dy2 = *px * CTM.b + *py * CTM.d + CTM.ty;
+            px += kStride, py += kStride;
+            if (*px != FLT_MAX) {
+                dx3 = *px * CTM.a + *py * CTM.c + CTM.tx, dy3 = *px * CTM.b + *py * CTM.d + CTM.ty;
+                px += kStride, py += kStride;
+                dx4 = *px * CTM.a + *py * CTM.c + CTM.tx, dy4 = *px * CTM.b + *py * CTM.d + CTM.ty;
+            } else
+                dx3 = dx4 = dx2, dy3 = dy4 = dy2;
+        } else
+            dx1 = dx2 = dx3 = dx4 = dx0, dy1 = dy2 = dy3 = dy4 = dy0;
         
         lx = min(min(min(dx0, dx1), dx2), min(dx3, dx4));
         ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
@@ -60,13 +66,12 @@ vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [
 {
     uint idx = iid * meshState.quadraticStride;
     int p = ps[idx / 8];
-    bool visible = quadratics[idx + 2] != FLT_MAX;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     AffineTransform unit = AffineTransformMakeUnit(paths[p].bounds, CTM);
     Bounds bounds = Bounds::transformUnit(unit);
     
     AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, meshState.quadraticStride);
+    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2);
     return vert;
 }
 
