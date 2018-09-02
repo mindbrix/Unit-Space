@@ -17,7 +17,6 @@
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
-@property (nonatomic, strong) id <MTLRenderPipelineState> arcPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
@@ -103,11 +102,6 @@
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
     descriptor.label = @"InteriorBlend";
     self.meshInteriorBlendPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"arc_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"arc_fragment_main"];
-    descriptor.label = @"Arc";
-    self.arcPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"circleSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
@@ -200,11 +194,6 @@
         size_t instanceCount = 1, baseInstance = 0;
         BOOL drawQuads = YES;
         switch (call->type) {
-            case kCallTypeArcs:
-                [commandEncoder setRenderPipelineState:_arcPipelineState];
-                [commandEncoder setVertexBytes:& call->arcs length:sizeof(Arcs) atIndex:10];
-                instanceCount = std::ceil(1.0 / call->state.flatness) * call->arcs.count;
-                break;
             case kCallTypeCirclesSOA:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
                 [commandEncoder setVertexBytes:& mesh->_circlesSOA._xs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:10];

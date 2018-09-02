@@ -15,8 +15,6 @@
 
 #pragma clang diagnostic ignored "-Wcomma"
 
-struct Arc { float x, y, r, t0, t1; };
-
 struct Circle { float x, y, r; };
 
 struct RGBA { float r, g, b, a;
@@ -113,11 +111,6 @@ struct Vector {
 
 struct _Size { float w, h; };
 
-struct Arcs {
-    int         count;
-    Arc         arcs[192];
-};
-
 #define kFlagsSize 1022
 
 struct Flags {
@@ -171,8 +164,7 @@ struct State {
 
 
 enum CallType : unsigned int {
-    kCallTypeArcs = 0,
-    kCallTypeCirclesSOA,
+    kCallTypeCirclesSOA = 0,
     kCallTypeFlags,
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
@@ -192,7 +184,6 @@ struct Call {
     State       state;
     MeshState   meshState;
     union {
-        Arcs        arcs;
         Flags       flags;
     };
 };

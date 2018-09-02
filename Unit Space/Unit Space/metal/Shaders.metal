@@ -13,67 +13,14 @@
 using namespace metal;
 
 
-#pragma mark - Arc
-
-struct StrokeVertex
-{
-    float4 position [[position]];
-    float4 color;
-    
-    float2 unitPoint;
-    float unitWidth;
-    
-    float alpha;
-};
-
-vertex StrokeVertex arc_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Arcs &arcs [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
-{
-    uint count = ceil(1.0 / state.flatness);
-    uint index = iid / count;
-    constant Arc& arc = arcs.arcs[index];
-    
-    float dt = (arc.t1 - arc.t0) * state.flatness;
-    float t0 = arc.t0 + dt * float(iid % count), t1 = t0 + dt;
-    float t = select(t0, t1, vid & 2);
-    
-    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
-    
-    float dilation = 1.0 / scale;
-    float maxedWidth = max(state.width, dilation);
-    float r0 = max(0.0, arc.r - maxedWidth - dilation);
-    float theta = PI * state.flatness * (arc.t1 - arc.t0);
-    float r1 = (arc.r + maxedWidth + dilation) / cos(theta);
-    
-    float r = select(r0, r1, vid & 1);
-    float x = arc.x + r * cos(t * TWO_PI);
-    float y = arc.y + r * sin(t * TWO_PI);
-    
-    float dx = x * state.CTM.a + y * state.CTM.c + state.CTM.tx;
-    float dy = x * state.CTM.b + y * state.CTM.d + state.CTM.ty;
-    
-    AffineTransform unit = { arc.r * 2.0, 0, 0, arc.r * 2.0, arc.x - arc.r, arc.y - arc.r };
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
-    
-    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
-    
-    StrokeVertex vert;
-    vert.position = float4((unitPoint * 2.0 - 1.0), 0.0, 1.0);
-    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    vert.unitWidth = maxedWidth * sqrt(el.a * el.a + el.b * el.b) * scale;
-    vert.alpha = min(1.0, state.width / dilation);
-    return vert;
-}
-
-fragment float4 arc_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
-{
-    float alpha = vert.alpha * saturate(ellipseStrokeDistance(vert.unitPoint, vert.unitWidth));
-    return float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a) * alpha;
-}
-
-
 #pragma mark - Flags
 
-vertex StrokeVertex flags_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Flags &flags [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
+struct FlagsVertex
+{
+    float4 position [[position]];
+};
+
+vertex FlagsVertex flags_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], constant Flags &flags [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     const float kDimension = 4;
     
@@ -85,12 +32,12 @@ vertex StrokeVertex flags_vertex_main(constant State &state [[buffer(0)]], const
     float2 devicePoint = { x, y };
     devicePoint = select(0, devicePoint, visible);
     
-    StrokeVertex vert;
+    FlagsVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), 1.0, 1.0);
     return vert;
 }
 
-fragment float4 flags_fragment_main(StrokeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 flags_fragment_main(FlagsVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     float alpha = 1;
     return float4(state.fillColor.r, state.fillColor.g, state.fillColor.b, state.fillColor.a) * alpha;
