@@ -18,7 +18,6 @@
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> shapePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
@@ -109,11 +108,6 @@
     descriptor.label = @"shapePipelineState";
     self.shapePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"circleSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
-    descriptor.label = @"Circle";
-    self.circlePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_line_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
     descriptor.label = @"quadraticLinePipelineState";
@@ -210,14 +204,6 @@
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._txs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:15];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._tys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:16];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:17];
-                instanceCount = call->instanceCount;
-                break;
-            case kCallTypeCirclesSOA:
-                [commandEncoder setRenderPipelineState:_circlePipelineState];
-                [commandEncoder setVertexBytes:& mesh->_circlesSOA._xs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_circlesSOA._ys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_circlesSOA._rs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_circlesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:13];
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeFlags:

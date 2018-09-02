@@ -428,43 +428,24 @@ using namespace std;
         RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
         
         AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *types++ = Mesh::ShapesSOA::kEllipse;
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *as++ = unit.a;
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *bs++ = unit.b;
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *cs++ = unit.c;
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *ds++ = unit.d;
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *txs++ = (idx % dimension) * g - unit.tx;
-        for (int idx = 0; idx < count; idx++)
+        for (idx = 0; idx < count; idx++)
             *tys++ = idx / dimension * g - unit.ty;
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, count);
-        
-        /*
-        float *dst;
-        _mesh._circlesSOA._xs = Memory<float>(count);
-        _mesh._circlesSOA._ys = Memory<float>(count);
-        _mesh._circlesSOA._rs = Memory<float>(count);
-        _mesh._circlesSOA._colors = Memory<RGBA8>(count);
-        
-        for (dst = &_mesh._circlesSOA._xs[0], idx = 0; idx < count; idx++)
-            *dst++ = (idx % dimension) * g;
-        for (dst = &_mesh._circlesSOA._ys[0], idx = 0; idx < count; idx++)
-            *dst++ = idx / dimension * g;
-        for (dst = &_mesh._circlesSOA._rs[0], idx = 0; idx < count; idx++)
-            *dst++ = r;
-        for (idx = 0; idx < count; idx++)
-            _mesh._circlesSOA._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
-        
-        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
-         */
         return;
     }
     
@@ -499,7 +480,7 @@ using namespace std;
                     _mesh._circlesSOA.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale, red);
             }
         }
-        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
+       // Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
     }
 }
 
