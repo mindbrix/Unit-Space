@@ -196,14 +196,14 @@
         switch (call->type) {
             case kCallTypeShapesSOA:
                 [commandEncoder setRenderPipelineState:_shapePipelineState];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._types[call->baseInstance] length:sizeof(Mesh::ShapesSOA::Type) * (call->instanceCount) atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._as[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._bs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._cs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:13];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._ds[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:14];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._txs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:15];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._tys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:16];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:17];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._types[call->baseInstance] length:sizeof(int) * call->instanceCount atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._as[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._bs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:12];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._cs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:13];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._ds[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:14];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._txs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:15];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._tys[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:16];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * call->instanceCount atIndex:17];
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeFlags:
@@ -231,12 +231,12 @@
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lxs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._uxs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lys[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._txs[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:13];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._tys[call->baseInstance] length:sizeof(short) * (call->instanceCount) atIndex:14];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._ps[call->baseInstance] length:sizeof(int) * (call->instanceCount) atIndex:15];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lxs[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._uxs[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lys[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:12];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._txs[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:13];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._tys[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:14];
+                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._ps[call->baseInstance] length:sizeof(int) * call->instanceCount atIndex:15];
 				[commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 instanceCount = call->instanceCount;
                 break;
