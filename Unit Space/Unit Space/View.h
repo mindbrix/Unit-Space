@@ -28,7 +28,7 @@
 
 - (IBAction)toggleCurves:(id)sender;
 - (IBAction)toggleEdges:(id)sender;
-- (IBAction)toggleUseQuadraticsWinding:(id)sender;
+- (IBAction)toggleUseQuadratics:(id)sender;
 - (IBAction)togglePoints:(id)sender;
 - (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowInterior:(id)sender;

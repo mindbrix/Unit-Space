@@ -33,7 +33,7 @@ using namespace std;
 @property(nonatomic) uint64_t pathBitmask;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEdges;
-@property(nonatomic) BOOL useQuadraticsWinding;
+@property(nonatomic) BOOL useQuadratics;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showTriangle;
@@ -266,8 +266,8 @@ using namespace std;
     [self redraw];
 }
 
-- (IBAction)toggleUseQuadraticsWinding:(id)sender {
-    _useQuadraticsWinding = !_useQuadraticsWinding;
+- (IBAction)toggleUseQuadratics:(id)sender {
+    _useQuadratics = !_useQuadratics;
     [self redraw];
 }
 
@@ -382,13 +382,13 @@ using namespace std;
     meshState.showAccumulations = false;
     meshState.showAccumulationsSOA = false;
     meshState.showAccumulationsAllocations = _showAccumulationsAllocations;
-    meshState.useQuadraticWinding = _useQuadraticsWinding;
+    meshState.useQuadraticWinding = _useQuadratics;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)_mesh._paths.size();
     scale /= uniforms.scaleFactor;
     meshState.quadraticStride = 4;
-    meshState.subdivisionCount = !_useQuadraticsWinding || scale <= 1 ? 1 : ceil(sqrt(scale));
+    meshState.subdivisionCount = !_useQuadratics || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
     meshState.cellSize = 1;

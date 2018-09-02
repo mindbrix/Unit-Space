@@ -725,10 +725,10 @@
                                     <action selector="toggleUseStrokeColor:" target="-1" id="e9r-mh-avO"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Use Quadratic Winding" keyEquivalent="q" id="9nd-3F-nzD">
+                            <menuItem title="Toggle Use Quadratics" keyEquivalent="q" id="9nd-3F-nzD">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleUseQuadraticsWinding:" target="-1" id="rKt-xE-DYy"/>
+                                    <action selector="toggleUseQuadratics:" target="-1" id="cWz-xu-csI"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle Show Visibles" keyEquivalent="v" id="3ZK-tU-5yv">
