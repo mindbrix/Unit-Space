@@ -424,7 +424,7 @@ using namespace std;
         float *ds = _mesh._shapesSOA._ds.new_ptr(count);
         float *txs = _mesh._shapesSOA._txs.new_ptr(count);
         float *tys = _mesh._shapesSOA._tys.new_ptr(count);
-        Mesh::ShapesSOA::Type *types = _mesh._shapesSOA._types.new_ptr(count);
+        int *types = _mesh._shapesSOA._types.new_ptr(count);
         RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
         
         AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
