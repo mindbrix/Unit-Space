@@ -135,7 +135,7 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
     else if (vert.shapeType == kShapeTypeRect)
         return vert.color * saturate(rectDistance(vert.unitPoint, vert.unitWidth));
     else
-        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.25, 0));
+        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.25, vert.unitWidth));
 }
 
 

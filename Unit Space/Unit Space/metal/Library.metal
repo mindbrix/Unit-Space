@@ -109,28 +109,15 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
 }
 
 float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
-    float x = max(0.0, abs(0.5 - unitPoint.x) - (0.5 - radius)), y = max(0.0, abs(0.5 - unitPoint.y) - (0.5 - radius));
-    float fx = 0.5 / radius * -2.0 * (x * dfdx(x) + y * dfdx(y));
-    float fy = 0.5 / radius * -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return (radius + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
-}
-
-/*
-float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
-    radius = max(radius, dilation);
-//    radius = min(0.5, radius + dilation);
-//    float x = max(0.0, abs(0.5 - unitPoint.x) - (0.5 - radius)) / radius, y = max(0.0, abs(0.5 - unitPoint.y) - (0.5 - radius)) / radius;
-    float x = max(0.0, abs(0.5 - unitPoint.x) - (0.5 - radius)), y = max(0.0, abs(0.5 - unitPoint.y) - (0.5 - radius));
-    
+    radius *= 2;
+    float u = unitPoint.x * 2.0 - 1.0, v = unitPoint.y * 2.0 - 1.0;
+    float x = max(0.0, abs(u) - (1.0 - radius)) / radius, y = max(0.0, abs(v) - (1.0 - radius)) / radius;
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return (radius * radius - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
-    
-//    float fx = (0.5 / radius) * -2.0 * (x * dfdx(x) + y * dfdx(y));
-//    float fy = (0.5 / radius) * -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return (radius + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+    float r = 1.0 + dilation / radius;
+    return saturate((r * r - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)));
 }
-*/
+
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, y0 = op.ty;
     float x1 = op.tx + op.a, y1 = op.ty + op.b;
