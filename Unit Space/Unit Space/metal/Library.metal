@@ -112,14 +112,11 @@ float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float 
     return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
 }
 
-float unitRoundedRectDistance(float2 unitPoint, float radius) {
-    float scale = sqrt(abs(dfdx(unitPoint.x) * dfdy(unitPoint.y) - dfdy(unitPoint.x) * dfdx(unitPoint.y)));
-    float rmin = min(0.5, scale), r = max(radius, rmin), b = 0.5 - r;
-    float x = max(0.0, abs(0.5 - unitPoint.x) - b), y = max(0.0, abs(0.5 - unitPoint.y) - b);
-    
-    float fx = x * dfdx(x) + y * dfdx(y);
-    float fy = x * dfdy(x) + y * dfdy(y);
-    return (r * r - (x * x + y * y)) * rsqrt(2.0 * max(1e-13, fx * fx + fy * fy));
+float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
+    float x = max(0.0, abs(0.5 - unitPoint.x) - (0.5 - radius)), y = max(0.0, abs(0.5 - unitPoint.y) - (0.5 - radius));
+    float fx = 0.5 / radius * -2.0 * (x * dfdx(x) + y * dfdx(y));
+    float fy = 0.5 / radius * -2.0 * (x * dfdy(x) + y * dfdy(y));
+    return (radius + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
 }
 
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
