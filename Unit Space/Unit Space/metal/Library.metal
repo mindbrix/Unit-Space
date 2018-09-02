@@ -83,11 +83,10 @@ float sRGB(float x) {
 }
 
 float ellipseDistance(float2 unitPoint, float dilation) {
-    float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
-    
+    float x = unitPoint.x * 2.0 - 1.0, y = unitPoint.y * 2.0 - 1.0;
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return (0.5 + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+    return saturate(((1.0 + dilation) * (1.0 + dilation) - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)));
 }
 
 float ellipseStrokeDistance(float2 unitPoint, float w) {
@@ -96,13 +95,10 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
 }
 
 float rectDistance(float2 unitPoint) {
-    float x = 0.5 - unitPoint.x, y = 0.5 - unitPoint.y;
-    
-    float a = dfdx(x), b = dfdy(x), c = dfdx(y), d = dfdy(y);
-    float sx = max(abs(a), abs(b)) / (a * a + b * b), sy = max(abs(c), abs(d)) / (c * c + d * d);
-    
-    float x0 = 0.5 - abs(x), y0 = 0.5 - abs(y);
-    return saturate(x0 * sx + 0.5) * saturate(y0 * sy + 0.5);
+    float u = unitPoint.x * 2.0 - 1.0, v = unitPoint.y * 2.0 - 1.0;
+    float dx = (1.0 - abs(u)) * rsqrt(dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)) + 0.5;
+    float dy = (1.0 - abs(v)) * rsqrt(dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)) + 0.5;
+    return saturate(dx) * saturate(dy);
 }
 
 float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2) {
@@ -119,6 +115,22 @@ float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
     return (radius + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
 }
 
+/*
+float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
+    radius = max(radius, dilation);
+//    radius = min(0.5, radius + dilation);
+//    float x = max(0.0, abs(0.5 - unitPoint.x) - (0.5 - radius)) / radius, y = max(0.0, abs(0.5 - unitPoint.y) - (0.5 - radius)) / radius;
+    float x = max(0.0, abs(0.5 - unitPoint.x) - (0.5 - radius)), y = max(0.0, abs(0.5 - unitPoint.y) - (0.5 - radius));
+    
+    float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
+    float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
+    return (radius * radius - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+    
+//    float fx = (0.5 / radius) * -2.0 * (x * dfdx(x) + y * dfdx(y));
+//    float fy = (0.5 / radius) * -2.0 * (x * dfdy(x) + y * dfdy(y));
+    return (radius + dilation - sqrt(x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy));
+}
+*/
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
     float x0 = op.tx, y0 = op.ty;
     float x1 = op.tx + op.a, y1 = op.ty + op.b;
