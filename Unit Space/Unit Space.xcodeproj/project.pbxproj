@@ -50,7 +50,7 @@
 		E97D7616211499E20015388A /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E97D7617211499E20015388A /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
 		E9B31327212A0223008EC18E /* SOA.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SOA.metal; sourceTree = "<group>"; };
-		E9B31329212C02D3008EC18E /* Accumulator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Accumulator.hpp; sourceTree = "<group>"; };
+		E9B31329212C02D3008EC18E /* Quadratics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Quadratics.hpp; sourceTree = "<group>"; };
 		E9C24948211724470019B25C /* Nu.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Nu.icns; path = ../../Designs/Nu.icns; sourceTree = "<group>"; };
 		E9EBC19B20F79EBF0045D338 /* stb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_truetype.h; path = ../../../../stb/stb_truetype.h; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
@@ -122,7 +122,6 @@
 		E97D760B2114995A0015388A /* src */ = {
 			isa = PBXGroup;
 			children = (
-				E9B31329212C02D3008EC18E /* Accumulator.hpp */,
 				E97D760C2114995A0015388A /* Algorithms.hpp */,
 				E97D760D2114995A0015388A /* libTess.hpp */,
 				E97D760E2114995A0015388A /* Memory.hpp */,
@@ -130,6 +129,7 @@
 				E97D76102114995A0015388A /* MetalLayer.h */,
 				E97D76112114995A0015388A /* MetalLayer.mm */,
 				E97D76122114995A0015388A /* Path.hpp */,
+				E9B31329212C02D3008EC18E /* Quadratics.hpp */,
 				E97D76132114995A0015388A /* Scene.hpp */,
 				E97D76142114995A0015388A /* SubPath.hpp */,
 				E97D7616211499E20015388A /* VGAffineTransform.h */,

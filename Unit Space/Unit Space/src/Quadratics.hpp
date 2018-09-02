@@ -1,5 +1,5 @@
 //
-//  Accumulator.hpp
+//  Quadratics.hpp
 //  Unit Space
 //
 //  Created by Nigel Barber on 21/08/2018.
@@ -7,13 +7,13 @@
 //
 #import "Scene.hpp"
 
-struct Accumulator {
-    static constexpr int kAccumulationFloatCount = 10, kQuadraticFloatCount = 8;
+struct Quadratics {
+    static constexpr int kQuadraticFloatStride = 8;
     
     static int subPathFloatCount(SubPath& s) {
         int nfloats = (int)s._quadratics.count();
         bool closed = s._quadratics[0] == s._quadratics[nfloats - 2] && s._quadratics[1] == s._quadratics[nfloats - 1];
-        return ((nfloats + 4 + (closed ? 0 : 4)) + kQuadraticFloatCount - 1) / kQuadraticFloatCount * kQuadraticFloatCount;
+        return ((nfloats + 4 + (closed ? 0 : 4)) + kQuadraticFloatStride - 1) / kQuadraticFloatStride * kQuadraticFloatStride;
     }
     
     static void writeSubPath(float *q, float *qend, SubPath& s) {
@@ -45,14 +45,14 @@ struct Accumulator {
                 nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
             }
         }
-        mesh._quadraticPs = Memory<int>(nfloats / kQuadraticFloatCount);
+        mesh._quadraticPs = Memory<int>(nfloats / kQuadraticFloatStride);
         mesh._quadraticFloats = Memory<float>(nfloats);
         
         for (base = p = 0; p < scene._paths.size(); p++)
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 begin = bases[base++];
                 end = base == nsubpaths ? (int)mesh._quadraticFloats.count() : bases[base];
-                for (int i = begin / kQuadraticFloatCount; i < end / kQuadraticFloatCount; i++)
+                for (int i = begin / kQuadraticFloatStride; i < end / kQuadraticFloatStride; i++)
                     mesh._quadraticPs[i] = p;
                 writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
             }
