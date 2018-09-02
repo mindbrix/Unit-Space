@@ -229,6 +229,30 @@ struct Mesh {
         Memory<int>                     _ps, _idxs;
     };
 
+    struct ShapesSOA {
+        enum Type { kEllipse, kRect };
+        
+        static AffineTransform circleUnit(float x, float y, float r) {
+            return { x + std::abs(r) * 0.5f, 0, 0, y + std::abs(r) * 0.5f, x - std::abs(r) * 0.5f, y - std::abs(r) * 0.5f };
+        }
+        void addCircle(float x, float y, float r, RGBA8 c) {
+            AffineTransform unit = circleUnit(x, y, r);
+            _types.push_back(kEllipse);
+            _as.push_back(unit.a), _bs.push_back(unit.b), _cs.push_back(unit.c), _ds.push_back(unit.d), _txs.push_back(unit.tx), _tys.push_back(unit.ty);
+            _colors.push_back(c);
+        }
+        void empty() {
+            _count = 0;
+            _types = Memory<Type>();
+            _as = Memory<float>(), _bs = Memory<float>(), _cs = Memory<float>(), _ds = Memory<float>(), _txs = Memory<float>(), _tys = Memory<float>(),
+            _colors = Memory<RGBA8>();
+        }
+        int                             _count;
+        Memory<Type>                    _types;
+        Memory<float>                   _as, _bs, _cs, _ds, _txs, _tys;
+        Memory<RGBA8>                   _colors;
+    };
+    
     struct CirclesSOA {
         void add(float x, float y, float r, RGBA8 c)    { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)), _colors.push_back(c); }
         void empty()                                    { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(), _colors = Memory<RGBA8>(); }
@@ -250,6 +274,7 @@ struct Mesh {
     vector<int>                         _idxs;
     vector<Vector>                      _points;
     
+    ShapesSOA                           _shapesSOA;
     CirclesSOA                          _circlesSOA;
     
     void empty() {
