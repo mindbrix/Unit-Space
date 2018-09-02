@@ -447,6 +447,7 @@ using namespace std;
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, count);
         
+        /*
         float *dst;
         _mesh._circlesSOA._xs = Memory<float>(count);
         _mesh._circlesSOA._ys = Memory<float>(count);
@@ -463,6 +464,7 @@ using namespace std;
             _mesh._circlesSOA._colors[idx] = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
+         */
         return;
     }
     

@@ -104,7 +104,7 @@
     descriptor.label = @"InteriorBlend";
     self.meshInteriorBlendPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"circleSOA_vertex_main"];
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
     descriptor.label = @"shapePipelineState";
     self.shapePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
@@ -210,7 +210,7 @@
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._txs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:15];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._tys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:16];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:17];
-                instanceCount = 0;// call->instanceCount;
+                instanceCount = call->instanceCount;
                 break;
             case kCallTypeCirclesSOA:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];

@@ -94,6 +94,40 @@ struct CircleVertex
     
     float alpha;
 };
+
+vertex CircleVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                          constant int *type [[buffer(10)]],
+                                          constant float *as [[buffer(11)]], constant float *bs [[buffer(12)]], constant float *cs [[buffer(13)]], constant float *ds [[buffer(14)]],
+                                          constant float *txs [[buffer(15)]], constant float *tys [[buffer(16)]],
+                                          constant RGBA8 *colors [[buffer(17)]],
+                                          uint vid [[vertex_id]], uint iid [[instance_id]])
+{
+    Circle circle = { txs[iid] + as[iid] * 0.5, tys[iid] + as[iid] * 0.5, as[iid] * 0.5 };
+    RGBA8 color = colors[iid];
+    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
+    float dilation = 0.7071 / scale;
+    float r = circle.r + dilation;
+    
+    float2 up = { circle.x + r * select(-1.0, 1.0, vid & 1), circle.y + r * select(-1.0, 1.0, vid & 2) };
+    
+    AffineTransform unit = { circle.r * 2.0, 0.0, 0.0, circle.r * 2.0, circle.x - circle.r, circle.y - circle.r };
+    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
+    
+    float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
+    float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
+    
+    float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
+    
+    CircleVertex vert;
+    vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
+    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
+    vert.unitWidth = min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
+    vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
+    
+    return vert;
+}
+
+
 vertex CircleVertex circleSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                        constant float *xs [[buffer(10)]], constant float *ys [[buffer(11)]],
                                        constant float *rs [[buffer(12)]], constant RGBA8 *colors [[buffer(13)]],
