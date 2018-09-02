@@ -426,10 +426,10 @@ using namespace std;
         float *tys = _mesh._shapesSOA._tys.new_ptr(count);
         int *types = _mesh._shapesSOA._types.new_ptr(count);
         RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
-        
+        ShapeType pattern[3] = { kShapeTypeEllipse, kShapeTypeRect, kShapeTypeRoundedRect };
         AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
         for (idx = 0; idx < count; idx++)
-            *types++ = Mesh::ShapesSOA::kEllipse;
+            *types++ = pattern[idx % 3];
         for (idx = 0; idx < count; idx++)
             *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         for (idx = 0; idx < count; idx++)

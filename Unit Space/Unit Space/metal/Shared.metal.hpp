@@ -175,6 +175,12 @@ enum CallType : unsigned int {
     kCallTypeQuadraticAccumulate,
 };
 
+enum ShapeType : int {
+    kShapeTypeEllipse,
+    kShapeTypeRect,
+    kShapeTypeRoundedRect
+};
+
 struct Call {
     Call() {}
     Call(CallType type, int instanceCount, int baseInstance, State state, MeshState meshState) : type(type), instanceCount(instanceCount), baseInstance(baseInstance), state(state), meshState(meshState) {}
