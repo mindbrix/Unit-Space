@@ -104,7 +104,7 @@
     self.meshInteriorBlendPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_fragment_main"];
     descriptor.label = @"shapePipelineState";
     self.shapePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 

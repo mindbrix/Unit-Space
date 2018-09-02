@@ -82,9 +82,9 @@ fragment float4 resolveSOA_fragment_main(ResolveVertex vert [[stage_in]], consta
 }
 
 
-#pragma mark - Circle
+#pragma mark - Shape
 
-struct CircleVertex
+struct ShapeVertex
 {
     float4 position [[position]];
     float4 color;
@@ -95,7 +95,7 @@ struct CircleVertex
     int shapeType;
 };
 
-vertex CircleVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                           constant int *types [[buffer(10)]],
                                           constant float *as [[buffer(11)]], constant float *bs [[buffer(12)]], constant float *cs [[buffer(13)]], constant float *ds [[buffer(14)]],
                                           constant float *txs [[buffer(15)]], constant float *tys [[buffer(16)]],
@@ -118,7 +118,7 @@ vertex CircleVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], c
     
     float2 unitPoint = { dx / state.drawableSize.w, dy / state.drawableSize.h };
     
-    CircleVertex vert;
+    ShapeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     vert.unitWidth = min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
@@ -127,7 +127,7 @@ vertex CircleVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], c
     return vert;
 }
 
-fragment float4 circle_fragment_main(CircleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     if (vert.shapeType == kShapeTypeEllipse)
         return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
