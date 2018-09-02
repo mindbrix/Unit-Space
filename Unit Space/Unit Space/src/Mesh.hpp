@@ -229,7 +229,7 @@ struct Mesh {
     struct ShapesSOA {
         enum Type { kEllipse, kRect };
         
-        static AffineTransform circleUnit(float x, float y, float r) {
+        static inline AffineTransform circleUnit(float x, float y, float r) {
             return { std::abs(r) * 2.f, 0, 0, std::abs(r) * 2.f, x - std::abs(r), y - std::abs(r) };
         }
         void addCircle(float x, float y, float r, RGBA8 c) {
