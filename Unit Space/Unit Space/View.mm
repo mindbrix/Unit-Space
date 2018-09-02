@@ -453,21 +453,19 @@ using namespace std;
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
-        _mesh._circlesSOA.empty();
+        _mesh._shapesSOA.empty();
         RGBA8 red(255, 0, 0, 255);
         
         if (_svgData == nullptr && _fontData  == nullptr) {
             if (self.pathBitmask & kPathBitmaskTriangle)
                 for (int j = 0; j < _triangle.size(); j++)
-                    _mesh._circlesSOA.add(_triangle[j].x, _triangle[j].y, radius, red);
-
+                    _mesh._shapesSOA.addCircle(_triangle[j].x, _triangle[j].y, radius, red);
             if (self.pathBitmask & kPathBitmaskLozenge)
                 for (int j = 0; j < _lozenge.size(); j++)
-                    _mesh._circlesSOA.add(_lozenge[j].x, _lozenge[j].y, radius, red);
-
+                    _mesh._shapesSOA.addCircle(_lozenge[j].x, _lozenge[j].y, radius, red);
             if (self.pathBitmask & kPathBitmaskQuad)
                 for (int j = 0; j < _quad.size(); j++)
-                    _mesh._circlesSOA.add(_quad[j].x, _quad[j].y, radius, red);
+                    _mesh._shapesSOA.addCircle(_quad[j].x, _quad[j].y, radius, red);
         } else if (p != -1) {
             AffineTransform m = _mesh._paths[p].ctm;
             float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
@@ -477,10 +475,10 @@ using namespace std;
                 int npoints = (int)s._quadratics.count() / 2;
                 int stride = 2;
                 for (int j = 0; j < npoints; j += stride)
-                    _mesh._circlesSOA.add(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale, red);
+                    _mesh._shapesSOA.addCircle(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius * scale : j == stride ? (largeRadius + radius) * scale * 0.5f : radius * scale, red);
             }
         }
-       // Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeCirclesSOA, _mesh._circlesSOA._xs.count());
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, _mesh._shapesSOA._as.count());
     }
 }
 

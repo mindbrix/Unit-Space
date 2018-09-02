@@ -250,14 +250,6 @@ struct Mesh {
         Memory<RGBA8>                   _colors;
     };
     
-    struct CirclesSOA {
-        void add(float x, float y, float r, RGBA8 c)    { _xs.push_back(x), _ys.push_back(y), _rs.push_back(std::abs(r)), _colors.push_back(c); }
-        void empty()                                    { _xs = Memory<float>(), _ys = Memory<float>(), _rs = Memory<float>(), _colors = Memory<RGBA8>(); }
-        
-        Memory<float>                   _xs, _ys, _rs;
-        Memory<RGBA8>                   _colors;
-    };
-    
     vector<Call>                        _calls;
     
     Memory<float>                       _quadraticFloats;
@@ -272,7 +264,6 @@ struct Mesh {
     vector<Vector>                      _points;
     
     ShapesSOA                           _shapesSOA;
-    CirclesSOA                          _circlesSOA;
     
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
