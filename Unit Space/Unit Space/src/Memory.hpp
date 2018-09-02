@@ -38,12 +38,18 @@ struct Memory {
         }
         return Memory();
     }
-    inline T *new_ptr() {
+    inline T *new_ptr(size_t allocation = 1) {
         if (header == nullptr)
             alloc(8);
-        if (header->end * sizeof(T) == header->size)
-            alloc(header->end * 1.5);
-        return ((T *)header->memory + header->end++);
+        header->end += allocation;
+        size_t count = header->size / sizeof(T);
+        if (header->end > count) {
+            do {
+                count *= 1.5;
+            } while (count < header->end);
+            alloc(count);
+        }
+        return ((T *)header->memory + header->end - allocation);
     }
     Memory& zero() {
         if (header)
