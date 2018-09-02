@@ -427,12 +427,24 @@ using namespace std;
         Mesh::ShapesSOA::Type *types = _mesh._shapesSOA._types.new_ptr(count);
         RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
         
-        for (int idx = 0; idx < count; idx++) {
-            AffineTransform unit = Mesh::ShapesSOA::circleUnit((idx % dimension) * g, idx / dimension * g, r);
+        AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
+        for (int idx = 0; idx < count; idx++)
             *types++ = Mesh::ShapesSOA::kEllipse;
-            *as++ = unit.a, *bs++ = unit.b, *cs++ = unit.c, *ds++ = unit.d, *txs++ = unit.tx, *tys++ = unit.ty;
+        for (int idx = 0; idx < count; idx++)
             *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
-        }
+        for (int idx = 0; idx < count; idx++)
+            *as++ = unit.a;
+        for (int idx = 0; idx < count; idx++)
+            *bs++ = unit.b;
+        for (int idx = 0; idx < count; idx++)
+            *cs++ = unit.c;
+        for (int idx = 0; idx < count; idx++)
+            *ds++ = unit.d;
+        for (int idx = 0; idx < count; idx++)
+            *txs++ = (idx % dimension) * g - unit.tx;
+        for (int idx = 0; idx < count; idx++)
+            *tys++ = idx / dimension * g - unit.ty;
+        
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, count);
         
         float *dst;
