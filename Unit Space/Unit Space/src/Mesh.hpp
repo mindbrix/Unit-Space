@@ -215,7 +215,10 @@ struct Mesh {
         void alloc(int allocation) {
             _count += allocation;
             if (_count > _lxs.count()) {
-                size_t size = 1 << int(std::ceil(log2f(_count)));
+                size_t size = _lxs.count();
+                do {
+                    size *= 1.5;
+                } while (size < _count);
                 _lxs.alloc(size), _uxs.alloc(size), _lys.alloc(size), _txs.alloc(size), _tys.alloc(size), _ps.alloc(size), _idxs.alloc(size);
             }
         }
