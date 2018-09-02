@@ -49,6 +49,22 @@ struct Mesh {
                     
                     calls.emplace_back(kCallTypeQuadraticLines, ((end - base) / meshState.quadraticStride - 1) * meshState.subdivisionCount, base / meshState.quadraticStride * meshState.subdivisionCount, state, meshState);
                 }
+            } else if (meshState.showAccumulations) {
+                MeshState resolveMeshState = meshState;
+                resolveMeshState.cellSize = 1;
+                MeshState clipState = resolveMeshState;
+                clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / resolveMeshState.cellSize), std::ceil(clipBounds.uy / resolveMeshState.cellSize) };
+                
+                State windingState = state;
+                AffineTransform cell = { 1.0f / resolveMeshState.cellSize, 0, 0, 1.0f / resolveMeshState.cellSize, 0, 0 };
+                windingState.CTM = AffineTransformConcat(state.CTM, cell);
+                for (i = 0; i < ranges.size(); i += 2) {
+                    base = mesh._quadraticIndices[ranges[i]];
+                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
+                    calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
+                }
+                calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
+                
             } else if (meshState.showAccumulationsSOA) {
                 mesh._accumulationsSOA.empty();
                 mesh._resolutionsSOA.empty();
@@ -133,22 +149,6 @@ struct Mesh {
                     }
                 }
                 writeSOACalls(mesh, state, meshState, kCallTypeResolveSOA, mesh._resolutionsSOA._count);
-                
-            } else if (meshState.showAccumulations) {
-                MeshState resolveMeshState = meshState;
-                resolveMeshState.cellSize = 1;
-                MeshState clipState = resolveMeshState;
-                clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / resolveMeshState.cellSize), std::ceil(clipBounds.uy / resolveMeshState.cellSize) };
-                
-				State windingState = state;
-                AffineTransform cell = { 1.0f / resolveMeshState.cellSize, 0, 0, 1.0f / resolveMeshState.cellSize, 0, 0 };
-                windingState.CTM = AffineTransformConcat(state.CTM, cell);
-				for (i = 0; i < ranges.size(); i += 2) {
-                    base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
-                }
-                calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
                 
             } else {
                 call = nullptr;
