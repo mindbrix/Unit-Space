@@ -230,7 +230,7 @@ struct Mesh {
         enum Type { kEllipse, kRect };
         
         static AffineTransform circleUnit(float x, float y, float r) {
-            return { x + std::abs(r) * 0.5f, 0, 0, y + std::abs(r) * 0.5f, x - std::abs(r) * 0.5f, y - std::abs(r) * 0.5f };
+            return { std::abs(r) * 2.f, 0, 0, std::abs(r) * 2.f, x - std::abs(r), y - std::abs(r) };
         }
         void addCircle(float x, float y, float r, RGBA8 c) {
             AffineTransform unit = circleUnit(x, y, r);

@@ -416,6 +416,25 @@ using namespace std;
     if (_flags & 8) {}
     if (_flags & 16) {
         int dimension = 330, r = 10, g = 20.0 / 0.618, count = dimension * dimension, idx;
+        
+        _mesh._shapesSOA.empty();
+        float *as = _mesh._shapesSOA._as.new_ptr(count);
+        float *bs = _mesh._shapesSOA._bs.new_ptr(count);
+        float *cs = _mesh._shapesSOA._cs.new_ptr(count);
+        float *ds = _mesh._shapesSOA._ds.new_ptr(count);
+        float *txs = _mesh._shapesSOA._txs.new_ptr(count);
+        float *tys = _mesh._shapesSOA._tys.new_ptr(count);
+        Mesh::ShapesSOA::Type *types = _mesh._shapesSOA._types.new_ptr(count);
+        RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
+        
+        for (int idx = 0; idx < count; idx++) {
+            AffineTransform unit = Mesh::ShapesSOA::circleUnit((idx % dimension) * g, idx / dimension * g, r);
+            *types++ = Mesh::ShapesSOA::kEllipse;
+            *as++ = unit.a, *bs++ = unit.b, *cs++ = unit.c, *ds++ = unit.d, *txs++ = unit.tx, *tys++ = unit.ty;
+            *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
+        }
+        Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, count);
+        
         float *dst;
         _mesh._circlesSOA._xs = Memory<float>(count);
         _mesh._circlesSOA._ys = Memory<float>(count);

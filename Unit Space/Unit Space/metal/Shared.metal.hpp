@@ -164,7 +164,8 @@ struct State {
 
 
 enum CallType : unsigned int {
-    kCallTypeCirclesSOA = 0,
+    kCallTypeShapesSOA = 0,
+    kCallTypeCirclesSOA,
     kCallTypeFlags,
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,

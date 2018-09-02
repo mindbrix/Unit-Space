@@ -17,6 +17,7 @@
 @property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
+@property (nonatomic, strong) id <MTLRenderPipelineState> shapePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> circlePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
@@ -103,6 +104,11 @@
     descriptor.label = @"InteriorBlend";
     self.meshInteriorBlendPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"circleSOA_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
+    descriptor.label = @"shapePipelineState";
+    self.shapePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"circleSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"circle_fragment_main"];
     descriptor.label = @"Circle";
@@ -194,6 +200,18 @@
         size_t instanceCount = 1, baseInstance = 0;
         BOOL drawQuads = YES;
         switch (call->type) {
+            case kCallTypeShapesSOA:
+                [commandEncoder setRenderPipelineState:_shapePipelineState];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._types[call->baseInstance] length:sizeof(Mesh::ShapesSOA::Type) * (call->instanceCount) atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._as[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:11];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._bs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:12];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._cs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:13];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._ds[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:14];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._txs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:15];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._tys[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:16];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * (call->instanceCount) atIndex:17];
+                instanceCount = 0;// call->instanceCount;
+                break;
             case kCallTypeCirclesSOA:
                 [commandEncoder setRenderPipelineState:_circlePipelineState];
                 [commandEncoder setVertexBytes:& mesh->_circlesSOA._xs[call->baseInstance] length:sizeof(float) * (call->instanceCount) atIndex:10];
