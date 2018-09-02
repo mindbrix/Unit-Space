@@ -214,13 +214,7 @@ struct Mesh {
     struct AccumulationSOA {
         void alloc(int allocation) {
             _count += allocation;
-            if (_count > _lxs.count()) {
-                size_t size = _lxs.count();
-                do {
-                    size *= 1.5;
-                } while (size < _count);
-                _lxs.alloc(size), _uxs.alloc(size), _lys.alloc(size), _txs.alloc(size), _tys.alloc(size), _ps.alloc(size), _idxs.alloc(size);
-            }
+            _lxs.new_ptr(allocation), _uxs.new_ptr(allocation), _lys.new_ptr(allocation), _txs.new_ptr(allocation), _tys.new_ptr(allocation), _ps.new_ptr(allocation), _idxs.new_ptr(allocation);
         }
         void empty() {
             _count = 0,
