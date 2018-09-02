@@ -38,7 +38,7 @@ struct Memory {
         }
         return Memory();
     }
-    inline T *new_ptr(size_t allocation = 1) {
+    inline T *new_ptr(size_t allocation) {
         if (header == nullptr)
             alloc(8);
         header->end += allocation;
@@ -60,7 +60,7 @@ struct Memory {
     size_t size()                               { return header ? header->size : 0; }
     T *get() const                              { return (T *) (header ? header->memory : nullptr); }
     inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
-    inline void push_back(T n)                  { *new_ptr() = n; }
+    inline void push_back(T n)                  { *new_ptr(1) = n; }
     
 private:
     void assign(const Memory& other) {
