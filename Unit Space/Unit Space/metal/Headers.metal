@@ -17,7 +17,7 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
 float windingToAlpha(float winding, bool evenOdd);
 float sRGB(float x);
 float ellipseDistance(float2 unitPoint, float dilation);
-float rectDistance(float2 unitPoint);
+float rectDistance(float2 unitPoint, float dilation);
 float roundedRectDistance(float2 unitPoint, float radius, float dilation);
 float ellipseStrokeDistance(float2 unitPoint, float w);
 float det(float2 a, float2 b);

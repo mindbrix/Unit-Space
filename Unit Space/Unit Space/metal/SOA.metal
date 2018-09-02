@@ -122,8 +122,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
     vert.unitWidth = sqrt(abs(el.a * el.d - el.b * el.c));// min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
-    vert.unitWidth = select(2.0 / vert.unitWidth - 1.0, vert.unitWidth, vert.unitWidth < 1.0);
-    
+   // vert.unitWidth = select(1.5 / vert.unitWidth - 0.5, vert.unitWidth, vert.unitWidth < 1.0);
     vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
     vert.shapeType = types[iid];
     return vert;
@@ -134,7 +133,7 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
     if (vert.shapeType == kShapeTypeEllipse)
         return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
     else if (vert.shapeType == kShapeTypeRect)
-        return vert.color * saturate(rectDistance(vert.unitPoint));
+        return vert.color * saturate(rectDistance(vert.unitPoint, vert.unitWidth));
     else
         return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.25, 0));
 }

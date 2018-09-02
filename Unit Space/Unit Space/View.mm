@@ -415,7 +415,7 @@ using namespace std;
     
     if (_flags & 8) {}
     if (_flags & 16) {
-        int dimension = 330, r = 10, g = r * 2 / 0.618, count = dimension * dimension, idx;
+        int dimension = 330, r = 10, g = r * 2 , count = dimension * dimension, idx;
         
         _mesh._shapesSOA.empty();
         float *as = _mesh._shapesSOA._as.new_ptr(count);

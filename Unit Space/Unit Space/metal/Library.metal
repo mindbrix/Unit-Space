@@ -94,10 +94,10 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float rectDistance(float2 unitPoint) {
+float rectDistance(float2 unitPoint, float dilation) {
     float u = unitPoint.x * 2.0 - 1.0, v = unitPoint.y * 2.0 - 1.0;
-    float dx = (1.0 - abs(u)) * rsqrt(dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)) + 0.5;
-    float dy = (1.0 - abs(v)) * rsqrt(dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)) + 0.5;
+    float dx = (1.0 + dilation - abs(u)) * rsqrt(dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
+    float dy = (1.0 + dilation - abs(v)) * rsqrt(dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
     return saturate(dx) * saturate(dy);
 }
 
