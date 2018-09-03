@@ -238,12 +238,12 @@ struct Mesh {
         }
         void empty() {
             _count = 0;
-            _types = Memory<int>();
+            _types = Memory<short>();
             _as = Memory<float>(), _bs = Memory<float>(), _cs = Memory<float>(), _ds = Memory<float>(), _txs = Memory<float>(), _tys = Memory<float>(),
             _colors = Memory<RGBA8>();
         }
         int                             _count;
-        Memory<int>                     _types;
+        Memory<short>                   _types;
         Memory<float>                   _as, _bs, _cs, _ds, _txs, _tys;
         Memory<RGBA8>                   _colors;
     };

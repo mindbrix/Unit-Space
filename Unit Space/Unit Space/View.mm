@@ -418,7 +418,7 @@ using namespace std;
         int dimension = 330, r = 10, g = r * 2 / 0.618, count = dimension * dimension, idx;
         
         _mesh._shapesSOA.empty();
-		int *types = _mesh._shapesSOA._types.new_ptr(count);
+		short *types = _mesh._shapesSOA._types.new_ptr(count);
 		float *as = _mesh._shapesSOA._as.new_ptr(count);
         float *bs = _mesh._shapesSOA._bs.new_ptr(count);
         float *cs = _mesh._shapesSOA._cs.new_ptr(count);
@@ -428,7 +428,7 @@ using namespace std;
         RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
         ShapeType pattern[4] = { kShapeTypeEllipse, kShapeTypeRect, kShapeTypeRoundedRect, kShapeTypeRect };
         AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
-		memset_pattern16(types, pattern, count * sizeof(*types));
+		memset_pattern8(types, pattern, count * sizeof(*types));
         for (idx = 0; idx < count; idx++)
             *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         for (idx = 0; idx < count; idx++)

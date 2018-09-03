@@ -175,7 +175,7 @@ enum CallType : unsigned int {
     kCallTypeQuadraticAccumulate,
 };
 
-enum ShapeType : int {
+enum ShapeType : short {
     kShapeTypeEllipse,
     kShapeTypeRect,
     kShapeTypeRoundedRect

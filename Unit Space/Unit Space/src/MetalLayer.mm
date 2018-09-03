@@ -196,7 +196,7 @@
         switch (call->type) {
             case kCallTypeShapesSOA:
                 [commandEncoder setRenderPipelineState:_shapePipelineState];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._types[call->baseInstance] length:sizeof(int) * call->instanceCount atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_shapesSOA._types[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:10];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._as[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:11];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._bs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:12];
                 [commandEncoder setVertexBytes:& mesh->_shapesSOA._cs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:13];

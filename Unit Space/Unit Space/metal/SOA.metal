@@ -96,7 +96,7 @@ struct ShapeVertex
 };
 
 vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                          constant int *types [[buffer(10)]],
+                                          constant short *types [[buffer(10)]],
                                           constant float *as [[buffer(11)]], constant float *bs [[buffer(12)]], constant float *cs [[buffer(13)]], constant float *ds [[buffer(14)]],
                                           constant float *txs [[buffer(15)]], constant float *tys [[buffer(16)]],
                                           constant RGBA8 *colors [[buffer(17)]],
