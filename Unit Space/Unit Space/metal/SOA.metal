@@ -90,7 +90,7 @@ struct ShapeVertex
     float4 color;
     
     float2 unitPoint;
-    float dilation;
+    float scale;
     
     int shapeType;
 };
@@ -104,7 +104,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 {
     Circle circle = { txs[iid] + as[iid] * 0.5, tys[iid] + as[iid] * 0.5, as[iid] * 0.5 };
     RGBA8 color = colors[iid];
-    float scale = sqrt(state.CTM.a * state.CTM.a + state.CTM.b * state.CTM.b);
+    float scale = sqrt(abs(state.CTM.a * state.CTM.d - state.CTM.b * state.CTM.c));
     float dilation = 0.7071 / scale;
     float r = circle.r + dilation;
     
@@ -117,7 +117,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     ShapeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2) };
-    vert.dilation = 0.5 - 0.7071;
+    vert.scale = scale * circle.r;
     vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
     vert.shapeType = types[iid];
     return vert;
@@ -125,12 +125,15 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 
 fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
+    const float kDilation = -0.2071067812, kCornerRadius = 0.5;
     if (vert.shapeType == kShapeTypeEllipse)
-        return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.dilation));
+        return vert.color * ellipseDistance(vert.unitPoint, kDilation);
     else if (vert.shapeType == kShapeTypeRect)
-        return vert.color * saturate(rectDistance(vert.unitPoint, vert.dilation));
-    else
-        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.5, vert.dilation));
+        return vert.color * rectDistance(vert.unitPoint, kDilation);
+    else {
+        float ur = max(2.0 / vert.scale, kCornerRadius);
+        return vert.color * roundedRectDistance(vert.unitPoint, ur, kDilation);
+    }
 }
 
 
