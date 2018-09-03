@@ -14,7 +14,7 @@
 #import "libTess.hpp"
 #import "Quadratics.hpp"
 
-constexpr float kPointDeviceRadius = 8;
+constexpr float kPointDeviceRadius = 4;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
 
 constexpr uint64_t kPathBitmaskTriangle = 1 << 0;
@@ -358,8 +358,8 @@ using namespace std;
     float ux = dx * inv.a + dy * inv.c + inv.tx, uy = dx * inv.b + dy * inv.d + inv.ty;
     
     float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
-    float largeRadius = kLargePointDeviceRadius / scale;
-    float radius = kPointDeviceRadius / scale;
+    float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
+    float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
     
     State uniforms;
     uniforms.CTM = CTM;
