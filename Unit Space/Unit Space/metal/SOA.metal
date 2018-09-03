@@ -116,7 +116,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     
     ShapeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
-    vert.unitPoint = { select(0.0, 1.0, vid & 1), select(0.0, 1.0, vid & 2) };
+    vert.unitPoint = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2) };
     vert.dilation = 0.5 - 0.7071;
     vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
     vert.shapeType = types[iid];
@@ -130,7 +130,7 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
     else if (vert.shapeType == kShapeTypeRect)
         return vert.color * saturate(rectDistance(vert.unitPoint, vert.dilation));
     else
-        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.25, vert.dilation));
+        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.5, vert.dilation));
 }
 
 
