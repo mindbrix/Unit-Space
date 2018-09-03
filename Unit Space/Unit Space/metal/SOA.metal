@@ -90,7 +90,7 @@ struct ShapeVertex
     float4 color;
     
     float2 unitPoint;
-    float unitWidth;
+    float dilation;
     
     int shapeType;
 };
@@ -109,10 +109,6 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     float r = circle.r + dilation;
     
     float2 up = { circle.x + r * select(-1.0, 1.0, vid & 1), circle.y + r * select(-1.0, 1.0, vid & 2) };
-    
-    AffineTransform unit = { circle.r * 2.0, 0.0, 0.0, circle.r * 2.0, circle.x - circle.r, circle.y - circle.r };
-    AffineTransform el = AffineTransformInvert(AffineTransformConcat(unit, state.CTM));
-    
     float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
     float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
     
@@ -120,9 +116,8 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     
     ShapeVertex vert;
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
-    vert.unitPoint = { dx * el.a + dy * el.c + el.tx, dx * el.b + dy * el.d + el.ty };
-    vert.unitWidth = sqrt(abs(el.a * el.d - el.b * el.c));// min(0.5, 0.5 * sqrt(abs(el.a * el.d - el.b * el.c)));
-   // vert.unitWidth = select(1.5 / vert.unitWidth - 0.5, vert.unitWidth, vert.unitWidth < 1.0);
+    vert.unitPoint = { select(0.0, 1.0, vid & 1), select(0.0, 1.0, vid & 2) };
+    vert.dilation = 0.5 - 0.7071;
     vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
     vert.shapeType = types[iid];
     return vert;
@@ -131,11 +126,11 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
     if (vert.shapeType == kShapeTypeEllipse)
-        return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.unitWidth));
+        return vert.color * saturate(ellipseDistance(vert.unitPoint, vert.dilation));
     else if (vert.shapeType == kShapeTypeRect)
-        return vert.color * saturate(rectDistance(vert.unitPoint, vert.unitWidth));
+        return vert.color * saturate(rectDistance(vert.unitPoint, vert.dilation));
     else
-        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.25, vert.unitWidth));
+        return vert.color * saturate(roundedRectDistance(vert.unitPoint, 0.25, vert.dilation));
 }
 
 
