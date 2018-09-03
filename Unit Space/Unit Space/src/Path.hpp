@@ -15,10 +15,8 @@ struct Path {
     void addSubPath(SubPath& s) {
         if (s._quadratics.count() / 2 > 2) {
             if (_subPaths.size() == 0)
-                _bounds = s._bounds, _maxArea = -FLT_MAX;
+                _bounds = s._bounds;
             _bounds.unite(s._bounds);
-            if (std::abs(s._area) > _maxArea)
-                _maxArea = std::abs(s._area), _outerIndex = _subPaths.size();
             _subPaths.emplace_back(s);
         }
     }
@@ -34,8 +32,6 @@ struct Path {
     
     RGBA8                       _color;
     bool                        _evenOdd;
-    float                       _maxArea;
-    size_t                      _outerIndex;
-    vector<SubPath>             _subPaths;
     Bounds                      _bounds;
+    vector<SubPath>             _subPaths;
 };
