@@ -97,13 +97,12 @@ using namespace std;
 }
 
 - (void)timerFired:(id)sender {
-    self.timerTime = [NSDate date].timeIntervalSinceReferenceDate;
     [self redraw];
 }
 
 - (IBAction)toggleTimer:(id)sender {
     if (self.timer)
-        [self.timer invalidate], self.timer = nil, self.timerTime = 0;
+        [self.timer invalidate], self.timer = nil;
     else
         [self resetTimer];
     [self redraw];
@@ -512,6 +511,7 @@ using namespace std;
 }
 
 - (void)redraw {
+    self.timerTime = self.timer ? [NSDate date].timeIntervalSinceReferenceDate : 0;
     [self writeDrawCalls];
     [self.metalLayer setNeedsDisplay];
 }
