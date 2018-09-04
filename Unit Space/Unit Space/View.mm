@@ -361,7 +361,7 @@ using namespace std;
     float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
     float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
     
-    vector<MeshPath> & paths = _mesh._timeline.pathsForTime(0);
+    vector<MeshPath> & paths = _mesh._timeline.pathsForTime(1);
     
     State uniforms;
     uniforms.CTM = CTM;

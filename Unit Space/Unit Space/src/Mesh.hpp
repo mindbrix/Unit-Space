@@ -250,9 +250,21 @@ struct Mesh {
     };
     
     struct Timeline {
-        vector<MeshPath>&               pathsForTime(double time) { return _paths; }
+        void empty() {
+            _paths.resize(0), _tpaths.resize(0);
+        }
+        vector<MeshPath>& pathsForTime(double time) {
+            if (time == 0)
+                return _paths;
+            
+            if (_tpaths.size() == 0)
+                for (MeshPath& path : _paths)
+                    _tpaths.emplace_back(path);
+            
+            return _tpaths;
+        }
     private:
-        vector<MeshPath>                _paths;
+        vector<MeshPath>                _paths, _tpaths;
     };
     vector<Call>                        _calls;
     
@@ -272,6 +284,6 @@ struct Mesh {
     
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
-        _timeline.pathsForTime(0).resize(0), _idxs.resize(0), _points.resize(0);
+        _timeline.empty(), _idxs.resize(0), _points.resize(0);
     }
 };
