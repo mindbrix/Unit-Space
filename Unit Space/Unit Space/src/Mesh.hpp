@@ -266,6 +266,7 @@ struct Mesh {
             for (int p = 0; p < _paths.size(); p++) {
                 double t = time - std::floor(time);
                 t = 1 - std::abs(1 - t * 2);
+                t = 3 * t * t - 2 * t * t *t;
                 _tpaths[p] = _paths[p];
                 _tpaths[p].ctm.tx += (_paths[p].bounds.ux - _paths[p].bounds.lx) * t;
             }
