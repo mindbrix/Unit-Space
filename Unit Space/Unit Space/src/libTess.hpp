@@ -73,7 +73,7 @@ struct libTess {
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = 0; p < scene._paths.size(); p++) {
             Path& path = scene._paths[p];
-            mesh._paths.emplace_back(path._color, scene._CTMs[p], path._bounds);
+            mesh._timeline._paths.emplace_back(path._color, scene._CTMs[p], path._bounds);
             mesh._idxs.emplace_back((int)(mesh._points.size() / kMeshTriangleSize));
             
             addPathContours(tess, path);

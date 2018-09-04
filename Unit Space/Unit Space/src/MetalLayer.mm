@@ -280,7 +280,7 @@
 }
 
 - (void)syncMesh:(Mesh &)mesh {
-    memcpy(_pathsBuffer.contents, & mesh._paths[0], _pathsBuffer.length);
+    memcpy(_pathsBuffer.contents, & mesh._timeline._paths[0], _pathsBuffer.length);
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
 }
 
@@ -293,9 +293,9 @@
         _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
                                                       length:mesh._quadraticPs.size()
                                                      options:MTLResourceStorageModeShared];
-    if (mesh._paths.size())
-        _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._paths[0]
-                                                 length:mesh._paths.size() * sizeof(MeshPath)
+    if (mesh._timeline._paths.size())
+        _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline._paths[0]
+                                                 length:mesh._timeline._paths.size() * sizeof(MeshPath)
                                                 options:MTLResourceStorageModeManaged];
     if (mesh._points.size())
         _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]

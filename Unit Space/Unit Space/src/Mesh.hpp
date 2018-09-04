@@ -18,23 +18,24 @@ struct Mesh {
         AffineTransform ctm;
         Call *call;
         if (mesh._points.size()) {
-            bool opaques[mesh._paths.size()], visibles[mesh._paths.size()], smalls[mesh._paths.size()];
-            AffineTransform units[mesh._paths.size()];
-            for (p = 0; p < mesh._paths.size(); p++) {
-                units[p] = ctm = AffineTransformMakeUnit(mesh._paths[p].bounds, AffineTransformConcat(mesh._paths[p].ctm, state.CTM));
-                opaques[p] = mesh._paths[p].color.a == 255;
+            vector<MeshPath> & paths = mesh._timeline._paths;
+            bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
+            AffineTransform units[paths.size()];
+            for (p = 0; p < paths.size(); p++) {
+                units[p] = ctm = AffineTransformMakeUnit(paths[p].bounds, AffineTransformConcat(paths[p].ctm, state.CTM));
+                opaques[p] = paths[p].color.a == 255;
                 smalls[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400;
             }
-            for (p = 0; p < mesh._paths.size(); p += 8) {
+            for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
-                for (j = 0; !set && j < 8 && p + j < mesh._paths.size(); j++)
+                for (j = 0; !set && j < 8 && p + j < paths.size(); j++)
                     set |= Bounds::transformUnit(units[p + j]).intersects(clipBounds);
-                for (j = 0; j < 8 && p + j < mesh._paths.size(); j++)
+                for (j = 0; j < 8 && p + j < paths.size(); j++)
                     visibles[p + j] = set;
             }
             vector<int> ranges;
-            for (p = 0; p < mesh._paths.size(); p += 8) {
-                int end = p + 8 < mesh._paths.size() ? p + 8 : (int)mesh._paths.size();
+            for (p = 0; p < paths.size(); p += 8) {
+                int end = p + 8 < paths.size() ? p + 8 : (int)paths.size();
                 if (visibles[p]) {
                     if (ranges.size() && ranges.back() == p)
                         ranges.back() = end;
@@ -45,7 +46,7 @@ struct Mesh {
             if (meshState.showQuadratics) {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count(): mesh._quadraticIndices[ranges[i + 1]];
+                    end = ranges[i + 1] == paths.size() ? (int)mesh._quadraticFloats.count(): mesh._quadraticIndices[ranges[i + 1]];
                     
                     calls.emplace_back(kCallTypeQuadraticLines, ((end - base) / meshState.quadraticStride - 1) * meshState.subdivisionCount, base / meshState.quadraticStride * meshState.subdivisionCount, state, meshState);
                 }
@@ -60,7 +61,7 @@ struct Mesh {
                 windingState.CTM = AffineTransformConcat(state.CTM, cell);
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == mesh._paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
+                    end = ranges[i + 1] == paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
                     calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
                 }
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
@@ -152,7 +153,7 @@ struct Mesh {
                 
             } else {
                 call = nullptr;
-                for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)mesh._paths.size() - 1; p >= 0; p--, end = base) {
+                for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)paths.size() - 1; p >= 0; p--, end = base) {
                     base = mesh._idxs[p];
                     if (visibles[p] && opaques[p]) {
                         count = end - base;
@@ -170,7 +171,7 @@ struct Mesh {
                     for (i = 0; i < ranges.size(); i += 2)
                         for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
                             base = mesh._idxs[p];
-                            end = p + 1 == mesh._paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._idxs[p + 1];
+                            end = p + 1 == paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._idxs[p + 1];
                             count = end - base;
                             if (opaques[p] || smalls[p]) {
                                 if (call == nullptr) {
@@ -189,10 +190,10 @@ struct Mesh {
             }
             
             if (meshState.showVisibles) {
-                calls.emplace_back(kCallTypeFlags, (int)mesh._paths.size(), 0, state, meshState);
+                calls.emplace_back(kCallTypeFlags, (int)paths.size(), 0, state, meshState);
                 call = & calls.back();
                 call->flags.w = call->flags.h = 64;
-                for (p = 0; p < mesh._paths.size(); p++) {
+                for (p = 0; p < paths.size(); p++) {
                     i = p >> 5, j = p % 32;
                     if (j == 0)
                         call->flags.flags[i] = 0;
@@ -248,6 +249,9 @@ struct Mesh {
         Memory<RGBA8>                   _colors;
     };
     
+    struct Timeline {
+        vector<MeshPath>                _paths;
+    };
     vector<Call>                        _calls;
     
     Memory<float>                       _quadraticFloats;
@@ -257,7 +261,8 @@ struct Mesh {
     AccumulationSOA                     _accumulationsSOA;
     AccumulationSOA                     _resolutionsSOA;
     
-    vector<MeshPath>                    _paths;
+    Timeline                            _timeline;
+    
     vector<int>                         _idxs;
     vector<Vector>                      _points;
     
@@ -265,6 +270,6 @@ struct Mesh {
     
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
-        _paths.resize(0), _idxs.resize(0), _points.resize(0);
+        _timeline._paths.resize(0), _idxs.resize(0), _points.resize(0);
     }
 };
