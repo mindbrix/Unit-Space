@@ -49,9 +49,27 @@ using namespace std;
 @property(nonatomic) Scene scene;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
-@property(nonatomic) NSTimer *timer;
 @property(nonatomic) double timerTime;
+@property(nonatomic) CVDisplayLinkRef displayLink;
+
+- (void)timerFired;
+
 @end
+
+static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
+								   const CVTimeStamp *now,
+								   const CVTimeStamp *outputTime,
+								   CVOptionFlags flagsIn,
+								   CVOptionFlags *flagsOut,
+								   void *displayLinkContext) {
+	View *view = (__bridge View *)displayLinkContext;
+	@autoreleasepool {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[view timerFired];
+		});
+	}
+	return kCVReturnSuccess;
+}
 
 @implementation View
 
@@ -83,29 +101,38 @@ using namespace std;
 }
 
 - (void)removeFromSuperview {
-    if (self.timer)
-        [self.timer invalidate];
+	[self stopTimer];
     [super removeFromSuperview];
 }
 
 #pragma mark - NSTimer
 
-- (void)resetTimer {
-    if (self.timer)
-        [self.timer invalidate];
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 60.0 target:self selector:@selector(timerFired:) userInfo:nil repeats:YES];
+- (void)stopTimer {
+	if (_displayLink) {
+		CVDisplayLinkStop(_displayLink);
+		CVDisplayLinkRelease(_displayLink);
+		_displayLink = nil;
+	}
 }
-
-- (void)timerFired:(id)sender {
-    [self redraw];
+	
+- (void)resetTimer {
+	[self stopTimer];
+	CVReturn cvReturn = CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
+	cvReturn = CVDisplayLinkSetOutputCallback(_displayLink, &OnDisplayLinkFrame, (__bridge void *)self);
+	cvReturn = CVDisplayLinkSetCurrentCGDisplay(_displayLink, CGMainDisplayID());
+	CVDisplayLinkStart(_displayLink);
 }
 
 - (IBAction)toggleTimer:(id)sender {
-    if (self.timer)
-        [self.timer invalidate], self.timer = nil;
-    else
-        [self resetTimer];
+	if (_displayLink)
+		[self stopTimer];
+	else
+		[self resetTimer];
     [self redraw];
+}
+
+- (void)timerFired {
+	[self redraw];
 }
 
 #pragma mark - NSResponder
@@ -512,7 +539,7 @@ using namespace std;
 }
 
 - (void)redraw {
-    self.timerTime = self.timer ? [NSDate date].timeIntervalSinceReferenceDate : 0;
+    self.timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
     [self writeDrawCalls];
     [self.metalLayer setNeedsDisplay];
 }

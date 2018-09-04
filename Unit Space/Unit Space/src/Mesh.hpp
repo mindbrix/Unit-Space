@@ -155,7 +155,7 @@ struct Mesh {
                 call = nullptr;
                 for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)paths.size() - 1; p >= 0; p--, end = base) {
                     base = mesh._idxs[p];
-                    if (visibles[p] && opaques[p]) {
+                    if (visibles[p] && (opaques[p] || smalls[p])) {
                         count = end - base;
                         if (call == nullptr || call->baseInstance != end) {
                             calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
