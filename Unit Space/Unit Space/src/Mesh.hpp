@@ -18,7 +18,7 @@ struct Mesh {
         AffineTransform ctm;
         Call *call;
         if (mesh._points.size()) {
-            const vector<MeshPath> & paths = mesh._timeline.pathsForTime(0);
+            const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
             AffineTransform units[paths.size()];
             for (p = 0; p < paths.size(); p++) {
