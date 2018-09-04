@@ -263,8 +263,12 @@ struct Mesh {
                 for (MeshPath& path : _paths)
                     _tpaths.emplace_back(path);
             
-            for (int p = 0; p < _paths.size(); p++)
-                _tpaths[p] = _paths[p], _tpaths[p].ctm.tx += (_paths[p].bounds.ux - _paths[p].bounds.lx) * (time - std::floor(time));
+            for (int p = 0; p < _paths.size(); p++) {
+                double t = time - std::floor(time);
+                t = 1 - std::abs(1 - t * 2);
+                _tpaths[p] = _paths[p];
+                _tpaths[p].ctm.tx += (_paths[p].bounds.ux - _paths[p].bounds.lx) * t;
+            }
             return _tpaths;
         }
     private:
