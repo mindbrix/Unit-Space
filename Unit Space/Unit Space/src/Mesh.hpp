@@ -262,7 +262,7 @@ struct Mesh {
             if (_tpaths.size() == 0)
                 for (MeshPath& path : _paths)
                     _tpaths.emplace_back(path);
-            
+            time *= 0.2;
             for (int p = 0; p < _paths.size(); p++) {
                 double t = time - std::floor(time);
                 t = 1 - std::abs(1 - t * 2);
