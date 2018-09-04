@@ -539,8 +539,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 }
 
 - (void)redraw {
-    self.timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
-    [self writeDrawCalls];
     [self.metalLayer setNeedsDisplay];
 }
 
@@ -565,6 +563,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 #pragma mark - LayerDelegate
 
 - (Mesh *)meshForLayer:(CALayer *)layer {
+    self.timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
+    [self writeDrawCalls];
     return & _mesh;
 }
 
