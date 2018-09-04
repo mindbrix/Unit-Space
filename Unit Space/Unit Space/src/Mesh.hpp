@@ -254,13 +254,17 @@ struct Mesh {
             _paths.resize(0), _tpaths.resize(0);
         }
         vector<MeshPath>& pathsForTime(double time) {
-            if (time == 0)
+            if (time == 0 || _tpaths.size() == 0)
                 return _paths;
-            
+            return _tpaths;
+        }
+        vector<MeshPath>& writePathsForTime(double time) {
             if (_tpaths.size() == 0)
                 for (MeshPath& path : _paths)
                     _tpaths.emplace_back(path);
             
+            for (int p = 0; p < _paths.size(); p++)
+                _tpaths[p] = _paths[p], _tpaths[p].ctm.tx += (_paths[p].bounds.ux - _paths[p].bounds.lx) * (time - std::floor(time));
             return _tpaths;
         }
     private:

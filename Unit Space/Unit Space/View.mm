@@ -49,6 +49,7 @@ using namespace std;
 @property(nonatomic) Scene scene;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
+@property(nonatomic) NSTimer *timer;
 
 @end
 
@@ -76,9 +77,28 @@ using namespace std;
     self.f = 20;
     self.count = 1000;
     
+    [self resetTimer];
     [self redraw];
 
     return self;
+}
+
+- (void)removeFromSuperview {
+    if (self.timer)
+        [self.timer invalidate];
+    [super removeFromSuperview];
+}
+
+#pragma mark - NSTimer
+
+- (void)resetTimer {
+    if (self.timer)
+        [self.timer invalidate];
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 60.0 target:self selector:@selector(timerFired:) userInfo:nil repeats:YES];
+}
+
+- (void)timerFired:(id)sender {
+    [self redraw];
 }
 
 #pragma mark - NSResponder
@@ -361,7 +381,7 @@ using namespace std;
     float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
     float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
     
-    vector<MeshPath> & paths = _mesh._timeline.pathsForTime(1);
+    vector<MeshPath> & paths = _mesh._timeline.writePathsForTime([NSDate date].timeIntervalSinceReferenceDate);
     
     State uniforms;
     uniforms.CTM = CTM;
