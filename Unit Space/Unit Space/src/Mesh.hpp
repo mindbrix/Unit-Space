@@ -18,7 +18,7 @@ struct Mesh {
         AffineTransform ctm;
         Call *call;
         if (mesh._points.size()) {
-            vector<MeshPath> & paths = mesh._timeline._paths;
+            const vector<MeshPath> & paths = mesh._timeline.pathsForTime(0);
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
             AffineTransform units[paths.size()];
             for (p = 0; p < paths.size(); p++) {
@@ -250,6 +250,8 @@ struct Mesh {
     };
     
     struct Timeline {
+        vector<MeshPath>&               pathsForTime(double time) { return _paths; }
+    private:
         vector<MeshPath>                _paths;
     };
     vector<Call>                        _calls;
@@ -270,6 +272,6 @@ struct Mesh {
     
     void empty() {
         _quadraticFloats = Memory<float>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
-        _timeline._paths.resize(0), _idxs.resize(0), _points.resize(0);
+        _timeline.pathsForTime(0).resize(0), _idxs.resize(0), _points.resize(0);
     }
 };

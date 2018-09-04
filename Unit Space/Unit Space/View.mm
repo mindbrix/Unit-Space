@@ -361,6 +361,8 @@ using namespace std;
     float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
     float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
     
+    vector<MeshPath> & paths = _mesh._timeline.pathsForTime(0);
+    
     State uniforms;
     uniforms.CTM = CTM;
     uniforms.fillColor = { 0, 0, 0, 1 };
@@ -385,7 +387,7 @@ using namespace std;
     meshState.useQuadraticWinding = _useQuadratics;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
-    meshState.colorsSize = (int)_mesh._timeline._paths.size();
+    meshState.colorsSize = (int)paths.size();
     scale /= uniforms.scaleFactor;
     meshState.quadraticStride = 4;
     meshState.subdivisionCount = !_useQuadratics || scale <= 1 ? 1 : ceil(sqrt(scale));
@@ -397,12 +399,12 @@ using namespace std;
     int p = -1;
     
     for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
-        AffineTransform inv = AffineTransformInvert(_mesh._timeline._paths[i].ctm);
+        AffineTransform inv = AffineTransformInvert(paths[i].ctm);
         if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
             p = i;
     }
     for (int i = 0; i < _scene._paths.size(); i++)
-        _mesh._timeline._paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
+        paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
     
     if (_flags & 1)
         meshState.showQuadratics = true;
@@ -466,7 +468,7 @@ using namespace std;
                 for (int j = 0; j < _quad.size(); j++)
                     _mesh._shapesSOA.addCircle(_quad[j].x, _quad[j].y, radius, red);
         } else if (p != -1) {
-            AffineTransform m = _mesh._timeline._paths[p].ctm;
+            AffineTransform m = paths[p].ctm;
             float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
             uniforms.CTM = AffineTransformConcat(m, CTM);
             for (SubPath& s : _scene._paths[p]._subPaths) {
