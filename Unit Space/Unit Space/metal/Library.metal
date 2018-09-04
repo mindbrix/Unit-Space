@@ -103,9 +103,9 @@ float rectDistance(float2 unitPoint, float dilation) {
 
 float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2) {
     float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
-    float f = 4.0 * b * d - a * a;
-    float dfx = dfdx(f), dfy = dfdy(f);
-    return f * max(abs(dfx), abs(dfy)) / (dfx * dfx + dfy * dfy);
+    float fx = dfdx(b) * 4 * d + dfdx(d) * 4 * b - 2 * a * dfdx(a);
+    float fy = dfdy(b) * 4 * d + dfdy(d) * 4 * b - 2 * a * dfdy(a);
+    return (4.0 * b * d - a * a) * rsqrt(fx * fx + fy * fy);
 }
 
 float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
