@@ -484,7 +484,8 @@ using namespace std;
         _mesh._shapesSOA.empty();
         RGBA8 red(255, 0, 0, 255);
         
-        if (_svgData == nullptr && _fontData  == nullptr) {
+        if (_svgData == nullptr && _fontData == nullptr) {
+            uniforms.CTM = AffineTransformConcat(paths[0].ctm, CTM);
             if (self.pathBitmask & kPathBitmaskTriangle)
                 for (int j = 0; j < _triangle.size(); j++)
                     _mesh._shapesSOA.addCircle(_triangle[j].x, _triangle[j].y, radius, red);
