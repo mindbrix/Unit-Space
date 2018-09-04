@@ -743,6 +743,12 @@
                                     <action selector="toggleRetina:" target="-1" id="ime-V6-d8z"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Timer" keyEquivalent=" " id="7jz-7I-Qc3">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleTimer:" target="-1" id="Tmd-A0-Ih9"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="mYK-Jo-Aue"/>
                             <menuItem title="Show Sidebar" keyEquivalent="s" id="kIP-vf-haE">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>

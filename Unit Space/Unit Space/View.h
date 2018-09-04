@@ -37,5 +37,6 @@
 - (IBAction)toggleUseMask:(id)sender;
 - (IBAction)toggleUseStrokeColor:(id)sender;
 - (IBAction)toggleShowVisibles:(id)sender;
+- (IBAction)toggleTimer:(id)sender;
 
 @end

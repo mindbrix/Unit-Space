@@ -50,7 +50,7 @@ using namespace std;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
 @property(nonatomic) NSTimer *timer;
-
+@property(nonatomic) double timerTime;
 @end
 
 @implementation View
@@ -77,7 +77,6 @@ using namespace std;
     self.f = 20;
     self.count = 1000;
     
-    [self resetTimer];
     [self redraw];
 
     return self;
@@ -98,6 +97,15 @@ using namespace std;
 }
 
 - (void)timerFired:(id)sender {
+    self.timerTime = [NSDate date].timeIntervalSinceReferenceDate;
+    [self redraw];
+}
+
+- (IBAction)toggleTimer:(id)sender {
+    if (self.timer)
+        [self.timer invalidate], self.timer = nil, self.timerTime = 0;
+    else
+        [self resetTimer];
     [self redraw];
 }
 
@@ -381,7 +389,7 @@ using namespace std;
     float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
     float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
     
-    vector<MeshPath> & paths = _mesh._timeline.writePathsForTime([NSDate date].timeIntervalSinceReferenceDate);
+    vector<MeshPath> & paths = _mesh._timeline.writePathsForTime(self.timerTime);
     
     State uniforms;
     uniforms.CTM = CTM;
