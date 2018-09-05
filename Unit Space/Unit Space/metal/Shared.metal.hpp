@@ -179,6 +179,7 @@ enum ShapeType : short {
     kShapeTypeEllipse,
     kShapeTypeRect,
     kShapeTypeRoundedRect,
+    kShapeTypeLozenge,
     kShapeTypeQuadratic,
 };
 

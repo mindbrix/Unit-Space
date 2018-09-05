@@ -106,9 +106,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     RGBA8 color = colors[iid];
     float scale = sqrt(abs(state.CTM.a * state.CTM.d - state.CTM.b * state.CTM.c));
     float dilation = 0.7071 / scale;
-    float r = circle.r + dilation;
-    
-    float2 up = { circle.x + r * select(-1.0, 1.0, vid & 1), circle.y + r * select(-1.0, 1.0, vid & 2) };
+    float2 up = { circle.x + (circle.r + dilation) * select(-1.0, 1.0, vid & 1), circle.y + (circle.r + dilation) * select(-1.0, 1.0, vid & 2) };
     float dx = up.x * state.CTM.a + up.y * state.CTM.c + state.CTM.tx;
     float dy = up.x * state.CTM.b + up.y * state.CTM.d + state.CTM.ty;
     
@@ -133,7 +131,9 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
     else if (vert.shapeType == kShapeTypeRoundedRect) {
         float ur = max(2.0 / vert.scale, kCornerRadius);
         return vert.color * roundedRectDistance(vert.unitPoint, ur, kDilation);
-    } else if (vert.shapeType == kShapeTypeQuadratic) {
+    } else if (vert.shapeType == kShapeTypeLozenge) {
+        return vert.color * lozengeDistance(vert.unitPoint, kDilation);
+    } else {
         return vert.color * quadraticDistance(vert.unitPoint, kDilation);
     }
 }

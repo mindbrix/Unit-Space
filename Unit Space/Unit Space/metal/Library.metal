@@ -96,6 +96,16 @@ float rectDistance(float2 unitPoint, float dilation) {
     return saturate(dx) * saturate(dy);
 }
 
+float lozengeDistance(float2 unitPoint, float dilation) {
+    float u = unitPoint.x, v = unitPoint.y;
+    float w = rsqrt(dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
+    float h = rsqrt(dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
+    float dx = (1.0 - abs(u)) * w;
+    float dy = (1.0 - abs(v)) * h;
+    float x = w - dx, y = max(0.0, w - dy);
+    return saturate(w - sqrt(x * x + y * y) + dilation);
+}
+
 float quadraticDistance(float2 unitPoint, float dilation) {
     float x = abs(unitPoint.x), y = 1 - abs(unitPoint.y);
     float fx = 2 * x * dfdx(x) - dfdx(y);
