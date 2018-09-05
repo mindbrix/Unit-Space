@@ -44,7 +44,7 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     dx12 = x2 - x1, dy12 = y2 - y1;
     dx20 = x0 - x2, dy20 = y0 - y2;
     area = dx12 * dy20 - dy12 * dx20;
-    if (abs(area) < 1)
+    if (abs(area) < 4)
         return edgeWinding(x0, y0, x2, y2);
     
     u = (dx12 * (0.5 - y1) - dy12 * (0.5 - x1)) / area;
