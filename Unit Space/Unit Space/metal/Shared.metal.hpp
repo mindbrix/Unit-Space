@@ -178,7 +178,8 @@ enum CallType : unsigned int {
 enum ShapeType : short {
     kShapeTypeEllipse,
     kShapeTypeRect,
-    kShapeTypeRoundedRect
+    kShapeTypeRoundedRect,
+    kShapeTypeQuadratic,
 };
 
 struct Call {

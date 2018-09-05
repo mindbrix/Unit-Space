@@ -96,11 +96,18 @@ float rectDistance(float2 unitPoint, float dilation) {
     return saturate(dx) * saturate(dy);
 }
 
-float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2) {
+float quadraticDistance(float2 unitPoint, float dilation) {
+    float x = abs(unitPoint.x), y = 1 - abs(unitPoint.y);
+    float fx = 2 * x * dfdx(x) - dfdx(y);
+    float fy = 2 * x * dfdy(x) - dfdy(y);
+    return saturate((y - x * x) * rsqrt(fx * fx + fy * fy) + dilation);
+}
+
+float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2, float dilation) {
     float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
     float fx = dfdx(b) * 4 * d + dfdx(d) * 4 * b - 2 * a * dfdx(a);
     float fy = dfdy(b) * 4 * d + dfdy(d) * 4 * b - 2 * a * dfdy(a);
-    return (4.0 * b * d - a * a) * rsqrt(fx * fx + fy * fy);
+    return (4.0 * b * d - a * a) * rsqrt(fx * fx + fy * fy) + dilation;
 }
 
 float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
@@ -183,7 +190,7 @@ float unitQuadraticWinding(float2 unitPoint) {
     
     float x0 = -ux, x1 = 1.0 - ux, x2 = x1;
     float y0 = -uy, y1 = y0, y2 = 1.0 - uy;
-    return quadraticDistance(x0, y0, x1, y1, x2, y2);
+    return quadraticDistance(x0, y0, x1, y1, x2, y2, 0);
     
     
     float a = dfdx(ux), b = dfdy(ux);

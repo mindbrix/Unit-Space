@@ -130,9 +130,11 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
         return vert.color * ellipseDistance(vert.unitPoint, kDilation);
     else if (vert.shapeType == kShapeTypeRect)
         return vert.color * rectDistance(vert.unitPoint, kDilation);
-    else {
+    else if (vert.shapeType == kShapeTypeRoundedRect) {
         float ur = max(2.0 / vert.scale, kCornerRadius);
         return vert.color * roundedRectDistance(vert.unitPoint, ur, kDilation);
+    } else if (vert.shapeType == kShapeTypeQuadratic) {
+        return vert.color * quadraticDistance(vert.unitPoint, kDilation);
     }
 }
 
