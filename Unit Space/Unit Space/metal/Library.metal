@@ -213,10 +213,7 @@ float2 unitComplexMultiply(float2 unit) {
 }
 
 float2 unitInverse(float2 unit) {
-    unit = (unit - 0.5) * 2.0;
-    unit = unit / dot(unit, unit);
-    unit = unit * 0.5 + 0.5;
-    return unit;
+    return unit / dot(unit, unit);
 }
 
 float2 unitRepeat(float2 unit, bool rx, bool ry) {
