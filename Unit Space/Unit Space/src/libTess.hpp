@@ -75,25 +75,23 @@ struct libTess {
         for (int p = 0; p < scene._paths.size(); p++)
             mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
-        int divisions = 4, size = (int)scene._paths.size(), step = (size + divisions - 1) / divisions;
-        int p, i, base;//, jobs;
-        if (divisions == 1) {
-            for (p = i = 0; i < divisions; i++, p += step)
-                triangulateRange(mesh._points, mesh._idxs, scene, p > size ? size : p, p + step > size ? size : p + step);
-        } else {
-            int counts[scene._paths.size()], count, total;
-            for (total = count = p = 0; p < scene._paths.size(); counts[p] = count, total += count, count = 0, p++)
+        int divisions = 4, size = (int)scene._paths.size();
+        int p, i, base;
+        if (divisions == 1)
+            triangulateRange(mesh._points, mesh._idxs, scene, 0, size);
+        else {
+            int counts[size], count, total;
+            for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
                 for (SubPath& s : scene._paths[p]._subPaths)
                     count += s._quadratics.count();
             int begins[divisions + 1], target, *b = begins;
-            begins[0] = 0, begins[divisions] = (int)scene._paths.size();
+            begins[0] = 0, begins[divisions] = size;
             for (count = p = 0, i = 1; i < divisions; i++) {
                 target = total * i / divisions;
                 while (count < target)
                     count += counts[p++];
                 begins[i] = p;
             }
-            
             vector<Vector> points[divisions], *pointss = points;
             vector<int> idxs[divisions], *idxss = idxs;
             dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^(size_t idx) {
