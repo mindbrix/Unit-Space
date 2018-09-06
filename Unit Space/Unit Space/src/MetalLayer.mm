@@ -156,6 +156,7 @@
         dispatch_semaphore_signal(_inflight_semaphore);
         return;
     }
+    [self syncMesh:*mesh];
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     if (self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height) {
         MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
@@ -281,7 +282,6 @@
 - (void)writePathCalls:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState {
     Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
     Mesh::writePathCalls(mesh, clipBounds, state, meshState);
-    [self syncMesh:mesh];
 }
 
 - (void)syncMesh:(Mesh &)mesh {
