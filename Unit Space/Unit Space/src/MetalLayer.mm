@@ -11,6 +11,7 @@
 
 @interface MetalLayer ()
 
+@property (nonatomic, strong) dispatch_semaphore_t inflight_semaphore;
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
@@ -57,6 +58,7 @@
     
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
+    self.inflight_semaphore = dispatch_semaphore_create(2);
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
     depthStencilDescriptor.depthWriteEnabled = YES;
@@ -137,6 +139,7 @@
 - (void)display {
     @autoreleasepool {
         self.drawableSize = CGSizeMake(self.bounds.size.width * self.contentsScale, self.bounds.size.height * self.contentsScale);
+        dispatch_semaphore_wait(_inflight_semaphore, DISPATCH_TIME_FOREVER);
         [self draw];
     }
 }
@@ -148,13 +151,12 @@
     Call *calls = mesh ? & mesh->_calls[0] : nullptr;
     size_t count = mesh ? mesh->_calls.size() : 0;
     
-    if (calls == nullptr || count == 0)
+    id <CAMetalDrawable> drawable = calls == nullptr || count == 0 ? nil : [self nextDrawable];
+    if (drawable == nil) {
+        dispatch_semaphore_signal(_inflight_semaphore);
         return;
+    }
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
-    id <CAMetalDrawable> drawable = [self nextDrawable];
-    if (drawable == nil)
-        return;
-    
     if (self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height) {
         MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
                                                                                         width:self.drawableSize.width
@@ -266,7 +268,10 @@
                           baseInstance:baseInstance];
     }
     [commandEncoder endEncoding];
-
+    __weak dispatch_semaphore_t block_sema = _inflight_semaphore;
+    [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+        dispatch_semaphore_signal(block_sema);
+    }];
     [commandBuffer presentDrawable:drawable];
     [commandBuffer commit];
 }
