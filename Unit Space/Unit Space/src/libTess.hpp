@@ -81,14 +81,13 @@ struct libTess {
             for (p = i = 0; i < divisions; i++, p += step)
                 triangulateRange(mesh._points, mesh._idxs, scene, p > size ? size : p, p + step > size ? size : p + step);
         } else {
-            dispatch_queue_t queue = dispatch_queue_create("triangulate()", DISPATCH_QUEUE_CONCURRENT);
-            
             jobs = (size + divisions - 1) / divisions;
             jobs = jobs < divisions ? jobs : divisions;
             
             vector<Vector> points[jobs], *pointss = points;
             vector<int> idxs[jobs], *idxss = idxs;
             
+            dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
             dispatch_apply(jobs, queue, ^(size_t idx) {
                 NSLog(@"%ld", idx);
                 int p = (int)idx * step;
