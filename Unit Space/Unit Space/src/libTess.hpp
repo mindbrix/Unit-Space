@@ -69,16 +69,16 @@ struct libTess {
         mesh.empty();
         for (int p = 0; p < scene._paths.size(); p++)
             mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
-        triangulateRange(mesh, scene, 0, (int)scene._paths.size());
+        triangulateRange(mesh._points, mesh._idxs, scene, 0, (int)scene._paths.size());
     }
     
-    static void triangulateRange(Mesh& mesh, Scene& scene, int begin, int end) {
+    static void triangulateRange(vector<Vector>& _points, vector<int>& _idxs, Scene& scene, int begin, int end) {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         vector<float> scales;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
-            mesh._idxs.emplace_back((int)(mesh._points.size() / kMeshTriangleSize));
+            _idxs.emplace_back((int)(_points.size() / kMeshTriangleSize));
             
             addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
@@ -136,10 +136,10 @@ struct libTess {
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
                         
-                        mesh._points.emplace_back(p, ta > t ? ta : t);
-                        mesh._points.emplace_back(x0, y0), mesh._points.emplace_back(m0);
-                        mesh._points.emplace_back(x1, y1), mesh._points.emplace_back(m1);
-                        mesh._points.emplace_back(x2, y2), mesh._points.emplace_back(m2);
+                        _points.emplace_back(p, ta > t ? ta : t);
+                        _points.emplace_back(x0, y0), _points.emplace_back(m0);
+                        _points.emplace_back(x1, y1), _points.emplace_back(m1);
+                        _points.emplace_back(x2, y2), _points.emplace_back(m2);
                     }
                 }
             }
