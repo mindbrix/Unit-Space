@@ -113,13 +113,6 @@ float quadraticDistance(float2 unitPoint, float dilation) {
     return saturate((y - x * x) * rsqrt(fx * fx + fy * fy) + dilation);
 }
 
-float quadraticDistance(float x0, float y0, float x1, float y1, float x2, float y2, float dilation) {
-    float a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
-    float fx = dfdx(b) * 4 * d + dfdx(d) * 4 * b - 2 * a * dfdx(a);
-    float fy = dfdy(b) * 4 * d + dfdy(d) * 4 * b - 2 * a * dfdy(a);
-    return (4.0 * b * d - a * a) * rsqrt(fx * fx + fy * fy) + dilation;
-}
-
 float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
     float u = unitPoint.x, v = unitPoint.y;
     float x = max(0.0, abs(u) - (1.0 - radius)) / radius, y = max(0.0, abs(v) - (1.0 - radius)) / radius;
