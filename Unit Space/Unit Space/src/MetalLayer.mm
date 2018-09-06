@@ -273,7 +273,7 @@
                           baseInstance:baseInstance];
     }
     [commandEncoder endEncoding];
-    __weak dispatch_semaphore_t block_sema = _inflight_semaphore;
+    __block dispatch_semaphore_t block_sema = _inflight_semaphore;
     [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
         dispatch_semaphore_signal(block_sema);
     }];
