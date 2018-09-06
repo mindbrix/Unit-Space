@@ -19,7 +19,6 @@
 
 @property(weak) id <LayerDelegate> layerDelegate;
 
-- (void)writePathCalls:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState;
 - (void)uploadMesh:(Mesh &)mesh;
 
 @end

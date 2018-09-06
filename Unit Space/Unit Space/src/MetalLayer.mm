@@ -282,11 +282,6 @@
 
 #pragma mark - Public
 
-- (void)writePathCalls:(Mesh &)mesh state:(State)state meshState:(MeshState)meshState {
-    Bounds clipBounds = { 0, 0, float(std::ceil(self.bounds.size.width * self.contentsScale)), float(std::ceil(self.bounds.size.height * self.contentsScale)) };
-    Mesh::writePathCalls(mesh, clipBounds, state, meshState);
-}
-
 - (void)uploadMesh:(Mesh &)mesh {
     if (mesh._quadraticFloats.size())
         _quadraticFloatsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticFloats.get()

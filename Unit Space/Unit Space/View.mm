@@ -504,7 +504,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         return;
     }
     
-    [self.metalLayer writePathCalls:_mesh state:uniforms meshState:meshState];
+    Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
+    Mesh::writePathCalls(_mesh, clipBounds, uniforms, meshState);
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
