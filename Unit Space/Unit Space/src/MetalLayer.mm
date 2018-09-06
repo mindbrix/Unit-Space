@@ -282,6 +282,7 @@
 - (void)syncMesh:(Mesh &)mesh {
     memcpy(_pathsBuffer.contents, & mesh._timeline.pathsForTime(1)[0], _pathsBuffer.length);
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
+    [[self.commandQueue commandBuffer] commit];
 }
 
 - (void)uploadMesh:(Mesh &)mesh {
