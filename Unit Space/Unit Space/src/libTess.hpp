@@ -6,6 +6,8 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 
+#import <dispatch/dispatch.h>
+
 #import "Scene.hpp"
 #import <vector>
 #import "tesselator.h"
@@ -67,24 +69,37 @@ struct libTess {
     
     static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
+        if (scene._paths.size() == 0)
+            return;
+        
         for (int p = 0; p < scene._paths.size(); p++)
             mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
-        const int divisions = 4, size = (int)scene._paths.size(), step = (size + divisions - 1) / divisions * divisions;
-        int p, i, base;
-//        for (p = i = 0; i < divisions; i++, p += step)
-//            triangulateRange(mesh._points, mesh._idxs, scene, p > size ? size : p, p + step > size ? size : p + step);
-        
-        vector<Vector> pointss[divisions];
-        vector<int> idxss[divisions];
-        for (p = i = 0; i < divisions; i++, p += step)
-            triangulateRange(pointss[i], idxss[i], scene, p > size ? size : p, p + step > size ? size : p + step);
-
-        for (base = i = 0; i < divisions; base += (int)pointss[i].size(), i++) {
-            for (Vector pt : pointss[i])
-                mesh._points.emplace_back(pt);
-            for (int idx : idxss[i])
-                mesh._idxs.emplace_back(base + idx);
+        int divisions = 4, size = (int)scene._paths.size(), step = (size + divisions - 1) / divisions;
+        int p, i, base, jobs;
+        if (true) {
+            for (p = i = 0; i < divisions; i++, p += step)
+                triangulateRange(mesh._points, mesh._idxs, scene, p > size ? size : p, p + step > size ? size : p + step);
+        } else {
+            dispatch_queue_t queue = dispatch_queue_create("triangulate()", DISPATCH_QUEUE_CONCURRENT);
+            
+            jobs = (size + divisions - 1) / divisions;
+            jobs = jobs < divisions ? jobs : divisions;
+            
+            vector<Vector> points[jobs], *pointss = points;
+            vector<int> idxs[jobs], *idxss = idxs;
+            
+            dispatch_apply(jobs, queue, ^(size_t idx) {
+                NSLog(@"%ld", idx);
+                int p = (int)idx * step;
+                triangulateRange(pointss[idx], idxss[idx], scene, p > size ? size : p, p + step > size ? size : p + step);
+            });
+            for (base = i = 0; i < jobs; base += (int)points[i].size() / kMeshTriangleSize, i++) {
+                for (Vector pt : points[i])
+                    mesh._points.emplace_back(pt);
+                for (int idx : idxs[i])
+                    mesh._idxs.emplace_back(base + idx);
+            }
         }
     }
     
