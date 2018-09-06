@@ -193,7 +193,7 @@ float unitQuadraticWinding(float2 unitPoint) {
     
     float x0 = -ux, x1 = 1.0 - ux, x2 = x1;
     float y0 = -uy, y1 = y0, y2 = 1.0 - uy;
-    return quadraticDistance(x0, y0, x1, y1, x2, y2, 0);
+    //return quadraticDistance(x0, y0, x1, y1, x2, y2, 0);
     
     
     float a = dfdx(ux), b = dfdy(ux);
