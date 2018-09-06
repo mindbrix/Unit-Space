@@ -368,7 +368,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 
 - (void)reset {
     if (_svgData || _fontData) {
-        libTess::triangulate(_mesh, _scene, self.useEvenOdd);
+        libTess::triangulate(_mesh, _scene);
         Quadratics::writeScene(_mesh, _scene);
         [self.metalLayer uploadMesh:_mesh];
     } else {
@@ -400,7 +400,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     if (self.pathBitmask & kPathBitmaskQuad)
         _scene.addPath(p2);
     
-    libTess::triangulate(_mesh, _scene, self.useEvenOdd);
+    libTess::triangulate(_mesh, _scene);
     Quadratics::writeScene(_mesh, _scene);
     [self.metalLayer uploadMesh:_mesh];
 }

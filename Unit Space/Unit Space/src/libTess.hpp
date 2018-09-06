@@ -65,15 +65,19 @@ struct libTess {
         return miterVector(x0, y0, px, py, nx, ny, left, limit, 1);
     }
     
-    static void triangulate(Mesh& mesh, Scene& scene, bool useMasking) {
+    static void triangulate(Mesh& mesh, Scene& scene) {
         mesh.empty();
+        for (int p = 0; p < scene._paths.size(); p++)
+            mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
+        triangulateRange(mesh, scene, 0, (int)scene._paths.size());
+    }
+    
+    static void triangulateRange(Mesh& mesh, Scene& scene, int begin, int end) {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
-        
         vector<float> scales;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-        for (int p = 0; p < scene._paths.size(); p++) {
+        for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
-            mesh._timeline.pathsForTime(0).emplace_back(path._color, scene._CTMs[p], path._bounds);
             mesh._idxs.emplace_back((int)(mesh._points.size() / kMeshTriangleSize));
             
             addPathContours(tess, path);
