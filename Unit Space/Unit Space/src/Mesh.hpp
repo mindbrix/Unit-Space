@@ -250,6 +250,10 @@ struct Mesh {
     };
     
     struct Timeline {
+		inline AffineTransform ctmForTime(float time, AffineTransform ctm, Bounds b) {
+			ctm.tx += (b.ux - b.lx) * time;
+			return ctm;
+		}
         void empty() {
             _paths.resize(0), _tpaths.resize(0);
         }
@@ -267,8 +271,7 @@ struct Mesh {
                 double t = time - std::floor(time);
                 t = 1 - std::abs(1 - t * 2);
                 t = 3 * t * t - 2 * t * t *t;
-                _tpaths[p] = _paths[p];
-                _tpaths[p].ctm.tx += (_paths[p].bounds.ux - _paths[p].bounds.lx) * t;
+				_tpaths[p].ctm = ctmForTime(t, _paths[p].ctm, _paths[p].bounds);
             }
             return _tpaths;
         }
