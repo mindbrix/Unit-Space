@@ -104,7 +104,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 {
     Circle circle = { txs[iid] + as[iid] * 0.5, tys[iid] + as[iid] * 0.5, as[iid] * 0.5 };
     RGBA8 color = colors[iid];
-    AffineTransform CTM = AffineTransformConcat(meshState.soaCTM, state.CTM);
+    constant AffineTransform& CTM = state.CTM;
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float dilation = 0.7071 / scale;
     float2 up = { circle.x + (circle.r + dilation) * select(-1.0, 1.0, vid & 1), circle.y + (circle.r + dilation) * select(-1.0, 1.0, vid & 2) };
