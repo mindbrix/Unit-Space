@@ -68,15 +68,15 @@ struct libTess {
     }
     
     static void triangulate(Mesh& mesh, Scene& scene) {
+        int p, i, base, divisions = 4, size = (int)scene._paths.size();
+        
         mesh.empty();
-        if (scene._paths.size() == 0)
+        if (size == 0)
             return;
         
-        for (int p = 0; p < scene._paths.size(); p++)
+        for (p = 0; p < size; p++)
             mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
-        int divisions = 4, size = (int)scene._paths.size();
-        int p, i, base;
         if (divisions == 1)
             triangulateRange(mesh._points, mesh._idxs, scene, 0, size);
         else {
