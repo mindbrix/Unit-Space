@@ -146,6 +146,7 @@ struct MeshState {
     unsigned int        quadraticStride;
     unsigned int        subdivisionCount;
 	Bounds				clipBounds;
+	AffineTransform		soaCTM;
     float               cellSize;
 };
 

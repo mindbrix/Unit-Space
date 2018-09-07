@@ -96,7 +96,6 @@ struct ShapeVertex
 };
 
 vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                          device MeshPath *paths [[buffer(9)]],
                                           constant short *types [[buffer(10)]],
                                           constant float *as [[buffer(11)]], constant float *bs [[buffer(12)]], constant float *cs [[buffer(13)]], constant float *ds [[buffer(14)]],
                                           constant float *txs [[buffer(15)]], constant float *tys [[buffer(16)]],
@@ -105,7 +104,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 {
     Circle circle = { txs[iid] + as[iid] * 0.5, tys[iid] + as[iid] * 0.5, as[iid] * 0.5 };
     RGBA8 color = colors[iid];
-    AffineTransform CTM = AffineTransformConcat(paths[0].ctm, state.CTM);
+    AffineTransform CTM = AffineTransformConcat(meshState.soaCTM, state.CTM);
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     float dilation = 0.7071 / scale;
     float2 up = { circle.x + (circle.r + dilation) * select(-1.0, 1.0, vid & 1), circle.y + (circle.r + dilation) * select(-1.0, 1.0, vid & 2) };

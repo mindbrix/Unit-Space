@@ -447,6 +447,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     meshState.subdivisionCount = !_useQuadratics || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
+	meshState.soaCTM = { 1, 0, 0, 1, 0, 0 };
     meshState.cellSize = 1;
     
     _mesh._calls.resize(0);
@@ -499,7 +500,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
             *txs++ = (idx % dimension) * g - unit.tx;
         for (idx = 0; idx < count; idx++)
             *tys++ = idx / dimension * g - unit.ty;
-        
+		
+		meshState.soaCTM = paths[0].ctm;
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, count);
         return;
     }
@@ -513,6 +515,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         RGBA8 red(255, 0, 0, 255);
         
         if (_svgData == nullptr && _fontData == nullptr) {
+			meshState.soaCTM = paths[0].ctm;
             if (self.pathBitmask & kPathBitmaskTriangle)
                 for (int j = 0; j < _triangle.size(); j++)
                     _mesh._shapesSOA.addCircle(_triangle[j].x, _triangle[j].y, radius, red);
@@ -523,9 +526,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
                 for (int j = 0; j < _quad.size(); j++)
                     _mesh._shapesSOA.addCircle(_quad[j].x, _quad[j].y, radius, red);
         } else if (p != -1) {
-            AffineTransform m = paths[p].ctm;
+			AffineTransform m = meshState.soaCTM = paths[p].ctm;
             float scale = 1.f / std::sqrt(std::abs(m.a * m.d - m.b * m.d));
-            uniforms.CTM = AffineTransformConcat(m, CTM);
             for (SubPath& s : _scene._paths[p]._subPaths) {
                 float *points = s._quadratics.get();
                 int npoints = (int)s._quadratics.count() / 2;
