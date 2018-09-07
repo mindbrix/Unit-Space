@@ -250,7 +250,7 @@ struct Mesh {
     };
     
     struct Timeline {
-		static void writeCTMForTime(AffineTransform& ctm, float time, MeshPath& p) {
+		inline void writeCTMForTime(AffineTransform& ctm, float time, MeshPath& p) {
 			ctm = p.ctm;
 			ctm.tx += (p.bounds.ux - p.bounds.lx) * time;
 		}
