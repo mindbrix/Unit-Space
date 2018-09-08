@@ -126,6 +126,7 @@ struct libTess {
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
                     float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
+                    bool ef0, ef1, ef2;
                     Vector m0, m1, m2;
                     int i, i0, i1, i2;
                     for (i = 0; i < nelems; i++, polygon += kPolySize) {
@@ -153,6 +154,10 @@ struct libTess {
                                         break;
                             }
                         }
+                        ef0 = e0->next() == e1->idx(), ef1 = e1->next() == e2->idx(), ef2 = e2->next() == e0->idx();
+                       // if (int(ef0) + int(ef1) + int(ef2) <= 1)
+                       //     continue;
+                        
                         m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2);
                         m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0);
                         m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1);
