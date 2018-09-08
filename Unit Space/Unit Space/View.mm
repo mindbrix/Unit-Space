@@ -219,7 +219,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     float dx = event.deltaX * self.layer.contentsScale, dy = -event.deltaY * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c, uy = dx * inv.b + dy * inv.d;
     
-    if (d0 < kLargePointDeviceRadius) {
+    if (d0 < kLargePointDeviceRadius * self.layer.contentsScale) {
         v.x += ux;
         v.y += uy;
         return YES;
