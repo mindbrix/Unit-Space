@@ -160,16 +160,16 @@ struct libTess {
                         ef2 = e2->next() == e0->idx() && e2->base == e0->base;
                         oi0 = indices[e0->idx()], oi1 = indices[e1->idx()], oi2 = indices[e2->idx()];
                         if (oi0 != TESS_UNDEF) {
-                            path.pointForIndex(tp0, oi0 * 2);
-                            assert(x0 == tp0[0] && y0 == tp0[1]);
+                            path.controlPointForIndex(tp0, oi0 * 2);
+//                            assert(x0 == tp0[0] && y0 == tp0[1]);
                         }
                         if (oi1 != TESS_UNDEF) {
-                            path.pointForIndex(tp1, oi1 * 2);
-                            assert(x1 == tp1[0] && y1 == tp1[1]);
+                            path.controlPointForIndex(tp1, oi1 * 2);
+//                            assert(x1 == tp1[0] && y1 == tp1[1]);
                         }
                         if (oi2 != TESS_UNDEF) {
-                            path.pointForIndex(tp2, oi2 * 2);
-                            assert(x2 == tp2[0] && y2 == tp2[1]);
+                            path.controlPointForIndex(tp2, oi2 * 2);
+//                            assert(x2 == tp2[0] && y2 == tp2[1]);
                         }
                         
                        // if (int(ef0) + int(ef1) + int(ef2) != 1)

@@ -30,14 +30,16 @@ struct Path {
         return _evenOdd ? wn & 1 : wn;
     }
     
-    void pointForIndex(float *p, int idx, int stride = 2) {
-        int begin = 0, end, i;
+    void controlPointForIndex(float *p, int idx, int stride = 2) {
+        int begin = 0, end, npoints, i;
         for (SubPath& s : _subPaths) {
-            end = begin + (int)s._quadratics.count() / 2;
+            npoints = (int)s._quadratics.count() / 2, end = begin + npoints;
             if (idx < end) {
                 i = (idx - begin) * 2;
-                p[0] = s._quadratics[i];
-                p[1] = s._quadratics[i + 1];
+                if (idx == end - 1) {
+                    p[0] = (s._quadratics[i] + s._quadratics[0]) * 0.5, p[1] = (s._quadratics[i + 1] + s._quadratics[1]) * 0.5;
+                } else
+                    p[0] = s._quadratics[i + 2], p[1] = s._quadratics[i + 3];
                 break;
             }
             begin = (end + stride - 1) / stride * stride;
