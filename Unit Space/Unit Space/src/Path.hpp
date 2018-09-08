@@ -30,6 +30,17 @@ struct Path {
         return _evenOdd ? wn & 1 : wn;
     }
     
+    float *pointForIndex(int idx, int stride = 2) {
+        int begin = 0, end;
+        for (SubPath& s : _subPaths) {
+            end = begin + (int)s._quadratics.count() / 2;
+            if (idx < end)
+                return & s._quadratics[(idx - begin) * 2];
+            begin = (end + stride - 1) / stride * stride;
+        }
+        assert(0);
+        return nullptr;
+    }
     RGBA8                       _color;
     bool                        _evenOdd;
     Bounds                      _bounds;
