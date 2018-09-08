@@ -117,6 +117,7 @@ struct libTess {
             addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
                 int count = tessGetVertexCount(tess);
+                const TESSindex *indices = tessGetVertexIndices(tess);
                 const float *verts = tessGetVertices(tess);
                 Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
                 addTessContours(dst, tess, edges);
@@ -128,7 +129,7 @@ struct libTess {
                     float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
                     bool ef0, ef1, ef2;
                     Vector m0, m1, m2;
-                    int i, i0, i1, i2;
+                    int i, i0, i1, i2, oi0, oi1, oi2;
                     for (i = 0; i < nelems; i++, polygon += kPolySize) {
                         i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
                         
@@ -157,6 +158,7 @@ struct libTess {
                         ef0 = e0->next() == e1->idx() && e0->base == e1->base;
                         ef1 = e1->next() == e2->idx() && e1->base == e2->base;
                         ef2 = e2->next() == e0->idx() && e2->base == e0->base;
+                        oi0 = indices[e0->idx()], oi1 = indices[e1->idx()], oi2 = indices[e2->idx()];
                        // if (int(ef0) + int(ef1) + int(ef2) != 1)
                        //     continue;
                         
