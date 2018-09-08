@@ -154,8 +154,10 @@ struct libTess {
                                         break;
                             }
                         }
-                        ef0 = e0->next() == e1->idx(), ef1 = e1->next() == e2->idx(), ef2 = e2->next() == e0->idx();
-                       // if (int(ef0) + int(ef1) + int(ef2) <= 1)
+                        ef0 = e0->next() == e1->idx() && e0->base == e1->base;
+                        ef1 = e1->next() == e2->idx() && e1->base == e2->base;
+                        ef2 = e2->next() == e0->idx() && e2->base == e0->base;
+                       // if (int(ef0) + int(ef1) + int(ef2) != 1)
                        //     continue;
                         
                         m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2);
