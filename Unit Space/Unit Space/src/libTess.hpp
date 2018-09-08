@@ -126,7 +126,7 @@ struct libTess {
                     float *points = (float *)tessGetVertices(dst);
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
-                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
+                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2, *p0, *p1, *p2;
                     bool ef0, ef1, ef2;
                     Vector m0, m1, m2;
                     int i, i0, i1, i2, oi0, oi1, oi2;
@@ -159,6 +159,16 @@ struct libTess {
                         ef1 = e1->next() == e2->idx() && e1->base == e2->base;
                         ef2 = e2->next() == e0->idx() && e2->base == e0->base;
                         oi0 = indices[e0->idx()], oi1 = indices[e1->idx()], oi2 = indices[e2->idx()];
+                        p0 = oi0 == TESS_UNDEF ? nullptr : path.pointForIndex(oi0 * 2);
+                        p1 = oi1 == TESS_UNDEF ? nullptr : path.pointForIndex(oi1 * 2);
+                        p2 = oi2 == TESS_UNDEF ? nullptr : path.pointForIndex(oi2 * 2);
+                        if (p0)
+                            assert(x0 == p0[0] && y0 == p0[1]);
+                        if (p1)
+                            assert(x1 == p1[0] && y1 == p1[1]);
+                        if (p2)
+                            assert(x2 == p2[0] && y2 == p2[1]);
+                        
                        // if (int(ef0) + int(ef1) + int(ef2) != 1)
                        //     continue;
                         
