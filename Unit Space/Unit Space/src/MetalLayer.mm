@@ -151,15 +151,15 @@
     Call *calls = mesh ? & mesh->_calls[0] : nullptr;
     size_t count = mesh ? mesh->_calls.size() : 0;
     
+    memcpy(_pathsBuffer.contents, & mesh->_timeline.pathsForTime(1)[0], _pathsBuffer.length);
+    [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
+    [[self.commandQueue commandBuffer] commit];
+    
     id <CAMetalDrawable> drawable = calls == nullptr || count == 0 ? nil : [self nextDrawable];
     if (drawable == nil) {
         dispatch_semaphore_signal(_inflight_semaphore);
         return;
     }
-    memcpy(_pathsBuffer.contents, & mesh->_timeline.pathsForTime(1)[0], _pathsBuffer.length);
-    [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
-    [[self.commandQueue commandBuffer] commit];
-    
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     if (self.drawableSize.width != self.depthTexture.width || self.drawableSize.height != self.depthTexture.height) {
         MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
