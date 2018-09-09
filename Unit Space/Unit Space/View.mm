@@ -353,9 +353,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 
 - (void)reset {
     if (_svgData || _fontData) {
-        libTess::triangulate(_mesh, _scene);
-        Quadratics::writeScene(_mesh, _scene);
-        [self.metalLayer uploadMesh:_mesh];
+        
     } else {
         _shapes =
         {
@@ -369,21 +367,14 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
             SubPath::kQuadratic,
             SubPath::kLine
         };
-        [self triangulate];
+        Path p(false, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
+        _scene.empty();
+        _scene.addPath(p);
     }
+    [self triangulate];
 }
 
 - (void)triangulate {
-    Path p(false, RGBA8(255, 0, 0, 255), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
-    _scene.empty();
-    _scene.addPath(p);
-    
-    RGBA8 red(255, 0, 0, 255);
-    RGBA8 green(0, 255, 0, 255);
-    RGBA8 blue(0, 0, 255, 255);
-    RGBA8 black(0, 0, 0, 255);
-    RGBA8 alpha(255, 0, 0, 128);
-    
     libTess::triangulate(_mesh, _scene);
     Quadratics::writeScene(_mesh, _scene);
     [self.metalLayer uploadMesh:_mesh];
