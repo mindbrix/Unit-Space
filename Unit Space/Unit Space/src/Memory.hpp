@@ -69,6 +69,7 @@ struct Memory {
     }
     size_t count()                              { return header ? (header->end ?: header->size / sizeof(T)) : 0; }
     size_t size()                               { return header ? header->size : 0; }
+    size_t pagedSize()                          { return header ? (header->size + 4095) / 4096 * 4096 : 0; }
     T *get() const                              { return (T *) (header ? header->memory : nullptr); }
     inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
     inline void push_back(T n)                  { *new_ptr(1) = n; }

@@ -285,7 +285,7 @@
 - (void)uploadMesh:(Mesh &)mesh {
     if (mesh._quadraticFloats.size())
 		_quadraticFloatsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticFloats.get()
-																length:(mesh._quadraticFloats.size() + 4095) / 4096 * 4096
+																length:mesh._quadraticFloats.pagedSize()
 															   options:MTLResourceStorageModeShared
 														   deallocator:nil];
     if (mesh._quadraticPs.size())
