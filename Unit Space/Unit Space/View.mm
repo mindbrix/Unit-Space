@@ -357,6 +357,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }        },
         {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }                  },
         {   { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }     },
+        {   { 0, 0 }, { 100, 0 }, { 0, 100 }, { 100, 100 }                  },
     };
     _shapeTypes =
     {
@@ -364,6 +365,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         SubPath::kQuadratic,
         SubPath::kLine,
         SubPath::kQuadratic,
+        SubPath::kLine,
     };
 }
 
