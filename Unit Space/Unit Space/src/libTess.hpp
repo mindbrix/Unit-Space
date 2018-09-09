@@ -77,9 +77,13 @@ struct libTess {
         for (p = 0; p < size; p++)
             mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
-        if (divisions == 1)
-            triangulateRange(mesh._points, mesh._idxs, scene, 0, size);
-        else {
+        if (divisions == 1) {
+            vector<Vector> points;
+            triangulateRange(points, mesh._idxs, scene, 0, size);
+            Vector *dst = mesh._triangles.new_ptr(points.size());
+            for (Vector pt : points)
+                *dst++ = pt;
+        } else {
             int counts[size], count, total;
             for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
                 for (SubPath& s : scene._paths[p]._subPaths)
@@ -98,8 +102,9 @@ struct libTess {
                 triangulateRange(pointss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
             for (base = i = 0; i < divisions; base += (int)points[i].size() / kMeshTriangleSize, i++) {
+                Vector *dst = mesh._triangles.new_ptr(points[i].size());
                 for (Vector pt : points[i])
-                    mesh._points.emplace_back(pt);
+                    *dst++ = pt;
                 for (int idx : idxs[i])
                     mesh._idxs.emplace_back(base + idx);
             }

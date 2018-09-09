@@ -17,7 +17,7 @@ struct Mesh {
         vector<Call> & calls = mesh._calls;
         AffineTransform ctm;
         Call *call;
-        if (mesh._points.size()) {
+        if (mesh._triangles.size()) {
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
             AffineTransform units[paths.size()];
@@ -153,7 +153,7 @@ struct Mesh {
                 
             } else {
                 call = nullptr;
-                for (end = (int)mesh._points.size() / kMeshTriangleSize, p = (int)paths.size() - 1; p >= 0; p--, end = base) {
+                for (end = (int)mesh._triangles.count() / kMeshTriangleSize, p = (int)paths.size() - 1; p >= 0; p--, end = base) {
                     base = mesh._idxs[p];
                     if (visibles[p] && (opaques[p] || smalls[p])) {
                         count = end - base;
@@ -171,7 +171,7 @@ struct Mesh {
                     for (i = 0; i < ranges.size(); i += 2)
                         for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
                             base = mesh._idxs[p];
-                            end = p + 1 == paths.size() ? (int)mesh._points.size() / kMeshTriangleSize : mesh._idxs[p + 1];
+                            end = p + 1 == paths.size() ? (int)mesh._triangles.count() / kMeshTriangleSize : mesh._idxs[p + 1];
                             count = end - base;
                             if (opaques[p] || smalls[p]) {
                                 if (call == nullptr) {
@@ -290,12 +290,12 @@ struct Mesh {
     Timeline                            _timeline;
     
     vector<int>                         _idxs;
-    vector<Vector>                      _points;
+    Memory<Vector, true>                _triangles;
     
     ShapesSOA                           _shapesSOA;
     
     void empty() {
         _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticIndices = Memory<int>();
-        _timeline.empty(), _idxs.resize(0), _points.resize(0);
+        _timeline.empty(), _idxs.resize(0), _triangles = Memory<Vector, true>();
     }
 };

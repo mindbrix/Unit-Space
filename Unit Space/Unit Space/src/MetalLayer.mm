@@ -15,7 +15,7 @@
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> pointsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> shapePipelineState;
@@ -224,7 +224,7 @@
                     continue;
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:_pointsBuffer offset:0 atIndex:10];
+                [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
@@ -290,17 +290,18 @@
 														   deallocator:nil];
     if (_quadraticPsBuffer.contents != mesh._quadraticPs.get() || _quadraticPsBuffer.length != mesh._quadraticPs.pagedSize())
         _quadraticPsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticPs.get()
-                                                                length:mesh._quadraticPs.pagedSize()
-                                                               options:MTLResourceStorageModeShared
-                                                           deallocator:nil];
+                                                            length:mesh._quadraticPs.pagedSize()
+                                                           options:MTLResourceStorageModeShared
+                                                       deallocator:nil];
+    if (_trianglesBuffer.contents != mesh._triangles.get() || _trianglesBuffer.length != mesh._triangles.pagedSize())
+        _trianglesBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._triangles.get()
+                                                          length:mesh._triangles.pagedSize()
+                                                         options:MTLResourceStorageModeShared
+                                                     deallocator:nil];
     if (mesh._timeline.pathsForTime(0).size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.pathsForTime(0)[0]
                                                  length:mesh._timeline.pathsForTime(0).size() * sizeof(MeshPath)
                                                 options:MTLResourceStorageModeManaged];
-    if (mesh._points.size())
-        _pointsBuffer = [self.device newBufferWithBytes:(void *)& mesh._points[0]
-                                              length:mesh._points.size() * sizeof(Vector)
-                                             options:MTLResourceStorageModeShared];
 }
 
 @end
