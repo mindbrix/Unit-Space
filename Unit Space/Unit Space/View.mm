@@ -73,8 +73,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     if (! self)
         return nil;
     
-    [self reset];
-    
     [self setWantsLayer:YES];
     [self setLayer:[MetalLayer layer]];
     self.metalLayer.contentsScale = [self convertSizeToBacking:NSMakeSize(1.f, 1.f)].width;
@@ -87,9 +85,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     self.useEvenOdd = YES;
     self.f = 20;
     self.count = 1000;
-    
+    [self resetShapes];
     [self redraw];
-
     return self;
 }
 
@@ -249,7 +246,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 }
 
 - (IBAction)resetModel:(id)sender {
-    [self reset];
+    [self resetShapes];
+    [self triangulate];
     [self redraw];
 }
 
@@ -258,7 +256,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     if (_shapeIndex == _shapes.size())
         _shapeIndex = 0;
     
-    [self reset];
+    [self resetShapes];
+    [self triangulate];
     [self redraw];
 }
 - (IBAction)toggleOne:(id)sender {
@@ -351,30 +350,27 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 
 #pragma mark -
 
-- (void)reset {
-    if (_svgData || _fontData) {
-        
-    } else {
-        _shapes =
-        {
-            {   { 0, 0 }, { 100, 100 }, { 0, 100 }                          },
-            {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }    },
-            {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }              },
-        };
-        _shapeTypes =
-        {
-            SubPath::kLine,
-            SubPath::kQuadratic,
-            SubPath::kLine
-        };
+- (void)resetShapes {
+    _shapes =
+    {
+        {   { 0, 0 }, { 100, 100 }, { 0, 100 }                          },
+        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }    },
+        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }              },
+    };
+    _shapeTypes =
+    {
+        SubPath::kLine,
+        SubPath::kQuadratic,
+        SubPath::kLine
+    };
+}
+
+- (void)triangulate {
+    if (_svgData == nil && _fontData == nil) {
         Path p(false, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
         _scene.empty();
         _scene.addPath(p);
     }
-    [self triangulate];
-}
-
-- (void)triangulate {
     libTess::triangulate(_mesh, _scene);
     Quadratics::writeScene(_mesh, _scene);
     [self.metalLayer uploadMesh:_mesh];
@@ -551,7 +547,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         _scene.addFont(_fontData.bytes, _fontData.length);
     }
     _flags |= 8;
-    [self reset];
+    [self triangulate];
     [self redraw];
 }
 
@@ -563,7 +559,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         _scene.addSVG(_svgData.bytes, _svgData.length);
     }
     _flags |= 8;
-    [self reset];
+    [self triangulate];
     [self redraw];
 }
 
