@@ -171,7 +171,7 @@
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
         
-        desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
         desc.pixelFormat = MTLPixelFormatR32Float;
         self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
         [self.accumulationTexture setLabel:@"accumulationTexture"];
