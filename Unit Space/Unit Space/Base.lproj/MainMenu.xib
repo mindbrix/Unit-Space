@@ -641,10 +641,10 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="dE8-xK-Qcr"/>
-                            <menuItem title="Shift Path Bitmask" keyEquivalent="," id="6g3-WI-1Dt">
+                            <menuItem title="Cycle Shapes" keyEquivalent="," id="6g3-WI-1Dt">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="shiftPathBitmask:" target="-1" id="tLL-Uc-nq9"/>
+                                    <action selector="cycleShapes:" target="-1" id="AKU-Uh-yht"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle 1" keyEquivalent="1" id="v8Y-J0-D5j">

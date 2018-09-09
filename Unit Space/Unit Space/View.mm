@@ -253,7 +253,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     [self redraw];
 }
 
-- (IBAction)shiftPathBitmask:(id)sender {
+- (IBAction)cycleShapes:(id)sender {
     _shapeIndex++;
     if (_shapeIndex == _shapes.size())
         _shapeIndex = 0;

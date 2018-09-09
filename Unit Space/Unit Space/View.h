@@ -18,7 +18,7 @@
 
 - (IBAction)resetModel:(id)sender;
 
-- (IBAction)shiftPathBitmask:(id)sender;
+- (IBAction)cycleShapes:(id)sender;
 
 - (IBAction)toggleOne:(id)sender;
 - (IBAction)toggleTwo:(id)sender;
