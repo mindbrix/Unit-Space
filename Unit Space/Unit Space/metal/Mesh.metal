@@ -41,6 +41,8 @@ struct AccumulateVertex
         ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
         uy = max(max(max(dy0, dy1), dy2), max(dy3, dy4));
         
+//        const float kDilation = 0.5 * ((1.0 / 0.8) - 1.0);
+//        dx = select(floor(lx - kDilation), ceil(ux + kDilation), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
         dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
         
         dx = clamp(dx, clipBounds.lx, clipBounds.ux);

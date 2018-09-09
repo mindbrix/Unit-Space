@@ -40,6 +40,9 @@ float edgeWinding(float x0, float y0, float x1, float y1) {
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
+//    const float scale = 0.8;
+//    x0 = (x0 - 0.5) * scale + 0.5, x1 = (x1 - 0.5) * scale + 0.5, x2 = (x2 - 0.5) * scale + 0.5;
+    
     float dx12, dy12, dx20, dy20, area, u, v, w, f, t, x01, y01, x12, y12;
     dx12 = x2 - x1, dy12 = y2 - y1;
     dx20 = x0 - x2, dy20 = y0 - y2;
