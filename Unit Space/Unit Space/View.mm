@@ -17,10 +17,6 @@
 constexpr float kPointDeviceRadius = 4;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
 
-constexpr uint64_t kPathBitmaskTriangle = 1 << 0;
-constexpr uint64_t kPathBitmaskLozenge = 1 << 1;
-constexpr uint64_t kPathBitmaskQuad = 1 << 2;
-constexpr uint64_t kPathBitmaskAll = kPathBitmaskTriangle | kPathBitmaskLozenge | kPathBitmaskQuad;
 
 using namespace std;
 
@@ -30,7 +26,6 @@ using namespace std;
 @property(nonatomic) VGAffineTransform *transform;
 @property(nonatomic) CGPoint mouseLocation;
 @property(nonatomic) uint64_t flags;
-@property(nonatomic) uint64_t pathBitmask;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEdges;
 @property(nonatomic) BOOL useQuadratics;
@@ -42,9 +37,9 @@ using namespace std;
 @property(nonatomic) BOOL useEvenOdd;
 @property(nonatomic) BOOL useStrokeColor;
 @property(nonatomic) BOOL showAccumulationsAllocations;
-@property(nonatomic) vector<Vector> triangle;
-@property(nonatomic) vector<Vector> lozenge;
-@property(nonatomic) vector<Vector> quad;
+@property(nonatomic) size_t shapeIndex;
+@property(nonatomic) vector<vector<Vector>> shapes;
+@property(nonatomic) vector<SubPath::Type> shapeTypes;
 @property(nonatomic) Mesh mesh;
 @property(nonatomic) Scene scene;
 @property(nonatomic) float f;
@@ -90,8 +85,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     self.showInterior = YES;
     self.showTriangle = YES;
     self.useEvenOdd = YES;
-    self.pathBitmask = kPathBitmaskTriangle;
-    
     self.f = 20;
     self.count = 1000;
     
@@ -157,15 +150,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     BOOL dragged = NO;
     if (_showPoints) {
         if (_svgData) {} else {
-            if (self.pathBitmask & kPathBitmaskTriangle)
-                dragged = dragged ?:[self mouseDragPoints:event points:_triangle];
-            
-            if (self.pathBitmask & kPathBitmaskLozenge)
-                dragged = dragged ?:[self mouseDragPoints:event points:_lozenge];
-            
-            if (self.pathBitmask & kPathBitmaskQuad)
-                dragged = dragged ?:[self mouseDragPoints:event points:_quad];
-            
+            dragged = dragged ?:[self mouseDragPoints:event points:_shapes[_shapeIndex]];
             if (dragged)
                 [self triangulate];
         }
@@ -269,9 +254,9 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 }
 
 - (IBAction)shiftPathBitmask:(id)sender {
-    _pathBitmask = _pathBitmask << 1;
-    if ((_pathBitmask & kPathBitmaskAll) == 0)
-        _pathBitmask = 1;
+    _shapeIndex++;
+    if (_shapeIndex == _shapes.size())
+        _shapeIndex = 0;
     
     [self reset];
     [self redraw];
@@ -372,33 +357,32 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         Quadratics::writeScene(_mesh, _scene);
         [self.metalLayer uploadMesh:_mesh];
     } else {
-        _triangle = { { 0, 0 }, { 100, 100 }, { 0, 100 } };
-        _lozenge = {  { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 } };
-		_quad = { { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 } };
+        _shapes = {
+            {
+                { 0, 0 }, { 100, 100 }, { 0, 100 }
+            },
+            {
+                { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
+            },
+            {
+                { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }
+            },
+        };
+        _shapeTypes = { SubPath::kLine, SubPath::kQuadratic, SubPath::kLine };
         [self triangulate];
     }
 }
 
 - (void)triangulate {
+    Path p(false, RGBA8(255, 0, 0, 255), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
+    _scene.empty();
+    _scene.addPath(p);
+    
     RGBA8 red(255, 0, 0, 255);
     RGBA8 green(0, 255, 0, 255);
     RGBA8 blue(0, 0, 255, 255);
     RGBA8 black(0, 0, 0, 255);
     RGBA8 alpha(255, 0, 0, 128);
-    
-    Path p0(false, red, { SubPath((float *)& _triangle[0], (int)_triangle.size(), SubPath::kLine) });
-    Path p1(true, red, { SubPath((float *)& _lozenge[0], (int)_lozenge.size(), SubPath::kQuadratic) });
-    Path p2(false, red, { SubPath((float *)& _quad[0], (int)_quad.size(), SubPath::kLine) });
-	
-    _scene.empty();
-    if (self.pathBitmask & kPathBitmaskTriangle)
-        _scene.addPath(p0);
-    
-    if (self.pathBitmask & kPathBitmaskLozenge)
-        _scene.addPath(p1);
-    
-    if (self.pathBitmask & kPathBitmaskQuad)
-        _scene.addPath(p2);
     
     libTess::triangulate(_mesh, _scene);
     Quadratics::writeScene(_mesh, _scene);
@@ -515,15 +499,9 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         
         if (_svgData == nullptr && _fontData == nullptr) {
 			uniforms.CTM = AffineTransformConcat(paths[0].ctm, uniforms.CTM);
-            if (self.pathBitmask & kPathBitmaskTriangle)
-                for (int j = 0; j < _triangle.size(); j++)
-                    _mesh._shapesSOA.addCircle(_triangle[j].x, _triangle[j].y, radius, red);
-            if (self.pathBitmask & kPathBitmaskLozenge)
-                for (int j = 0; j < _lozenge.size(); j++)
-                    _mesh._shapesSOA.addCircle(_lozenge[j].x, _lozenge[j].y, radius, red);
-            if (self.pathBitmask & kPathBitmaskQuad)
-                for (int j = 0; j < _quad.size(); j++)
-                    _mesh._shapesSOA.addCircle(_quad[j].x, _quad[j].y, radius, red);
+            vector<Vector>& shape = _shapes[_shapeIndex];
+            for (int j = 0; j < shape.size(); j++)
+                _mesh._shapesSOA.addCircle(shape[j].x, shape[j].y, radius, red);
         } else if (p != -1) {
 			uniforms.CTM = AffineTransformConcat(paths[p].ctm, uniforms.CTM);
 			for (SubPath& s : _scene._paths[p]._subPaths) {
