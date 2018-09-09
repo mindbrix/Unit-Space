@@ -281,7 +281,7 @@ struct Mesh {
     vector<Call>                        _calls;
     
     Memory<float, true>                 _quadraticFloats;
-    Memory<int>                         _quadraticPs;
+    Memory<int, true>                   _quadraticPs;
     Memory<int>                         _quadraticIndices;
     
     AccumulationSOA                     _accumulationsSOA;
@@ -295,7 +295,7 @@ struct Mesh {
     ShapesSOA                           _shapesSOA;
     
     void empty() {
-        _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int>(), _quadraticIndices = Memory<int>();
+        _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticIndices = Memory<int>();
         _timeline.empty(), _idxs.resize(0), _points.resize(0);
     }
 };

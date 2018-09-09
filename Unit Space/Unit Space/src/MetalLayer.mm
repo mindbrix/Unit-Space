@@ -288,10 +288,11 @@
 																length:mesh._quadraticFloats.pagedSize()
 															   options:MTLResourceStorageModeShared
 														   deallocator:nil];
-    if (mesh._quadraticPs.size())
-        _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
-                                                      length:mesh._quadraticPs.size()
-                                                     options:MTLResourceStorageModeShared];
+    if (_quadraticPsBuffer.contents != mesh._quadraticPs.get() || _quadraticPsBuffer.length != mesh._quadraticPs.pagedSize())
+        _quadraticPsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticPs.get()
+                                                                length:mesh._quadraticPs.pagedSize()
+                                                               options:MTLResourceStorageModeShared
+                                                           deallocator:nil];
     if (mesh._timeline.pathsForTime(0).size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.pathsForTime(0)[0]
                                                  length:mesh._timeline.pathsForTime(0).size() * sizeof(MeshPath)

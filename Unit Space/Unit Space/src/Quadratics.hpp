@@ -45,7 +45,7 @@ struct Quadratics {
                 nfloats += subPathFloatCount(scene._paths[p]._subPaths[s]);
             }
         }
-        mesh._quadraticPs = Memory<int>(nfloats / kQuadraticFloatStride);
+        mesh._quadraticPs = Memory<int, true>(nfloats / kQuadraticFloatStride);
         mesh._quadraticFloats = Memory<float, true>(nfloats);
         
         for (base = p = 0; p < scene._paths.size(); p++)
