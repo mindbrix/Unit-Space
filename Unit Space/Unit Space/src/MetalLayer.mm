@@ -283,8 +283,8 @@
 #pragma mark - Public
 
 - (void)uploadMesh:(Mesh &)mesh {
-    if (mesh._quadraticFloats.size())
-		_quadraticFloatsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticFloats.get()
+    if (_quadraticFloatsBuffer.contents != mesh._quadraticFloats.get() || _quadraticFloatsBuffer.length != mesh._quadraticFloats.pagedSize())
+        _quadraticFloatsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticFloats.get()
 																length:mesh._quadraticFloats.pagedSize()
 															   options:MTLResourceStorageModeShared
 														   deallocator:nil];
