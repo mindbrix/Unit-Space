@@ -19,25 +19,26 @@ struct Memory {
             free(header->memory), free(header);
     }
     void alloc(size_t count) {
+		size_t size = count * sizeof(T);
 		if (header) {
 			if (page_aligned) {
 				void *memory;
-				posix_memalign(& memory, 4096, count * sizeof(T));
+				posix_memalign(& memory, 4096, (size + 4095) / 4096 * 4096);
 				memcpy(memory, header->memory, header->size);
 				free(header->memory);
 				header->memory = memory;
 			} else
-            	header->memory = ::realloc(header->memory, count * sizeof(T));
+            	header->memory = ::realloc(header->memory, size);
 		} else {
             header = (Header *)malloc(sizeof(Header));
 			if (page_aligned)
-				posix_memalign(& header->memory, 4096, count * sizeof(T));
+				posix_memalign(& header->memory, 4096, (size + 4095) / 4096 * 4096);
 			else
-            	header->memory = malloc(count * sizeof(T));
+            	header->memory = malloc(size);
             header->refCount = 1;
             header->end = 0;
         }
-        header->size = count * sizeof(T);
+        header->size = size;
     }
     Memory clone() {
         if (header) {
