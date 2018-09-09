@@ -103,8 +103,7 @@ float triangleDistance(float2 unitPoint, float dilation) {
     float u = 1.0 - abs(unitPoint.x), v = 1.0 - abs(unitPoint.y);
     float dx = u * rsqrt(max(1e-13, dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
     float dy = v * rsqrt(max(1e-13, dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
-    u = (unitPoint.x + 1) * 0.5, v = (unitPoint.y + 1) * 0.5;
-    float w = u - v;
+    float w = (unitPoint.x - unitPoint.y) * 0.5;
     float dz = w * rsqrt(max(1e-13, dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
     return saturate(dx + dilation) * saturate(dy + dilation) * saturate(dz + dilation);
 }
