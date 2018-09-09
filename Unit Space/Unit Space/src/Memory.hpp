@@ -7,7 +7,7 @@
 //
 #import <stdlib.h>
 
-template<typename T>
+template<typename T, bool page_aligned = false>
 struct Memory {
     Memory()                            {}
     Memory(void *memory, size_t count)  { alloc(count); memcpy(header->memory, memory, header->size); }
@@ -19,11 +19,21 @@ struct Memory {
             free(header->memory), free(header);
     }
     void alloc(size_t count) {
-        if (header)
-            header->memory = ::realloc(header->memory, count * sizeof(T));
-        else {
+		if (header) {
+			if (page_aligned) {
+				void *memory;
+				posix_memalign(& memory, 4096, count * sizeof(T));
+				memcpy(memory, header->memory, header->size);
+				free(header->memory);
+				header->memory = memory;
+			} else
+            	header->memory = ::realloc(header->memory, count * sizeof(T));
+		} else {
             header = (Header *)malloc(sizeof(Header));
-            header->memory = malloc(count * sizeof(T));
+			if (page_aligned)
+				posix_memalign(& header->memory, 4096, count * sizeof(T));
+			else
+            	header->memory = malloc(count * sizeof(T));
             header->refCount = 1;
             header->end = 0;
         }
