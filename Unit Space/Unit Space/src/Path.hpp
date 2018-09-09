@@ -31,9 +31,9 @@ struct Path {
     }
     
     void controlPointForIndex(float *p, int idx, int stride = 2) {
-        int begin = 0, end, npoints, i;
+        int begin = 0, end, i;
         for (SubPath& s : _subPaths) {
-            npoints = (int)s._quadratics.count() / 2, end = begin + npoints;
+            end = begin + (int)s._quadratics.count() / 2;
             if (idx < end) {
                 i = (idx - begin) * 2;
                 if (idx == end - 1) {
