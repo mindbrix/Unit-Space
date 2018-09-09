@@ -283,25 +283,38 @@
 #pragma mark - Public
 
 - (void)uploadMesh:(Mesh &)mesh {
-    if (_quadraticFloatsBuffer.contents != mesh._quadraticFloats.get() || _quadraticFloatsBuffer.length != mesh._quadraticFloats.pagedSize())
-        _quadraticFloatsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticFloats.get()
-																length:mesh._quadraticFloats.pagedSize()
-															   options:MTLResourceStorageModeShared
-														   deallocator:nil];
-    if (_quadraticPsBuffer.contents != mesh._quadraticPs.get() || _quadraticPsBuffer.length != mesh._quadraticPs.pagedSize())
-        _quadraticPsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticPs.get()
-                                                            length:mesh._quadraticPs.pagedSize()
-                                                           options:MTLResourceStorageModeShared
-                                                       deallocator:nil];
-    if (_trianglesBuffer.contents != mesh._triangles.get() || _trianglesBuffer.length != mesh._triangles.pagedSize())
-        _trianglesBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._triangles.get()
-                                                          length:mesh._triangles.pagedSize()
-                                                         options:MTLResourceStorageModeShared
-                                                     deallocator:nil];
+//    if (_quadraticFloatsBuffer.contents != mesh._quadraticFloats.get() || _quadraticFloatsBuffer.length != mesh._quadraticFloats.pagedSize())
+//        _quadraticFloatsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticFloats.get()
+//                                                                length:mesh._quadraticFloats.pagedSize()
+//                                                               options:MTLResourceStorageModeShared
+//                                                           deallocator:nil];
+//    if (_quadraticPsBuffer.contents != mesh._quadraticPs.get() || _quadraticPsBuffer.length != mesh._quadraticPs.pagedSize())
+//        _quadraticPsBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._quadraticPs.get()
+//                                                            length:mesh._quadraticPs.pagedSize()
+//                                                           options:MTLResourceStorageModeShared
+//                                                       deallocator:nil];
+//    if (_trianglesBuffer.contents != mesh._triangles.get() || _trianglesBuffer.length != mesh._triangles.pagedSize())
+//        _trianglesBuffer = [self.device newBufferWithBytesNoCopy:(void *)mesh._triangles.get()
+//                                                          length:mesh._triangles.pagedSize()
+//                                                         options:MTLResourceStorageModeShared
+//                                                     deallocator:nil];
+    
+    if (mesh._quadraticFloats.pagedSize())
+        _quadraticFloatsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticFloats.get()
+                                                          length:mesh._quadraticFloats.pagedSize()
+                                                         options:MTLResourceStorageModeShared];
+    if (mesh._quadraticPs.pagedSize())
+        _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
+                                                      length:mesh._quadraticPs.pagedSize()
+                                                     options:MTLResourceStorageModeShared];
+    if (mesh._triangles.pagedSize())
+        _trianglesBuffer = [self.device newBufferWithBytes:(void *)mesh._triangles.get()
+                                                    length:mesh._triangles.pagedSize()
+                                                   options:MTLResourceStorageModeShared];
     if (mesh._timeline.pathsForTime(0).size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.pathsForTime(0)[0]
-                                                 length:mesh._timeline.pathsForTime(0).size() * sizeof(MeshPath)
-                                                options:MTLResourceStorageModeManaged];
+                                                length:mesh._timeline.pathsForTime(0).size() * sizeof(MeshPath)
+                                               options:MTLResourceStorageModeManaged];
 }
 
 @end
