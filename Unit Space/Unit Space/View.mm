@@ -353,15 +353,17 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 - (void)resetShapes {
     _shapes =
     {
-        {   { 0, 0 }, { 100, 100 }, { 0, 100 }                          },
-        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }    },
-        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }              },
+        {   { 0, 0 }, { 100, 100 }, { 0, 100 }                              },
+        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }        },
+        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }                  },
+        {   { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }     },
     };
     _shapeTypes =
     {
         SubPath::kLine,
         SubPath::kQuadratic,
-        SubPath::kLine
+        SubPath::kLine,
+        SubPath::kQuadratic,
     };
 }
 
