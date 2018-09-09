@@ -77,37 +77,33 @@ struct libTess {
         for (p = 0; p < size; p++)
             mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
-        if (divisions == 1) {
-            vector<Vector> points;
-            triangulateRange(points, mesh._idxs, scene, 0, size);
-            Vector *dst = mesh._triangles.new_ptr(points.size());
-            for (Vector pt : points)
-                *dst++ = pt;
-        } else {
-            int counts[size], count, total;
-            for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
-                for (SubPath& s : scene._paths[p]._subPaths)
-                    count += s._quadratics.count();
-            int begins[divisions + 1], target, *b = begins;
-            begins[0] = 0, begins[divisions] = size;
-            for (count = p = 0, i = 1; i < divisions; i++) {
-                target = total * i / divisions;
-                while (count < target)
-                    count += counts[p++];
-                begins[i] = p;
-            }
-            vector<Vector> points[divisions], *pointss = points;
-            vector<int> idxs[divisions], *idxss = idxs;
+        int counts[size], count, total;
+        for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
+            for (SubPath& s : scene._paths[p]._subPaths)
+                count += s._quadratics.count();
+        int begins[divisions + 1], target, *b = begins;
+        begins[0] = 0, begins[divisions] = size;
+        for (count = p = 0, i = 1; i < divisions; i++) {
+            target = total * i / divisions;
+            while (count < target)
+                count += counts[p++];
+            begins[i] = p;
+        }
+        vector<Vector> points[divisions], *pointss = points;
+        vector<int> idxs[divisions], *idxss = idxs;
+        if (divisions == 1)
+            triangulateRange(points[0], idxss[0], scene, 0, size);
+        else {
             dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^(size_t idx) {
                 triangulateRange(pointss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
-            for (base = i = 0; i < divisions; base += (int)points[i].size() / kMeshTriangleSize, i++) {
-                Vector *dst = mesh._triangles.new_ptr(points[i].size());
-                for (Vector pt : points[i])
-                    *dst++ = pt;
-                for (int idx : idxs[i])
-                    mesh._idxs.emplace_back(base + idx);
-            }
+        }
+        for (base = i = 0; i < divisions; base += (int)points[i].size() / kMeshTriangleSize, i++) {
+            Vector *dst = mesh._triangles.new_ptr(points[i].size());
+            for (Vector pt : points[i])
+                *dst++ = pt;
+            for (int idx : idxs[i])
+                mesh._idxs.emplace_back(base + idx);
         }
     }
     
