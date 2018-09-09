@@ -459,9 +459,11 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         float *txs = _mesh._shapesSOA._txs.new_ptr(count);
         float *tys = _mesh._shapesSOA._tys.new_ptr(count);
         RGBA8 *colors = _mesh._shapesSOA._colors.new_ptr(count);
-        ShapeType pattern[4] = { kShapeTypeEllipse, kShapeTypeRect, kShapeTypeRoundedRect, kShapeTypeLozenge };
+        ShapeType pattern[8] = {
+            kShapeTypeRect, kShapeTypeEllipse, kShapeTypeTriangle, kShapeTypeRoundedRect,
+            kShapeTypeLozenge, kShapeTypeRoundedRect, kShapeTypeTriangle, kShapeTypeEllipse };
         AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
-		memset_pattern8(types, pattern, count * sizeof(*types));
+		memset_pattern16(types, pattern, count * sizeof(*types));
         for (idx = 0; idx < count; idx++)
             *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
         for (idx = 0; idx < count; idx++)

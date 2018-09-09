@@ -132,11 +132,10 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
     else if (vert.shapeType == kShapeTypeRoundedRect) {
         float ur = max(2.0 / vert.scale, kCornerRadius);
         return vert.color * roundedRectDistance(vert.unitPoint, ur, kDilation);
-    } else if (vert.shapeType == kShapeTypeLozenge) {
+    } else if (vert.shapeType == kShapeTypeLozenge)
         return vert.color * lozengeDistance(vert.unitPoint, kDilation);
-    } else {
-        return vert.color * quadraticDistance(vert.unitPoint, kDilation);
-    }
+     else
+        return vert.color * triangleDistance(vert.unitPoint, kDilation);
 }
 
 

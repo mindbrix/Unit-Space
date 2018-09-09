@@ -179,10 +179,11 @@ enum CallType : unsigned int {
 
 enum ShapeType : short {
     kShapeTypeEllipse,
+    kShapeTypeLozenge,
     kShapeTypeRect,
     kShapeTypeRoundedRect,
-    kShapeTypeLozenge,
     kShapeTypeQuadratic,
+    kShapeTypeTriangle,
 };
 
 struct Call {
