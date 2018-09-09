@@ -99,9 +99,7 @@ struct libTess {
             });
         }
         for (base = i = 0; i < divisions; base += (int)points[i].size() / kMeshTriangleSize, i++) {
-            Vector *dst = mesh._triangles.new_ptr(points[i].size());
-            for (Vector pt : points[i])
-                *dst++ = pt;
+            memcpy(mesh._triangles.new_ptr(points[i].size()), & points[i][0], points[i].size() * sizeof(points[i][0]));
             for (int idx : idxs[i])
                 mesh._idxs.emplace_back(base + idx);
         }
