@@ -357,18 +357,18 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         Quadratics::writeScene(_mesh, _scene);
         [self.metalLayer uploadMesh:_mesh];
     } else {
-        _shapes = {
-            {
-                { 0, 0 }, { 100, 100 }, { 0, 100 }
-            },
-            {
-                { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }
-            },
-            {
-                { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }
-            },
+        _shapes =
+        {
+            {   { 0, 0 }, { 100, 100 }, { 0, 100 }                          },
+            {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }    },
+            {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }              },
         };
-        _shapeTypes = { SubPath::kLine, SubPath::kQuadratic, SubPath::kLine };
+        _shapeTypes =
+        {
+            SubPath::kLine,
+            SubPath::kQuadratic,
+            SubPath::kLine
+        };
         [self triangulate];
     }
 }
