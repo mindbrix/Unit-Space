@@ -130,7 +130,7 @@ struct SubPath {
                 _quadratics = flattenQuadratics(& quadratics[0], nfloats / 2, precision);
             }
         } else if (type == kQuadratic) {
-            if (npoints > 4)
+            if (npoints > 2)
                 _quadratics = flattenQuadratics(points, npoints, precision);
         } else {
             float x0, y0, x1, y1;
