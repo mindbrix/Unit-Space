@@ -30,18 +30,17 @@ struct Quadratics {
             *q++ = FLT_MAX;
     }
     
-    static float quadraticLength(float *q, float *qend) {
-        float d0, d1, length, x0, y0, x1, y1, x2, y2;
+    static float writeQuadraticLengths(float *lengths, float *q, float *qend) {
+        float length, total, x0, y0, x1, y1, x2, y2;
         
-        for (length = 0, x0 = *q++, y0 = *q++; q < qend; x0 = x2, y0 = y2) {
+        for (total = 0, x0 = *q++, y0 = *q++; q < qend; x0 = x2, y0 = y2) {
             x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
-            if (x1 != FLT_MAX) {
-                d0 = ::quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
-                d1 = ::quadraticLength(x0, y0, x1, y1, x2, y2, 1.0);
-                length += d1 - d0;
-            }
+            
+            length = x1 == FLT_MAX ? 0 : ::quadraticLength(x0, y0, x1, y1, x2, y2, 1.0) - ::quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
+            total += length;
+            *lengths++ = length;
         }
-        return length;
+        return total;
     }
     
     static void writeScene(Mesh& mesh, Scene& scene) {
@@ -72,7 +71,7 @@ struct Quadratics {
                     mesh._quadraticPs[i] = p;
                 writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
                 
-                length = quadraticLength(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end]);
+                length = writeQuadraticLengths(& mesh._quadraticTs[begin / kQuadraticFloatStride / 2], & mesh._quadraticFloats[begin], & mesh._quadraticFloats[end]);
             }
     }
 };
