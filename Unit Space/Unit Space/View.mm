@@ -260,6 +260,10 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     [self triangulate];
     [self redraw];
 }
+- (IBAction)resetViewCTM:(id)sender {
+    [self.transform reset];
+    [self redraw];
+}
 - (IBAction)toggleOne:(id)sender {
     _flags &= 1;
     _flags ^= 1;

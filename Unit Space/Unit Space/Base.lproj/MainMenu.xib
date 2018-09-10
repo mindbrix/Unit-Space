@@ -640,6 +640,15 @@
                                     <action selector="resetModel:" target="-1" id="bpQ-rO-R5g"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Reset View CTM" id="v72-wx-yJQ">
+                                <string key="keyEquivalent" base64-UTF8="YES">
+DQ
+</string>
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="resetViewCTM:" target="-1" id="74r-0T-HEC"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="dE8-xK-Qcr"/>
                             <menuItem title="Cycle Shapes" keyEquivalent="," id="6g3-WI-1Dt">
                                 <modifierMask key="keyEquivalentModifierMask"/>

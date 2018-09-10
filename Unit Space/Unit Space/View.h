@@ -19,6 +19,7 @@
 - (IBAction)resetModel:(id)sender;
 
 - (IBAction)cycleShapes:(id)sender;
+- (IBAction)resetViewCTM:(id)sender;
 
 - (IBAction)toggleOne:(id)sender;
 - (IBAction)toggleTwo:(id)sender;
