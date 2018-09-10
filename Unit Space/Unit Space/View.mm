@@ -490,21 +490,23 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
         _mesh._shapesSOA.empty();
-        RGBA8 red(255, 0, 0, 255);
         
         if (_svgData == nullptr && _fontData == nullptr) {
 			uniforms.CTM = AffineTransformConcat(paths[0].ctm, uniforms.CTM);
             vector<Vector>& shape = _shapes[_shapeIndex];
+            SubPath::Type type = _shapeTypes[_shapeIndex];
             for (int j = 0; j < shape.size(); j++)
-                _mesh._shapesSOA.addCircle(shape[j].x, shape[j].y, radius, red);
+                _mesh._shapesSOA.addCircle(shape[j].x, shape[j].y, radius, type == SubPath::kLine || (j % 2 == 0) ? RGBA8::Red() : RGBA8::Blue());
         } else if (p != -1) {
 			uniforms.CTM = AffineTransformConcat(paths[p].ctm, uniforms.CTM);
 			for (SubPath& s : _scene._paths[p]._subPaths) {
-                float *points = s._quadratics.get();
+                float *points = s._quadratics.get(), r;
                 int npoints = (int)s._quadratics.count() / 2;
                 int stride = 2;
-                for (int j = 0; j < npoints; j += stride)
-                    _mesh._shapesSOA.addCircle(points[j * 2], points[j * 2 + 1], j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius, red);
+                for (int j = 0; j < npoints; j += stride) {
+                    r = j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius;
+                    _mesh._shapesSOA.addCircle(points[j * 2], points[j * 2 + 1], r, RGBA8::Red());
+                }
             }
         }
         Mesh::writeSOACalls(_mesh, uniforms, meshState, kCallTypeShapesSOA, _mesh._shapesSOA._as.count());
