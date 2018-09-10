@@ -470,7 +470,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
 		memset_pattern16(types, pattern, count * sizeof(*types));
         for (idx = 0; idx < count; idx++)
-            *colors++ = RGBA8(idx & 0xFF, idx >> 8, 0, 255);
+            *colors++ = _showColors ? RGBA8(idx & 0xFF, idx >> 8, 0, 255) : RGBA8::Black();
         for (idx = 0; idx < count; idx++)
             *as++ = unit.a;
         for (idx = 0; idx < count; idx++)
