@@ -433,11 +433,12 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     _mesh._calls.resize(0);
     int p = -1;
     
-    for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
-        AffineTransform inv = AffineTransformInvert(paths[i].ctm);
-        if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
-            p = i;
-    }
+    if (_svgData || _fontData)
+        for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
+            AffineTransform inv = AffineTransformInvert(paths[i].ctm);
+            if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
+                p = i;
+        }
     for (int i = 0; i < _scene._paths.size(); i++)
         paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
     
