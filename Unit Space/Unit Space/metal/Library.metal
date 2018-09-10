@@ -105,7 +105,7 @@ float triangleDistance(float2 unitPoint, float dilation, float width) {
     float dy = v * rsqrt(max(1e-13, dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
     float w = (unitPoint.x - unitPoint.y) * 0.5;
     float dz = w * rsqrt(max(1e-13, dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
-    return saturate((dx + dilation) * width) * saturate((dy + dilation) * width) * saturate((dz + dilation) * width);
+    return saturate((dx + dilation) * width) * saturate((dy + dilation) * width) * saturate((dz + 0.5) * width);
 }
 
 float lozengeDistance(float2 unitPoint, float dilation) {

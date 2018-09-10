@@ -124,7 +124,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 
 fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    const float kDilation = -0.2071067812, kCornerRadius = 0.5, kFilter = 0.5;
+    const float kDilation = -0.2071067812, kCornerRadius = 0.5, kFilter = 1;
     switch (vert.shapeType) {
         case kShapeTypeEllipse:
             return vert.color * ellipseDistance(vert.unitPoint, kDilation, kFilter);
