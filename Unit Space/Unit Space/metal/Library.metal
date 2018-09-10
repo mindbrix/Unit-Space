@@ -99,13 +99,13 @@ float rectDistance(float2 unitPoint, float dilation, float width) {
     return saturate((dx + dilation) * width) * saturate((dy + dilation) * width);
 }
 
-float triangleDistance(float2 unitPoint, float dilation) {
+float triangleDistance(float2 unitPoint, float dilation, float width) {
     float u = 1.0 - abs(unitPoint.x), v = 1.0 - abs(unitPoint.y);
     float dx = u * rsqrt(max(1e-13, dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
     float dy = v * rsqrt(max(1e-13, dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
     float w = (unitPoint.x - unitPoint.y) * 0.5;
     float dz = w * rsqrt(max(1e-13, dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
-    return saturate(dx + dilation) * saturate(dy + dilation) * saturate(dz + dilation);
+    return saturate((dx + dilation) * width) * saturate((dy + dilation) * width) * saturate((dz + dilation) * width);
 }
 
 float lozengeDistance(float2 unitPoint, float dilation) {
@@ -125,12 +125,12 @@ float quadraticDistance(float2 unitPoint, float dilation) {
     return saturate((y - x * x) * rsqrt(fx * fx + fy * fy) + dilation);
 }
 
-float roundedRectDistance(float2 unitPoint, float radius, float dilation) {
+float roundedRectDistance(float2 unitPoint, float radius, float dilation, float width) {
     float u = unitPoint.x, v = unitPoint.y;
     float x = max(0.0, abs(u) - (1.0 - radius)) / radius, y = max(0.0, abs(v) - (1.0 - radius)) / radius;
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return saturate((1 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)) + dilation);
+    return saturate(((1 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)) + dilation) * width);
 }
 
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
