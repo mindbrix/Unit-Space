@@ -31,14 +31,13 @@ struct Quadratics {
     }
     
     static float writeQuadraticLengths(float *lengths, float *q, float *qend) {
-        float length, total, x0, y0, x1, y1, x2, y2;
+        float total, x0, y0, x1, y1, x2, y2;
         
-        for (total = 0, x0 = *q++, y0 = *q++; q < qend; x0 = x2, y0 = y2) {
+        for (total = 0, *lengths++ = total, x0 = *q++, y0 = *q++; q < qend; x0 = x2, y0 = y2) {
             x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
             
-            length = x1 == FLT_MAX ? 0 : quadraticLength(x0, y0, x1, y1, x2, y2, 1.0) - quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
-            total += length;
-            *lengths++ = length;
+            total += x1 == FLT_MAX ? 0 : quadraticLength(x0, y0, x1, y1, x2, y2, 1.0) - quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
+            *lengths++ = total;
         }
         return total;
     }
@@ -60,9 +59,9 @@ struct Quadratics {
         }
         mesh._quadraticPs = Memory<int, true>(nfloats / kQuadraticFloatStride);
         mesh._quadraticFloats = Memory<float, true>(nfloats);
-        mesh._quadraticTs = Memory<float, true>(nfloats / kQuadraticFloatStride / 2);
+        mesh._quadraticTs = Memory<float, true>(nfloats / kQuadraticFloatStride * 2);
         
-        float length;
+        float length, inverse, *l, *lend;
         for (base = p = 0; p < scene._paths.size(); p++)
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 begin = bases[base++];
@@ -71,7 +70,11 @@ struct Quadratics {
                     mesh._quadraticPs[i] = p;
                 writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
                 
-                length = writeQuadraticLengths(& mesh._quadraticTs[begin / kQuadraticFloatStride / 2], & mesh._quadraticFloats[begin], & mesh._quadraticFloats[end]);
+                l = & mesh._quadraticTs[begin / kQuadraticFloatStride * 2], lend = & mesh._quadraticTs[end / kQuadraticFloatStride * 2];
+                length = writeQuadraticLengths(l, & mesh._quadraticFloats[begin], & mesh._quadraticFloats[end]);
+                inverse = 1.0 / length;
+                while (l < lend)
+                    *l *= inverse, l++;
             }
     }
 };
