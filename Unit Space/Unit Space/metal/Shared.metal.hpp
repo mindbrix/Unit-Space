@@ -159,6 +159,7 @@ struct State {
     RGBA                strokeColor;
     AffineTransform     CTM;
     _Size               drawableSize;
+    float               dashLength;
     float               flatness;
     float               width;
     float               cap;
