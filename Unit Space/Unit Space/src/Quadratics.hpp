@@ -61,7 +61,6 @@ struct Quadratics {
         mesh._quadraticFloats = Memory<float, true>(nfloats);
         mesh._quadraticTs = Memory<float, true>(nfloats / kQuadraticFloatStride * 2);
         
-        float length, inverse, *l, *lend;
         for (base = p = 0; p < scene._paths.size(); p++)
             for (s = 0; s < scene._paths[p]._subPaths.size(); s++) {
                 begin = bases[base++];
@@ -69,12 +68,8 @@ struct Quadratics {
                 for (int i = begin / kQuadraticFloatStride; i < end / kQuadraticFloatStride; i++)
                     mesh._quadraticPs[i] = p;
                 writeSubPath(& mesh._quadraticFloats[begin], & mesh._quadraticFloats[end], scene._paths[p]._subPaths[s]);
-                
-                l = & mesh._quadraticTs[begin / kQuadraticFloatStride * 2], lend = & mesh._quadraticTs[end / kQuadraticFloatStride * 2];
-                length = writeQuadraticLengths(l, & mesh._quadraticFloats[begin], & mesh._quadraticFloats[end]);
-                inverse = 1.0 / length;
-                while (l < lend)
-                    *l *= inverse, l++;
+    
+                writeQuadraticLengths(& mesh._quadraticTs[begin / kQuadraticFloatStride * 2], & mesh._quadraticFloats[begin], & mesh._quadraticFloats[end]);
             }
     }
 };

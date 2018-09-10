@@ -18,6 +18,7 @@
 @property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> quadraticTsBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> shapePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
@@ -252,6 +253,7 @@
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_quadraticFloatsBuffer offset:0 atIndex:10];
                 [commandEncoder setVertexBuffer:_quadraticPsBuffer offset:0 atIndex:11];
+                [commandEncoder setVertexBuffer:_quadraticTsBuffer offset:0 atIndex:12];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
         }
@@ -290,6 +292,10 @@
     if (mesh._quadraticPs.pagedSize())
         _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
                                                       length:mesh._quadraticPs.pagedSize()
+                                                     options:MTLResourceStorageModeShared];
+    if (mesh._quadraticTs.pagedSize())
+        _quadraticTsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticTs.get()
+                                                      length:mesh._quadraticTs.pagedSize()
                                                      options:MTLResourceStorageModeShared];
     if (mesh._triangles.pagedSize())
         _trianglesBuffer = [self.device newBufferWithBytes:(void *)mesh._triangles.get()

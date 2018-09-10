@@ -161,14 +161,14 @@ struct LineVertex
         x0 = p0.x - devicePoint.x, y0 = p0.y - devicePoint.y, x1 = p1.x - devicePoint.x, y1 = p1.y - devicePoint.y;
     }
     float4 position [[position]];
-    float u, v;
+    float u, v, t, padding;
 	float x0, y0, x1, y1;
     float4 color;
 };
 
 vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                       device MeshPath *paths [[buffer(9)]],
-                                      device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]],
+                                      device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]], device float *ts [[buffer(12)]],
                                       uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint idx = iid / meshState.subdivisionCount * meshState.quadraticStride;
@@ -194,6 +194,7 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
     LineVertex vert;
     vert.write(p0, p1, scale, vid, state, paths[p].color);
     vert.position *= float(visible);
+    vert.t = ts[idx / 4 + int(vid >> 1)] / state.dashLength;
     return vert;
 }
 
@@ -206,5 +207,5 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
     float dy = (1.0 - abs(vert.v)) * h;
     float x = w - dx, y = max(0.0, w - dy);
     float rounded = saturate(w - sqrt(x * x + y * y));
-    return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap);
+    return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap) * fract(vert.t);
 }
