@@ -36,7 +36,7 @@ struct Quadratics {
         for (total = 0, x0 = *q++, y0 = *q++; q < qend; x0 = x2, y0 = y2) {
             x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
             
-            length = x1 == FLT_MAX ? 0 : ::quadraticLength(x0, y0, x1, y1, x2, y2, 1.0) - ::quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
+            length = x1 == FLT_MAX ? 0 : quadraticLength(x0, y0, x1, y1, x2, y2, 1.0) - quadraticLength(x0, y0, x1, y1, x2, y2, 0.0);
             total += length;
             *lengths++ = length;
         }
