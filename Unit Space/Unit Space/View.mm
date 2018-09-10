@@ -440,7 +440,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
                 p = i;
         }
     for (int i = 0; i < _scene._paths.size(); i++)
-        paths[i].color = i == p ? RGBA8(255, 0, 0, 255) : _showColors ? _scene._paths[i]._color : RGBA8(0, 0, 0, 255);
+        paths[i].color = i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
     
     if (_flags & 1)
         meshState.showQuadratics = true;
