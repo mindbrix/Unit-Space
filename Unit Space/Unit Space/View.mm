@@ -392,7 +392,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     float dx = self.mouseLocation.x * self.layer.contentsScale, dy = self.mouseLocation.y * self.layer.contentsScale;
     float ux = dx * inv.a + dy * inv.c + inv.tx, uy = dx * inv.b + dy * inv.d + inv.ty;
     
-    float scale = std::sqrt(std::abs(CTM.a * CTM.d - CTM.b * CTM.c));
+    float scale = std::sqrt(std::abs(AffineTransformArea(CTM)));
     float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
     float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
     
@@ -503,6 +503,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
             for (int j = 0; j < shape.size(); j++)
                 _mesh._shapesSOA.addCircle(shape[j].x, shape[j].y, radius, type == SubPath::kLine || (j % 2 == 0) ? RGBA8::Red() : RGBA8::Blue());
         } else if (p != -1) {
+            float pathScale = std::sqrt(std::abs(AffineTransformArea(paths[p].ctm)));
 			uniforms.CTM = AffineTransformConcat(paths[p].ctm, uniforms.CTM);
 			for (SubPath& s : _scene._paths[p]._subPaths) {
                 float *points = s._quadratics.get(), r;
@@ -510,7 +511,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
                 int stride = 2;
                 for (int j = 0; j < npoints; j += stride) {
                     r = j == 0 ? largeRadius : j == stride ? (largeRadius + radius) * 0.5f : radius;
-                    _mesh._shapesSOA.addCircle(points[j * 2], points[j * 2 + 1], r, RGBA8::Red());
+                    _mesh._shapesSOA.addCircle(points[j * 2], points[j * 2 + 1], r / pathScale, RGBA8::Red());
                 }
             }
         }
