@@ -80,11 +80,11 @@ float sRGB(float x) {
         return 1.055*pow(x,(1.0 / 2.4) ) - 0.055;
 }
 
-float ellipseDistance(float2 unitPoint, float dilation) {
+float ellipseDistance(float2 unitPoint, float dilation, float width) {
     float x = unitPoint.x, y = unitPoint.y;
     float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
     float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return saturate((1 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)) + dilation);
+    return saturate(((1 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)) + dilation) * width);
 }
 
 float ellipseStrokeDistance(float2 unitPoint, float w) {
