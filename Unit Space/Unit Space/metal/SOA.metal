@@ -151,8 +151,6 @@ struct LineVertex
         uw = select(state.width, 1.0 / scale, state.width == 0);
         dilation = (abs(nv.x) + abs(nv.y)) * 0.5;
         dh = dw = uw * scale * 0.5;
-        dw = select(dw, select(0.0, 1.0, (vid & 1) == (v01.y < 0)), false);
-        dh = select(dh, select(0.0, 1.0, (vid >> 1) == (v01.x > 0)), false);
         float2 devicePoint = select(p0, p1, vid & 2) + (dh + dilation) * select(-nv, nv, vid & 2) + (dw + dilation) * select(-lnv, lnv, vid & 1);
         float2 ndcPoint = { (devicePoint.x / state.drawableSize.w * 2.0) - 1.0, (devicePoint.y / state.drawableSize.h * 2.0) - 1.0 };
         
