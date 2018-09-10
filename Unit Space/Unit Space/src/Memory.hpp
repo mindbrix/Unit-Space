@@ -23,7 +23,7 @@ struct Memory {
 		if (header) {
 			if (page_aligned) {
 				void *memory;
-				posix_memalign(& memory, 4096, (size + 4095) / 4096 * 4096);
+				posix_memalign(& memory, 4096, pageRounded(size));
 				memcpy(memory, header->memory, header->size);
 				free(header->memory);
 				header->memory = memory;
@@ -32,7 +32,7 @@ struct Memory {
 		} else {
             header = (Header *)malloc(sizeof(Header));
 			if (page_aligned)
-				posix_memalign(& header->memory, 4096, (size + 4095) / 4096 * 4096);
+				posix_memalign(& header->memory, 4096, pageRounded(size));
 			else
             	header->memory = malloc(size);
             header->refCount = 1;
@@ -69,11 +69,11 @@ struct Memory {
     }
     size_t count()                              { return header ? (header->end ?: header->size / sizeof(T)) : 0; }
     size_t size()                               { return header ? header->size : 0; }
-    size_t pagedSize()                          { return header ? (header->size + 4095) / 4096 * 4096 : 0; }
+    size_t pagedSize()                          { return header ? pageRounded(header->size) : 0; }
     T *get() const                              { return (T *) (header ? header->memory : nullptr); }
     inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
     inline void push_back(T n)                  { *new_ptr(1) = n; }
-    
+    inline static size_t pageRounded(size_t s)  { return (s + 4095) / 4096 * 4096; }
 private:
     void assign(const Memory& other) {
         if (this != & other) {
