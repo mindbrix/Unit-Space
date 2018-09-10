@@ -92,11 +92,11 @@ float ellipseStrokeDistance(float2 unitPoint, float w) {
     return (w - abs(0.5 - sqrt(x * x + y * y))) * rsqrt(abs(dfdx(x) * dfdy(y) - dfdx(y) * dfdy(x)));
 }
 
-float rectDistance(float2 unitPoint, float dilation) {
+float rectDistance(float2 unitPoint, float dilation, float width) {
     float u = 1.0 - abs(unitPoint.x), v = 1.0 - abs(unitPoint.y);
     float dx = u * rsqrt(max(1e-13, dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
     float dy = v * rsqrt(max(1e-13, dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
-    return saturate(dx + dilation) * saturate(dy + dilation);
+    return saturate((dx + dilation) * width) * saturate((dy + dilation) * width);
 }
 
 float triangleDistance(float2 unitPoint, float dilation) {
