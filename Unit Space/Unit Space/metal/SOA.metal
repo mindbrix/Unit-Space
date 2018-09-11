@@ -180,6 +180,7 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
     
     float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
     float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
+    float t;
     
     if (meshState.subdivisionCount > 1) {
         float cpx = quadratics[idx + 2], cpy = quadratics[idx + 3];
@@ -189,12 +190,14 @@ vertex LineVertex quadratic_line_vertex_main(constant State &state [[buffer(0)]]
         float2 tp0 = s0 * s0 * p0 + 2.0 * s0 * t0 * cp + t0 * t0 * p1;
         float2 tp1 = s1 * s1 * p0 + 2.0 * s1 * t1 * cp + t1 * t1 * p1;
         p0 = tp0, p1 = tp1;
-    }
+        t = mix(ts[idx / 4], ts[idx / 4 + 1], select(t0, t1, vid & 2)) / state.dashLength;
+    } else
+        t = ts[idx / 4 + int(vid >> 1)] / state.dashLength;
     
     LineVertex vert;
     vert.write(p0, p1, scale, vid, state, paths[p].color);
     vert.position *= float(visible);
-    vert.t = ts[idx / 4 + int(vid >> 1)] / state.dashLength;
+    vert.t = t;
     return vert;
 }
 
@@ -207,5 +210,5 @@ fragment float4 line_fragment_main(LineVertex vert [[stage_in]],
     float dy = (1.0 - abs(vert.v)) * h;
     float x = w - dx, y = max(0.0, w - dy);
     float rounded = saturate(w - sqrt(x * x + y * y));
-    return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap) * fract(vert.t);
+    return vert.color * select(saturate(dx) * saturate(dy / 1.74), rounded, state.roundCap) * step(0.5, fract(vert.t));
 }
