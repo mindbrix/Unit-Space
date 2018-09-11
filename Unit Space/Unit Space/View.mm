@@ -468,10 +468,10 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         ShapeType pattern[8] = {
             kShapeTypeRect, kShapeTypeEllipse, kShapeTypeTriangle, kShapeTypeRoundedRect,
             kShapeTypeLozenge, kShapeTypeRoundedRect, kShapeTypeTriangle, kShapeTypeEllipse };
-        AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
-		memset_pattern16(types, pattern, count * sizeof(*types));
+        memset_pattern16(types, pattern, count * sizeof(*types));
         for (idx = 0; idx < count; idx++)
             *colors++ = _showColors ? RGBA8(idx & 0xFF, idx >> 8, 0, 255) : RGBA8::Black();
+        AffineTransform unit = { float(r) * 2, 0, 0, float(r) * 2, -float(r), -float(r) };
         for (idx = 0; idx < count; idx++)
             *as++ = unit.a;
         for (idx = 0; idx < count; idx++)
