@@ -52,8 +52,7 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     w = 1 - u - v;
     f = 4.0 * u * w - v * v;
     
-    t = saturate(w / (w + v * 0.5));
-    t = select(t, 1.0 - saturate(u / (u + v * 0.5)), t < 0.5);
+    t = select(saturate(w / (w + v * 0.5)), 1.0 - saturate(u / (u + v * 0.5)), u > w);
     t = select(t, 0.5, f < -0.333);
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     return edgeWinding(x0, y0, x01, y01) + edgeWinding(x01, y01, x12, y12) + edgeWinding(x12, y12, x2, y2);
