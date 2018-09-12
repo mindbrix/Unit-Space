@@ -129,7 +129,7 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
         case kShapeTypeEllipse:
             return vert.color * ellipseDistance(vert.unitPoint, kDilation, kFilter);
         case kShapeTypeRect:
-            return vert.color * rectDistance(vert.unitPoint, kDilation, kFilter);
+            return vert.color * rectDistance(vert.unitPoint, 0.7071067812, kFilter);
         case kShapeTypeRoundedRect:
             return vert.color * roundedRectDistance(vert.unitPoint, max(2.0 / vert.scale, kCornerRadiusW), kDilation, kFilter);
         case kShapeTypeLozenge:

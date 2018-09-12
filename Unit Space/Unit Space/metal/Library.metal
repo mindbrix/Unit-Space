@@ -93,11 +93,11 @@ float rectDistance(float2 unitPoint, float dilation, float width) {
     float x = unitPoint.x, y = unitPoint.y;
     float sx = rsqrt(max(1e-13, dfdx(x) * dfdx(x) + dfdy(x) * dfdy(x)));
     float sy = rsqrt(max(1e-13, dfdx(y) * dfdx(y) + dfdy(y) * dfdy(y)));
-    float east = (1 - x) * sx + dilation;
-    float west = (1 + x) * sx + dilation;
-    float north = (1 - y) * sy + dilation;
-    float south = (1 + y) * sy + dilation;
-    return (saturate(west) - (1.0 - saturate(east))) * (saturate(south) - (1.0 - saturate(north)));
+    float e = min(0.5, ((1 - x) * sx - dilation) * width);
+    float w = min(0.5, ((1 + x) * sx - dilation) * width);
+    float n = min(0.5, ((1 - y) * sy - dilation) * width);
+    float s = min(0.5, ((1 + y) * sy - dilation) * width);
+    return (e + w) * (n + s);
 }
 
 float triangleDistance(float2 unitPoint, float dilation, float width) {
