@@ -57,7 +57,7 @@ struct RGBA8 {
     static RGBA8 Blue() { return RGBA8(0, 0, 255, 255); }
     static RGBA8 Black() { return RGBA8(0, 0, 0, 255); }
     
-    RGBA8() : r(0), g(0), b(0), a(0) {}
+    RGBA8() {}
     RGBA8(RGBA rgba) : r(rgba.r * 255), g(rgba.g * 255), b(rgba.b * 255), a(rgba.a * 255) {}
     RGBA8(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
     RGBA8(int r, int g, int b, int a) : r(r), g(g), b(b), a(a) {}
