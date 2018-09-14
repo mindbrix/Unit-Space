@@ -38,7 +38,7 @@ struct libTess {
                     x0 = *(qend - 2), y0 = *(qend - 1), x2 = *q++, y2 = *q++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
                 else
                     x0 = *q++, y0 = *q++, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
-                for (; q <= qend; x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++) {
+                while (q <= qend) {
                     if (x0 != x2 || y0 != y2) {
                         dx = x2 - x0, dy = y2 - y0, l = std::sqrt(dx * dx + dy * dy);
                         nx = dx / l, ny = dy / l;
@@ -49,6 +49,7 @@ struct libTess {
                         *contour++ = x2 + ny * path._strokeWidth * 0.5, *contour++ = y2 - nx * path._strokeWidth * 0.5;
                         tessAddContour(dst, 2, quad, kPointStride, 4);
                     }
+                    x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
                 }
             } else
                 tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
