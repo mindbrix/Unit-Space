@@ -132,7 +132,7 @@ struct Scene {
                     addPath(p);
                 if (shape->stroke.type == NSVG_PAINT_COLOR) {
                     RGBA8 strokeColor(shape->stroke.color & 0xFF, (shape->stroke.color >> 8) & 0xFF, (shape->stroke.color >> 16) & 0xFF, shape->stroke.color >> 24);
-                    Path strokePath(false, 1, strokeColor, p._subPaths);
+                    Path strokePath(false, shape->strokeWidth, strokeColor, p._subPaths);
                     addPath(strokePath);
                 }
             }
