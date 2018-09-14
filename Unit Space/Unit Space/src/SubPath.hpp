@@ -124,7 +124,7 @@ struct SubPath {
         if (type == kCubic) {
             Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision);
             const int nfloats = (int)quadratics.count();
-            if (nfloats > 9) {
+            if (nfloats > 5) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
                     quadratics[nfloats - 2] = quadratics[0], quadratics[nfloats - 1] = quadratics[1];
                 _quadratics = flattenQuadratics(& quadratics[0], nfloats / 2, precision);
