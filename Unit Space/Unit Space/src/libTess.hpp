@@ -34,7 +34,11 @@ struct libTess {
             if (path._strokeWidth) {
                 float x0, y0, x1, y1, x2, y2, *q, *qend, dx, dy, l, nx, ny, quad[8], *contour;
                 q = s._quadratics.get(), qend = q + s._quadratics.count();
-                for (x0 = *(qend - 2), y0 = *(qend - 1), x2 = *q++, y2 = *q++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5; q <= qend; x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++) {
+                if (path._closed)
+                    x0 = *(qend - 2), y0 = *(qend - 1), x2 = *q++, y2 = *q++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
+                else
+                    x0 = *q++, y0 = *q++, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
+                for (; q <= qend; x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++) {
                     if (x0 != x2 || y0 != y2) {
                         dx = x2 - x0, dy = y2 - y0, l = std::sqrt(dx * dx + dy * dy);
                         nx = dx / l, ny = dy / l;
