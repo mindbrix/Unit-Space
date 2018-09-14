@@ -103,6 +103,8 @@ struct Scene {
             printf("size: %f x %f\n", image->width, image->height);            
             int limit = 60000;
             for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next, limit--) {
+                RGBA8 fillColor, strokeColor;
+                
                 if (shape->fill.type != NSVG_PAINT_NONE) {
                     int r, g, b, a, nstops, i;
                     unsigned int rgba;
@@ -118,16 +120,23 @@ struct Scene {
                         }
                         r /= nstops, g /= nstops, b /= nstops, a /= nstops;
                     }
-                    RGBA8 color(r, g, b, a);
-                    Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, 0, color);
-                    
-                    for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
-                        for (int i = 0; i < path->npts; i++)
-                            path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
-                        SubPath s(path->pts, path->npts, SubPath::kCubic);
-                        p.addSubPath(s);
-                    }
+                    fillColor = RGBA8(r, g, b, a);
+                }
+                if (shape->stroke.type == NSVG_PAINT_COLOR)
+                    strokeColor = RGBA8(shape->stroke.color & 0xFF, (shape->stroke.color >> 8) & 0xFF, (shape->stroke.color >> 16) & 0xFF, shape->stroke.color >> 24);
+                
+                Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, 0, fillColor);
+                for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                    for (int i = 0; i < path->npts; i++)
+                        path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
+                    SubPath s(path->pts, path->npts, SubPath::kCubic);
+                    p.addSubPath(s);
+                }
+                if (fillColor.a)
                     addPath(p);
+                if (strokeColor.a) {
+                    Path strokePath(false, 1, strokeColor, p._subPaths);
+                    addPath(strokePath);
                 }
             }
             // Delete
