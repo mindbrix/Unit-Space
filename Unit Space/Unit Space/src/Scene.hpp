@@ -78,7 +78,7 @@ struct Scene {
                             *dst++ = px = vertex->x, *dst++ = py = vertex->y;
                         }
                         
-                        Path p(false, RGBA8(0, 0, 0, 255));
+                        Path p(false, 0, RGBA8(0, 0, 0, 255));
                         for (base = bases, j = 0; j < ncontours; j++, base++) {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
@@ -119,7 +119,7 @@ struct Scene {
                         r /= nstops, g /= nstops, b /= nstops, a /= nstops;
                     }
                     RGBA8 color(r, g, b, a);
-                    Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, color);
+                    Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, 0, color);
                     
                     for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                         for (int i = 0; i < path->npts; i++)
