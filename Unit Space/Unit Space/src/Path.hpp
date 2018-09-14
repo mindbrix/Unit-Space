@@ -9,8 +9,8 @@
 
 struct Path {
     Path() {}
-    Path(bool evenOdd, float strokeWidth, RGBA8 color, vector<SubPath> subpaths) : _color(color), _evenOdd(evenOdd), _strokeWidth(strokeWidth) { for (SubPath& s : subpaths) addSubPath(s); }
-    Path(bool evenOdd, float strokeWidth, RGBA8 color) : _color(color), _evenOdd(evenOdd), _strokeWidth(strokeWidth) {}
+    Path(bool closed, bool evenOdd, float strokeWidth, RGBA8 color, vector<SubPath> subpaths) : _color(color), _closed(closed), _evenOdd(evenOdd), _strokeWidth(strokeWidth) { for (SubPath& s : subpaths) addSubPath(s); }
+    Path(bool closed, bool evenOdd, float strokeWidth, RGBA8 color) : _color(color), _closed(closed), _evenOdd(evenOdd), _strokeWidth(strokeWidth) {}
     
     void addSubPath(SubPath& s) {
         if (s._quadratics.count() / 2 > 2) {
@@ -46,7 +46,7 @@ struct Path {
         }
     }
     RGBA8                       _color;
-    bool                        _evenOdd;
+    bool                        _closed, _evenOdd;
     float                       _strokeWidth;
     Bounds                      _bounds;
     vector<SubPath>             _subPaths;

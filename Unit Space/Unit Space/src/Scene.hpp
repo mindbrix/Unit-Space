@@ -78,7 +78,7 @@ struct Scene {
                             *dst++ = px = vertex->x, *dst++ = py = vertex->y;
                         }
                         
-                        Path p(false, 0, RGBA8(0, 0, 0, 255));
+                        Path p(false, false, 0, RGBA8(0, 0, 0, 255));
                         for (base = bases, j = 0; j < ncontours; j++, base++) {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
@@ -121,7 +121,7 @@ struct Scene {
                     }
                     fillColor = RGBA8(r, g, b, a);
                 }
-                Path p(shape->fillRule == NSVG_FILLRULE_EVENODD, 0, fillColor);
+                Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, fillColor);
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                     for (int i = 0; i < path->npts; i++)
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
@@ -132,7 +132,7 @@ struct Scene {
                     addPath(p);
                 if (shape->stroke.type == NSVG_PAINT_COLOR) {
                     RGBA8 strokeColor(shape->stroke.color & 0xFF, (shape->stroke.color >> 8) & 0xFF, (shape->stroke.color >> 16) & 0xFF, shape->stroke.color >> 24);
-                    Path strokePath(false, shape->strokeWidth, strokeColor, p._subPaths);
+                    Path strokePath(shape->paths->closed, false, shape->strokeWidth, strokeColor, p._subPaths);
                     addPath(strokePath);
                 }
             }
