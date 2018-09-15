@@ -45,16 +45,16 @@ struct libTess {
                 while (q <= qend) {
                     if (x0 != x2 || y0 != y2) {
                         dx = x2 - x0, dy = y2 - y0, l = std::sqrt(dx * dx + dy * dy), nx = -dy / l, ny = dx / l;
-                        float quad[8] = {
+                        det = pnx * ny - pny * nx;
+                        float polygon[10] = {
                             x0 + nx * w, y0 + ny * w,
+                            det == 0 ? x0 : det < 0 ? x0 + pnx * w : x0 - pnx * w, det == 0 ? y0 : det < 0 ? y0 + pny * w : y0 - pny * w,
                             x0 - nx * w, y0 - ny * w,
                             x2 - nx * w, y2 - ny * w,
                             x2 + nx * w, y2 + ny * w,
                         };
-                        tessAddContour(dst, 2, quad, kPointStride, 4);
-                        if (pnx != 0 || pny != 0) {
-                            det = pnx * ny - pny * nx;
-                        }
+                        tessAddContour(dst, 2, polygon, kPointStride, 5);
+                        
                         pnx = nx, pny = ny;
                     }
                     x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
