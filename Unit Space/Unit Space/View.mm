@@ -402,7 +402,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     uniforms.CTM = CTM;
     uniforms.fillColor = { 0, 0, 0, 1 };
     uniforms.strokeColor = { 0, 0, 0, 1 };
-    uniforms.dashLength = 10;
+    uniforms.dashLength = 0;
     uniforms.flatness = 0.03125;
     uniforms.width = 0;
     uniforms.cap = 1;
