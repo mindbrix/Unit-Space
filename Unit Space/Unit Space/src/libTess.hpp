@@ -32,8 +32,17 @@ struct libTess {
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
             if (path._strokeWidth) {
-                float x0, y0, x1, y1, x2, y2, *q, *qend, dx, dy, l, nx, ny, quad[8];
+                float x0, y0, x1, y1, x2, y2, *q, *qend, dx, dy, l, nx, ny, vx, vy;
+                int end, i;
                 q = s._quadratics.get(), qend = q + s._quadratics.count();
+                end = (int)s._quadratics.count() - *(qend - 2) == q[0] && *(qend - 1) == q[1] ? 4 : 0;
+                
+                for (i = 0; i < end; i += 4) {
+                    x0 = q[(i + end - 2) % end], y0 = q[(i + end - 1) % end];
+                    x1 = q[i], y1 = q[i + 1];
+                    x2 = q[(i + 2) % end], y2 = q[(i + 3) % end];
+                    
+                }
                 if (path._closed)
                     x0 = *(qend - 2), y0 = *(qend - 1), x2 = *q++, y2 = *q++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
                 else
@@ -41,10 +50,13 @@ struct libTess {
                 while (q <= qend) {
                     if (x0 != x2 || y0 != y2) {
                         dx = x2 - x0, dy = y2 - y0, l = std::sqrt(dx * dx + dy * dy), nx = dx / l, ny = dy / l;
-                        quad[0] = x0 + ny * path._strokeWidth * 0.5, quad[1] = y0 - nx * path._strokeWidth * 0.5;
-                        quad[2] = x0 - ny * path._strokeWidth * 0.5, quad[3] = y0 + nx * path._strokeWidth * 0.5;
-                        quad[4] = x2 - ny * path._strokeWidth * 0.5, quad[5] = y2 + nx * path._strokeWidth * 0.5;
-                        quad[6] = x2 + ny * path._strokeWidth * 0.5, quad[7] = y2 - nx * path._strokeWidth * 0.5;
+                        vx = -ny * path._strokeWidth * 0.5, vy = nx * path._strokeWidth * 0.5;
+                        float quad[8] = {
+                            x0 + vx, y0 + vy,
+                            x0 - vx, y0 - vy,
+                            x2 - vx, y2 - vy,
+                            x2 + vx, y2 + vy,
+                        };
                         tessAddContour(dst, 2, quad, kPointStride, 4);
                     }
                     x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
