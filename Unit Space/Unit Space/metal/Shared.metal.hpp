@@ -134,7 +134,6 @@ struct MeshPath {
 };
 
 struct MeshState {
-    bool                disableInteriorVector;
     bool                showEdges;
     bool                showInterior;
     bool                showColors;

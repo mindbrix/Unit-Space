@@ -380,7 +380,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 
 - (void)triangulate {
     if (_svgData == nil && _fontData == nil) {
-        Path p(true, false, 4, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
+        Path p(true, false, 0, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
         _scene.empty();
         _scene.addPath(p);
     }
@@ -414,7 +414,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     uniforms.roundCap = false;
     
     MeshState meshState;
-    meshState.disableInteriorVector = false;
     meshState.showEdges = _showEdges;
     meshState.showInterior = _showInterior;
     meshState.showColors = _showColors;
