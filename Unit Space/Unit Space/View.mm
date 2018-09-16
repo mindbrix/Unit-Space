@@ -419,16 +419,16 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     meshState.showInterior = _showInterior;
     meshState.showColors = _showColors;
     meshState.showTriangles = _showTriangles;
-    meshState.showQuadratics = false;
-    meshState.showAccumulations = false;
-    meshState.showAccumulationsSOA = false;
+    meshState.showQuadratics = _flags & 1;
+    meshState.showAccumulations = _flags & 2;
+    meshState.quadraticStride = _flags & 2 ? 8 : 4;
+    meshState.showAccumulationsSOA = _flags & 4;
     meshState.showAccumulationsAllocations = _showAccumulationsAllocations;
     meshState.useQuadraticWinding = _useQuadratics;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
     meshState.colorsSize = (int)paths.size();
     scale /= uniforms.scaleFactor;
-    meshState.quadraticStride = 4;
     meshState.subdivisionCount = !_useQuadratics || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.winding = 0;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
@@ -446,16 +446,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     for (int i = 0; i < _scene._paths.size(); i++)
         paths[i].color = i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
     
-    if (_flags & 1)
-        meshState.showQuadratics = true;
-    if (_flags & 2)  {
-        meshState.quadraticStride = 8;
-        meshState.showAccumulations = true;
-    }
-    if (_flags & 4)
-        meshState.showAccumulationsSOA = true;
-    
-    if (_flags & 8) {}
     if (_flags & 16) {
         int dimension = 330, r = 10, g = r * 2 / 0.618, count = dimension * dimension, idx;
         
