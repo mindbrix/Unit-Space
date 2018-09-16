@@ -106,15 +106,28 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     uint idx = kMeshTriangleSize * select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
     int c = pts[idx].x;
     float t = pts[idx].y;
-    int i = idx + 1 + vid * 2;
     
     RGBA8 color = paths[c].color;
     AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
-    float2 devicePoint = { pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx, pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty };
-    
     float scale = sqrt(abs(CTM.d * CTM.a - CTM.b * CTM.c));
-    Vector interiorVector = pts[i + 1];
-    float2 iv = { interiorVector.x * CTM.a + interiorVector.y * CTM.c, interiorVector.x * CTM.b + interiorVector.y * CTM.d };
+    
+    float x0 = pts[idx + 1].x, y0 = pts[idx + 1].y, x1 = pts[idx + 3].x, y1 = pts[idx + 3].y, x2 = pts[idx + 5].x, y2 = pts[idx + 5].y;
+    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
+    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
+    float2 p2 = { x2 * CTM.a + y2 * CTM.c + CTM.tx, x2 * CTM.b + y2 * CTM.d + CTM.ty };
+    
+    x0 = pts[idx + 2].x, y0 = pts[idx + 2].y, x1 = pts[idx + 4].x, y1 = pts[idx + 4].y, x2 = pts[idx + 6].x, y2 = pts[idx + 6].y;
+    float2 iv0 = { x0 * CTM.a + y0 * CTM.c, x0 * CTM.b + y0 * CTM.d };
+    float2 iv1 = { x1 * CTM.a + y1 * CTM.c, x1 * CTM.b + y1 * CTM.d };
+    float2 iv2 = { x2 * CTM.a + y2 * CTM.c, x2 * CTM.b + y2 * CTM.d };
+    
+    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
+    float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
+    
+//    i = idx + 1 + vid * 2;
+//    float2 devicePoint = { pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx, pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty };
+//    Vector interiorVector = pts[i + 1];
+//    float2 iv = { interiorVector.x * CTM.a + interiorVector.y * CTM.c, interiorVector.x * CTM.b + interiorVector.y * CTM.d };
     
     devicePoint = select(devicePoint + iv / scale, 0, scale < t);
     
