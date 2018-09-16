@@ -133,7 +133,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
     float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
     float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    return select(vert.color * max(eu, max(ev, ew)), vert.color, meshState.showInterior);
+    return select(vert.color, vert.color * max(eu, max(ev, ew)), meshState.showTriangles);
 }
 
 #pragma mark - Triangle

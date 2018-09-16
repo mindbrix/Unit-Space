@@ -135,10 +135,10 @@ struct MeshPath {
 
 struct MeshState {
     bool                disableInteriorVector;
-    bool                hideTriangles;
     bool                showEdges;
-    bool                showColors;
     bool                showInterior;
+    bool                showColors;
+    bool                showTriangles;
     bool                showQuadratics;
     bool                showAccumulations;
     bool                showAccumulationsSOA;

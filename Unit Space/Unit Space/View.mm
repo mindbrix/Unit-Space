@@ -28,10 +28,10 @@ using namespace std;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) BOOL showColors;
 @property(nonatomic) BOOL showEdges;
-@property(nonatomic) BOOL useQuadratics;
 @property(nonatomic) BOOL showInterior;
+@property(nonatomic) BOOL useQuadratics;
+@property(nonatomic) BOOL showTriangles;
 @property(nonatomic) BOOL showPoints;
-@property(nonatomic) BOOL showTriangle;
 @property(nonatomic) BOOL showVisibles;
 @property(nonatomic) BOOL useDelaunay;
 @property(nonatomic) BOOL useEvenOdd;
@@ -79,9 +79,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     self.metalLayer.layerDelegate = self;
     self.transform = [VGAffineTransform new];
     self.mouseLocation = { 0, 0 };
-    self.showColors = YES;
     self.showInterior = YES;
-    self.showTriangle = YES;
+    self.showColors = YES;
     self.useEvenOdd = YES;
     self.f = 20;
     self.count = 1000;
@@ -298,6 +297,10 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     _showEdges = !_showEdges;
     [self redraw];
 }
+- (IBAction)toggleInterior:(id)sender {
+    _showInterior = !_showInterior;
+    [self redraw];
+}
 - (IBAction)toggleCurves:(id)sender {
     _showAccumulationsAllocations = !_showAccumulationsAllocations;
     [self redraw];
@@ -318,8 +321,8 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     [self redraw];
 }
 
-- (IBAction)toggleShowInterior:(id)sender {
-    _showInterior = !_showInterior;
+- (IBAction)toggleShowTriangles:(id)sender {
+    _showTriangles = !_showTriangles;
     [self updateFromState];
     [self redraw];
 }
@@ -412,10 +415,10 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     
     MeshState meshState;
     meshState.disableInteriorVector = false;
-    meshState.hideTriangles = !_showTriangle;
     meshState.showEdges = _showEdges;
-    meshState.showColors = _showColors;
     meshState.showInterior = _showInterior;
+    meshState.showColors = _showColors;
+    meshState.showTriangles = _showTriangles;
     meshState.showQuadratics = false;
     meshState.showAccumulations = false;
     meshState.showAccumulationsSOA = false;

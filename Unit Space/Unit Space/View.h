@@ -29,10 +29,11 @@
 
 - (IBAction)toggleCurves:(id)sender;
 - (IBAction)toggleEdges:(id)sender;
+- (IBAction)toggleInterior:(id)sender;
 - (IBAction)toggleUseQuadratics:(id)sender;
 - (IBAction)togglePoints:(id)sender;
 - (IBAction)toggleShowColors:(id)sender;
-- (IBAction)toggleShowInterior:(id)sender;
+- (IBAction)toggleShowTriangles:(id)sender;
 - (IBAction)toggleRetina:(id)sender;
 - (IBAction)toggleUseDelaunay:(id)sender;
 - (IBAction)toggleUseMask:(id)sender;

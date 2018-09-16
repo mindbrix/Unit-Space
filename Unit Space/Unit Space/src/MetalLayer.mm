@@ -221,8 +221,6 @@
             case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
             case kCallTypeMeshTriangles:
-                if (call->meshState.hideTriangles)
-                    continue;
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:10];

@@ -697,10 +697,10 @@ DQ
                                     <action selector="toggleShowColors:" target="-1" id="nTC-XR-Jl6"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Show Interior" keyEquivalent="i" id="iqo-KW-y8W">
+                            <menuItem title="Toggle Show Trianges" keyEquivalent="i" id="iqo-KW-y8W">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleShowInterior:" target="-1" id="Fvw-t5-c8n"/>
+                                    <action selector="toggleShowTriangles:" target="-1" id="cUH-c7-nxh"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle Use Delaunay" keyEquivalent="d" id="9z2-Fi-Oav">
