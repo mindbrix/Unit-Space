@@ -153,20 +153,21 @@ struct Mesh {
                 
             } else {
                 call = nullptr;
-                for (end = (int)mesh._triangles.count() / kMeshTriangleSize, p = (int)paths.size() - 1; p >= 0; p--, end = base) {
-                    base = mesh._idxs[p];
-                    if (visibles[p] && (opaques[p] || smalls[p])) {
-                        count = end - base;
-                        if (call == nullptr || call->baseInstance != end) {
-                            calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
-                            call = & calls.back();
-                            call->meshState.reverseCount = end;
+                if (meshState.showInterior) {
+                    for (end = (int)mesh._triangles.count() / kMeshTriangleSize, p = (int)paths.size() - 1; p >= 0; p--, end = base) {
+                        base = mesh._idxs[p];
+                        if (visibles[p] && (opaques[p] || smalls[p])) {
+                            count = end - base;
+                            if (call == nullptr || call->baseInstance != end) {
+                                calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
+                                call = & calls.back();
+                                call->meshState.reverseCount = end;
+                            }
+                            call->baseInstance = base;
+                            call->instanceCount += count;
                         }
-                        call->baseInstance = base;
-                        call->instanceCount += count;
                     }
                 }
-                
                 if (!meshState.showEdges) {
                     for (i = 0; i < ranges.size(); i += 2)
                         for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {

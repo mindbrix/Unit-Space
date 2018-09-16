@@ -685,6 +685,12 @@ DQ
                                     <action selector="toggleEdges:" target="-1" id="XZr-WB-bvI"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Interior" keyEquivalent="w" id="FAk-83-end">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleInterior:" target="-1" id="A3B-SB-irs"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Points" keyEquivalent="p" id="FEL-y9-7ve">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
