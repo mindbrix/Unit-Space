@@ -293,11 +293,12 @@ struct Mesh {
     
     vector<int>                         _idxs;
     Memory<Vector, true>                _triangles;
+    Memory<Triangle, true>              _tris;
     
     ShapesSOA                           _shapesSOA;
     
     void empty() {
         _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticTs = Memory<float, true>(), _quadraticIndices = Memory<int>();
-        _timeline.empty(), _idxs.resize(0), _triangles = Memory<Vector, true>();
+        _timeline.empty(), _idxs.resize(0), _triangles = Memory<Vector, true>(), _tris = Memory<Triangle, true>();
     }
 };
