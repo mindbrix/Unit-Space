@@ -98,6 +98,7 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
+    float d0, d1, d2;
     float4 color;
 };
 
@@ -128,6 +129,12 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
+    
+    float d0, d1, d2;
+    d0 = 40 + -dot(devicePoint - p0, normalize(iv0)) - length(iv0) / scale;
+    d1 = 40 + -dot(devicePoint - p1, normalize(iv1)) - length(iv1) / scale;
+    d2 = 40 + -dot(devicePoint - p2, normalize(iv2)) - length(iv2) / scale;
+    
     devicePoint = select(devicePoint + iv / scale, 0, scale < t);
     
     RGBA8 color = paths[c].color;
@@ -137,6 +144,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
+    vert.d0 = d0, vert.d1 = d1, vert.d2 = d2;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -147,6 +155,8 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
     float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
     float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+    return select(vert.color, vert.color * max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2))), meshState.showTriangles);
+    
     return select(vert.color, vert.color * max(eu, max(ev, ew)), meshState.showTriangles);
 }
 
