@@ -103,7 +103,6 @@ struct InteriorVertex
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                            device Triangle *tris [[buffer(8)]], device MeshPath *paths [[buffer(9)]],
-                                           device Vector *pts [[buffer(10)]],
                                            uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
@@ -127,34 +126,9 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 iv1 = { float(tri.ix1) * CTM.a + float(tri.iy1) * CTM.c, float(tri.ix1) * CTM.b + float(tri.iy1) * CTM.d };
     float2 iv2 = { float(tri.ix2) * CTM.a + float(tri.iy2) * CTM.c, float(tri.ix2) * CTM.b + float(tri.iy2) * CTM.d };
     
-
-//    uint idx = kMeshTriangleSize * select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
-//    int c = pts[idx].x;
-//    float t = pts[idx].y;
-//
-//    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
-//    float scale = sqrt(abs(CTM.d * CTM.a - CTM.b * CTM.c));
-//    
-//    float x0 = pts[idx + 1].x, y0 = pts[idx + 1].y, x1 = pts[idx + 3].x, y1 = pts[idx + 3].y, x2 = pts[idx + 5].x, y2 = pts[idx + 5].y;
-//    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
-//    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-//    float2 p2 = { x2 * CTM.a + y2 * CTM.c + CTM.tx, x2 * CTM.b + y2 * CTM.d + CTM.ty };
-//
-//    x0 = pts[idx + 2].x, y0 = pts[idx + 2].y, x1 = pts[idx + 4].x, y1 = pts[idx + 4].y, x2 = pts[idx + 6].x, y2 = pts[idx + 6].y;
-//    float2 iv0 = { x0 * CTM.a + y0 * CTM.c, x0 * CTM.b + y0 * CTM.d };
-//    float2 iv1 = { x1 * CTM.a + y1 * CTM.c, x1 * CTM.b + y1 * CTM.d };
-//    float2 iv2 = { x2 * CTM.a + y2 * CTM.c, x2 * CTM.b + y2 * CTM.d };
-    
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
     devicePoint = select(devicePoint + iv / scale, 0, scale < t);
-    
-//    i = idx + 1 + vid * 2;
-//    float2 devicePoint = { pts[i].x * CTM.a + pts[i].y * CTM.c + CTM.tx, pts[i].x * CTM.b + pts[i].y * CTM.d + CTM.ty };
-//    Vector interiorVector = pts[i + 1];
-//    float2 iv = { interiorVector.x * CTM.a + interiorVector.y * CTM.c, interiorVector.x * CTM.b + interiorVector.y * CTM.d };
-    
-//    devicePoint = select(devicePoint + iv / scale, 0, scale < t);
     
     RGBA8 color = paths[c].color;
     
@@ -189,7 +163,7 @@ struct TriangleVertex
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                        device Triangle *tris [[buffer(8)]],
-                                       device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]],
+                                       device MeshPath *paths [[buffer(9)]],
                                        uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = iid;
@@ -206,17 +180,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 p0 = { tri.x0 * CTM.a + tri.y0 * CTM.c + CTM.tx, tri.x0 * CTM.b + tri.y0 * CTM.d + CTM.ty };
     float2 p1 = { tri.x1 * CTM.a + tri.y1 * CTM.c + CTM.tx, tri.x1 * CTM.b + tri.y1 * CTM.d + CTM.ty };
     float2 p2 = { tri.x2 * CTM.a + tri.y2 * CTM.c + CTM.tx, tri.x2 * CTM.b + tri.y2 * CTM.d + CTM.ty };
-    
-//    uint idx = iid * kMeshTriangleSize;
-//    int c = pts[idx].x;
-//    float x0 = pts[idx + 1].x, y0 = pts[idx + 1].y, x1 = pts[idx + 3].x, y1 = pts[idx + 3].y, x2 = pts[idx + 5].x, y2 = pts[idx + 5].y;
-//
-//    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
-//
-//    float2 p0 = { x0 * CTM.a + y0 * CTM.c + CTM.tx, x0 * CTM.b + y0 * CTM.d + CTM.ty };
-//    float2 p1 = { x1 * CTM.a + y1 * CTM.c + CTM.tx, x1 * CTM.b + y1 * CTM.d + CTM.ty };
-//    float2 p2 = { x2 * CTM.a + y2 * CTM.c + CTM.tx, x2 * CTM.b + y2 * CTM.d + CTM.ty };
-    
+        
     const float dilation = -0.5, hmin = 0.1;
     float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
     float2 v12 = p2 - p1, n12 = normalize(float2(v12.y, -v12.x));

@@ -118,31 +118,29 @@ struct libTess {
                 count += counts[p++];
             begins[i] = p;
         }
-        vector<Vector> points[divisions], *pointss = points;
         vector<Triangle> tris[divisions], *triss = tris;
         vector<int> idxs[divisions], *idxss = idxs;
         if (divisions == 1)
-            triangulateRange(tris[0], points[0], idxss[0], scene, 0, size);
+            triangulateRange(tris[0], idxss[0], scene, 0, size);
         else {
             dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^(size_t idx) {
-                triangulateRange(triss[idx], pointss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
+                triangulateRange(triss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
         }
-        for (base = i = 0; i < divisions; base += (int)points[i].size() / kMeshTriangleSize, i++) {
+        for (base = i = 0; i < divisions; base += (int)tris[i].size(), i++) {
             memcpy(mesh._tris.new_ptr(tris[i].size()), & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
-            memcpy(mesh._triangles.new_ptr(points[i].size()), & points[i][0], points[i].size() * sizeof(points[i][0]));
             for (int idx : idxs[i])
                 mesh._idxs.emplace_back(base + idx);
         }
     }
     
-    static void triangulateRange(vector<Triangle>& _tris, vector<Vector>& _points, vector<int>& _idxs, Scene& scene, int begin, int end) {
+    static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         vector<float> scales;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
-            _idxs.emplace_back((int)(_points.size() / kMeshTriangleSize));
+            _idxs.emplace_back((int)_tris.size());
             
             addPathContours(tess, path);
             if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
@@ -222,7 +220,6 @@ struct libTess {
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
                         
-                        _points.emplace_back(p, ta > t ? ta : t);
                         float lx, ly, rw, rh;
                         lx = path._bounds.lx, rw = 1 / (path._bounds.ux - lx);
                         ly = path._bounds.ly, rh = 1 / (path._bounds.uy - ly);
@@ -235,10 +232,6 @@ struct libTess {
                                            m1.x * rw * 32767, m1.y * rh * 32767,
                                            m2.x * rw * 32767, m2.y * rh * 32767
                         );
-                        
-                        _points.emplace_back(x0, y0), _points.emplace_back(m0);
-                        _points.emplace_back(x1, y1), _points.emplace_back(m1);
-                        _points.emplace_back(x2, y2), _points.emplace_back(m2);
                     }
                 }
             }

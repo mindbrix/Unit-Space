@@ -16,7 +16,6 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trisBuffer;
-@property (nonatomic, strong) id <MTLBuffer> trianglesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticTsBuffer;
@@ -225,7 +224,6 @@
                 [commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
                 [commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:_trianglesBuffer offset:0 atIndex:10];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
@@ -301,10 +299,6 @@
         _trisBuffer = [self.device newBufferWithBytes:(void *)mesh._tris.get()
                                                length:mesh._tris.pagedSize()
                                               options:MTLResourceStorageModeShared];
-    if (mesh._triangles.pagedSize())
-        _trianglesBuffer = [self.device newBufferWithBytes:(void *)mesh._triangles.get()
-                                                    length:mesh._triangles.pagedSize()
-                                                   options:MTLResourceStorageModeShared];
     if (mesh._timeline.pathsForTime(0).size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.pathsForTime(0)[0]
                                                 length:mesh._timeline.pathsForTime(0).size() * sizeof(MeshPath)
