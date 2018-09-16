@@ -101,7 +101,10 @@ struct InteriorVertex
     float4 color;
 };
 
-vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                           device Triangle *tris [[buffer(8)]], device MeshPath *paths [[buffer(9)]],
+                                           device Vector *pts [[buffer(10)]],
+                                           uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = kMeshTriangleSize * select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
     int c = pts[idx].x;
@@ -160,7 +163,10 @@ struct TriangleVertex
 
 #pragma mark Vertex
 
-vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]], device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]], uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                       device Triangle *tris [[buffer(8)]],
+                                       device MeshPath *paths [[buffer(9)]], device Vector *pts [[buffer(10)]],
+                                       uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = iid * kMeshTriangleSize;
     int c = pts[idx].x;
