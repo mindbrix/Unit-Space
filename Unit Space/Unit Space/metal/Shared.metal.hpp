@@ -90,6 +90,9 @@ struct Bounds {
     inline bool intersects(Bounds other) const {
         return ux > other.lx && other.ux > lx && uy > other.ly && other.uy > ly;
     }
+	inline AffineTransform makeUnit() {
+		return { ux - lx, 0, 0, uy - ly, lx, ly };
+	}
     static inline Bounds transformUnit(const AffineTransform t) {
         float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
         return {
