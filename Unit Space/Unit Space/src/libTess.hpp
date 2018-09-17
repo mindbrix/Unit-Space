@@ -140,6 +140,10 @@ struct libTess {
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
+			float lx, ly, rw, rh, ms = kShortMax / kInteriorMax;
+			lx = path._bounds.lx, rw = kShortMax / (path._bounds.ux - lx);
+			ly = path._bounds.ly, rh = kShortMax / (path._bounds.uy - ly);
+
             _idxs.emplace_back((int)_tris.size());
             
             addPathContours(tess, path);
@@ -219,20 +223,11 @@ struct libTess {
                         }
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
-                        
-                        float lx, ly, rw, rh, ms;
-                        lx = path._bounds.lx, rw = 1 / (path._bounds.ux - lx);
-                        ly = path._bounds.ly, rh = 1 / (path._bounds.uy - ly);
-                        rw *= 32767, rh *= 32767, ms = 32767.0 / 10.0;
-                        
+						
                         _tris.emplace_back(p, ta > t ? ta : t,
                                            (x0 - lx) * rw, (y0 - ly) * rh,
                                            (x1 - lx) * rw, (y1 - ly) * rh,
                                            (x2 - lx) * rw, (y2 - ly) * rh,
-//                                           m0.x * rw, m0.y * rh,
-//                                           m1.x * rw, m1.y * rh,
-//                                           m2.x * rw, m2.y * rh
-
                                            m0.x * ms, m0.y * ms,
                                            m1.x * ms, m1.y * ms,
                                            m2.x * ms, m2.y * ms

@@ -116,15 +116,15 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     device Bounds& bounds = paths[c].bounds;
     AffineTransform unit = { bounds.ux - bounds.lx, 0, 0, bounds.uy - bounds.ly, bounds.lx, bounds.ly };
     CTM = AffineTransformConcat(unit, CTM);
-    AffineTransform s = { 1.0 / 32767.0, 0, 0, 1.0 / 32767.0, 0, 0 };
-    CTM = AffineTransformConcat(s, CTM);
-    
+	float s = 1.0 / kShortMax;
+	CTM.a *= s, CTM.b *= s, CTM.c *= s, CTM.d *= s;
+	
     float2 p0 = { tri.x0 * CTM.a + tri.y0 * CTM.c + CTM.tx, tri.x0 * CTM.b + tri.y0 * CTM.d + CTM.ty };
     float2 p1 = { tri.x1 * CTM.a + tri.y1 * CTM.c + CTM.tx, tri.x1 * CTM.b + tri.y1 * CTM.d + CTM.ty };
     float2 p2 = { tri.x2 * CTM.a + tri.y2 * CTM.c + CTM.tx, tri.x2 * CTM.b + tri.y2 * CTM.d + CTM.ty };
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
-    float ms = 1.0 / scale / 32767.0 * 10.0;
+    float ms = 1.0 / scale / kShortMax * kInteriorMax;
     CTM = iCTM;
     CTM.a *= ms, CTM.b *= ms, CTM.c *= ms, CTM.d *= ms;
     float2 iv0 = { float(tri.ix0) * CTM.a + float(tri.iy0) * CTM.c, float(tri.ix0) * CTM.b + float(tri.iy0) * CTM.d };
@@ -215,8 +215,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     device Bounds& bounds = paths[c].bounds;
     AffineTransform unit = { bounds.ux - bounds.lx, 0, 0, bounds.uy - bounds.ly, bounds.lx, bounds.ly };
     CTM = AffineTransformConcat(unit, CTM);
-    AffineTransform s = { 1.0 / 32767.0, 0, 0, 1.0 / 32767.0, 0, 0 };
-    CTM = AffineTransformConcat(s, CTM);
+	float s = 1.0 / kShortMax;
+	CTM.a *= s, CTM.b *= s, CTM.c *= s, CTM.d *= s;
     
     float2 p0 = { tri.x0 * CTM.a + tri.y0 * CTM.c + CTM.tx, tri.x0 * CTM.b + tri.y0 * CTM.d + CTM.ty };
     float2 p1 = { tri.x1 * CTM.a + tri.y1 * CTM.c + CTM.tx, tri.x1 * CTM.b + tri.y1 * CTM.d + CTM.ty };

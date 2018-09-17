@@ -109,6 +109,7 @@ struct Bounds {
 };
 
 #define kShortMax 32767.0
+#define kInteriorMax 100.0
 
 struct Triangle {
     Triangle(int p, float t, float x0, float y0, float x1, float y1, float x2, float y2, float ix0, float iy0, float ix1, float iy1, float ix2, float iy2)
