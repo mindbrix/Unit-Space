@@ -132,35 +132,31 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 iv1 = { tri.ix1 * CTM.a + tri.iy1 * CTM.c, tri.ix1 * CTM.b + tri.iy1 * CTM.d };
     float2 iv2 = { tri.ix2 * CTM.a + tri.iy2 * CTM.c, tri.ix2 * CTM.b + tri.iy2 * CTM.d };
 
-    float d0, d1, d2, d3, d4, d5, width, cosine, sine;
-    float2 iv, niv, ep, en;
+    float d0, d1, d2, d3, d4, d5, width, cosine, sine, sx, sy;
+    float2 iv, niv;
     d0 = d1 = d2 = d3 = d4 = d5 = 0, width = 10;
     
     iv = iv0;
     cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
-//    cosine = sine = sqrt(0.5);
     niv = normalize(iv);
-    en = { niv.x * cosine - niv.y * sine, niv.x * sine + niv.y * cosine };
-    ep = { niv.x * cosine + niv.y * sine, niv.x * -sine + niv.y * cosine };
-    d0 = width - dot(devicePoint - p0, en);
-    d1 = width - dot(devicePoint - p0, ep);
-    
+	sx = devicePoint.x - p0.x, sy = devicePoint.y - p0.y;
+	d0 = width - (sx * (niv.x * cosine - niv.y * sine) + sy * (niv.x * sine + niv.y * cosine));
+	d1 = width - (sx * (niv.x * cosine + niv.y * sine) + sy * (niv.x * -sine + niv.y * cosine));
+	
     iv = iv1;
     cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
     niv = normalize(iv);
-    en = { niv.x * cosine - niv.y * sine, niv.x * sine + niv.y * cosine };
-    ep = { niv.x * cosine + niv.y * sine, niv.x * -sine + niv.y * cosine };
-    d2 = width - dot(devicePoint - p1, en);
-    d3 = width - dot(devicePoint - p1, ep);
-
+	sx = devicePoint.x - p1.x, sy = devicePoint.y - p1.y;
+	d2 = width - (sx * (niv.x * cosine - niv.y * sine) + sy * (niv.x * sine + niv.y * cosine));
+	d3 = width - (sx * (niv.x * cosine + niv.y * sine) + sy * (niv.x * -sine + niv.y * cosine));
+	
     iv = iv2;
     cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
     niv = normalize(iv);
-    en = { niv.x * cosine - niv.y * sine, niv.x * sine + niv.y * cosine };
-    ep = { niv.x * cosine + niv.y * sine, niv.x * -sine + niv.y * cosine };
-    d4 = width - dot(devicePoint - p2, en);
-    d5 = width - dot(devicePoint - p2, ep);
-    
+	sx = devicePoint.x - p2.x, sy = devicePoint.y - p2.y;
+	d4 = width - (sx * (niv.x * cosine - niv.y * sine) + sy * (niv.x * sine + niv.y * cosine));
+	d5 = width - (sx * (niv.x * cosine + niv.y * sine) + sy * (niv.x * -sine + niv.y * cosine));
+	
     iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
     devicePoint = select(devicePoint + iv, 0, scale < t);
     RGBA8 color = paths[c].color;
