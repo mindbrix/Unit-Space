@@ -98,7 +98,7 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
-    float d0, d1, d2;
+    float d0, d1, d2, d3, d4, d5, d6;
     float4 color;
 };
 
@@ -111,7 +111,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     device Triangle& tri = tris[idx];
     int c = tri.p;
     float t = tri.t;
-    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
+    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM), iCTM = CTM;
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     device Bounds& bounds = paths[c].bounds;
     AffineTransform unit = { bounds.ux - bounds.lx, 0, 0, bounds.uy - bounds.ly, bounds.lx, bounds.ly };
@@ -122,21 +122,46 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 p0 = { tri.x0 * CTM.a + tri.y0 * CTM.c + CTM.tx, tri.x0 * CTM.b + tri.y0 * CTM.d + CTM.ty };
     float2 p1 = { tri.x1 * CTM.a + tri.y1 * CTM.c + CTM.tx, tri.x1 * CTM.b + tri.y1 * CTM.d + CTM.ty };
     float2 p2 = { tri.x2 * CTM.a + tri.y2 * CTM.c + CTM.tx, tri.x2 * CTM.b + tri.y2 * CTM.d + CTM.ty };
+    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
+    float ms = 1.0 / scale / 32767.0 * 10.0;
+    CTM = iCTM;
+    CTM.a *= ms, CTM.b *= ms, CTM.c *= ms, CTM.d *= ms;
     float2 iv0 = { float(tri.ix0) * CTM.a + float(tri.iy0) * CTM.c, float(tri.ix0) * CTM.b + float(tri.iy0) * CTM.d };
     float2 iv1 = { float(tri.ix1) * CTM.a + float(tri.iy1) * CTM.c, float(tri.ix1) * CTM.b + float(tri.iy1) * CTM.d };
     float2 iv2 = { float(tri.ix2) * CTM.a + float(tri.iy2) * CTM.c, float(tri.ix2) * CTM.b + float(tri.iy2) * CTM.d };
+
+    float d0, d1, d2, d3, d4, d5, width, cosine, sine;
+    float2 iv, niv, ep, en;
+    d0 = d1 = d2 = d3 = d4 = d5 = 0, width = 10;
     
-    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
-    float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
+    iv = iv0;
+    cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
+//    cosine = sine = sqrt(0.5);
+    niv = normalize(iv);
+    en = { niv.x * cosine - niv.y * sine, niv.x * sine + niv.y * cosine };
+    ep = { niv.x * cosine + niv.y * sine, niv.x * -sine + niv.y * cosine };
+    d0 = width - dot(devicePoint - p0, en);
+    d1 = width - dot(devicePoint - p0, ep);
     
-    float d0, d1, d2;
-    d0 = 40 + -dot(devicePoint - p0, normalize(iv0)) - length(iv0) / scale;
-    d1 = 40 + -dot(devicePoint - p1, normalize(iv1)) - length(iv1) / scale;
-    d2 = 40 + -dot(devicePoint - p2, normalize(iv2)) - length(iv2) / scale;
+    iv = iv1;
+    cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
+    niv = normalize(iv);
+    en = { niv.x * cosine - niv.y * sine, niv.x * sine + niv.y * cosine };
+    ep = { niv.x * cosine + niv.y * sine, niv.x * -sine + niv.y * cosine };
+    d2 = width - dot(devicePoint - p1, en);
+    d3 = width - dot(devicePoint - p1, ep);
+
+    iv = iv2;
+    cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
+    niv = normalize(iv);
+    en = { niv.x * cosine - niv.y * sine, niv.x * sine + niv.y * cosine };
+    ep = { niv.x * cosine + niv.y * sine, niv.x * -sine + niv.y * cosine };
+    d4 = width - dot(devicePoint - p2, en);
+    d5 = width - dot(devicePoint - p2, ep);
     
-    devicePoint = select(devicePoint + iv / scale, 0, scale < t);
-    
+    iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
+    devicePoint = select(devicePoint + iv, 0, scale < t);
     RGBA8 color = paths[c].color;
     
     InteriorVertex vert;
@@ -144,7 +169,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
-    vert.d0 = d0, vert.d1 = d1, vert.d2 = d2;
+    vert.d0 = d0, vert.d1 = d1, vert.d2 = d2, vert.d3 = d3, vert.d4 = d4, vert.d5 = d5;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -155,7 +180,13 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
     float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
     float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    return select(vert.color, vert.color * max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2))), meshState.showTriangles);
+    
+    float e0 = max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2)));
+    float e1 = max(saturate(vert.d3), max(saturate(vert.d4), saturate(vert.d5)));
+    float edges = 0;//max(saturate(eu), max(saturate(ev), saturate(ew)));
+    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), max(max(e0, e1), edges)), meshState.showTriangles);
+    
+    //return select(vert.color, vert.color * max(max(e0, e1), edges), meshState.showTriangles);
     
     return select(vert.color, vert.color * max(eu, max(ev, ew)), meshState.showTriangles);
 }
@@ -216,10 +247,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 #pragma mark Fragment
 
-fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]])
+fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     float winding = edgeWinding(vert.p0.x, vert.p0.y, vert.p1.x, vert.p1.y)
 	+ edgeWinding(vert.p1.x, vert.p1.y, vert.p2.x, vert.p2.y)
 	+ edgeWinding(vert.p2.x, vert.p2.y, vert.p0.x, vert.p0.y);
-    return vert.color * abs(winding);
+    return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * abs(winding);
 }
