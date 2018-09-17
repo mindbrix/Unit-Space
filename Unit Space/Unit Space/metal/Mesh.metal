@@ -128,9 +128,9 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float ms = 1.0 / scale / kShortMax * kInteriorMax;
     CTM = iCTM;
     CTM.a *= ms, CTM.b *= ms, CTM.c *= ms, CTM.d *= ms;
-    float2 iv0 = { float(tri.ix0) * CTM.a + float(tri.iy0) * CTM.c, float(tri.ix0) * CTM.b + float(tri.iy0) * CTM.d };
-    float2 iv1 = { float(tri.ix1) * CTM.a + float(tri.iy1) * CTM.c, float(tri.ix1) * CTM.b + float(tri.iy1) * CTM.d };
-    float2 iv2 = { float(tri.ix2) * CTM.a + float(tri.iy2) * CTM.c, float(tri.ix2) * CTM.b + float(tri.iy2) * CTM.d };
+    float2 iv0 = { tri.ix0 * CTM.a + tri.iy0 * CTM.c, tri.ix0 * CTM.b + tri.iy0 * CTM.d };
+    float2 iv1 = { tri.ix1 * CTM.a + tri.iy1 * CTM.c, tri.ix1 * CTM.b + tri.iy1 * CTM.d };
+    float2 iv2 = { tri.ix2 * CTM.a + tri.iy2 * CTM.c, tri.ix2 * CTM.b + tri.iy2 * CTM.d };
 
     float d0, d1, d2, d3, d4, d5, width, cosine, sine;
     float2 iv, niv, ep, en;
