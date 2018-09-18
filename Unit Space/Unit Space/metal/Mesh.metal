@@ -112,7 +112,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     int p = tri.p;
     float t = tri.t;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+    float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kShortMax, h = (bounds.uy - bounds.ly) / kShortMax;
@@ -122,7 +122,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
-    float ms = 1.0 / scale / kShortMax * kInteriorMax, ia = CTM.a * ms, ib = CTM.b * ms, ic = CTM.c * ms, id = CTM.d * ms;
+    float ms = rscale / kShortMax * kInteriorMax, ia = CTM.a * ms, ib = CTM.b * ms, ic = CTM.c * ms, id = CTM.d * ms;
     float2 iv0 = { tri.ix0 * ia + tri.iy0 * ic, tri.ix0 * ib + tri.iy0 * id };
     float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
     float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
@@ -155,7 +155,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 	d5 = width - (sx * (niv.x * cosine + niv.y * sine) + sy * (niv.x * -sine + niv.y * cosine));
 	
     iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
-    devicePoint = select(devicePoint + iv, 0, scale < t);
+    devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
     RGBA8 color = paths[p].color;
     
     InteriorVertex vert;
