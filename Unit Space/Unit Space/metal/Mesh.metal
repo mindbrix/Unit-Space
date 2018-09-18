@@ -109,24 +109,20 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     uint idx = select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
     
     device Triangle& tri = tris[idx];
-    int c = tri.p;
+    int p = tri.p;
     float t = tri.t;
-    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
+    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
-    float ms = 1.0 / scale / kShortMax * kInteriorMax, ia = CTM.a * ms, ib = CTM.b * ms, ic = CTM.c * ms, id = CTM.d * ms;
     
-    Bounds bounds = paths[c].bounds;
+    Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kShortMax, h = (bounds.uy - bounds.ly) / kShortMax;
-	CTM = {
-		w * CTM.a,              w * CTM.b,
-		h * CTM.c,              h * CTM.d,
-		bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,    bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
-	};
-    float2 p0 = { tri.x0 * CTM.a + tri.y0 * CTM.c + CTM.tx, tri.x0 * CTM.b + tri.y0 * CTM.d + CTM.ty };
-    float2 p1 = { tri.x1 * CTM.a + tri.y1 * CTM.c + CTM.tx, tri.x1 * CTM.b + tri.y1 * CTM.d + CTM.ty };
-    float2 p2 = { tri.x2 * CTM.a + tri.y2 * CTM.c + CTM.tx, tri.x2 * CTM.b + tri.y2 * CTM.d + CTM.ty };
+    float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d, tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
+    float2 p0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
+    float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
+    float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
+    float ms = 1.0 / scale / kShortMax * kInteriorMax, ia = CTM.a * ms, ib = CTM.b * ms, ic = CTM.c * ms, id = CTM.d * ms;
     float2 iv0 = { tri.ix0 * ia + tri.iy0 * ic, tri.ix0 * ib + tri.iy0 * id };
     float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
     float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
@@ -160,10 +156,10 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 	
     iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
     devicePoint = select(devicePoint + iv, 0, scale < t);
-    RGBA8 color = paths[c].color;
+    RGBA8 color = paths[p].color;
     
     InteriorVertex vert;
-    float z = (c * 2 + 2) / float(meshState.colorsSize * 2 + 2);
+    float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
@@ -208,20 +204,16 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     uint idx = iid;
     
     device Triangle& tri = tris[idx];
-    int c = tri.p;
-    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
-	Bounds bounds = paths[c].bounds;
+    int p = tri.p;
+    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
+	Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kShortMax, h = (bounds.uy - bounds.ly) / kShortMax;
-	CTM = {
-		w * CTM.a,              w * CTM.b,
-		h * CTM.c,              h * CTM.d,
-		bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,    bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
-	};
-    float2 p0 = { tri.x0 * CTM.a + tri.y0 * CTM.c + CTM.tx, tri.x0 * CTM.b + tri.y0 * CTM.d + CTM.ty };
-    float2 p1 = { tri.x1 * CTM.a + tri.y1 * CTM.c + CTM.tx, tri.x1 * CTM.b + tri.y1 * CTM.d + CTM.ty };
-    float2 p2 = { tri.x2 * CTM.a + tri.y2 * CTM.c + CTM.tx, tri.x2 * CTM.b + tri.y2 * CTM.d + CTM.ty };
-        
-    const float dilation = -0.5, hmin = 0.1;
+    float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d, tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
+    float2 p0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
+    float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
+    float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
+    
+	const float dilation = -0.5, hmin = 0.1;
     float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
     float2 v12 = p2 - p1, n12 = normalize(float2(v12.y, -v12.x));
     float2 v20 = p0 - p2, n20 = normalize(float2(v20.y, -v20.x));
@@ -232,9 +224,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 dp2 = p0 * dh0 + p1 * dh1 + p2 * (1 - dh0 - dh1);
     float2 devicePoint = select(select(dp2, dp1, vid == 1), dp0, vid == 0);
     
-    RGBA8 color = paths[c].color;
+    RGBA8 color = paths[p].color;
     
-    float z = (c * 2 + 1) / float(meshState.colorsSize * 2 + 2);
+    float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
