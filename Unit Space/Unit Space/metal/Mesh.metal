@@ -111,9 +111,11 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     device Triangle& tri = tris[idx];
     int c = tri.p;
     float t = tri.t;
-    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM), iCTM = CTM;
+    AffineTransform CTM = AffineTransformConcat(paths[c].ctm, state.CTM);
     float scale = sqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
-	Bounds bounds = paths[c].bounds;
+    float ms = 1.0 / scale / kShortMax * kInteriorMax, ia = CTM.a * ms, ib = CTM.b * ms, ic = CTM.c * ms, id = CTM.d * ms;
+    
+    Bounds bounds = paths[c].bounds;
 	float w = (bounds.ux - bounds.lx) / kShortMax, h = (bounds.uy - bounds.ly) / kShortMax;
 	CTM = {
 		w * CTM.a,              w * CTM.b,
@@ -125,19 +127,18 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 p2 = { tri.x2 * CTM.a + tri.y2 * CTM.c + CTM.tx, tri.x2 * CTM.b + tri.y2 * CTM.d + CTM.ty };
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
-    float ms = 1.0 / scale / kShortMax * kInteriorMax;
-    CTM = iCTM;
-    CTM.a *= ms, CTM.b *= ms, CTM.c *= ms, CTM.d *= ms;
-    float2 iv0 = { tri.ix0 * CTM.a + tri.iy0 * CTM.c, tri.ix0 * CTM.b + tri.iy0 * CTM.d };
-    float2 iv1 = { tri.ix1 * CTM.a + tri.iy1 * CTM.c, tri.ix1 * CTM.b + tri.iy1 * CTM.d };
-    float2 iv2 = { tri.ix2 * CTM.a + tri.iy2 * CTM.c, tri.ix2 * CTM.b + tri.iy2 * CTM.d };
+    float2 iv0 = { tri.ix0 * ia + tri.iy0 * ic, tri.ix0 * ib + tri.iy0 * id };
+    float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
+    float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
 
-    float d0, d1, d2, d3, d4, d5, width, cosine, sine, sx, sy;
+    float d0, d1, d2, d3, d4, d5, width, cosine, sine, tmp, sx, sy;
     float2 iv, niv;
     d0 = d1 = d2 = d3 = d4 = d5 = 0, width = 10;
     
     iv = iv0;
     cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
+    //tmp = cosine, cosine = sine, sine = tmp;
+    
     niv = normalize(iv);
 	sx = devicePoint.x - p0.x, sy = devicePoint.y - p0.y;
 	d0 = width - (sx * (niv.x * cosine - niv.y * sine) + sy * (niv.x * sine + niv.y * cosine));
@@ -173,19 +174,19 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float w = 1.0 - vert.u - vert.v;
-    float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
-    float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
-    float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+//    float w = 1.0 - vert.u - vert.v;
+//    float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
+//    float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
+//    float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+//    return select(vert.color, vert.color * max(eu, max(ev, ew)), meshState.showTriangles);
     
+//    float e0 = min(saturate(vert.d0), saturate(vert.d1));
+//    float e1 = min(saturate(vert.d2), saturate(vert.d3));
+//    float edges = min(saturate(vert.d4), saturate(vert.d5));
     float e0 = max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2)));
     float e1 = max(saturate(vert.d3), max(saturate(vert.d4), saturate(vert.d5)));
     float edges = 0;//max(saturate(eu), max(saturate(ev), saturate(ew)));
     return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), max(max(e0, e1), edges)), meshState.showTriangles);
-    
-    //return select(vert.color, vert.color * max(max(e0, e1), edges), meshState.showTriangles);
-    
-    return select(vert.color, vert.color * max(eu, max(ev, ew)), meshState.showTriangles);
 }
 
 #pragma mark - Triangle
