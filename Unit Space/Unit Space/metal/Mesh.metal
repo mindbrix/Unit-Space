@@ -102,6 +102,14 @@ struct InteriorVertex
     float4 color;
 };
 
+float2 ivDistances(float2 iv, float sx, float sy) {
+    float width = 10, cos2 = 1.0 / max(1.0, iv.x * iv.x + iv.y * iv.y), sinecosine = sqrt((1 - cos2) * cos2);
+    return {
+        width - (sx * (iv.x * cos2 - iv.y * sinecosine) + sy * (iv.x * sinecosine + iv.y * cos2)),
+        width - (sx * (iv.x * cos2 + iv.y * sinecosine) + sy * (iv.x * -sinecosine + iv.y * cos2))
+    };
+}
+
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                            device Triangle *tris [[buffer(8)]], device MeshPath *paths [[buffer(9)]],
                                            uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
@@ -127,29 +135,11 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
     float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
 
-    float d0, d1, d2, d3, d4, d5, width, cos2, sinecosine, cosine, sine, sx, sy;
-    float2 iv;
-    d0 = d1 = d2 = d3 = d4 = d5 = 0, width = 10;
+    float2 dd0 = ivDistances(iv0, devicePoint.x - p0.x, devicePoint.y - p0.y);
+    float2 dd1 = ivDistances(iv1, devicePoint.x - p1.x, devicePoint.y - p1.y);
+    float2 dd2 = ivDistances(iv2, devicePoint.x - p2.x, devicePoint.y - p2.y);
     
-    iv = iv0;
-    cos2 = 1.0 / max(1.0, iv.x * iv.x + iv.y * iv.y), sinecosine = sqrt((1 - cos2) * cos2);
-    sx = devicePoint.x - p0.x, sy = devicePoint.y - p0.y;
-    d0 = width - (sx * (iv.x * cos2 - iv.y * sinecosine) + sy * (iv.x * sinecosine + iv.y * cos2));
-    d1 = width - (sx * (iv.x * cos2 + iv.y * sinecosine) + sy * (iv.x * -sinecosine + iv.y * cos2));
-    
-    iv = iv1;
-    cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
-    sx = devicePoint.x - p1.x, sy = devicePoint.y - p1.y;
-    d2 = width - cosine * (sx * (iv.x * cosine - iv.y * sine) + sy * (iv.x * sine + iv.y * cosine));
-    d3 = width - cosine * (sx * (iv.x * cosine + iv.y * sine) + sy * (iv.x * -sine + iv.y * cosine));
-	
-    iv = iv2;
-    cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
-    sx = devicePoint.x - p2.x, sy = devicePoint.y - p2.y;
-    d4 = width - cosine * (sx * (iv.x * cosine - iv.y * sine) + sy * (iv.x * sine + iv.y * cosine));
-    d5 = width - cosine * (sx * (iv.x * cosine + iv.y * sine) + sy * (iv.x * -sine + iv.y * cosine));
-	
-    iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
+    float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
     devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
     RGBA8 color = paths[p].color;
     
@@ -158,7 +148,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
-    vert.d0 = d0, vert.d1 = d1, vert.d2 = d2, vert.d3 = d3, vert.d4 = d4, vert.d5 = d5;
+    vert.d0 = dd0.x, vert.d1 = dd0.y, vert.d2 = dd1.x, vert.d3 = dd1.y, vert.d4 = dd2.x, vert.d5 = dd2.y;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
