@@ -127,16 +127,16 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
     float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
 
-    float d0, d1, d2, d3, d4, d5, width, cosine, sine, sx, sy;
+    float d0, d1, d2, d3, d4, d5, width, cos2, sinecosine, cosine, sine, sx, sy;
     float2 iv;
     d0 = d1 = d2 = d3 = d4 = d5 = 0, width = 10;
     
     iv = iv0;
-    cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
+    cos2 = 1.0 / max(1.0, iv.x * iv.x + iv.y * iv.y), sinecosine = sqrt((1 - cos2) * cos2);
     sx = devicePoint.x - p0.x, sy = devicePoint.y - p0.y;
-	d0 = width - cosine * (sx * (iv.x * cosine - iv.y * sine) + sy * (iv.x * sine + iv.y * cosine));
-	d1 = width - cosine * (sx * (iv.x * cosine + iv.y * sine) + sy * (iv.x * -sine + iv.y * cosine));
-	
+    d0 = width - (sx * (iv.x * cos2 - iv.y * sinecosine) + sy * (iv.x * sinecosine + iv.y * cos2));
+    d1 = width - (sx * (iv.x * cos2 + iv.y * sinecosine) + sy * (iv.x * -sinecosine + iv.y * cos2));
+    
     iv = iv1;
     cosine = min(1.0, rsqrt(iv.x * iv.x + iv.y * iv.y)), sine = sqrt(1 - cosine * cosine);
     sx = devicePoint.x - p1.x, sy = devicePoint.y - p1.y;
