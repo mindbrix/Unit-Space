@@ -170,19 +170,20 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-//    float w = 1.0 - vert.u - vert.v;
-//    float eu = 1.0 - vert.u * rsqrt(dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
-//    float ev = 1.0 - vert.v * rsqrt(dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
-//    float ew = 1.0 - w * rsqrt(dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-//    return select(vert.color, vert.color * max(eu, max(ev, ew)), meshState.showTriangles);
+    float w = 1.0 - vert.u - vert.v;
+    float eu = vert.u * vert.u / (dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
+    float ev = vert.v * vert.v / (dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
+    float ew = w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+    return select(vert.color, vert.color * (1.0 - sqrt(min(eu, min(ev, ew)))), meshState.showTriangles);
     
 //    float e0 = min(saturate(vert.d0), saturate(vert.d1));
 //    float e1 = min(saturate(vert.d2), saturate(vert.d3));
 //    float edges = min(saturate(vert.d4), saturate(vert.d5));
-    float e0 = max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2)));
-    float e1 = max(saturate(vert.d3), max(saturate(vert.d4), saturate(vert.d5)));
-    float edges = 0;//max(saturate(eu), max(saturate(ev), saturate(ew)));
-    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), max(max(e0, e1), edges)), meshState.showTriangles);
+    
+//    float e0 = max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2)));
+//    float e1 = max(saturate(vert.d3), max(saturate(vert.d4), saturate(vert.d5)));
+//    float edges = 0;//max(saturate(eu), max(saturate(ev), saturate(ew)));
+//    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), max(max(e0, e1), edges)), meshState.showTriangles);
 }
 
 #pragma mark - Triangle
