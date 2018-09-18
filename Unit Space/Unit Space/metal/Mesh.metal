@@ -115,7 +115,6 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
                                            uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
-    
     device Triangle& tri = tris[idx];
     int p = tri.p;
     float t = tri.t;
@@ -188,9 +187,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
                                        device MeshPath *paths [[buffer(9)]],
                                        uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    uint idx = iid;
-    
-    device Triangle& tri = tris[idx];
+    device Triangle& tri = tris[iid];
     int p = tri.p;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
 	Bounds bounds = paths[p].bounds;
