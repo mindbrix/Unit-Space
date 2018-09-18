@@ -170,11 +170,12 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float w = 1.0 - vert.u - vert.v;
-    float eu = vert.u * vert.u / (dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
-    float ev = vert.v * vert.v / (dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
-    float ew = w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    return vert.color * (1.0 - float(meshState.showTriangles) * sqrt(min(eu, min(ev, ew))));
+    float u = vert.u, v = vert.v, w = 1.0 - u - v;
+    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
+    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
+    float ew = sign(w) * w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+    float m = min(eu, min(ev, ew));
+    return vert.color * saturate(1 - float(meshState.showTriangles) * sign(m) * sqrt(abs(m)));
     
 //    float e0 = min(saturate(vert.d0), saturate(vert.d1));
 //    float e1 = min(saturate(vert.d2), saturate(vert.d3));
