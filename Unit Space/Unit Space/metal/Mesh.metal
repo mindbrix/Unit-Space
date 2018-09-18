@@ -174,7 +174,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float eu = vert.u * vert.u / (dfdx(vert.u) * dfdx(vert.u) + dfdy(vert.u) * dfdy(vert.u));
     float ev = vert.v * vert.v / (dfdx(vert.v) * dfdx(vert.v) + dfdy(vert.v) * dfdy(vert.v));
     float ew = w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    return select(vert.color, vert.color * (1.0 - sqrt(min(eu, min(ev, ew)))), meshState.showTriangles);
+    return vert.color * (1.0 - float(meshState.showTriangles) * sqrt(min(eu, min(ev, ew))));
     
 //    float e0 = min(saturate(vert.d0), saturate(vert.d1));
 //    float e1 = min(saturate(vert.d2), saturate(vert.d3));
