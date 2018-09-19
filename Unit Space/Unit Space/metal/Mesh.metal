@@ -102,8 +102,8 @@ struct InteriorVertex
     float4 color;
 };
 
-float2 ivDistances(float2 iv, float sx, float sy) {
-    float width = 10, cos2 = 1.0 / max(1.0, iv.x * iv.x + iv.y * iv.y), sinecosine = sqrt((1 - cos2) * cos2);
+float2 ivDistances(float2 iv, float width, float sx, float sy) {
+    float cos2 = 1.0 / max(1.0, iv.x * iv.x + iv.y * iv.y), sinecosine = sqrt((1 - cos2) * cos2);
     return {
         width - (sx * (iv.x * cos2 - iv.y * sinecosine) + sy * (iv.x * sinecosine + iv.y * cos2)),
         width - (sx * (iv.x * cos2 + iv.y * sinecosine) + sy * (iv.x * -sinecosine + iv.y * cos2))
@@ -134,9 +134,9 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
     float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
 
-    float2 dd0 = ivDistances(iv0, devicePoint.x - p0.x, devicePoint.y - p0.y);
-    float2 dd1 = ivDistances(iv1, devicePoint.x - p1.x, devicePoint.y - p1.y);
-    float2 dd2 = ivDistances(iv2, devicePoint.x - p2.x, devicePoint.y - p2.y);
+    float2 dd0 = ivDistances(iv0, 10, devicePoint.x - p0.x, devicePoint.y - p0.y);
+    float2 dd1 = ivDistances(iv1, 10, devicePoint.x - p1.x, devicePoint.y - p1.y);
+    float2 dd2 = ivDistances(iv2, 10, devicePoint.x - p2.x, devicePoint.y - p2.y);
     
     float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
     devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
