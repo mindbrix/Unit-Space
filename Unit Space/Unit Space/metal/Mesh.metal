@@ -98,6 +98,7 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
+    float x, y;
     float d0, d1, d2, d3, d4, d5, d6;
     float4 color;
 };
@@ -147,6 +148,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
+    vert.x = float(vid == 1);
+    vert.y = float(vid == 2);
     vert.d0 = dd0.x, vert.d1 = dd0.y, vert.d2 = dd1.x, vert.d3 = dd1.y, vert.d4 = dd2.x, vert.d5 = dd2.y;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
@@ -154,6 +157,31 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
+    float2 lambda = { vert.u, vert.v };
+    float2x2 j = float2x2(dfdx(lambda), dfdy(lambda));
+    float detJ = determinant(j);
+    float2 detXY = float2(determinant(float2x2(j[1], lambda)),
+                      determinant(float2x2(lambda, j[0])));
+    float2 v = detJ * 0 + detXY;
+    
+    float2 v0 = (v + float2(j[1][1], -j[0][1])) / detJ;
+    float2 v1 = (v + float2(-j[1][0], j[0][0])) / detJ;
+    float2 v2 = v / detJ;
+    
+    float2 e0 = v1 - v0, e1 = v2 - v1, e2 = v0 - v2;
+    float area = e0.x*e1.y - e0.y*e1.x;
+    float2 pq0 = v0 - e0*clamp( dot(v0,e0)/dot(e0,e0), 0.0, 1.0 );
+    float2 pq1 = v1 - e1*clamp( dot(v1,e1)/dot(e1,e1), 0.0, 1.0 );
+    float2 pq2 = v2 - e2*clamp( dot(v2,e2)/dot(e2,e2), 0.0, 1.0 );
+    
+    float2 dist = min( min( float2( dot( pq0, pq0 ), (v0.x*e0.y-v0.y*e0.x) ),
+                           float2( dot( pq1, pq1 ), (v1.x*e1.y-v1.y*e1.x) )),
+                      float2( dot( pq2, pq2 ), (v2.x*e2.y-v2.y*e2.x) ));
+    
+    float pd = -40 - sqrt(dist.x)*sign(dist.y * -area);
+    
+    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(pd)), meshState.showTriangles);
+    
 //    float u = vert.u, v = vert.v, w = 1.0 - u - v;
 //    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
 //    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
@@ -161,14 +189,11 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
 //    float m = min(eu, min(ev, ew));
 //    return vert.color * saturate(1 - float(meshState.showTriangles) * sign(m) * sqrt(abs(m)));
     
-    float e0 = max(saturate(vert.d0), saturate(vert.d1));
-    float e1 = max(saturate(vert.d2), saturate(vert.d3));
-    float edges = max(saturate(vert.d4), saturate(vert.d5));
-    
-//    float e0 = max(saturate(vert.d0), max(saturate(vert.d1), saturate(vert.d2)));
-//    float e1 = max(saturate(vert.d3), max(saturate(vert.d4), saturate(vert.d5)));
-//    float edges = 0;//max(saturate(eu), max(saturate(ev), saturate(ew)));
-    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), max(max(e0, e1), edges)), meshState.showTriangles);
+//    float e0 = max(saturate(vert.d0), saturate(vert.d1));
+//    float e1 = max(saturate(vert.d2), saturate(vert.d3));
+//    float edges = max(saturate(vert.d4), saturate(vert.d5));
+//
+//    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), max(max(e0, e1), edges)), meshState.showTriangles);
 }
 
 #pragma mark - Triangle
