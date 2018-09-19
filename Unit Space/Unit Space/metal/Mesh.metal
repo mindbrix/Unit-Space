@@ -181,11 +181,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float2 dist = min( min( float2(d0, s * (x0 * e0.y - y0 * e0.x) ),
                             float2(d1, s * (x1 * -a - y1 * b) )),
                             float2(d2, s * (x2 * -c - y2 * d) ));
-    
-//    float2 dist = min( min( float2( dot( pq0, pq0 ), s * (x0 * e0.y - y0 * e0.x) ),
-//                           float2( dot( pq1, pq1 ), s * (x1 * -a - y1 * b) )),
-//                      float2( dot( pq2, pq2 ), s * (x2 * -c - y2 * d) ));
-    
+        
     float pd = -40 - sqrt(dist.x)*sign(dist.y);
     
     return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(pd)), meshState.showTriangles);
