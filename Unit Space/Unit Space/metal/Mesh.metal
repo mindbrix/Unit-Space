@@ -163,34 +163,28 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
     
-    float vx = b * vert.v - d * vert.u, vy = vert.u * c - vert.v * a;
-    float x0 = vx + d, y0 = vy - c;
-    float x1 = vx - b, y1 = vy + a;
-    float x2 = vx, y2 = vy;
+    float x2 = b * vert.v - d * vert.u, y2 = vert.u * c - vert.v * a;
+    float x0 = x2 + d, y0 = y2 - c;
+    float x1 = x2 - b, y1 = y2 + a;
     
     float2 e0 = { -b - d, a + c };
     float t0 = saturate((x0 * e0.x + y0 * e0.y) / (e0.x * e0.x + e0.y * e0.y));
     float t1 = saturate((x1 * b + y1 * -a) / (b * b + a * a));
     float t2 = saturate((x2 * d + y2 * -c) / (d * d + c * c));
     
-//    float2 e0 = { -b - d, a + c };
-//    float2 e1 = { b, -a };
-//    float2 e2 = { d, -c };
+    float d0 = length_squared(float2(x0 - e0.x * t0, y0 - e0.y * t0));
+    float d1 = length_squared(float2(x1 - b * t1, y1 + a * t1));
+    float d2 = length_squared(float2(x2 - d * t2, y2 + c * t2));
     
-    float2 pq0 = { x0 - e0.x * t0, y0 - e0.y * t0 };
-    float2 pq1 = { x1 - b * t1, y1 + a * t1 };
-    float2 pq2 = { x2 - d * t2, y2 + c * t2 };
-    
-//    float2 pq0 = v0 - e0 * t0;
-//    float2 pq1 = v1 - e1 * t1;
-//    float2 pq2 = v2 - e2 * t2;
-        
     float s = sign( e0.x * -c - e0.y * d );
-//    float s = sign( e0.x * e2.y - e0.y * e2.x );
     
-    float2 dist = min( min( float2( dot( pq0, pq0 ), s * (x0 * e0.y - y0 * e0.x) ),
-                           float2( dot( pq1, pq1 ), s * (x1 * -a - y1 * b) )),
-                      float2( dot( pq2, pq2 ), s * (x2 * -c - y2 * d) ));
+    float2 dist = min( min( float2(d0, s * (x0 * e0.y - y0 * e0.x) ),
+                            float2(d1, s * (x1 * -a - y1 * b) )),
+                            float2(d2, s * (x2 * -c - y2 * d) ));
+    
+//    float2 dist = min( min( float2( dot( pq0, pq0 ), s * (x0 * e0.y - y0 * e0.x) ),
+//                           float2( dot( pq1, pq1 ), s * (x1 * -a - y1 * b) )),
+//                      float2( dot( pq2, pq2 ), s * (x2 * -c - y2 * d) ));
     
     float pd = -40 - sqrt(dist.x)*sign(dist.y);
     
