@@ -159,6 +159,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
 {
     // http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
     // https://www.shadertoy.com/view/XsXSz4
+    
     float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
     float invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
@@ -167,22 +168,24 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float x0 = x2 + d, y0 = y2 - c;
     float x1 = x2 - b, y1 = y2 + a;
     
-    float2 e0 = { -b - d, a + c };
-    float t0 = saturate((x0 * e0.x + y0 * e0.y) / (e0.x * e0.x + e0.y * e0.y));
+    float e0x = -b - d, e0y = a + c;
+    x0 = -x0, y0 = -y0, x1 = -x1, y1 = -y1, x2 = -x2, y2 = -y2;
+    
+    float t0 = saturate((x0 * e0x + y0 * e0y) / (e0x * e0x + e0y * e0y));
     float t1 = saturate((x1 * b + y1 * -a) / (b * b + a * a));
     float t2 = saturate((x2 * d + y2 * -c) / (d * d + c * c));
     
-    float d0 = length_squared(float2(x0 - e0.x * t0, y0 - e0.y * t0));
+    float d0 = length_squared(float2(x0 - e0x * t0, y0 - e0y * t0));
     float d1 = length_squared(float2(x1 - b * t1, y1 + a * t1));
     float d2 = length_squared(float2(x2 - d * t2, y2 + c * t2));
     
-    float s = sign( e0.x * -c - e0.y * d );
+    float s = sign( e0x * -c - e0y * d );
     
-    float2 dist = min( min( float2(d0, s * (x0 * e0.y - y0 * e0.x) ),
+    float2 dist = min( min( float2(d0, s * (x0 * e0y - y0 * e0x) ),
                             float2(d1, s * (x1 * -a - y1 * b) )),
                             float2(d2, s * (x2 * -c - y2 * d) ));
-        
-    float pd = -40 - sqrt(dist.x)*sign(dist.y);
+    
+    float pd = 10 - sqrt(dist.x)*sign(dist.y);
     
     return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(pd)), meshState.showTriangles);
     
