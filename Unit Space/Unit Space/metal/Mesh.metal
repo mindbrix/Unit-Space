@@ -157,24 +157,42 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
+    // http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
+    // https://www.shadertoy.com/view/XsXSz4
     float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
-    float detJ = a * d - b * c;
-    float2 v = { b * vert.v - d * vert.u, vert.u * c - vert.v * a };
-    float2 v0 = (v + float2(d, -c)) / detJ;
-    float2 v1 = (v + float2(-b, a)) / detJ;
-    float2 v2 = v / detJ;
+    float invdet = 1.0 / (a * d - b * c);
+    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
     
-    float2 e0 = v1 - v0, e1 = v2 - v1, e2 = v0 - v2;
-    float area = e0.x*e1.y - e0.y*e1.x;
-    float2 pq0 = v0 - e0*clamp( dot(v0,e0)/dot(e0,e0), 0.0, 1.0 );
-    float2 pq1 = v1 - e1*clamp( dot(v1,e1)/dot(e1,e1), 0.0, 1.0 );
-    float2 pq2 = v2 - e2*clamp( dot(v2,e2)/dot(e2,e2), 0.0, 1.0 );
+    float vx = b * vert.v - d * vert.u, vy = vert.u * c - vert.v * a;
+    float x0 = vx + d, y0 = vy - c;
+    float x1 = vx - b, y1 = vy + a;
+    float x2 = vx, y2 = vy;
     
-    float2 dist = min( min( float2( dot( pq0, pq0 ), (v0.x*e0.y-v0.y*e0.x) ),
-                           float2( dot( pq1, pq1 ), (v1.x*e1.y-v1.y*e1.x) )),
-                      float2( dot( pq2, pq2 ), (v2.x*e2.y-v2.y*e2.x) ));
+    float2 e0 = { -b - d, a + c };
+    float t0 = saturate((x0 * e0.x + y0 * e0.y) / (e0.x * e0.x + e0.y * e0.y));
+    float t1 = saturate((x1 * b + y1 * -a) / (b * b + a * a));
+    float t2 = saturate((x2 * d + y2 * -c) / (d * d + c * c));
     
-    float pd = -40 - sqrt(dist.x)*sign(dist.y * -area);
+//    float2 e0 = { -b - d, a + c };
+//    float2 e1 = { b, -a };
+//    float2 e2 = { d, -c };
+    
+    float2 pq0 = { x0 - e0.x * t0, y0 - e0.y * t0 };
+    float2 pq1 = { x1 - b * t1, y1 + a * t1 };
+    float2 pq2 = { x2 - d * t2, y2 + c * t2 };
+    
+//    float2 pq0 = v0 - e0 * t0;
+//    float2 pq1 = v1 - e1 * t1;
+//    float2 pq2 = v2 - e2 * t2;
+        
+    float s = sign( e0.x * -c - e0.y * d );
+//    float s = sign( e0.x * e2.y - e0.y * e2.x );
+    
+    float2 dist = min( min( float2( dot( pq0, pq0 ), s * (x0 * e0.y - y0 * e0.x) ),
+                           float2( dot( pq1, pq1 ), s * (x1 * -a - y1 * b) )),
+                      float2( dot( pq2, pq2 ), s * (x2 * -c - y2 * d) ));
+    
+    float pd = -40 - sqrt(dist.x)*sign(dist.y);
     
     return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(pd)), meshState.showTriangles);
     
