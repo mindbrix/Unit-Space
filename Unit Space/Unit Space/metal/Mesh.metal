@@ -157,15 +157,11 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float2 lambda = { vert.u, vert.v };
-    float2x2 j = float2x2(dfdx(lambda), dfdy(lambda));
-    float detJ = determinant(j);
-    float2 detXY = float2(determinant(float2x2(j[1], lambda)),
-                      determinant(float2x2(lambda, j[0])));
-    float2 v = detJ * 0 + detXY;
-    
-    float2 v0 = (v + float2(j[1][1], -j[0][1])) / detJ;
-    float2 v1 = (v + float2(-j[1][0], j[0][0])) / detJ;
+    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
+    float detJ = a * d - b * c;
+    float2 v = { b * vert.v - d * vert.u, vert.u * c - vert.v * a };
+    float2 v0 = (v + float2(d, -c)) / detJ;
+    float2 v1 = (v + float2(-b, a)) / detJ;
     float2 v2 = v / detJ;
     
     float2 e0 = v1 - v0, e1 = v2 - v1, e2 = v0 - v2;
