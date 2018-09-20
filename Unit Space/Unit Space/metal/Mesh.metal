@@ -240,18 +240,17 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 v20 = p0 - p2, n20 = normalize(float2(v20.y, -v20.x));
     float h0 = dot(n12, v01), h1 = dot(n20, v12), h2 = dot(n01, v20);
     float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
-    float2 dp0 = p0 * (1 - dh1 - dh2) + p1 * dh1 + p2 * dh2;
-    float2 dp1 = p0 * dh0 + p1 * (1 - dh0 - dh2) + p2 * dh2;
-    float2 dp2 = p0 * dh0 + p1 * dh1 + p2 * (1 - dh0 - dh1);
-    float2 devicePoint = select(select(dp2, dp1, vid == 1), dp0, vid == 0);
+    float u = select(dh0, 1 - dh1 - dh2, vid == 0);
+    float v = select(dh1, 1 - dh0 - dh2, vid == 1);
+    float2 devicePoint = p0 * u + p1 * v + p2 * (1 - u - v);
     
     RGBA8 color = paths[p].color;
     
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
-    vert.u = select(dh0, 1 - dh1 - dh2, vid == 0);
-    vert.v = select(dh1, 1 - dh0 - dh2, vid == 1);
+    vert.u = u;
+    vert.v = v;
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
