@@ -162,7 +162,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
 	Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kShortMax, h = (bounds.uy - bounds.ly) / kShortMax;
-    float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d, tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
+    float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d;
+    float tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
     float2 p0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
     float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
