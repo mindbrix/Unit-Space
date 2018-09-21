@@ -98,17 +98,8 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
-    float d0, d1, d2, d3, d4, d5, d6;
     float4 color;
 };
-
-float2 ivDistances(float2 iv, float width, float sx, float sy) {
-    float cos2 = 1.0 / max(1.0, iv.x * iv.x + iv.y * iv.y), sinecosine = sqrt((1 - cos2) * cos2);
-    return {
-        width - (sx * (iv.x * cos2 - iv.y * sinecosine) + sy * (iv.x * sinecosine + iv.y * cos2)),
-        width - (sx * (iv.x * cos2 + iv.y * sinecosine) + sy * (iv.x * -sinecosine + iv.y * cos2))
-    };
-}
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                            device Triangle *tris [[buffer(8)]], device MeshPath *paths [[buffer(9)]],
@@ -129,16 +120,9 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
     
-    float ms = rscale / kShortMax * kInteriorMax, ia = CTM.a * ms, ib = CTM.b * ms, ic = CTM.c * ms, id = CTM.d * ms;
-    float2 iv0 = { tri.ix0 * ia + tri.iy0 * ic, tri.ix0 * ib + tri.iy0 * id };
-    float2 iv1 = { tri.ix1 * ia + tri.iy1 * ic, tri.ix1 * ib + tri.iy1 * id };
-    float2 iv2 = { tri.ix2 * ia + tri.iy2 * ic, tri.ix2 * ib + tri.iy2 * id };
-
-    float2 dd0 = ivDistances(iv0, 10, devicePoint.x - p0.x, devicePoint.y - p0.y);
-    float2 dd1 = ivDistances(iv1, 10, devicePoint.x - p1.x, devicePoint.y - p1.y);
-    float2 dd2 = ivDistances(iv2, 10, devicePoint.x - p2.x, devicePoint.y - p2.y);
-    
-    float2 iv = select(select(iv2, iv1, vid == 1), iv0, vid == 0);
+    float ms = rscale / kShortMax * kInteriorMax;
+    device short *ix = & tri.ix0 + vid * 2;
+    float2 iv = { ix[0] * CTM.a * ms + ix[1] * CTM.c * ms, ix[0] * CTM.b * ms + ix[1] * CTM.d * ms };
     devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
     RGBA8 color = paths[p].color;
     
@@ -147,7 +131,6 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
-    vert.d0 = dd0.x, vert.d1 = dd0.y, vert.d2 = dd1.x, vert.d3 = dd1.y, vert.d4 = dd2.x, vert.d5 = dd2.y;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
