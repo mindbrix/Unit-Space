@@ -146,7 +146,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     InteriorVertex vert;
     float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
-    float delta = 0;
+    float delta = 0.333;
     vert.u = select(-delta * 0.5, 1 + delta, vid == 2);
     vert.v = select(-delta * 0.5, 1 + delta, vid == 0);
 //    vert.u = float(vid == 2);
@@ -163,24 +163,31 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     // http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
     // https://www.shadertoy.com/view/XsXSz4
     
-    /*
-    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
+    /* */
+    float w = 1.0 - vert.u - vert.v, a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
     float invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
+    
+    float a2 = b * b + a * a, b2 = d * d + c * c, e0x = -b - d, e0y = a + c, c2 = e0x * e0x + e0y * e0y;
     
     float x2 = b * vert.v - d * vert.u, y2 = vert.u * c - vert.v * a;
     float x0 = x2 + d, y0 = y2 - c;
     float x1 = x2 - b, y1 = y2 + a;
-    
-    float e0x = -b - d, e0y = a + c;
     x0 = -x0, y0 = -y0, x1 = -x1, y1 = -y1, x2 = -x2, y2 = -y2;
     
-    float t0 = saturate((x0 * e0x + y0 * e0y) / (e0x * e0x + e0y * e0y));
-    float t1 = saturate((x1 * b + y1 * -a) / (b * b + a * a));
-    float t2 = saturate((x2 * d + y2 * -c) / (d * d + c * c));
+    float t0 = saturate((x0 * e0x + y0 * e0y) / c2);
+    float t1 = saturate((x1 * b + y1 * -a) / a2);
     
-    float d0 = length_squared(float2(x0 - e0x * t0, y0 - e0y * t0));
-    float d1 = length_squared(float2(x1 - b * t1, y1 + a * t1));
+    float u0 = (1 - t0) - vert.u, v0 = t0 - vert.v, w0 = -w;
+    float u1 = -vert.u, v1 = (1 - t1) - vert.v, w1 = t1 - w;
+    float d0 = -a2 * v0 * w0 - b2 * w0 * u0 - c2 * u0 * v0;
+    float d1 = -a2 * v1 * w1 - b2 * w1 * u1 - c2 * u1 * v1;
+    
+//    float d0 = length_squared(float2(x0 - e0x * t0, y0 - e0y * t0));
+//    float d1 = length_squared(float2(x1 - b * t1, y1 + a * t1));
+    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(20 - sqrt(min(d0, d1)))), meshState.showTriangles);
+    
+    float t2 = saturate((x2 * d + y2 * -c) / b2);
     float d2 = length_squared(float2(x2 - d * t2, y2 + c * t2));
     
     float s = sign( e0x * -c - e0y * d );
@@ -192,14 +199,14 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
     float pd = 20 + sqrt(dist.x)*sign(dist.y);
     
     return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(pd)), meshState.showTriangles);
-    */
+   
     
-    float u = vert.u, v = vert.v, w = 1.0 - u - v;
-    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
-    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
-    float ew = sign(w) * w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-    float m = min(eu, min(ev, ew));
-    return vert.color * saturate(1 - float(meshState.showTriangles) * sign(m) * sqrt(abs(m)));
+//    float u = vert.u, v = vert.v, w = 1.0 - u - v;
+//    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
+//    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
+//    float ew = sign(w) * w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+//    float m = min(eu, min(ev, ew));
+//    return vert.color * saturate(1 - float(meshState.showTriangles) * sign(m) * sqrt(abs(m)));
     
 //    float e0 = max(saturate(vert.d0), saturate(vert.d1));
 //    float e1 = max(saturate(vert.d2), saturate(vert.d3));
