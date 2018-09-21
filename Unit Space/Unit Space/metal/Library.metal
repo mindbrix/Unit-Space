@@ -11,6 +11,8 @@
 
 using namespace metal;
 
+// http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
+// https://www.shadertoy.com/view/XsXSz4
 float barycentricDistance(float u, float v) {
     float w = 1.0 - u - v, a = dfdx(u), b = dfdy(u), c = dfdx(v), d = dfdy(v);
     float invdet = 1.0 / (a * d - b * c);
@@ -34,6 +36,15 @@ float barycentricDistance(float u, float v) {
     float d1 = -a2 * v1 * w1 - b2 * w1 * u1 - c2 * u1 * v1;
     float d2 = -a2 * v2 * w2 - b2 * w2 * u2 - c2 * u2 * v2;
     return sqrt(min(d2, min(d0, d1)));
+}
+
+float simpleBarycentricDistance(float u, float v) {
+    float w = 1.0 - u - v;
+    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
+    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
+    float ew = sign(w) * w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+    float m = min(eu, min(ev, ew));
+    return sign(m) * sqrt(abs(m));
 }
 
 float adjustedT(float t) {

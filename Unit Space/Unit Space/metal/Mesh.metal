@@ -98,7 +98,6 @@ struct InteriorVertex
 {
     float4 position [[position]];
     float u, v;
-    float x, y;
     float d0, d1, d2, d3, d4, d5, d6;
     float4 color;
 };
@@ -146,13 +145,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     InteriorVertex vert;
     float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
-    float delta = 0.333;
-    vert.u = select(-delta * 0.5, 1 + delta, vid == 2);
-    vert.v = select(-delta * 0.5, 1 + delta, vid == 0);
-//    vert.u = float(vid == 2);
-//    vert.v = float(vid == 0);
-    vert.x = float(vid == 1);
-    vert.y = float(vid == 2);
+    vert.u = float(vid == 2);
+    vert.v = float(vid == 0);
     vert.d0 = dd0.x, vert.d1 = dd0.y, vert.d2 = dd1.x, vert.d3 = dd1.y, vert.d4 = dd2.x, vert.d5 = dd2.y;
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
@@ -160,33 +154,10 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    // http://pcwalton.github.io/2018/02/14/determining-triangle-geometry-in-fragment-shaders.html
-    // https://www.shadertoy.com/view/XsXSz4
-    
-    float d = barycentricDistance(vert.u, vert.v);
-    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(20 - d)), meshState.showTriangles);
-    
-    /*
-    float t2 = saturate((x2 * d + y2 * -c) / b2);
-    float d2 = length_squared(float2(x2 - d * t2, y2 + c * t2));
-    
-    float s = sign( e0x * -c - e0y * d );
-    
-    float2 dist = min( min( float2(d0, s * (x0 * e0y - y0 * e0x) ),
-                            float2(d1, s * (x1 * -a - y1 * b) )),
-                            float2(d2, s * (x2 * -c - y2 * d) ));
-    
-    float pd = 20 + sqrt(dist.x)*sign(dist.y);
-    
-    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(pd)), meshState.showTriangles);
-   */
-    
-//    float u = vert.u, v = vert.v, w = 1.0 - u - v;
-//    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
-//    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
-//    float ew = sign(w) * w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
-//    float m = min(eu, min(ev, ew));
-//    return vert.color * saturate(1 - float(meshState.showTriangles) * sign(m) * sqrt(abs(m)));
+    float w = 10;
+    float d = simpleBarycentricDistance(vert.u, vert.v);
+   // float d = barycentricDistance(vert.u, vert.v);
+    return select(vert.color, mix(vert.color, float4(0, 0, 0, 1), saturate(w - d)), meshState.showTriangles);
 }
 
 #pragma mark - Triangle
