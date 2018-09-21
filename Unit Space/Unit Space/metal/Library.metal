@@ -11,6 +11,28 @@
 
 using namespace metal;
 
+float barycentricDistance(float u, float v) {
+    float w = 1.0 - u - v, a = dfdx(u), b = dfdy(u), c = dfdx(v), d = dfdy(v);
+    float invdet = 1.0 / (a * d - b * c);
+    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
+    
+    float a2 = b * b + a * a, b2 = d * d + c * c, e0x = -b - d, e0y = a + c, c2 = e0x * e0x + e0y * e0y;
+    
+    float x2 = b * v - d * u, y2 = u * c - v * a;
+    float x0 = x2 + d, y0 = y2 - c;
+    float x1 = x2 - b, y1 = y2 + a;
+    x0 = -x0, y0 = -y0, x1 = -x1, y1 = -y1, x2 = -x2, y2 = -y2;
+    
+    float t0 = saturate((x0 * e0x + y0 * e0y) / c2);
+    float t1 = saturate((x1 * b + y1 * -a) / a2);
+    
+    float u0 = (1 - t0) - u, v0 = t0 - v, w0 = -w;
+    float u1 = -u, v1 = (1 - t1) - v, w1 = t1 - w;
+    float d0 = -a2 * v0 * w0 - b2 * w0 * u0 - c2 * u0 * v0;
+    float d1 = -a2 * v1 * w1 - b2 * w1 * u1 - c2 * u1 * v1;
+    return sqrt(min(d0, d1));
+}
+
 float adjustedT(float t) {
     return select(2 * t * (t - 1) + 1, 2 * t * (1 - t), t < 0.5);
 }
