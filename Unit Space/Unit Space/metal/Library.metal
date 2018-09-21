@@ -19,15 +19,11 @@ float barycentricDistance(float u, float v) {
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
     
     float a2 = b * b + a * a, b2 = d * d + c * c, e0x = -b - d, e0y = a + c, c2 = e0x * e0x + e0y * e0y;
-    
     float x2 = b * v - d * u, y2 = u * c - v * a;
-    float x0 = x2 + d, y0 = y2 - c;
-    float x1 = x2 - b, y1 = y2 + a;
-    x0 = -x0, y0 = -y0, x1 = -x1, y1 = -y1, x2 = -x2, y2 = -y2;
     
-    float t0 = saturate((x0 * e0x + y0 * e0y) / c2);
-    float t1 = saturate((x1 * b + y1 * -a) / a2);
-    float t2 = saturate((x2 * d + y2 * -c) / b2);
+    float t0 = saturate(((x2 + d) * e0x + (y2 - c) * e0y) / -c2);
+    float t1 = saturate(((x2 - b) * b + (y2 + a) * -a) / -a2);
+    float t2 = saturate((x2 * d + y2 * -c) / -b2);
     
     float u0 = (1 - t0) - u, v0 = t0 - v, w0 = -w;
     float u1 = -u, v1 = (1 - t1) - v, w1 = t1 - w;
