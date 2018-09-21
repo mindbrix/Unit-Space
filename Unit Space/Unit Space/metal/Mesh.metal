@@ -114,12 +114,11 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kShortMax, h = (bounds.uy - bounds.ly) / kShortMax;
-    float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d, tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
-    float2 p0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
-    float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
-    float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
-    float2 devicePoint = select(select(p2, p1, vid == 1), p0, vid == 0);
-    
+    device short *pt = & tri.x0 + vid * 2;
+    float2 devicePoint = {
+        pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,
+        pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
+    };
     float ms = rscale / kShortMax * kInteriorMax;
     device short *ix = & tri.ix0 + vid * 2;
     float2 iv = { ix[0] * CTM.a * ms + ix[1] * CTM.c * ms, ix[0] * CTM.b * ms + ix[1] * CTM.d * ms };
