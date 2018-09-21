@@ -25,12 +25,15 @@ float barycentricDistance(float u, float v) {
     
     float t0 = saturate((x0 * e0x + y0 * e0y) / c2);
     float t1 = saturate((x1 * b + y1 * -a) / a2);
+    float t2 = saturate((x2 * d + y2 * -c) / b2);
     
     float u0 = (1 - t0) - u, v0 = t0 - v, w0 = -w;
     float u1 = -u, v1 = (1 - t1) - v, w1 = t1 - w;
+    float u2 = t2 - u, v2 = -v, w2 = (1 - t2) - w;
     float d0 = -a2 * v0 * w0 - b2 * w0 * u0 - c2 * u0 * v0;
     float d1 = -a2 * v1 * w1 - b2 * w1 * u1 - c2 * u1 * v1;
-    return sqrt(min(d0, d1));
+    float d2 = -a2 * v2 * w2 - b2 * w2 * u2 - c2 * u2 * v2;
+    return sqrt(min(d2, min(d0, d1)));
 }
 
 float adjustedT(float t) {
