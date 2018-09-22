@@ -190,6 +190,7 @@ struct libTess {
                         ef0 = e0->next() == e1->idx() && e0->base == e1->base;
                         ef1 = e1->next() == e2->idx() && e1->base == e2->base;
                         ef2 = e2->next() == e0->idx() && e2->base == e0->base;
+                        
                         oi0 = indices[e0->idx()], oi1 = indices[e1->idx()], oi2 = indices[e2->idx()];
                         if (oi0 != TESS_UNDEF) {
                             path.controlPointForIndex(tp0, oi0 * 2);
