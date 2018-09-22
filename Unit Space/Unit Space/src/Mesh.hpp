@@ -18,8 +18,7 @@ struct Mesh {
         AffineTransform ctm;
         Call *call;
         if (mesh._tris.size()) {
-            float scale = std::sqrt(std::abs(AffineTransformArea(state.CTM)));
-            float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / scale;
+            float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / std::sqrt(std::abs(AffineTransformArea(state.CTM)));
             
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
