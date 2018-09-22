@@ -27,7 +27,7 @@
 - (IBAction)toggleFour:(id)sender;
 - (IBAction)toggleFive:(id)sender;
 
-- (IBAction)toggleCurves:(id)sender;
+- (IBAction)toggleShowPolygons:(id)sender;
 - (IBAction)toggleEdges:(id)sender;
 - (IBAction)toggleInterior:(id)sender;
 - (IBAction)toggleUseQuadratics:(id)sender;

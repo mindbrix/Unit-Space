@@ -673,10 +673,10 @@ DQ
                                     <action selector="toggleFive:" target="-1" id="9Xt-sL-q9y"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Curves" keyEquivalent="y" id="87r-mG-RYi">
+                            <menuItem title="Toggle Polygons" keyEquivalent="y" id="87r-mG-RYi">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="toggleCurves:" target="-1" id="hAV-mP-g6E"/>
+                                    <action selector="toggleShowPolygons:" target="-1" id="zIO-Ip-6os"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle Edges" keyEquivalent="e" id="wM3-ZR-EEO">

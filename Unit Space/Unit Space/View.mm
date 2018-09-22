@@ -302,8 +302,9 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     _showInterior = !_showInterior;
     [self redraw];
 }
-- (IBAction)toggleCurves:(id)sender {
-    _showAccumulationsAllocations = !_showAccumulationsAllocations;
+- (IBAction)toggleShowPolygons:(id)sender{
+    _showPolygons = !_showPolygons;
+    _showTriangles = NO;
     [self redraw];
 }
 - (IBAction)toggleShowColors:(id)sender {
@@ -323,6 +324,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 }
 
 - (IBAction)toggleShowTriangles:(id)sender {
+    _showPolygons = NO;
     _showTriangles = !_showTriangles;
     [self updateFromState];
     [self redraw];
