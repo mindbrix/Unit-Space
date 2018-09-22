@@ -45,6 +45,8 @@ struct Quadratics {
     static void writeScene(Mesh& mesh, Scene& scene) {
         int p, s, nsubpaths, nfloats, begin, end;
         
+        mesh._bounds = scene._bounds;
+        
         for (nsubpaths = p = 0; p < scene._paths.size(); p++)
             nsubpaths += (int)scene._paths[p]._subPaths.size();
         int bases[nsubpaths], base;
