@@ -85,7 +85,7 @@ struct Mesh {
                         }
                     }
                 }
-                if (!meshState.showEdges) {
+                if (!meshState.showEdgeTriangles) {
                     for (i = 0; i < ranges.size(); i += 2)
                         for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
                             base = mesh._idxs[p];

@@ -164,7 +164,7 @@ struct MeshPath {
 };
 
 struct MeshState {
-    bool                showEdges;
+    bool                showEdgeTriangles;
     bool                showInterior;
     bool                showColors;
     bool                showTriangles;

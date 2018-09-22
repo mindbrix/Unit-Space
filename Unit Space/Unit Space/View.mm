@@ -27,7 +27,7 @@ using namespace std;
 @property(nonatomic) CGPoint mouseLocation;
 @property(nonatomic) uint64_t flags;
 @property(nonatomic) BOOL showColors;
-@property(nonatomic) BOOL showEdges;
+@property(nonatomic) BOOL showEdgeTriangles;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL useQuadratics;
 @property(nonatomic) BOOL showTriangles;
@@ -294,7 +294,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 }
 
 - (IBAction)toggleEdges:(id)sender {
-    _showEdges = !_showEdges;
+    _showEdgeTriangles = !_showEdgeTriangles;
     [self redraw];
 }
 - (IBAction)toggleInterior:(id)sender {
@@ -414,7 +414,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     uniforms.roundCap = false;
     
     MeshState meshState;
-    meshState.showEdges = _showEdges;
+    meshState.showEdgeTriangles = _showEdgeTriangles;
     meshState.showInterior = _showInterior;
     meshState.showColors = _showColors;
     meshState.showTriangles = _showTriangles;
