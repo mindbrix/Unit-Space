@@ -140,9 +140,12 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float w = max(1.0, state.width);
-    float d = barycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
-    return vert.color * select(1.0, saturate(w - d), meshState.showTriangles || meshState.showPolygons); 
+	if (meshState.showTriangles || meshState.showPolygons) {
+		float w = max(1.0, state.width);
+		float d = barycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
+		return vert.color * saturate(w - d);
+	} else
+		return vert.color;
 }
 
 #pragma mark - Triangle
