@@ -114,10 +114,10 @@ struct Bounds {
 
 struct Triangle {
     enum Flags : unsigned int {
-        kFlagsEdge0 = (unsigned int)1 << 31,
-        kFlagsEdge1 = 1 << 30,
-        kFlagsEdge2 = 1 << 29,
-        kFlagsMask = 0x0FFFFFFF,
+        kFlagsEdge0 = 1U << 31,
+        kFlagsEdge1 = 1U << 30,
+        kFlagsEdge2 = 1U << 29,
+        kFlagsMask = ~(kFlagsEdge0 | kFlagsEdge1 | kFlagsEdge2),
     };
     
     Triangle(int p, bool ef0, bool ef1, bool ef2, float t,
