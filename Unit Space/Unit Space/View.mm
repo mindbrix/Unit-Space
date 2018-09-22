@@ -441,7 +441,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
                 p = i;
         }
     for (int i = 0; i < _scene._paths.size(); i++)
-        paths[i].color = i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
+		paths[i].color = _showTriangles ? RGBA8::Black() : i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
     
     if (_flags & 16) {
         int dimension = 330, r = 10, g = r * 2 / 0.618, count = dimension * dimension, idx;
