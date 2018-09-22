@@ -116,7 +116,7 @@ struct Bounds {
 #define kInteriorMax 100.0
 
 struct Triangle {
-    Triangle(int p, float t,
+    Triangle(int p, bool ef0, bool ef1, bool ef2, float t,
 			 float x0, float y0, float x1, float y1, float x2, float y2,
 			 float ix0, float iy0, float ix1, float iy1, float ix2, float iy2)
     : p(p), t(t), x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2),

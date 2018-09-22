@@ -224,7 +224,8 @@ struct libTess {
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
 						
-                        _tris.emplace_back(p, ta > t ? ta : t,
+                        _tris.emplace_back(p, ef0, ef1, ef2,
+										   ta > t ? ta : t,
                                            (x0 - lx) * rw, (y0 - ly) * rh,
                                            (x1 - lx) * rw, (y1 - ly) * rh,
                                            (x2 - lx) * rw, (y2 - ly) * rh,
