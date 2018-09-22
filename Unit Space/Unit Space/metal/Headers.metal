@@ -11,7 +11,7 @@
 
 using namespace metal;
 
-float barycentricDistance(float u, float v);
+float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
 float simpleBarycentricDistance(float u, float v);
 float adjustedT(float t);
 float edgeWinding(float x0, float y0, float x1, float y1);

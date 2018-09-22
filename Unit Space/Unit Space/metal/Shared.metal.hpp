@@ -113,14 +113,22 @@ struct Bounds {
 #define kInteriorMax 100.0
 
 struct Triangle {
+    enum Flags : unsigned int {
+        kFlagsEdge0 = (unsigned int)1 << 31,
+        kFlagsEdge1 = 1 << 30,
+        kFlagsEdge2 = 1 << 29,
+        kFlagsMask = 0x0FFFFFFF,
+    };
+    
     Triangle(int p, bool ef0, bool ef1, bool ef2, float t,
 			 float x0, float y0, float x1, float y1, float x2, float y2,
 			 float ix0, float iy0, float ix1, float iy1, float ix2, float iy2)
-    : p(p), t(t), x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2),
+    : p((unsigned int)p | (ef0 ? kFlagsEdge0 : 0) | (ef1 ? kFlagsEdge1 : 0) | (ef2 ? kFlagsEdge2 : 0)), t(t),
+    x0(x0), y0(y0), x1(x1), y1(y1), x2(x2), y2(y2),
     ix0(ix0 < -kShortMax ? -kShortMax : ix0 > kShortMax ? kShortMax : ix0), iy0(iy0 < -kShortMax ? -kShortMax : iy0 > kShortMax ? kShortMax : iy0),
     ix1(ix1 < -kShortMax ? -kShortMax : ix1 > kShortMax ? kShortMax : ix1), iy1(iy1 < -kShortMax ? -kShortMax : iy1 > kShortMax ? kShortMax : iy1),
     ix2(ix2 < -kShortMax ? -kShortMax : ix2 > kShortMax ? kShortMax : ix2), iy2(iy2 < -kShortMax ? -kShortMax : iy2 > kShortMax ? kShortMax : iy2) {}
-    int p;
+    unsigned int p;
     float t;
     unsigned short x0, y0, x1, y1, x2, y2;
     short ix0, iy0, ix1, iy1, ix2, iy2;
