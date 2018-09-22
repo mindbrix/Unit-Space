@@ -47,7 +47,7 @@ static float pointsSignedArea(const float *begin, const float *end, size_t strid
     return sum * 0.5;
 }
 
-static Vector miterVector(float x, float y, float px, float py, float nx, float ny, bool left, float limit, float scale) {
+static Vector miterVector(float x, float y, float px, float py, float nx, float ny, bool left, float limit) {
     float vx0, vy0, vx1, vy1, len0, len1;
     float nx0, ny0, nx1, ny1;
     float tanx, tany, tanlen;
@@ -59,7 +59,6 @@ static Vector miterVector(float x, float y, float px, float py, float nx, float 
     tanx = nx0 + nx1, tany = ny0 + ny1;
     tanlen = std::sqrt(tanx * tanx + tany * tany);
     tanx /= tanlen, tany /= tanlen;
-    tanx *= scale, tany *= scale;
     mx = tany, my = - tanx;
     normx = ny0, normy = -nx0;
     dot = mx * normx + my * normy;

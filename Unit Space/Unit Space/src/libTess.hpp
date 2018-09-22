@@ -93,7 +93,7 @@ struct libTess {
         if ((x1 == px && y1 == py) || (x1 == nx && y1 == ny))
             if ((x2 == px && y2 == py) || (x2 == nx && y2 == ny))
                 limit = 5e-3;
-        return miterVector(x0, y0, px, py, nx, ny, left, limit, 1);
+        return miterVector(x0, y0, px, py, nx, ny, left, limit);
     }
     
     static void triangulate(Mesh& mesh, Scene& scene) {
