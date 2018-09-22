@@ -172,6 +172,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
+    float area = abs(cross(float3(p1 - p0, 0), float3(p2 - p1, 0)).z);
 	const float dilation = -0.5, hmin = 0.1;
     float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
     float2 v12 = p2 - p1, n12 = normalize(float2(v12.y, -v12.x));
@@ -180,7 +181,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
     float u = select(dh0, 1 - dh1 - dh2, vid == 0);
     float v = select(dh1, 1 - dh0 - dh2, vid == 1);
-    float2 devicePoint = p0 * u + p1 * v + p2 * (1 - u - v);
+    float2 devicePoint = float(area > 1e-2) * (p0 * u + p1 * v + p2 * (1 - u - v));
     
     RGBA8 color = paths[p].color;
     
