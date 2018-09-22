@@ -90,6 +90,11 @@ struct Bounds {
 	inline AffineTransform makeUnit() {
 		return { ux - lx, 0, 0, uy - ly, lx, ly };
 	}
+    inline float scaleToFit(Bounds other) {
+        float ow = other.ux - other.lx, oh = other.uy - other.ly, omin = ow < oh ? ow : oh;
+        float w = ux - lx, h = uy - ly, max = w > h ? w : h;
+        return omin / max;
+    }
     static inline Bounds transformUnit(const AffineTransform t) {
         float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
         return {
