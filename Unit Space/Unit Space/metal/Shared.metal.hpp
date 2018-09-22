@@ -76,9 +76,6 @@ struct Bounds {
     bool contains(Bounds other) const {
         return lx <= other.lx && ux >= other.ux && ly <= other.ly && uy >= other.uy;
     }
-    Bounds integral() {
-        return { float(int(lx)), float(int(ly)), float(int(ux + 0.99999999)), float(int(uy + 0.99999999)) };
-    }
     Bounds intersected(Bounds other) {
         return {
             lx < other.lx ? other.lx : lx > other.ux ? other.ux : lx,
