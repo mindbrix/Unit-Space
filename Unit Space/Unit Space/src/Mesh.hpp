@@ -18,7 +18,9 @@ struct Mesh {
         AffineTransform ctm;
         Call *call;
         if (mesh._tris.size()) {
-            float scale = std::sqrt(std::abs(AffineTransformArea(state.CTM))) / state.scaleFactor;
+            float scale = std::sqrt(std::abs(AffineTransformArea(state.CTM)));
+            float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / scale;
+            
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
             AffineTransform units[paths.size()];
@@ -30,7 +32,7 @@ struct Mesh {
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
                 for (j = 0; !set && j < 8 && p + j < paths.size(); j++)
-                    set |= scale < 2 ? true : Bounds::transformUnit(units[p + j]).intersects(clipBounds);
+                    set |= limit > 0.5 ? true : Bounds::transformUnit(units[p + j]).intersects(clipBounds);
                 for (j = 0; j < 8 && p + j < paths.size(); j++)
                     visibles[p + j] = set;
             }
@@ -182,6 +184,8 @@ struct Mesh {
     };
     vector<Call>                        _calls;
     
+    Bounds                              _bounds;
+    
     Memory<float, true>                 _quadraticFloats;
     Memory<int, true>                   _quadraticPs;
     Memory<float, true>                 _quadraticTs;
@@ -195,6 +199,7 @@ struct Mesh {
     ShapesSOA                           _shapesSOA;
     
     void empty() {
+        _bounds = Bounds(0, 0, 0, 0);
         _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticTs = Memory<float, true>(), _quadraticIndices = Memory<int>();
         _timeline.empty(), _idxs.resize(0), _tris = Memory<Triangle, true>();
     }
