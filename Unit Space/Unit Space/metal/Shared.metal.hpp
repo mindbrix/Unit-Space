@@ -112,6 +112,7 @@ struct Bounds {
 };
 
 #define kShortMax 32767.0
+#define kUnsignedShortMax 65535.0
 #define kInteriorMax 100.0
 
 struct Triangle {
@@ -122,7 +123,7 @@ struct Triangle {
     ix2(ix2 < -kShortMax ? -kShortMax : ix2 > kShortMax ? kShortMax : ix2), iy2(iy2 < -kShortMax ? -kShortMax : iy2 > kShortMax ? kShortMax : iy2) {}
     int p;
     float t;
-    short x0, y0, x1, y1, x2, y2;
+    unsigned short x0, y0, x1, y1, x2, y2;
     short ix0, iy0, ix1, iy1, ix2, iy2;
 };
 

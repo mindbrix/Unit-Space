@@ -141,8 +141,8 @@ struct libTess {
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
 			float lx, ly, rw, rh, ms = kShortMax / kInteriorMax;
-			lx = path._bounds.lx, rw = kShortMax / (path._bounds.ux - lx);
-			ly = path._bounds.ly, rh = kShortMax / (path._bounds.uy - ly);
+			lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
+			ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
 
             _idxs.emplace_back((int)_tris.size());
             
