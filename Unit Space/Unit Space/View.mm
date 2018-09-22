@@ -421,8 +421,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     meshState.showQuadratics = _flags & 1;
     meshState.showAccumulations = _flags & 2;
     meshState.quadraticStride = _flags & 2 ? 8 : 4;
-    meshState.showAccumulationsSOA = _flags & 4;
-    meshState.showAccumulationsAllocations = _showAccumulationsAllocations;
     meshState.useQuadraticWinding = _useQuadratics;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;

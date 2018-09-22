@@ -13,7 +13,7 @@ using namespace std;
 
 struct Mesh {
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
-        int base, end, count, p, i, j, size;
+        int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
         AffineTransform ctm;
         Call *call;
@@ -65,91 +65,6 @@ struct Mesh {
                     calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
                 }
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
-                
-            } else if (meshState.showAccumulationsSOA) {
-                mesh._accumulationsSOA.empty();
-                mesh._resolutionsSOA.empty();
-                
-                short *lxs, *uxs, *lys, *txs, *tys, sy0, sy1, w, ax, ay;
-                int *ps, *idxs, base, rows;
-                rows = (int)(clipBounds.uy / kFatScanlineHeight);
-                short allocations[rows], *allocation = allocations, *aend = allocation + rows;
-                memset(allocations, 0, sizeof(allocations));
-                for (i = 0; i < ranges.size(); i += 2) {
-                    count = ranges[i + 1] - ranges[i];
-                    Bounds bounds[count], tb, ib;
-                    bool smalls[count];
-                    for (j = 0; j < count; j++) {
-                        p = j + ranges[i];
-                        AffineTransform& u = units[p];
-                        float scale = 63.0 / std::sqrt(std::abs(AffineTransformArea(u)));
-                        if (scale < 1) {
-                            u.a *= scale, u.b *= scale, u.c *= scale, u.d *= scale;
-                        }
-                        tb = Bounds::transformUnit(u);
-                        ib = { std::floor(tb.lx), std::floor(tb.ly), std::ceil(tb.ux), std::ceil(tb.uy) };
-                        bounds[j] = ib.intersected(clipBounds);
-                        smalls[j] = bounds[j].lx != bounds[j].ux && bounds[j].ly != bounds[j].uy && std::abs(AffineTransformArea(u)) < 4096;
-                    }
-                    size = 0;
-                    for (j = 0; j < count; j++)
-                        if (smalls[j])
-                            size += std::ceil((bounds[j].uy - bounds[j].ly) / kFatScanlineHeight);
-                    
-                    base = mesh._resolutionsSOA._count;
-                    mesh._resolutionsSOA.alloc(size);
-                    lxs = & mesh._resolutionsSOA._lxs[base], uxs = & mesh._resolutionsSOA._uxs[base], lys = & mesh._resolutionsSOA._lys[base];
-                    txs = & mesh._resolutionsSOA._txs[base], tys = & mesh._resolutionsSOA._tys[base];
-                    ps = & mesh._resolutionsSOA._ps[base], idxs = & mesh._resolutionsSOA._idxs[base];
-                    
-                    float m0, abx0, abx1, m1, cdx0, cdx1, dx0, dx1, lx0, ux0, lx1, ux1, ilx, iux, wa, wc, lxy, uxy;
-                    for (j = 0; j < count; j++) {
-                        if (!smalls[j])
-                            continue;
-                        p = j + ranges[i];
-                        AffineTransform& u = units[p];
-                        Bounds& b = bounds[j];
-                        abx0 = abx1 = cdx0 = cdx1 = dx0 = dx1 = lxy = uxy = FLT_MAX;
-                        if (!(u.a == 0 || u.c == 0) && b.uy - b.ly > kFatScanlineHeight) {
-                            m0 = -u.b / u.a, abx0 = (b.ly - u.ty) * m0 + u.tx, abx1 = abx0 + u.a - u.b * m0;
-                            if (abx0 > abx1)
-                                std::swap(abx0, abx1);
-                            m1 = -u.d / u.c, cdx0 = (b.ly - u.ty) * m1 + u.tx, cdx1 = cdx0 + u.c - u.d * m1;
-                            if (cdx0 > cdx1)
-                                std::swap(cdx0, cdx1);
-                            dx0 = m0 * kFatScanlineHeight, dx1 = m1 * kFatScanlineHeight;
-                            wa = u.a < 0 ? 1 : 0, wc = u.c < 0 ? 1 : 0;
-                            lxy = u.ty + wa * u.b + wc * u.d, uxy = u.ty + (1 - wa) * u.b + (1 - wc) * u.d;
-                        }
-                        for (lx0 = FLT_MAX, ux0 = -FLT_MAX, sy0 = (short)b.ly, sy1 = sy0 + kFatScanlineHeight; sy0 < b.uy; sy0 = sy1, sy1 += kFatScanlineHeight) {
-                            ilx = b.lx, iux = b.ux;
-                            if (abx0 != FLT_MAX) {
-                                if (sy1 < b.uy)
-                                    abx0 += dx0, abx1 += dx0, cdx0 += dx1, cdx1 += dx1;
-                                
-                                lx1 = abx0 < cdx0 ? cdx0 : abx0 > cdx1 ? cdx1 : abx0;
-                                ux1 = abx1 < cdx0 ? cdx0 : abx1 > cdx1 ? cdx1 : abx1;
-                                
-                                ilx = lxy >= sy0 && lxy < sy1 ? b.lx : std::floor(lx0 < lx1 ? lx0 : lx1);
-                                iux = uxy >= sy0 && uxy < sy1 ? b.ux : std::ceil(ux0 > ux1 ? ux0 : ux1);
-                                
-                                lx0 = lx1, ux0 = ux1;
-                            }
-                            w = (short)(iux - ilx);
-                            while (allocation < aend && *allocation + w > clipBounds.ux)
-                                allocation++;
-                            if (allocation < aend) {
-                                *lxs++ = (short)ilx, *uxs++ = (short)iux, *lys++ = sy0;
-                                ax = *allocation, ay = (short)(allocation - allocations) * kFatScanlineHeight;
-                                *allocation += w;
-                                *txs++ = ax - (short)ilx, *tys++ = ay - sy0;
-                            } else
-                                *lxs++ = *uxs++ = *lys++, *txs++ = *tys++ = 0;
-                            *ps++ = p, *idxs++ = 0;
-                        }
-                    }
-                }
-                writeSOACalls(mesh, state, meshState, kCallTypeResolveSOA, mesh._resolutionsSOA._count);
                 
             } else {
                 call = nullptr;
@@ -213,21 +128,6 @@ struct Mesh {
         }
     }
     
-    struct AccumulationSOA {
-        void alloc(int allocation) {
-            _count += allocation;
-            _lxs.new_ptr(allocation), _uxs.new_ptr(allocation), _lys.new_ptr(allocation), _txs.new_ptr(allocation), _tys.new_ptr(allocation), _ps.new_ptr(allocation), _idxs.new_ptr(allocation);
-        }
-        void empty() {
-            _count = 0,
-            _lxs = Memory<short>(1024), _uxs = Memory<short>(1024), _lys = Memory<short>(1024), _txs = Memory<short>(1024), _tys = Memory<short>(1024);
-            _ps = Memory<int>(1024), _idxs = Memory<int>(1024);
-        }
-        int                             _count;
-        Memory<short>                   _lxs, _uxs, _lys, _txs, _tys;
-        Memory<int>                     _ps, _idxs;
-    };
-
     struct ShapesSOA {
         static inline AffineTransform circleUnit(float x, float y, float r) {
             return { std::abs(r) * 2.f, 0, 0, std::abs(r) * 2.f, x - std::abs(r), y - std::abs(r) };
@@ -285,9 +185,6 @@ struct Mesh {
     Memory<int, true>                   _quadraticPs;
     Memory<float, true>                 _quadraticTs;
     Memory<int>                         _quadraticIndices;
-    
-    AccumulationSOA                     _accumulationsSOA;
-    AccumulationSOA                     _resolutionsSOA;
     
     Timeline                            _timeline;
     

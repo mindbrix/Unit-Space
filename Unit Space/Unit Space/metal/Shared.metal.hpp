@@ -165,8 +165,6 @@ struct MeshState {
     bool                showTriangles;
     bool                showQuadratics;
     bool                showAccumulations;
-    bool                showAccumulationsSOA;
-    bool                showAccumulationsAllocations;
     bool                showVisibles;
     bool                useStrokeColor;
     bool                useQuadraticWinding;
@@ -200,7 +198,6 @@ enum CallType : unsigned int {
     kCallTypeMeshInterior,
     kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
-    kCallTypeResolveSOA,
     kCallTypeResolveQuadSOA,
     kCallTypeQuadraticLines,
     kCallTypeQuadraticAccumulate,

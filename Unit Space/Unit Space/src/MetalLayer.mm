@@ -22,7 +22,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> shapePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> resolveSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -115,11 +114,6 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
     descriptor.label = @"quadraticLinePipelineState";
     self.quadraticLinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
-    descriptor.label = @"resolveSOAPipelineState";
-    self.resolveSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
@@ -231,19 +225,6 @@
                 [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveQuadSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
-                break;
-            case kCallTypeResolveSOA:
-                [commandEncoder textureBarrier];
-                [commandEncoder setRenderPipelineState:_resolveSOAPipelineState];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lxs[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._uxs[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._lys[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._txs[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:13];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._tys[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:14];
-                [commandEncoder setVertexBytes:& mesh->_resolutionsSOA._ps[call->baseInstance] length:sizeof(int) * call->instanceCount atIndex:15];
-				[commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
-                instanceCount = call->instanceCount;
                 break;
             case kCallTypeQuadraticLines:
             case kCallTypeQuadraticAccumulate:

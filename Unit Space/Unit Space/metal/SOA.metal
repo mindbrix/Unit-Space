@@ -23,29 +23,6 @@ struct ResolveVertex
     float4 color;
 };
 
-vertex ResolveVertex resolveSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                                  device MeshPath *paths [[buffer(9)]],
-                                                  constant short *lxs [[buffer(10)]], constant short *uxs [[buffer(11)]], constant short *lys [[buffer(12)]],
-                                                  constant short *txs [[buffer(13)]], constant short *tys [[buffer(14)]],
-                                                  constant int *ps [[buffer(15)]],
-                                                  uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
-{
-    float dx = select(float(lxs[iid]), float(uxs[iid]), vid & 1), dy = select(float(lys[iid]), float(lys[iid]) + kFatScanlineHeight, vid & 2);
-    if (meshState.showAccumulationsAllocations)
-        dx += float(txs[iid]), dy += float(tys[iid]);
-                
-    ResolveVertex vert;
-    vert.position = { dx / state.drawableSize.w * 2.0 - 1.0, dy / state.drawableSize.h * 2.0 - 1.0, 0.0, 1.0 };
-    vert.uv = -1;// { (dx + float(txs[iid])) / state.drawableSize.w, (dy + float(tys[iid])) / state.drawableSize.h };
-    vert.color = {
-        float(paths[ps[iid]].color.r) / 255.0,
-        float(paths[ps[iid]].color.g) / 255.0,
-        float(paths[ps[iid]].color.b) / 255.0,
-        float(paths[ps[iid]].color.a) / 255.0
-    };
-    return vert;
-}
-
 vertex ResolveVertex resolveQuadSOA_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                  uint vid [[vertex_id]], uint iid [[instance_id]])
 {
