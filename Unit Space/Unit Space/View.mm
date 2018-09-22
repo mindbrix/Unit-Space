@@ -30,6 +30,7 @@ using namespace std;
 @property(nonatomic) BOOL showEdgeTriangles;
 @property(nonatomic) BOOL showInterior;
 @property(nonatomic) BOOL useQuadratics;
+@property(nonatomic) BOOL showPolygons;
 @property(nonatomic) BOOL showTriangles;
 @property(nonatomic) BOOL showPoints;
 @property(nonatomic) BOOL showVisibles;
@@ -417,6 +418,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     meshState.showEdgeTriangles = _showEdgeTriangles;
     meshState.showInterior = _showInterior;
     meshState.showColors = _showColors;
+    meshState.showPolygons = _showPolygons;
     meshState.showTriangles = _showTriangles;
     meshState.showQuadratics = _flags & 1;
     meshState.showAccumulations = _flags & 2;
@@ -441,7 +443,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
                 p = i;
         }
     for (int i = 0; i < _scene._paths.size(); i++)
-		paths[i].color = _showTriangles ? RGBA8::Black() : i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
+		paths[i].color = _showTriangles || _showPolygons ? RGBA8::Black() : i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
     
     if (_flags & 16) {
         int dimension = 330, r = 10, g = r * 2 / 0.618, count = dimension * dimension, idx;

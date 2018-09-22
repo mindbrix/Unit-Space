@@ -131,9 +131,9 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = float(vid == 2);
     vert.v = float(vid == 0);
-    vert.ef0 = bool(tri.p & Triangle::kFlagsEdge0);
-    vert.ef1 = bool(tri.p & Triangle::kFlagsEdge1);
-    vert.ef2 = bool(tri.p & Triangle::kFlagsEdge2);
+    vert.ef0 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge0);
+    vert.ef1 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge1);
+    vert.ef2 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge2);
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -142,7 +142,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
 {
     float w = max(1.0, state.width);
     float d = barycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
-    return vert.color * select(1.0, saturate(w - d), meshState.showTriangles); 
+    return vert.color * select(1.0, saturate(w - d), meshState.showTriangles || meshState.showPolygons); 
 }
 
 #pragma mark - Triangle

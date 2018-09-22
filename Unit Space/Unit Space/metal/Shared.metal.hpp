@@ -167,6 +167,7 @@ struct MeshState {
     bool                showEdgeTriangles;
     bool                showInterior;
     bool                showColors;
+    bool                showPolygons;
     bool                showTriangles;
     bool                showQuadratics;
     bool                showAccumulations;
