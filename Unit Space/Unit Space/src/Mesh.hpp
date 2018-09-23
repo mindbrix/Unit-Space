@@ -23,14 +23,13 @@ struct Mesh {
             float w, h, rp, vx, vy;
             
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
-            bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
+            bool opaques[paths.size()], visibles[paths.size()];
             AffineTransform units[paths.size()];
             for (p = 0; p < paths.size(); p++) {
 				const MeshPath& path = paths[p];
-				opaques[p] = path.color.a == 255;
-                units[p] = AffineTransformMakeUnit(path.bounds, AffineTransformConcat(path.ctm, state.CTM));
+				units[p] = AffineTransformMakeUnit(path.bounds, AffineTransformConcat(path.ctm, state.CTM));
 				AffineTransform unit = units[p];
-				smalls[p] = std::abs(unit.a * unit.d - unit.b * unit.c) < 400;
+				opaques[p] = path.color.a == 255 || std::abs(unit.a * unit.d - unit.b * unit.c) < 400;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
@@ -82,7 +81,7 @@ struct Mesh {
                 if (meshState.showInterior) {
                     for (end = (int)mesh._tris.count(), p = (int)paths.size() - 1; p >= 0; p--, end = base) {
                         base = mesh._idxs[p];
-                        if (visibles[p] && (opaques[p] || smalls[p])) {
+                        if (visibles[p] && opaques[p]) {
                             count = end - base;
                             if (call == nullptr || call->baseInstance != end) {
                                 calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
@@ -100,7 +99,7 @@ struct Mesh {
                             base = mesh._idxs[p];
                             end = p + 1 == paths.size() ? (int)mesh._tris.count() : mesh._idxs[p + 1];
                             count = end - base;
-                            if (opaques[p] || smalls[p]) {
+                            if (opaques[p]) {
                                 if (call == nullptr) {
                                     calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
                                     call = & calls.back();
