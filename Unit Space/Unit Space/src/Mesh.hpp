@@ -19,6 +19,9 @@ struct Mesh {
         Call *call;
         if (mesh._tris.size()) {
             float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / std::sqrt(std::abs(AffineTransformArea(state.CTM)));
+            float cx = (clipBounds.lx + clipBounds.ux) * 0.5, cy = (clipBounds.ly + clipBounds.uy) * 0.5;
+            float rd = std::sqrt((clipBounds.ux - cx) * (clipBounds.ux - cx) + (clipBounds.uy - cy) * (clipBounds.uy - cy));
+            float w, h, rp, vx, vy;
             
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
@@ -29,9 +32,16 @@ struct Mesh {
                 smalls[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400;
             }
             for (p = 0; p < paths.size(); p += 8) {
-                bool set = false;
-                for (j = 0; !set && j < 8 && p + j < paths.size(); j++)
-                    set |= limit > 0.5 ? true : Bounds::transformUnit(units[p + j]).intersects(clipBounds);
+                bool set = false, visible;
+                for (j = 0; !set && j < 8 && p + j < paths.size(); j++) {
+                    AffineTransform& unit = units[p + j];
+                    w = 0.5 * (unit.a + unit.c), h = 0.5 * (unit.b + unit.d);
+                    rp = std::sqrt(w * w + h * h);
+                    vx = cx - (w + unit.tx), vy = cy - (h + unit.ty);
+                    visible = vx * vx + vy * vy < (rd + rp) * (rd + rp);
+//                    visible = Bounds::transformUnit(units[p + j]).intersects(clipBounds);
+                    set |= limit > 0.5 ? true : visible;
+                }
                 for (j = 0; j < 8 && p + j < paths.size(); j++)
                     visibles[p + j] = set;
             }
