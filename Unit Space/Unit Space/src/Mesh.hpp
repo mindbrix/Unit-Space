@@ -32,25 +32,25 @@ struct Mesh {
 				opaques[p] = path.color.a == 255 || std::abs(unit.a * unit.d - unit.b * unit.c) < 400;
             }
             for (p = 0; p < paths.size(); p += 8) {
-                bool set = false;
-                for (j = 0; !set && j < 8 && p + j < paths.size(); j++) {
+                bool set = false, visible, opaque;
+                for (j = 0; j < 8 && p + j < paths.size(); j++) {
                     AffineTransform& unit = units[p + j];
                     w = 0.5 * (unit.a + unit.c), h = 0.5 * (unit.b + unit.d);
                     rp = std::sqrt(w * w + h * h);
                     vx = cx - (w + unit.tx), vy = cy - (h + unit.ty);
-                    set |= limit > 0.5 ? true : vx * vx + vy * vy < (rd + rp) * (rd + rp);
+                    opaque = opaques[p + j];
+                    visible = limit > 0.5 || (set && opaque) ? true : vx * vx + vy * vy < (rd + rp) * (rd + rp);
+                    visibles[p + j] = visible;
+                    set |= opaque && visible;
                 }
-                for (j = 0; j < 8 && p + j < paths.size(); j++)
-                    visibles[p + j] = set;
             }
             vector<int> ranges;
-            for (p = 0; p < paths.size(); p += 8) {
-                int end = p + 8 < paths.size() ? p + 8 : (int)paths.size();
+            for (p = 0; p < paths.size(); p++) {
                 if (visibles[p]) {
                     if (ranges.size() && ranges.back() == p)
-                        ranges.back() = end;
+                        ranges.back() = p + 1;
                     else
-                        ranges.emplace_back(p), ranges.emplace_back(end);
+                        ranges.emplace_back(p), ranges.emplace_back(p + 1);
                 }
             }
             if (meshState.showQuadratics) {
@@ -118,6 +118,8 @@ struct Mesh {
 				mesh._flags.w = mesh._flags.h = 64;
                 for (p = 0; p < paths.size(); p++) {
                     i = p >> 5, j = p % 32;
+                    if (i == kFlagsSize)
+                        break;
                     if (j == 0)
                         mesh._flags.flags[i] = 0;
                     if (visibles[p])
