@@ -117,14 +117,13 @@ struct Mesh {
             
             if (meshState.showVisibles) {
                 calls.emplace_back(kCallTypeFlags, (int)paths.size(), 0, state, meshState);
-                call = & calls.back();
-                call->flags.w = call->flags.h = 64;
+				mesh._flags.w = mesh._flags.h = 64;
                 for (p = 0; p < paths.size(); p++) {
                     i = p >> 5, j = p % 32;
                     if (j == 0)
-                        call->flags.flags[i] = 0;
+                        mesh._flags.flags[i] = 0;
                     if (visibles[p])
-                        call->flags.flags[i] |= (1 << j);
+                        mesh._flags.flags[i] |= (1 << j);
                 }
             }
         }
@@ -205,7 +204,8 @@ struct Mesh {
     Memory<Triangle, true>              _tris;
     
     ShapesSOA                           _shapesSOA;
-    
+	Flags								_flags;
+	
     void empty() {
         _bounds = Bounds(0, 0, 0, 0);
         _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticTs = Memory<float, true>(), _quadraticIndices = Memory<int>();

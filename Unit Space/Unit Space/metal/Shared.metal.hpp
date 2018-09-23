@@ -226,9 +226,6 @@ struct Call {
     int         instanceCount, baseInstance;
     State       state;
     MeshState   meshState;
-    union {
-        Flags       flags;
-    };
 };
 
 inline float AffineTransformArea(const AffineTransform t) {

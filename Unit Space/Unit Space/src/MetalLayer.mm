@@ -209,7 +209,7 @@
                 break;
             case kCallTypeFlags:
                 [commandEncoder setRenderPipelineState:_flagPipelineState];
-                [commandEncoder setVertexBytes:& call->flags length:sizeof(Flags) atIndex:10];
+                [commandEncoder setVertexBytes:& mesh->_flags length:sizeof(Flags) atIndex:10];
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeMeshInterior:
