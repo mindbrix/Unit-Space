@@ -96,9 +96,7 @@ struct Mesh {
                 if (!meshState.showEdgeTriangles) {
                     for (i = 0; i < ranges.size(); i += 2)
                         for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
-                            base = mesh._idxs[p];
-                            end = p + 1 == paths.size() ? (int)mesh._tris.count() : mesh._idxs[p + 1];
-                            count = end - base;
+                            base = mesh._idxs[p], end = mesh._idxs[p + 1], count = end - base;
                             if (opaques[p]) {
                                 if (call == nullptr) {
                                     calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);

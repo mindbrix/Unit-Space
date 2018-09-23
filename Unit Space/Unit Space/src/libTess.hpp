@@ -132,6 +132,7 @@ struct libTess {
             for (int idx : idxs[i])
                 mesh._idxs.emplace_back(base + idx);
         }
+        mesh._idxs.emplace_back((int)mesh._tris.count());
     }
     
     static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {
