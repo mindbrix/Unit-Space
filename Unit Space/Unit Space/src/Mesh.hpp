@@ -29,7 +29,7 @@ struct Mesh {
             for (p = 0; p < paths.size(); p++) {
                 units[p] = ctm = AffineTransformMakeUnit(paths[p].bounds, AffineTransformConcat(paths[p].ctm, state.CTM));
                 opaques[p] = paths[p].color.a == 255;
-                smalls[p] = ctm.a * ctm.a + ctm.b * ctm.b < 400 || ctm.c * ctm.c + ctm.d * ctm.d < 400;
+				smalls[p] = std::abs(ctm.a * ctm.d - ctm.b * ctm.c) < 400;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
