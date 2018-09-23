@@ -15,7 +15,6 @@ struct Mesh {
     static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
         int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
-        AffineTransform ctm;
         Call *call;
         if (mesh._tris.size()) {
             float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / std::sqrt(std::abs(AffineTransformArea(state.CTM)));
@@ -27,9 +26,11 @@ struct Mesh {
             bool opaques[paths.size()], visibles[paths.size()], smalls[paths.size()];
             AffineTransform units[paths.size()];
             for (p = 0; p < paths.size(); p++) {
-                units[p] = ctm = AffineTransformMakeUnit(paths[p].bounds, AffineTransformConcat(paths[p].ctm, state.CTM));
-                opaques[p] = paths[p].color.a == 255;
-				smalls[p] = std::abs(ctm.a * ctm.d - ctm.b * ctm.c) < 400;
+				const MeshPath& path = paths[p];
+				opaques[p] = path.color.a == 255;
+                units[p] = AffineTransformMakeUnit(path.bounds, AffineTransformConcat(path.ctm, state.CTM));
+				AffineTransform unit = units[p];
+				smalls[p] = std::abs(unit.a * unit.d - unit.b * unit.c) < 400;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
