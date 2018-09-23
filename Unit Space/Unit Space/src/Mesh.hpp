@@ -34,15 +34,23 @@ struct Mesh {
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false, visible, opaque;
                 for (j = 0; j < 8 && p + j < paths.size(); j++) {
-                    AffineTransform& unit = units[p + j];
-                    w = 0.5 * (unit.a + unit.c), h = 0.5 * (unit.b + unit.d);
-                    rp = std::sqrt(w * w + h * h);
-                    vx = cx - (w + unit.tx), vy = cy - (h + unit.ty);
                     opaque = opaques[p + j];
-                    visible = limit > 0.5 || (set && opaque) ? true : vx * vx + vy * vy < (rd + rp) * (rd + rp);
-                    visibles[p + j] = visible;
-                    set |= opaque && visible;
+                    if (limit > 0.5 || (set && opaque))
+                        visibles[p + j] = true;
+                    else {
+                        AffineTransform& unit = units[p + j];
+                        w = 0.5 * (unit.a + unit.c), h = 0.5 * (unit.b + unit.d);
+                        rp = std::sqrt(w * w + h * h);
+                        vx = cx - (w + unit.tx), vy = cy - (h + unit.ty);
+                        visible = vx * vx + vy * vy < (rd + rp) * (rd + rp);
+                        visibles[p + j] = visible;
+                        set |= opaque && visible;
+                    }
                 }
+                if (set)
+                    for (j = 0; j < 8 && p + j < paths.size(); j++)
+                        if (opaques[p + j])
+                            visibles[p + j] = true;
             }
             vector<int> ranges;
             for (p = 0; p < paths.size(); p++) {
