@@ -123,7 +123,7 @@ struct libTess {
         if (divisions == 1)
             triangulateRange(tris[0], idxss[0], scene, 0, size);
         else {
-            dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^(size_t idx) {
+            dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t idx) {
                 triangulateRange(triss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
         }
