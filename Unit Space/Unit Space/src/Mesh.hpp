@@ -53,14 +53,12 @@ struct Mesh {
                             visibles[p + j] = true;
             }
             vector<int> ranges;
-            for (p = 0; p < paths.size(); p++) {
-                if (visibles[p]) {
-                    if (ranges.size() && ranges.back() == p)
-                        ranges.back() = p + 1;
-                    else
-                        ranges.emplace_back(p), ranges.emplace_back(p + 1);
-                }
-            }
+			for (p = 0; p < paths.size(); ) {
+				for (j = p; !visibles[j] && j < paths.size(); j++) {}
+				for (p = j; visibles[p] && p < paths.size(); p++) {}
+				if (j != p)
+					ranges.emplace_back(j), ranges.emplace_back(p);
+			}
             if (meshState.showQuadratics) {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
