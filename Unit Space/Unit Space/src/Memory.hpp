@@ -75,6 +75,7 @@ struct Memory {
     T *get() const                              { return (T *) (header ? header->memory : nullptr); }
     inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
     inline void push_back(T n)                  { *new_ptr(1) = n; }
+    inline void empty()                         { if (header) header->end = 0; }
     inline static size_t pageRounded(size_t s)  { return (s + kMemoryPageSize - 1) / kMemoryPageSize * kMemoryPageSize; }
 private:
     void assign(const Memory& other) {

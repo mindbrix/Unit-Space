@@ -139,6 +139,7 @@ struct libTess {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         vector<float> scales;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+        Memory<Edge> _edges;
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
 			float lx, ly, rw, rh, ms = kShortMax / kInteriorMax;
@@ -152,7 +153,8 @@ struct libTess {
                 int count = tessGetVertexCount(tess);
                 const TESSindex *indices = tessGetVertexIndices(tess);
                 const float *verts = tessGetVertices(tess);
-                Edge edges[count], *eend = edges + count, *e0, *e1, *e2;
+                _edges.empty();
+                Edge *edges = _edges.new_ptr(count), *eend = edges + count, *e0, *e1, *e2;
                 addTessContours(dst, tess, edges);
                 sort(edges, eend);
                 if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
