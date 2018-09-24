@@ -221,12 +221,11 @@ enum ShapeType : short {
 struct Call {
     Call() {}
     Call(CallType type, int instanceCount, int baseInstance, State state, MeshState meshState)
-	: type(type), instanceCount(instanceCount), baseInstance(baseInstance), syncState(true), state(state), meshState(meshState) {}
+	: type(type), instanceCount(instanceCount), baseInstance(baseInstance), state(state), meshState(meshState) {}
     
     CallType    type;
     int         instanceCount, baseInstance;
-	bool		syncState;
-    State       state;
+	State       state;
     MeshState   meshState;
 };
 

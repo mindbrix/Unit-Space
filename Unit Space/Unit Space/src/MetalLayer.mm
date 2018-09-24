@@ -215,11 +215,9 @@
             case kCallTypeMeshInterior:
             case kCallTypeMeshInteriorBlend:
             case kCallTypeMeshTriangles:
-				if (call->syncState) {
-					[commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
-					[commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
-					[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-				}
+				[commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
+				[commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
+				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
                 break;
@@ -241,14 +239,13 @@
         if (instanceCount == 0)
             continue;
 		
-		if (call->syncState) {
-			State state = call->state;
-			state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
-			[commandEncoder setVertexBytes:& state length:sizeof(State) atIndex:0];
-			[commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
-			[commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
-			[commandEncoder setFragmentBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
-		}
+		State state = call->state;
+		state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
+		[commandEncoder setVertexBytes:& state length:sizeof(State) atIndex:0];
+		[commandEncoder setVertexBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
+		[commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
+		[commandEncoder setFragmentBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
+	
         [commandEncoder drawPrimitives:drawQuads ? MTLPrimitiveTypeTriangleStrip : MTLPrimitiveTypeTriangle
                            vertexStart:0
                            vertexCount:drawQuads ? 4 : 3
