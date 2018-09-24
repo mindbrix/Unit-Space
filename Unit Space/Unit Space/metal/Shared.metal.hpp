@@ -174,7 +174,6 @@ struct MeshState {
     bool                showVisibles;
     bool                useStrokeColor;
     bool                useQuadraticWinding;
-	float				winding;
 	int                 colorsSize;
     int                 reverseCount;
     unsigned int        quadraticStride;

@@ -431,7 +431,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     meshState.colorsSize = (int)paths.size();
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useQuadratics || scale <= 1 ? 1 : ceil(sqrt(scale));
-	meshState.winding = 0;
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
 	meshState.cellSize = 1;
     
