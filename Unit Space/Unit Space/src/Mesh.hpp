@@ -20,37 +20,29 @@ struct Mesh {
             float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / std::sqrt(std::abs(AffineTransformArea(state.CTM)));
             float cx = (clipBounds.lx + clipBounds.ux) * 0.5, cy = (clipBounds.ly + clipBounds.uy) * 0.5;
             float rd = std::sqrt((clipBounds.ux - cx) * (clipBounds.ux - cx) + (clipBounds.uy - cy) * (clipBounds.uy - cy));
-            float w, h, rp, vx, vy;
+            float mx, my, w, h, rp, vx, vy;
             
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()];
-            AffineTransform units[paths.size()];
+            AffineTransform ctm;
             for (p = 0; p < paths.size(); p++) {
 				const MeshPath& path = paths[p];
-				units[p] = AffineTransformMakeUnit(path.bounds, AffineTransformConcat(path.ctm, state.CTM));
-				AffineTransform unit = units[p];
-				opaques[p] = path.color.a == 255 || std::abs(unit.a * unit.d - unit.b * unit.c) < 400;
+                ctm = AffineTransformConcat(path.ctm, state.CTM);
+                mx = (path.bounds.lx + path.bounds.ux) * 0.5, my = (path.bounds.ly + path.bounds.uy) * 0.5;
+                vx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), vy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
+                w = (path.bounds.ux - path.bounds.lx) * 0.5 * (ctm.a + ctm.c), h = (path.bounds.uy - path.bounds.ly) * 0.5 * (ctm.b + ctm.d);
+                rp = std::sqrt(w * w + h * h);
+                visibles[p] = limit > 0.5 ||  vx * vx + vy * vy < (rd + rp) * (rd + rp);
+                opaques[p] = path.color.a == 255 || rp < 20;
             }
             for (p = 0; p < paths.size(); p += 8) {
-                bool set = false, visible, opaque;
-                for (j = 0; j < 8 && p + j < paths.size(); j++) {
-                    opaque = opaques[p + j];
-                    if (limit > 0.5 || (set && opaque))
-                        visibles[p + j] = true;
-                    else {
-                        AffineTransform& unit = units[p + j];
-                        w = 0.5 * (unit.a + unit.c), h = 0.5 * (unit.b + unit.d);
-                        rp = std::sqrt(w * w + h * h);
-                        vx = cx - (w + unit.tx), vy = cy - (h + unit.ty);
-                        visible = vx * vx + vy * vy < (rd + rp) * (rd + rp);
-                        visibles[p + j] = visible;
-                        set |= opaque && visible;
-                    }
-                }
-                if (set)
-                    for (j = 0; j < 8 && p + j < paths.size(); j++)
-                        if (opaques[p + j])
-                            visibles[p + j] = true;
+                bool set = false;
+                end = p + 8 > paths.size() ? (int)paths.size() : p + 8;
+                for (j = p; j < end && !set; j++)
+                    set |= visibles[j] && opaques[j];
+                for (j = p; j < end && set; j++)
+                    if (opaques[j])
+                        visibles[j] = true;
             }
             vector<int> ranges;
 			for (p = 0; p < paths.size(); ) {
