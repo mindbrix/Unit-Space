@@ -31,7 +31,7 @@ float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     float d0 = -a2 * v0 * w0 - b2 * w0 * u0 - c2 * u0 * v0;
     float d1 = -a2 * v1 * w1 - b2 * w1 * u1 - c2 * u1 * v1;
     float d2 = -a2 * v2 * w2 - b2 * w2 * u2 - c2 * u2 * v2;
-    return sqrt(min(d2, min(d0, d1)));
+    return select(1.0, -1.0, u < 0 || v < 0 || w < 0) * sqrt(min(d2, min(d0, d1)));
 }
 
 float simpleBarycentricDistance(float u, float v) {
