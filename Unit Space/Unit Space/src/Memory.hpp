@@ -7,6 +7,8 @@
 //
 #import <stdlib.h>
 
+constexpr size_t kMemoryPageSize = 4096;
+
 template<typename T, bool page_aligned = false>
 struct Memory {
     Memory()                            {}
@@ -23,7 +25,7 @@ struct Memory {
 		if (header) {
 			if (page_aligned) {
 				void *memory;
-				posix_memalign(& memory, 4096, pageRounded(size));
+				posix_memalign(& memory, kMemoryPageSize, pageRounded(size));
 				memcpy(memory, header->memory, header->size);
 				free(header->memory);
 				header->memory = memory;
@@ -32,7 +34,7 @@ struct Memory {
 		} else {
             header = (Header *)malloc(sizeof(Header));
 			if (page_aligned)
-				posix_memalign(& header->memory, 4096, pageRounded(size));
+				posix_memalign(& header->memory, kMemoryPageSize, pageRounded(size));
 			else
             	header->memory = malloc(size);
             header->refCount = 1;
@@ -73,7 +75,7 @@ struct Memory {
     T *get() const                              { return (T *) (header ? header->memory : nullptr); }
     inline T &operator[] (const size_t index)   { return ((T *)header->memory)[index]; }
     inline void push_back(T n)                  { *new_ptr(1) = n; }
-    inline static size_t pageRounded(size_t s)  { return (s + 4095) / 4096 * 4096; }
+    inline static size_t pageRounded(size_t s)  { return (s + kMemoryPageSize - 1) / kMemoryPageSize * kMemoryPageSize; }
 private:
     void assign(const Memory& other) {
         if (this != & other) {
