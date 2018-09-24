@@ -17,7 +17,6 @@ struct Mesh {
         vector<Call> & calls = mesh._calls;
         Call *call;
         if (mesh._tris.size()) {
-            float limit = mesh._bounds.scaleToFit(meshState.clipBounds) / std::sqrt(std::abs(AffineTransformArea(state.CTM)));
             float cx = (clipBounds.lx + clipBounds.ux) * 0.5, cy = (clipBounds.ly + clipBounds.uy) * 0.5;
             float rd = std::sqrt((clipBounds.ux - cx) * (clipBounds.ux - cx) + (clipBounds.uy - cy) * (clipBounds.uy - cy));
             float mx, my, w, h, rp, vx, vy;
@@ -32,7 +31,7 @@ struct Mesh {
                 vx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), vy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
                 w = (path.bounds.ux - path.bounds.lx) * 0.5 * (ctm.a + ctm.c), h = (path.bounds.uy - path.bounds.ly) * 0.5 * (ctm.b + ctm.d);
                 rp = std::sqrt(w * w + h * h);
-                visibles[p] = limit > 0.5 ||  vx * vx + vy * vy < (rd + rp) * (rd + rp);
+                visibles[p] = vx * vx + vy * vy < (rd + rp) * (rd + rp);
                 opaques[p] = path.color.a == 255 || rp < 20;
             }
             for (p = 0; p < paths.size(); p += 8) {
