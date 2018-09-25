@@ -175,15 +175,13 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
-    float area = abs(cross(float3(p1 - p0, 0), float3(p2 - p1, 0)).z);
-	const float dilation = -0.5, hmin = 0.1;
-    float2 v01 = p1 - p0, n01 = normalize(float2(v01.y, -v01.x));
-    float2 v12 = p2 - p1, n12 = normalize(float2(v12.y, -v12.x));
-    float2 v20 = p0 - p2, n20 = normalize(float2(v20.y, -v20.x));
-    float h0 = dot(n12, v01), h1 = dot(n20, v12), h2 = dot(n01, v20);
-    float dh0 = dilation / max(hmin, h0), dh1 = dilation / max(hmin, h1), dh2 = dilation / max(hmin, h2);
-    float u = select(dh0, 1 - dh1 - dh2, vid == 0);
-    float v = select(dh1, 1 - dh0 - dh2, vid == 1);
+    const float dilation = -0.5, hmin = 0.1;
+    float area = cross(float3(p1 - p0, 0), float3(p2 - p1, 0)).z;
+	float du = dilation / max(hmin, area * rsqrt(length_squared(p2 - p1)));
+    float dv = dilation / max(hmin, area * rsqrt(length_squared(p0 - p2)));
+    float dw = dilation / max(hmin, area * rsqrt(length_squared(p1 - p0)));
+    float u = select(du, 1 - dv - dw, vid == 0);
+    float v = select(dv, 1 - du - dw, vid == 1);
     float2 devicePoint = float(area > 1e-2) * (p0 * u + p1 * v + p2 * (1 - u - v));
     
     RGBA8 color = paths[p].color;
@@ -201,8 +199,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
-    float invdet = 1.0 / (a * d - b * c);
+    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
 
     float x2 = 0.5 + b * vert.v - d * vert.u, y2 = 0.5 + vert.u * c - vert.v * a;
