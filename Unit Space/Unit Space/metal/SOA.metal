@@ -84,14 +84,14 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 
 fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    const float kDilation = -0.2071067812, kCornerRadiusW = 0.5, kCornerRadiusH = 0.5;
+    const float kDilation = -0.2071067812, kCornerRadius = 0.5, kFilterWidth = 0.5;
     switch (vert.shapeType) {
         case kShapeTypeEllipse:
             return vert.color * ellipseDistance(vert.unitPoint, kDilation, vert.width);
         case kShapeTypeRect:
-            return vert.color * rectDistance(vert.unitPoint, 0.7071067812, vert.width);
+            return vert.color * rectDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
         case kShapeTypeRoundedRect:
-            return vert.color * roundedRectDistance(vert.unitPoint, max(2.0 / vert.scale, kCornerRadiusW), kDilation, vert.width);
+            return vert.color * roundedRectDistance(vert.unitPoint, max(2.0 / vert.scale, kCornerRadius), kDilation, vert.width);
         case kShapeTypeLozenge:
             return vert.color * lozengeDistance(vert.unitPoint, kDilation);
         default:
