@@ -437,7 +437,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     _mesh._calls.resize(0);
     int p = -1;
     
-    if (_svgData || _fontData)
+    if (_showPoints && (_svgData || _fontData))
         for (int i = 0; _showPoints && i < _scene._paths.size(); i++) {
             AffineTransform inv = AffineTransformInvert(paths[i].ctm);
             if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
