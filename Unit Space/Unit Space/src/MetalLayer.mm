@@ -178,7 +178,7 @@
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
     
     descriptor.colorAttachments[1].texture = _accumulationTexture;
-    descriptor.colorAttachments[2].storeAction = MTLStoreActionDontCare;
+    descriptor.colorAttachments[1].storeAction = MTLStoreActionDontCare;
     descriptor.colorAttachments[1].loadAction = MTLLoadActionClear;
     descriptor.colorAttachments[1].clearColor = MTLClearColorMake(0, 0, 0, 0);
     
