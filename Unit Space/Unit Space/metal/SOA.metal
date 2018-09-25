@@ -95,7 +95,7 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
         case kShapeTypeLozenge:
             return vert.color * lozengeDistance(vert.unitPoint, kDilation);
         default:
-            return vert.color * triangleDistance(vert.unitPoint, kDilation, vert.width);
+            return vert.color * triangleDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
     }
 }
 

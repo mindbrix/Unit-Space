@@ -128,13 +128,15 @@ float rectDistance(float x, float y, float dilation, float f) {
     return ew * ns;
 }
 
-float triangleDistance(float2 unitPoint, float dilation, float width) {
-    float u = 1.0 - abs(unitPoint.x), v = 1.0 - abs(unitPoint.y);
-    float dx = u * rsqrt(max(1e-13, dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
-    float dy = v * rsqrt(max(1e-13, dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
-    float w = (unitPoint.x - unitPoint.y) * 0.5;
-    float dz = w * rsqrt(max(1e-13, dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
-    return saturate((dx + dilation) * width) * saturate((dy + dilation) * width) * saturate((dz + 0.5) * width);
+float triangleDistance(float x, float y, float dilation, float f) {
+    float sx = rsqrt(max(1e-13, dfdx(x) * dfdx(x) + dfdy(x) * dfdy(x)));
+    float sy = rsqrt(max(1e-13, dfdx(y) * dfdx(y) + dfdy(y) * dfdy(y)));
+    float w = 0.5 / f * (f + max(-f, min(f, (1 - x) * sx - dilation)));
+    float n = 0.5 / f * (f + max(-f, min(f, (1 + y) * sy - dilation)));
+    float z = (x - y) * 0.5;
+    float sz = rsqrt(max(1e-13, dfdx(z) * dfdx(z) + dfdy(z) * dfdy(z)));
+    float d = 0.5 / f * (f + max(-f, min(f, z * sz)));
+    return w * n * d;
 }
 
 float lozengeDistance(float2 unitPoint, float dilation) {

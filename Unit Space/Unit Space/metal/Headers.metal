@@ -23,7 +23,7 @@ float rectDistance(float x, float y, float dilation, float f);
 float roundedRectDistance(float2 unitPoint, float radius, float dilation, float width);
 float lozengeDistance(float2 unitPoint, float dilation);
 float quadraticDistance(float2 unitPoint, float dilation);
-float triangleDistance(float2 unitPoint, float dilation, float width);
+float triangleDistance(float x, float y, float dilation, float f);
 float ellipseStrokeDistance(float2 unitPoint, float w);
 float det(float2 a, float2 b);
 float implicitDistance(float px, float py, float x0, float y0, float x1, float y1, float x2, float y2);
