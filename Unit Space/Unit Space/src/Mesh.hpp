@@ -24,15 +24,15 @@ struct Mesh {
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], visibles[paths.size()];
             AffineTransform ctm;
-            for (p = 0; p < paths.size(); p++) {
-				const MeshPath& path = paths[p];
-                ctm = AffineTransformConcat(path.ctm, state.CTM);
-                mx = (path.bounds.lx + path.bounds.ux) * 0.5, my = (path.bounds.ly + path.bounds.uy) * 0.5;
+            const MeshPath *path = & paths[0];
+            for (p = 0; p < paths.size(); p++, path++) {
+				ctm = AffineTransformConcat(path->ctm, state.CTM);
+                mx = (path->bounds.lx + path->bounds.ux) * 0.5, my = (path->bounds.ly + path->bounds.uy) * 0.5;
                 vx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), vy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
-                w = (path.bounds.ux - path.bounds.lx) * 0.5 * (ctm.a + ctm.c), h = (path.bounds.uy - path.bounds.ly) * 0.5 * (ctm.b + ctm.d);
+                w = (path->bounds.ux - path->bounds.lx) * 0.5 * (ctm.a + ctm.c), h = (path->bounds.uy - path->bounds.ly) * 0.5 * (ctm.b + ctm.d);
                 rp = std::sqrt(w * w + h * h);
                 visibles[p] = vx * vx + vy * vy < (rd + rp) * (rd + rp);
-                opaques[p] = path.color.a == 255 || rp < 20;
+                opaques[p] = path->color.a == 255 || rp < 20;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
