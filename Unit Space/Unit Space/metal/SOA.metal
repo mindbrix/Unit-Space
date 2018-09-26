@@ -87,7 +87,7 @@ fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant 
     const float kDilation = -0.2071067812, kCornerRadius = 0.5, kFilterWidth = 0.5;
     switch (vert.shapeType) {
         case kShapeTypeEllipse:
-            return vert.color * ellipseDistance(vert.unitPoint, kDilation, vert.width);
+            return vert.color * ellipseDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
         case kShapeTypeRect:
             return vert.color * rectDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
         case kShapeTypeRoundedRect:
