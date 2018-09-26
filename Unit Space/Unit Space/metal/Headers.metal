@@ -20,7 +20,7 @@ float windingToAlpha(float winding, bool evenOdd);
 float sRGB(float x);
 float ellipseDistance(float x, float y, float dilation, float f);
 float rectDistance(float x, float y, float dilation, float f);
-float roundedRectDistance(float2 unitPoint, float radius, float dilation, float width);
+float roundedRectDistance(float x, float y, float radius, float dilation, float f);
 float lozengeDistance(float2 unitPoint, float dilation);
 float quadraticDistance(float2 unitPoint, float dilation);
 float triangleDistance(float x, float y, float dilation, float f);

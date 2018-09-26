@@ -156,12 +156,9 @@ float quadraticDistance(float2 unitPoint, float dilation) {
     return saturate((y - x * x) * rsqrt(fx * fx + fy * fy) + dilation);
 }
 
-float roundedRectDistance(float2 unitPoint, float radius, float dilation, float width) {
-    float u = unitPoint.x, v = unitPoint.y;
-    float x = max(0.0, abs(u) - (1.0 - radius)) / radius, y = max(0.0, abs(v) - (1.0 - radius)) / radius;
-    float fx = -2.0 * (x * dfdx(x) + y * dfdx(y));
-    float fy = -2.0 * (x * dfdy(x) + y * dfdy(y));
-    return saturate(((1 - (x * x + y * y)) * rsqrt(max(1e-13, fx * fx + fy * fy)) + dilation) * width);
+float roundedRectDistance(float x, float y, float radius, float dilation, float f) {
+    float u = max(0.0, abs(x) - (1.0 - radius)) / radius, v = max(0.0, abs(y) - (1.0 - radius)) / radius;
+    return ellipseDistance(u, v, dilation, f);
 }
 
 float4 quadraticColor(float2 devicePoint, AffineTransform op) {
