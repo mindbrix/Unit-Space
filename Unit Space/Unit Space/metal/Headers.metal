@@ -12,7 +12,7 @@
 using namespace metal;
 
 float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
-float simpleBarycentricDistance(float u, float v);
+float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
 float adjustedT(float t);
 float edgeWinding(float x0, float y0, float x1, float y1);
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2);

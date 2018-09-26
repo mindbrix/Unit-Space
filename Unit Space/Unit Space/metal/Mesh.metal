@@ -142,7 +142,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
 {
 	if (meshState.showTriangles || meshState.showPolygons) {
 		float w = max(1.0, state.width);
-		float d = barycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
+		float d = simpleBarycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
 		return vert.color * saturate(w - d);
 	} else
 		return vert.color;

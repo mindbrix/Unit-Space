@@ -34,11 +34,11 @@ float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     return select(1.0, -1.0, u < 0 || v < 0 || w < 0) * sqrt(min(d2, min(d0, d1)));
 }
 
-float simpleBarycentricDistance(float u, float v) {
+float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     float w = 1.0 - u - v;
-    float eu = sign(u) * u * u / (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u));
-    float ev = sign(v) * v * v / (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v));
-    float ew = sign(w) * w * w / (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w));
+	float eu = float(!ef0) * 1e12 + sign(u) * u * u / max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
+    float ev = float(!ef1) * 1e12 + sign(v) * v * v / max(1e-13, (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
+    float ew = float(!ef2) * 1e12 + sign(w) * w * w / max(1e-13, (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
     float m = min(eu, min(ev, ew));
     return sign(m) * sqrt(abs(m));
 }
