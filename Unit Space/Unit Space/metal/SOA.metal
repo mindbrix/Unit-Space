@@ -76,7 +76,7 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
     vert.position = float4((unitPoint * 2.0 - 1.0), 1.0, 1.0);
     vert.unitPoint = { select(-1.0, 1.0, vid & 1), select(-1.0, 1.0, vid & 2) };
     vert.scale = scale * circle.r;
-    vert.width = min(1.0, 0.5 * circle.r * scale);
+    vert.width = 0.5;// min(0.5, 0.5 * circle.r * scale);
     vert.color = { sRGB(float(color.r) / 255.0), sRGB(float(color.g) / 255.0), sRGB(float(color.b) / 255.0), sRGB(float(color.a) / 255.0) };
     vert.shapeType = types[iid];
     return vert;
@@ -84,18 +84,18 @@ vertex ShapeVertex shapesSOA_vertex_main(constant State &state [[buffer(0)]], co
 
 fragment float4 shapesSOA_fragment_main(ShapeVertex vert [[stage_in]], constant State &state [[buffer(0)]])
 {
-    const float kDilation = -0.2071067812, kCornerRadius = 0.5, kFilterWidth = 0.5;
+    const float kDilation = -0.2071067812, kCornerRadius = 0.5;
     switch (vert.shapeType) {
         case kShapeTypeEllipse:
-            return vert.color * ellipseDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
+            return vert.color * ellipseDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, vert.width);
         case kShapeTypeRect:
-            return vert.color * rectDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
+            return vert.color * rectDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, vert.width);
         case kShapeTypeRoundedRect:
-            return vert.color * roundedRectDistance(vert.unitPoint.x, vert.unitPoint.y, max(2.0 / vert.scale, kCornerRadius), 0.7071067812, kFilterWidth);
+            return vert.color * roundedRectDistance(vert.unitPoint.x, vert.unitPoint.y, max(2.0 / vert.scale, kCornerRadius), 0.7071067812, vert.width);
         case kShapeTypeLozenge:
             return vert.color * lozengeDistance(vert.unitPoint, kDilation);
         default:
-            return vert.color * triangleDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, kFilterWidth);
+            return vert.color * triangleDistance(vert.unitPoint.x, vert.unitPoint.y, 0.7071067812, vert.width);
     }
 }
 
