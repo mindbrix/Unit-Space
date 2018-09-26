@@ -199,6 +199,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
+    float area = circularBarycentricArea(vert.u, vert.v, true, true, true, 0.7071);
+    return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * area;
+    
     float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
 
