@@ -133,8 +133,7 @@ float triangleDistance(float x, float y, float dilation, float f) {
     float sy = rsqrt(max(1e-13, dfdx(y) * dfdx(y) + dfdy(y) * dfdy(y)));
     float w = 0.5 / f * (f + max(-f, min(f, (1 - x) * sx - dilation)));
     float n = 0.5 / f * (f + max(-f, min(f, (1 + y) * sy - dilation)));
-    float z = (x - y) * 0.5;
-    float sz = rsqrt(max(1e-13, dfdx(z) * dfdx(z) + dfdy(z) * dfdy(z)));
+    float z = x - y, sz = rsqrt(max(1e-13, dfdx(z) * dfdx(z) + dfdy(z) * dfdy(z)));
     float d = 0.5 / f * (f + max(-f, min(f, z * sz)));
     return w * n * d;
 }
