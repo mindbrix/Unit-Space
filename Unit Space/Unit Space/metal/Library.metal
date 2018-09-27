@@ -78,6 +78,18 @@ float edgeCoverage(float x0, float y0, float x1, float y1) {
     return select(0.0, saturate(y1) - saturate(y0), (y1 > y0) == (det < 0));
 }
 
+float edgeWinding(float x0, float y0, float x1, float y1, float f) {
+    float vx = select(x1 - x0, 1e-6, x0 == x1), vy = select(y1 - y0, 1e-6, y0 == y1), vxvy = vx / vy;
+    float x = -y0 * vxvy + x0;
+    float dx = 0.5 * abs(vxvy);
+    
+    float t1 = saturate(0.5 * (x + dx + f) / dx), t0 = saturate(0.5 * (x + dx - f) / dx);
+   // t0 = t1 = 0;
+    float sy0 = clamp(y0, -f, f), sy1 = clamp(y1, -f, f);
+  //  sy1 = 1, sy0 = 0;
+    return (sy1 - sy0) * (1 - (saturate(x - dx) + dx * (t1 * t1 - t0 * t0)));
+}
+
 float edgeWinding(float x0, float y0, float x1, float y1) {
     float sy0 = saturate(y0), sy1 = saturate(y1);
     float coverage = sy1 - sy0;
