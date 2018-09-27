@@ -15,7 +15,6 @@ float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
 float circularBarycentricArea(float u, float v, bool ef0, bool ef1, bool ef2, float f);
 float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
 float adjustedT(float t);
-float edgeWinding(float x0, float y0, float x1, float y1, float f);
 float edgeWinding(float x0, float y0, float x1, float y1);
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2);
 float windingToAlpha(float winding, bool evenOdd);
