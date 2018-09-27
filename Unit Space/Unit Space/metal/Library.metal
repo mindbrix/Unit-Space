@@ -34,28 +34,6 @@ float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     return select(1.0, -1.0, u < 0 || v < 0 || w < 0) * sqrt(min(d2, min(d0, d1)));
 }
 
-float circularBarycentricArea(float u, float v, bool ef0, bool ef1, bool ef2, float f) {
-    float w = 1.0 - u - v;
-    float eu = float(!ef0) * 1e12 + sign(u) * u * rsqrt(max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u))));
-    float ev = float(!ef1) * 1e12 + sign(v) * v * rsqrt(max(1e-13, (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v))));
-    float ew = float(!ef2) * 1e12 + sign(w) * w * rsqrt(max(1e-13, (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w))));
-    
-    float h, c, a, s0, s1, s2, rfa = 1.0 / (3.14159265 * f * f);
-    h = max(1e-12, f - abs(eu));
-    c = 2 * sqrt(h * (2 * f - h)), a = rfa * 0.666666666 * c * h + h * h * h * 0.5 / c;
-    s0 = select(a, 1.0 - a, u < 0.0);
-    
-    h = max(1e-12, f - abs(ev));
-    c = 2 * sqrt(h * (2 * f - h)), a = rfa * 0.666666666 * c * h + h * h * h * 0.5 / c;
-    s1 = select(a, 1.0 - a, v < 0.0);
-    
-    h = max(1e-12, f - abs(ew));
-    c = 2 * sqrt(h * (2 * f - h)), a =rfa * 0.666666666 * c * h + h * h * h * 0.5 / c;
-    s2 = select(a, 1.0 - a, w < 0.0);
-    
-    return max(0.0, 1.0 - (s0 + s1 + s2));
-}
-
 float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     float w = 1.0 - u - v;
 	float eu = float(!ef0) * 1e12 + sign(u) * u * u / max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
