@@ -8,7 +8,7 @@
 #import "Memory.hpp"
 
 constexpr int kPointStride = 2 * sizeof(float);
-constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.5;
+constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.125;
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
