@@ -86,7 +86,9 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
 {
     AccumulateFragment frag;
     if (meshState.useQuadraticWinding)
-        frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+        
+        frag.winding = edgeCoverage(vert.x0 - 0.5, vert.y0 - 0.5, vert.x2 - 0.5, vert.y2 - 0.5) + edgeCoverage(vert.x2 - 0.5, vert.y2 - 0.5, vert.x4 - 0.5, vert.y4 - 0.5);
+        //frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
     else
         frag.winding = edgeWinding(vert.x0, vert.y0, vert.x2, vert.y2) + edgeWinding(vert.x2, vert.y2, vert.x4, vert.y4);
     return frag;

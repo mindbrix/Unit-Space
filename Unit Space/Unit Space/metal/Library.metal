@@ -53,8 +53,17 @@ float verticalWinding(float x, float y0, float y1) {
 }
 
 float edgeCoverage(float x0, float y0, float x1, float y1) {
-    float det = (x1 - x0) * (0.5 - y0) - (y1 - y0) * (0.5 - x0);
-    return select(0.0, saturate(y1) - saturate(y0), (y1 > y0) == (det < 0));
+    float f = 0.5;
+    float dx = x1 - x0, dy = y1 - y0;
+    float det = dx * - y0 - dy * -x0;
+    float dot = dx * dx + dy * dy;
+    float d = -det * rsqrt(dot);
+    float area = saturate(f + select(d, -d, y1 < y0));
+    float window = clamp(y1, -f, f) - clamp(y0, -f, f);
+    return window * area;
+    
+//    float det = (x1 - x0) * (0.5 - y0) - (y1 - y0) * (0.5 - x0);
+//    return select(0.0, saturate(y1) - saturate(y0), (y1 > y0) == (det < 0));
 }
 
 float edgeWinding(float x0, float y0, float x1, float y1) {
