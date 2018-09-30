@@ -54,14 +54,11 @@ float verticalWinding(float x, float y0, float y1) {
 
 float edgeCoverage(float x0, float y0, float x1, float y1) {
     const float f = 0.5;
-    float dx = x1 - x0, dy = y1 - y0, right = float(dx > 0.0);
-	float wy0 = clamp(mix(y1, y0, right), -f, f), wy1 = clamp(mix(y0, y1, right), -f, f);
+    float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy;
+    float wy0 = clamp(y0 + left, -f, f), wy1 = clamp(y1 - left, -f, f);
 	float vx0 = f - x0, vy0 = wy0 - y0, vx1 = -f - x0, vy1 = wy1 - y0;
     float a0 = fma(dx, vy0, -dy * vx0), a1 = fma(dx, vy1, -dy * vx1);
     return smoothstep(0, 1, (-a0 / (a1 - a0))) * sign(dy) * abs(wy1 - wy0);
-    
-//    float det = (x1 - x0) * (0.5 - y0) - (y1 - y0) * (0.5 - x0);
-//    return select(0.0, saturate(y1) - saturate(y0), (y1 > y0) == (det < 0));
 }
 
 float edgeWinding(float x0, float y0, float x1, float y1) {
@@ -77,6 +74,25 @@ float edgeWinding(float x0, float y0, float x1, float y1) {
 	float t0 = saturate(-minx / range), t1 = saturate((1.0 - minx) / range);
 	float area = (saturate(sx0) + saturate(sx1)) * 0.5;
 	return coverage * (t1 - ((t1 - t0) * area));
+}
+
+float edgeCoverage(float x0, float y0, float x1, float y1, float x2, float y2) {
+    float dx12, dy12, dx20, dy20, area, u, v, w, f, t, x01, y01, x12, y12;
+    dx12 = x2 - x1, dy12 = y2 - y1;
+    dx20 = x0 - x2, dy20 = y0 - y2;
+    area = dx12 * dy20 - dy12 * dx20;
+    if (abs(area) < 4)
+        return edgeCoverage(x0, y0, x2, y2);
+    
+    u = (dx12 * (-y1) - dy12 * (-x1));
+    v = (dx20 * (-y2) - dy20 * (-x2));
+    w = area - u - v;
+    f = 4.0 * u * w - v * v;
+    
+    t = select(saturate(w / (w + v * 0.5)), 1.0 - saturate(u / (u + v * 0.5)), u > w);
+    t = select(t, 0.5, f < -0.333);
+    x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
+    return edgeWinding(x0, y0, x01, y01) + edgeWinding(x01, y01, x12, y12) + edgeWinding(x12, y12, x2, y2);
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
