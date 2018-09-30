@@ -16,7 +16,7 @@ using namespace metal;
 
 struct AccumulateVertex
 {
-    void write(AffineTransform CTM, float ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride) {
+    void write(AffineTransform CTM, float ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride, float offset) {
         float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, uy, dx, dy;
         device float *px, *py;
         
@@ -50,7 +50,7 @@ struct AccumulateVertex
         
         position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
         
-        dx -= 0.5, dy -= 0.5;
+        dx += offset, dy += offset;
         x0 = dx0 - dx, y0 = dy0 - dy;
         x1 = dx1 - dx, y1 = dy1 - dy;
         x2 = dx2 - dx, y2 = dy2 - dy;
@@ -73,7 +73,7 @@ vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [
     Bounds bounds = Bounds::transformUnit(unit);
     
     AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2);
+    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2, select(-0.5, 0.0, meshState.useQuadraticWinding));
     return vert;
 }
 
@@ -84,11 +84,10 @@ struct AccumulateFragment {
 fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[stage_in]],
 													 constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    const float offset = -0.5;
     AccumulateFragment frag;
     if (meshState.useQuadraticWinding)
         
-        frag.winding = edgeCoverage(vert.x0 + offset, vert.y0 + offset, vert.x2 + offset, vert.y2 + offset) + edgeCoverage(vert.x2 + offset, vert.y2 + offset, vert.x4 + offset, vert.y4 + offset);
+        frag.winding = edgeCoverage(vert.x0, vert.y0, vert.x2, vert.y2) + edgeCoverage(vert.x2, vert.y2, vert.x4, vert.y4);
         //frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
     else
         frag.winding = edgeWinding(vert.x0, vert.y0, vert.x2, vert.y2) + edgeWinding(vert.x2, vert.y2, vert.x4, vert.y4);
