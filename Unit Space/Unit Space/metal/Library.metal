@@ -58,7 +58,7 @@ float edgeCoverage(float x0, float y0, float x1, float y1) {
 	float wy0 = clamp(mix(y1, y0, right), -f, f), wy1 = clamp(mix(y0, y1, right), -f, f);
 	float vx0 = f - x0, vy0 = wy0 - y0, vx1 = -f - x0, vy1 = wy1 - y0;
     float a0 = fma(dx, vy0, -dy * vx0), a1 = fma(dx, vy1, -dy * vx1);
-    return smoothstep(-0.1, 1.1, (-a0 / (a1 - a0))) * sign(dy) * abs(wy1 - wy0);
+    return smoothstep(0, 1, (-a0 / (a1 - a0))) * sign(dy) * abs(wy1 - wy0);
     
 //    float det = (x1 - x0) * (0.5 - y0) - (y1 - y0) * (0.5 - x0);
 //    return select(0.0, saturate(y1) - saturate(y0), (y1 > y0) == (det < 0));
