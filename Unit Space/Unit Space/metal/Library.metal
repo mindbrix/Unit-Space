@@ -57,7 +57,7 @@ float edgeCoverage(float x0, float y0, float x1, float y1) {
     float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy;
     float wy0 = clamp(y0 + left, -f, f), wy1 = clamp(y1 - left, -f, f);
 	float a0 = fma(dx, (wy0 - y0), -dy * (f - x0)), a1 = fma(dx, (wy1 - y0), -dy * (-f - x0));
-    return saturate(-a0 / (a1 - a0)) * sign(dy) * abs(wy1 - wy0);
+    return smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * sign(dy) * abs(wy1 - wy0);
 }
 
 float edgeWinding(float x0, float y0, float x1, float y1) {
