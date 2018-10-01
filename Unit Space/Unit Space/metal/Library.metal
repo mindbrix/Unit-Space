@@ -86,14 +86,34 @@ float quadraticWinding(float u, float v) {
     float x1 = x2 - b, y1 = y2 + a;
     float w = 1 - u - v;
     
-    float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy;
-    float wy0 = clamp(y0 + left, -f, f), wy1 = clamp(y1 - left, -f, f);
-    float u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
-    float v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
-    float w0 = w + dfdx(w) * 0.5 + dfdy(w) * wy0, w1 = w + dfdx(w) * -0.5 + dfdy(w) * wy1;
-    float a0 = 4.0 * u0 * w0 - v0 * v0;
-    float a1 = 4.0 * u1 * w1 - v1 * v1;
-    return saturate(-a0 / (a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
+    float t = saturate(-(y1 - y0) / (y0 + y2 - y1 - y1));
+    float x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(y1, y2, t), y12 = mix(y1, y2, t);
+    float x012 = mix(x01, x12, t), y012 = mix(y01, y12, t);
+    
+    float cx0, cy0, cx1, cy1;
+    float dx, dy, left, wy0, wy1, u0, u1, v0, v1, w0, w1, a0, a1, winding;
+    
+    winding = 0;
+    
+    cx0 = x0, cy0 = y0, cx1 = x012, cy1 = y012;
+    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
+    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+    u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
+    v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
+    w0 = w + dfdx(w) * 0.5 + dfdy(w) * wy0, w1 = w + dfdx(w) * -0.5 + dfdy(w) * wy1;
+    a0 = 4.0 * u0 * w0 - v0 * v0, a1 = 4.0 * u1 * w1 - v1 * v1;
+    winding += saturate(-a0 / (a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
+    
+    cx0 = x012, cy0 = y012, cx1 = x2, cy1 = y2;
+    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
+    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+    u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
+    v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
+    w0 = w + dfdx(w) * 0.5 + dfdy(w) * wy0, w1 = w + dfdx(w) * -0.5 + dfdy(w) * wy1;
+    a0 = 4.0 * u0 * w0 - v0 * v0, a1 = 4.0 * u1 * w1 - v1 * v1;
+    winding += saturate(-a0 / (a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
+    
+    return winding;
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
