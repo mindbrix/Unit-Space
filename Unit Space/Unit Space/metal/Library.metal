@@ -75,23 +75,25 @@ float edgeWinding(float x0, float y0, float x1, float y1) {
 	return coverage * (t1 - ((t1 - t0) * area));
 }
 
-float edgeCoverage(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float dx12, dy12, dx20, dy20, area, u, v, w, f, t, x01, y01, x12, y12;
-    dx12 = x2 - x1, dy12 = y2 - y1;
-    dx20 = x0 - x2, dy20 = y0 - y2;
-    area = dx12 * dy20 - dy12 * dx20;
-    if (abs(area) < 4)
-        return edgeCoverage(x0, y0, x2, y2);
+float quadraticWinding(float u, float v) {
+    const float f = 0.5;
     
-    u = (dx12 * (-y1) - dy12 * (-x1));
-    v = (dx20 * (-y2) - dy20 * (-x2));
-    w = area - u - v;
-    f = 4.0 * u * w - v * v;
+    float a = dfdx(u), b = dfdy(u), c = dfdx(v), d = dfdy(v), invdet = 1.0 / (a * d - b * c);
+    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
     
-    t = select(saturate(w / (w + v * 0.5)), 1.0 - saturate(u / (u + v * 0.5)), u > w);
-    t = select(t, 0.5, f < -0.333);
-    x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
-    return edgeWinding(x0, y0, x01, y01) + edgeWinding(x01, y01, x12, y12) + edgeWinding(x12, y12, x2, y2);
+    float x2 = b * v - d * u, y2 = u * c - v * a;
+    float x0 = x2 + d, y0 = y2 - c;
+    float x1 = x2 - b, y1 = y2 + a;
+    float w = 1 - u - v;
+    
+    float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy;
+    float wy0 = clamp(y0 + left, -f, f), wy1 = clamp(y1 - left, -f, f);
+    float u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
+    float v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
+    float w0 = w + dfdx(w) * 0.5 + dfdy(w) * wy0, w1 = w + dfdx(w) * -0.5 + dfdy(w) * wy1;
+    float a0 = 4.0 * u0 * w0 - v0 * v0;
+    float a1 = 4.0 * u1 * w1 - v1 * v1;
+    return saturate(-a0 / (a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
