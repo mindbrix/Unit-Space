@@ -55,8 +55,8 @@ float verticalWinding(float x, float y0, float y1) {
 float edgeCoverage(float x0, float y0, float x1, float y1) {
     const float f = 0.5;
     float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy;
-    float wy0 = clamp(y0 + left, -f, f), wy1 = clamp(y1 - left, -f, f);
-	float a0 = fma(dx, (wy0 - y0), -dy * (f - x0)), a1 = fma(dx, (wy1 - y0), -dy * (-f - x0));
+    float wy0 = clamp(y0 + left, -f, f) - y0, wy1 = clamp(y1 - left, -f, f) - y0;
+	float a0 = fma(dx, wy0, -dy * (f - x0)), a1 = fma(dx, wy1, -dy * (-f - x0));
     return smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * copysign(wy1 - wy0, dy);
 }
 
