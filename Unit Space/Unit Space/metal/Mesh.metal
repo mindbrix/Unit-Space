@@ -73,7 +73,7 @@ vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [
     Bounds bounds = Bounds::transformUnit(unit);
     
     AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2, select(-0.5, 0.0, meshState.useQuadraticWinding));
+    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2, select(-0.5, -0.5, meshState.useQuadraticWinding));
     return vert;
 }
 
@@ -87,8 +87,8 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
     AccumulateFragment frag;
     if (meshState.useQuadraticWinding)
         
-        frag.winding = edgeCoverage(vert.x0, vert.y0, vert.x2, vert.y2) + edgeCoverage(vert.x2, vert.y2, vert.x4, vert.y4);
-        //frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+        //frag.winding = edgeCoverage(vert.x0, vert.y0, vert.x2, vert.y2) + edgeCoverage(vert.x2, vert.y2, vert.x4, vert.y4);
+        frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
     else
         frag.winding = edgeWinding(vert.x0, vert.y0, vert.x2, vert.y2) + edgeWinding(vert.x2, vert.y2, vert.x4, vert.y4);
     return frag;
@@ -201,15 +201,13 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float winding = quadraticWinding(vert.u, vert.v);
-    
-//   float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
-//    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
-//
-//    float x2 = 0.5 + b * vert.v - d * vert.u, y2 = 0.5 + vert.u * c - vert.v * a;
-//    float x0 = x2 + d, y0 = y2 - c;
-//    float x1 = x2 - b, y1 = y2 + a;
-//    float winding = edgeWinding(x0, y0, x1, y1) + edgeWinding(x1, y1, x2, y2) + edgeWinding(x2, y2, x0, y0);
+    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
+    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
+
+    float x2 = 0.5 + b * vert.v - d * vert.u, y2 = 0.5 + vert.u * c - vert.v * a;
+    float x0 = x2 + d, y0 = y2 - c;
+    float x1 = x2 - b, y1 = y2 + a;
+    float winding = edgeWinding(x0, y0, x1, y1) + edgeWinding(x1, y1, x2, y2) + edgeWinding(x2, y2, x0, y0);
 
     return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * abs(winding);
 }

@@ -85,6 +85,34 @@ float quadraticWinding(float u, float v) {
     float x0 = x2 + d, y0 = y2 - c;
     float x1 = x2 - b, y1 = y2 + a;
     float w = 1 - u - v;
+    /*
+    float t = select(saturate(w / (w + v * 0.5)), 1.0 - saturate(u / (u + v * 0.5)), u > w);
+    t = select(t, 0.5, f < -0.333);
+    float x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
+    
+    float cx0, cy0, cx1, cy1;
+    float dx, dy, left, wy0, wy1, a0, a1, winding;
+    
+    winding = 0;
+    
+    cx0 = x0, cy0 = y0, cx1 = x01, cy1 = y01;
+    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
+    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+    a0 = fma(dx, (wy0 - cy0), -dy * (f - cx0)), a1 = fma(dx, (wy1 - cy0), -dy * (-f - cx0));
+    winding += smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * sign(dy) * abs(wy1 - wy0);
+    
+    cx0 = x01, cy0 = y01, cx1 = x12, cy1 = y12;
+    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
+    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+    a0 = fma(dx, (wy0 - cy0), -dy * (f - cx0)), a1 = fma(dx, (wy1 - cy0), -dy * (-f - cx0));
+    winding += smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * sign(dy) * abs(wy1 - wy0);
+    
+    cx0 = x12, cy0 = y12, cx1 = x2, cy1 = y2;
+    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
+    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+    a0 = fma(dx, (wy0 - cy0), -dy * (f - cx0)), a1 = fma(dx, (wy1 - cy0), -dy * (-f - cx0));
+    winding += smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * sign(dy) * abs(wy1 - wy0);
+    */
     
     float t = saturate(-(y1 - y0) / (y0 + y2 - y1 - y1));
     float x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(y1, y2, t), y12 = mix(y1, y2, t);
@@ -97,27 +125,31 @@ float quadraticWinding(float u, float v) {
     
     cx0 = x0, cy0 = y0, cx1 = x012, cy1 = y012;
     dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
-    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
-    u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
-    v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
-    w0 = w + dfdx(w) * 0.5 + dfdy(w) * wy0, w1 = w + dfdx(w) * -0.5 + dfdy(w) * wy1;
-    a0 = 4.0 * u0 * w0 - v0 * v0, a1 = 4.0 * u1 * w1 - v1 * v1;
-    winding += saturate(-a0 / (a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
+    if (dy != 0) {
+        wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+        u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
+        v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
+        w0 = 1 - u0 - v0, w1 = 1 - u1 - v1;
+        a0 = -(4.0 * u0 * w0 - v0 * v0), a1 = -(4.0 * u1 * w1 - v1 * v1);
+        winding += saturate(-a0 / max(0.0, a1 - a0)) * sign(dy) * abs(wy1 - wy0);
+    }
     
-    cx0 = x012, cy0 = y012, cx1 = x2, cy1 = y2;
-    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
-    wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
-    u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
-    v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
-    w0 = w + dfdx(w) * 0.5 + dfdy(w) * wy0, w1 = w + dfdx(w) * -0.5 + dfdy(w) * wy1;
-    a0 = 4.0 * u0 * w0 - v0 * v0, a1 = 4.0 * u1 * w1 - v1 * v1;
-    winding += saturate(-a0 / (a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
     
+//    cx0 = x012, cy0 = y012, cx1 = x2, cy1 = y2;
+//    dx = cx1 - cx0, dy = cy1 - cy0, left = float(dx < 0.0) * dy;
+//    if (dy != 0) {
+//        wy0 = clamp(cy0 + left, -f, f), wy1 = clamp(cy1 - left, -f, f);
+//        u0 = u + dfdx(u) * 0.5 + dfdy(u) * wy0, u1 = u + dfdx(u) * -0.5 + dfdy(u) * wy1;
+//        v0 = v + dfdx(v) * 0.5 + dfdy(v) * wy0, v1 = v + dfdx(v) * -0.5 + dfdy(v) * wy1;
+//        w0 = 1 - u0 - v0, w1 = 1 - u1 - v1;
+//        a0 = -(4.0 * u0 * w0 - v0 * v0), a1 = -(4.0 * u1 * w1 - v1 * v1);
+//        winding -= saturate(-a0 / max(0.0, a1 - a0)) * sign(dy);// * abs(wy1 - wy0);
+//    }
     return winding;
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float dx12, dy12, dx20, dy20, area, u, v, w, f, t, x01, y01, x12, y12;
+    float dx12, dy12, dx20, dy20, area, u, v, w, width, t, x01, y01, x12, y12;
     dx12 = x2 - x1, dy12 = y2 - y1;
     dx20 = x0 - x2, dy20 = y0 - y2;
     area = dx12 * dy20 - dy12 * dx20;
@@ -127,10 +159,8 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     u = (dx12 * (0.5 - y1) - dy12 * (0.5 - x1)) / area;
     v = (dx20 * (0.5 - y2) - dy20 * (0.5 - x2)) / area;
     w = 1 - u - v;
-    f = 4.0 * u * w - v * v;
-    
-    t = select(saturate(w / (w + v * 0.5)), 1.0 - saturate(u / (u + v * 0.5)), u > w);
-    t = select(t, 0.5, f < -0.333);
+    width = abs(fwidth(w) * 0.5);
+    t = sqrt(saturate(max(width, w)));
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     return edgeWinding(x0, y0, x01, y01) + edgeWinding(x01, y01, x12, y12) + edgeWinding(x12, y12, x2, y2);
 }
