@@ -73,7 +73,7 @@ vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [
     Bounds bounds = Bounds::transformUnit(unit);
     
     AccumulateVertex vert;
-    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2, select(-0.5, 0.0, meshState.useQuadraticWinding));
+    vert.write(CTM, bounds.ux, vid, & quadratics[idx], state, meshState.clipBounds, 2, select(-0.5, -0.5, meshState.useQuadraticWinding));
     return vert;
 }
 
@@ -86,8 +86,8 @@ fragment AccumulateFragment accumulate_fragment_main(AccumulateVertex vert [[sta
 {
     AccumulateFragment frag;
     if (meshState.useQuadraticWinding)
-        frag.winding = edgeCoverage(vert.x0, vert.y0, vert.x2, vert.y2) + edgeCoverage(vert.x2, vert.y2, vert.x4, vert.y4);
-       // frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
+        //frag.winding = edgeCoverage(vert.x0, vert.y0, vert.x2, vert.y2) + edgeCoverage(vert.x2, vert.y2, vert.x4, vert.y4);
+        frag.winding = quadraticWinding(vert.x0, vert.y0, vert.x1, vert.y1, vert.x2, vert.y2) + quadraticWinding(vert.x2, vert.y2, vert.x3, vert.y3, vert.x4, vert.y4);
     else
         frag.winding = edgeWinding(vert.x0, vert.y0, vert.x2, vert.y2) + edgeWinding(vert.x2, vert.y2, vert.x4, vert.y4);
     return frag;
