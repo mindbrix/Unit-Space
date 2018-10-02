@@ -16,7 +16,6 @@ float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
 float adjustedT(float t);
 float edgeCoverage(float x0, float y0, float x1, float y1);
 float edgeWinding(float x0, float y0, float x1, float y1);
-float quadraticWinding(float u, float v);
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2);
 float windingToAlpha(float winding, bool evenOdd);
 float sRGB(float x);
