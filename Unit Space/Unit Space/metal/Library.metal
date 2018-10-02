@@ -149,7 +149,7 @@ float quadraticWinding(float u, float v) {
 }
 
 float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y2) {
-    float dx12, dy12, dx20, dy20, area, u, v, w, width, t, x01, y01, x12, y12;
+    float dx12, dy12, dx20, dy20, area, u, v, w, t, x01, y01, x12, y12;
     dx12 = x2 - x1, dy12 = y2 - y1;
     dx20 = x0 - x2, dy20 = y0 - y2;
     area = dx12 * dy20 - dy12 * dx20;
@@ -159,8 +159,7 @@ float quadraticWinding(float x0, float y0, float x1, float y1, float x2, float y
     u = (dx12 * (0.5 - y1) - dy12 * (0.5 - x1)) / area;
     v = (dx20 * (0.5 - y2) - dy20 * (0.5 - x2)) / area;
     w = 1 - u - v;
-    width = abs(fwidth(w) * 0.5);
-    t = sqrt(saturate(max(width, w)));
+    t = sqrt(clamp(w, fwidth(w) * 0.5, 1.0));
     x01 = mix(x0, x1, t), y01 = mix(y0, y1, t), x12 = mix(x1, x2, t), y12 = mix(y1, y2, t);
     return edgeWinding(x0, y0, x01, y01) + edgeWinding(x01, y01, x12, y12) + edgeWinding(x12, y12, x2, y2);
 }
