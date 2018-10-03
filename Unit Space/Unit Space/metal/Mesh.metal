@@ -41,15 +41,11 @@ struct AccumulateVertex
         ly = min(min(min(dy0, dy1), dy2), min(dy3, dy4));
         uy = max(max(max(dy0, dy1), dy2), max(dy3, dy4));
         
-//        const float kDilation = 0.5 * ((1.0 / 0.8) - 1.0);
-//        dx = select(floor(lx - kDilation), ceil(ux + kDilation), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
         dx = select(floor(lx), ceil(ux), vid & 1), dy = select(floor(ly), ceil(uy), vid & 2);
-        
         dx = clamp(dx, clipBounds.lx, clipBounds.ux);
         dy = clamp(dy, clipBounds.ly, clipBounds.uy);
         
         position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
-        
         
         dx += offset, dy += offset;
         x0 = dx0 - dx, y0 = dy0 - dy;
@@ -58,17 +54,16 @@ struct AccumulateVertex
         x3 = dx3 - dx, y3 = dy3 - dy;
         x4 = dx4 - dx, y4 = dy4 - dy;
         
-        vx = x2 - x0, vy = y2 - y0;
-        cosine0 = vx * rsqrt(vx * vx + vy * vy);
-        
-        vx = x4 - x2, vy = y4 - y2;
-        cosine1 = vx * rsqrt(vx * vx + vy * vy);
+//        vx = x2 - x0, vy = y2 - y0;
+//        cosine0 = abs(vx) * rsqrt(vx * vx + vy * vy);
+//        vx = x4 - x2, vy = y4 - y2;
+//        cosine1 = abs(vx) * rsqrt(vx * vx + vy * vy);
         
     }
     float4 position [[position]];
     float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
-    float cosine0, cosine1;
-    float a0_0, a1_0, a0_1, a1_1;
+//    float cosine0, cosine1;
+//    float a0_0, a1_0, a0_1, a1_1;
 };
 
 vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],

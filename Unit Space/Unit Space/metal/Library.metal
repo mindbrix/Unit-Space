@@ -54,11 +54,11 @@ float verticalWinding(float x, float y0, float y1) {
 
 float winding(float y0, float y1, float a0, float a1, float cosine) {
     const float f = 0.5;
-    float cy0, cy1, t0, t1;
+    float up, cy0, cy1;
+    up = sign(a1 - a0) * cosine;
     cy0 = clamp(y0, -f, f), cy1 = clamp(y1, -f, f);
-    t0 = f + cy0, t1 = f - cy1;
-    a0 -= t0 * cosine, a1 += t1 * cosine;
-    return smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * (cy1 - cy0);
+    a0 = fma((f + cy0), -up, a0), a1 = fma((f - cy1), up, a1);
+    return smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * copysign(cy1 - cy0, up);
 }
 
 float edgeCoverage(float x0, float y0, float x1, float y1) {
