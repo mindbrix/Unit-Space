@@ -61,12 +61,15 @@ float winding(float y0, float y1, float a0, float a1, float cosine) {
     return smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * copysign(cy1 - cy0, up);
 }
 
-float edgeCoverage(float x0, float y0, float x1, float y1) {
+float edgeCoverage(float x0, float y0, float x1, float y1, float dilation) {
     const float f = 0.5;
-    float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy;
+    float dx = x1 - x0, dy = y1 - y0, left = float(dx < 0.0) * dy, rl = rsqrt(dx * dx + dy * dy);
     float wy0 = clamp(y0 + left, -f, f) - y0, wy1 = clamp(y1 - left, -f, f) - y0;
-	float a0 = fma(dx, wy0, -dy * (f - x0)), a1 = fma(dx, wy1, -dy * (-f - x0));
-    return smoothstep(0.0, 1.0, -a0 / (a1 - a0)) * copysign(wy1 - wy0, dy);
+    float nx = -dy * rl, ny = dx * rl;
+    float a0 = nx * (f - x0) + ny * wy0, a1 = nx * (-f - x0) + ny * wy1;
+//    float a0 = fma(dx, wy0, -dy * (f - x0)), a1 = fma(dx, wy1, -dy * (-f - x0));
+    return saturate(-(a0 + dilation) / (a1 - a0)) * copysign(wy1 - wy0, dy);
+   //return smoothstep(0.0, 1.0, -(a0 + dilation) / (a1 - a0)) * copysign(wy1 - wy0, dy);
 }
 
 float edgeWinding(float x0, float y0, float x1, float y1) {

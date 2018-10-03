@@ -160,6 +160,8 @@ struct TriangleVertex
 {
     float4 position [[position]];
     float u, v;
+    bool ef0, ef1, ef2;
+    float d0, d1, d2;
     float4 color;
 };
 
@@ -181,11 +183,13 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
-    const float dilation = -0.5, hmin = 0.1;
+    const float dilation = -(0.5 + 0.333), hmin = 0.1;
     float area = cross(float3(p1 - p0, 0), float3(p2 - p1, 0)).z;
-	float du = dilation / max(hmin, area * rsqrt(length_squared(p2 - p1)));
-    float dv = dilation / max(hmin, area * rsqrt(length_squared(p0 - p2)));
-    float dw = dilation / max(hmin, area * rsqrt(length_squared(p1 - p0)));
+    float l01 = rsqrt(length_squared(p1 - p0)), l12 = rsqrt(length_squared(p2 - p1)), l20 = rsqrt(length_squared(p0 - p2));
+    
+	float du = dilation / max(hmin, area * l12);
+    float dv = dilation / max(hmin, area * l20);
+    float dw = dilation / max(hmin, area * l01);
     float u = select(du, 1 - dv - dw, vid == 0);
     float v = select(dv, 1 - du - dw, vid == 1);
     float2 devicePoint = float(area > 1e-2) * (p0 * u + p1 * v + p2 * (1 - u - v));
@@ -197,6 +201,13 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = u;
     vert.v = v;
+    vert.ef0 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge0);
+    vert.ef1 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge1);
+    vert.ef2 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge2);
+    float2 oc = (p0 + p1 + p2) / 3.0;
+    vert.d0 = dot(normalize(oc - p0), devicePoint - p0);
+    vert.d1 = dot(normalize(oc - p1), devicePoint - p1);
+    vert.d2 = dot(normalize(oc - p2), devicePoint - p2);
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
@@ -208,10 +219,31 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
 
+    const float dilation = -0.5;
+    float x2 = b * vert.v - d * vert.u, y2 = vert.u * c - vert.v * a;
+    float x0 = x2 + d, y0 = y2 - c;
+    float x1 = x2 - b, y1 = y2 + a;
+    
+    float winding = edgeCoverage(x0, y0, x1, y1, float(vert.d0 > 1 && vert.d1 > 1 && !vert.ef0) * dilation)
+    + edgeCoverage(x1, y1, x2, y2, float(vert.d1 > 1 && vert.d2 > 1 && !vert.ef1) * dilation)
+    + edgeCoverage(x2, y2, x0, y0, float(vert.d2 > 1 && vert.d0 > 1 && !vert.ef2) * dilation);
+    
+    /*
+    bool f = x0 * x0 + y0 * y0 > 1 && x1 * x1 + y1 * y1 > 1 && x2 * x2 + y2 * y2 > 1;
+    float winding = edgeCoverage(x0, y0, x1, y1, float(f && !vert.ef0) * dilation)
+    + edgeCoverage(x1, y1, x2, y2, float(f && !vert.ef1) * dilation)
+    + edgeCoverage(x2, y2, x0, y0, float(f && !vert.ef2) * dilation);
+    */
+    //bool fu = vert.u > fwidth(vert.u) * 0.5, fv = vert.v > fwidth(vert.v) * 0.5, fw = w > fwidth(w) * 0.5;
+   // float winding = edgeCoverage(x0, y0, x1, y1, float(fu && fv && !vert.ef0) * dilation)
+   // + edgeCoverage(x1, y1, x2, y2, float(fv && fw && !vert.ef1) * dilation)
+   // + edgeCoverage(x2, y2, x0, y0, float(fw && fu && !vert.ef2) * dilation);
+    
+    /*
     float x2 = 0.5 + b * vert.v - d * vert.u, y2 = 0.5 + vert.u * c - vert.v * a;
     float x0 = x2 + d, y0 = y2 - c;
     float x1 = x2 - b, y1 = y2 + a;
     float winding = edgeWinding(x0, y0, x1, y1) + edgeWinding(x1, y1, x2, y2) + edgeWinding(x2, y2, x0, y0);
-
+*/
     return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * abs(winding);
 }
