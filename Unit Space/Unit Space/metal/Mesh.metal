@@ -17,7 +17,7 @@ using namespace metal;
 struct AccumulateVertex
 {
     void write(AffineTransform CTM, float ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride, float offset) {
-        float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, uy, dx, dy;
+        float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, uy, dx, dy, vx, vy;
         device float *px, *py;
         
         px = points, py = px + 1;
@@ -50,15 +50,25 @@ struct AccumulateVertex
         
         position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), 0.0, 1.0);
         
+        
         dx += offset, dy += offset;
         x0 = dx0 - dx, y0 = dy0 - dy;
         x1 = dx1 - dx, y1 = dy1 - dy;
         x2 = dx2 - dx, y2 = dy2 - dy;
         x3 = dx3 - dx, y3 = dy3 - dy;
         x4 = dx4 - dx, y4 = dy4 - dy;
+        
+        vx = x2 - x0, vy = y2 - y0;
+        cosine0 = vx * rsqrt(vx * vx + vy * vy);
+        
+        vx = x4 - x2, vy = y4 - y2;
+        cosine1 = vx * rsqrt(vx * vx + vy * vy);
+        
     }
     float4 position [[position]];
     float x0, y0, x1, y1, x2, y2, x3, y3, x4, y4;
+    float cosine0, cosine1;
+    float a0_0, a1_0, a0_1, a1_1;
 };
 
 vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
