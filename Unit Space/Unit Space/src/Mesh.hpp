@@ -38,9 +38,9 @@ struct Mesh {
                 bool set = false;
                 end = p + 8 > paths.size() ? (int)paths.size() : p + 8;
                 for (j = p; j < end && !set; j++)
-                    set |= visibles[j] && opaques[j];
+                set |= visibles[j];// && opaques[j];
                 for (j = p; j < end && set; j++)
-                    if (opaques[j])
+                    //if (opaques[j])
                         visibles[j] = true;
             }
             vector<int> ranges;
@@ -91,22 +91,26 @@ struct Mesh {
                     }
                 }
                 if (!meshState.showEdgeTriangles) {
-                    for (i = 0; i < ranges.size(); i += 2)
-                        for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
-                            base = mesh._idxs[p], end = mesh._idxs[p + 1], count = end - base;
-                            if (opaques[p]) {
-                                if (call == nullptr) {
-                                    calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
-                                    call = & calls.back();
-                                }
-                                call->instanceCount += count;
-                            } else {
-                                calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, state, meshState);
-                                calls.back().meshState.reverseCount = end;
-                                calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
-                                call = nullptr;
-                            }
-                        }
+                    for (i = 0; i < ranges.size(); i += 2) {
+                        base = mesh._idxs[ranges[i]], end = mesh._idxs[ranges[i + 1]], count = end - base;
+                        calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
+                    }
+//                    for (i = 0; i < ranges.size(); i += 2)
+//                        for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
+//                            base = mesh._idxs[p], end = mesh._idxs[p + 1], count = end - base;
+//                            if (opaques[p]) {
+//                                if (call == nullptr) {
+//                                    calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
+//                                    call = & calls.back();
+//                                }
+//                                call->instanceCount += count;
+//                            } else {
+//                                calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, state, meshState);
+//                                calls.back().meshState.reverseCount = end;
+//                                calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
+//                                call = nullptr;
+//                            }
+//                        }
                 }
             }
             
