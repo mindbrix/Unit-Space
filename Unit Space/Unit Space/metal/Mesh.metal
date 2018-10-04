@@ -129,7 +129,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     float ms = rscale / kShortMax * kInteriorMax;
     device short *ix = & tri.ix0 + vid * 2;
     float2 iv = { ix[0] * CTM.a * ms + ix[1] * CTM.c * ms, ix[0] * CTM.b * ms + ix[1] * CTM.d * ms };
-    devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
+    devicePoint = select(devicePoint + iv * 0.5, 0, 1.0 / rscale < t);
     RGBA8 color = paths[p].color;
     
     InteriorVertex vert;
@@ -184,7 +184,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
     float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
-    const float dilation = -(0.5 + 0.333), hmin = 0.1;
+    const float dilation = -0.5, hmin = 0.1;
     float area = cross(float3(p1 - p0, 0), float3(p2 - p1, 0)).z;
     float l01 = rsqrt(length_squared(p1 - p0)), l12 = rsqrt(length_squared(p2 - p1)), l20 = rsqrt(length_squared(p0 - p2));
     
