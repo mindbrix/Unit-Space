@@ -176,7 +176,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     device Triangle& tri = tris[iid];
     uint p = tri.p & Triangle::kFlagsMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
 	Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d;
@@ -203,10 +202,12 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = u;
     vert.v = v;
+    /*
     vert.ef0 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge0);
     vert.ef1 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge1);
     vert.ef2 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge2);
     
+    float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     vert.left0 = bool(tri.p & Triangle::kFlagsLeft0);
     vert.left1 = bool(tri.p & Triangle::kFlagsLeft1);
     vert.left2 = bool(tri.p & Triangle::kFlagsLeft2);
@@ -218,34 +219,27 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv2 = { tri.ix2 * a + tri.iy2 * c, tri.ix2 * b + tri.iy2 * d };
     float cosine, sine, vx, vy, nx, ny;
     
-    // a = c, b = s, c = -s, d = c
     vx = devicePoint.x - p0.x, vy = devicePoint.y - p0.y;
-    cosine = max(1.0, rsqrt(iv0.x * iv0.x + iv0.y * iv0.y)), sine = sqrt(1 - cosine * cosine);
-    nx = iv0.x * cosine + iv0.y * sine, ny = iv0.x * -sine + iv0.y * cosine;
-    vert.d0 = (vx * nx + vy * ny) * cosine;
+    cosine = min(1.0, rsqrt(iv0.x * iv0.x + iv0.y * iv0.y)), sine = sqrt(1 - cosine * cosine);
     nx = iv0.x * cosine + iv0.y * -sine, ny = iv0.x * sine + iv0.y * cosine;
+    vert.d0 = (vx * nx + vy * ny) * cosine;
+    nx = iv0.x * cosine + iv0.y * sine, ny = iv0.x * -sine + iv0.y * cosine;
     vert.d1 = (vx * nx + vy * ny) * cosine;
-//    nx = iv0.x, ny = iv0.y;
-//    vert.d0 = (vx * nx + vy * ny) * cosine;
-    
+
     vx = devicePoint.x - p1.x, vy = devicePoint.y - p1.y;
-    cosine = max(1.0, rsqrt(iv1.x * iv1.x + iv1.y * iv1.y)), sine = sqrt(1 - cosine * cosine);
+    cosine = min(1.0, rsqrt(iv1.x * iv1.x + iv1.y * iv1.y)), sine = sqrt(1 - cosine * cosine);
     nx = iv1.x * cosine + iv1.y * sine, ny = iv1.x * -sine + iv1.y * cosine;
     vert.d2 = (vx * nx + vy * ny) * cosine;
     nx = iv1.x * cosine + iv1.y * -sine, ny = iv1.x * sine + iv1.y * cosine;
     vert.d3 = (vx * nx + vy * ny) * cosine;
-//    nx = iv1.x, ny = iv1.y;
-//    vert.d1 = (vx * nx + vy * ny) * cosine;
     
     vx = devicePoint.x - p2.x, vy = devicePoint.y - p2.y;
-    cosine = max(1.0, rsqrt(iv2.x * iv2.x + iv2.y * iv2.y)), sine = sqrt(1 - cosine * cosine);
+    cosine = min(1.0, rsqrt(iv2.x * iv2.x + iv2.y * iv2.y)), sine = sqrt(1 - cosine * cosine);
     nx = iv2.x * cosine + iv2.y * sine, ny = iv2.x * -sine + iv2.y * cosine;
     vert.d4 = (vx * nx + vy * ny) * cosine;
     nx = iv2.x * cosine + iv2.y * -sine, ny = iv2.x * sine + iv2.y * cosine;
     vert.d5 = (vx * nx + vy * ny) * cosine;
-//    nx = iv2.x, ny = iv2.y;
-//    vert.d2 = (vx * nx + vy * ny) * cosine;
-    
+    */
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
@@ -254,34 +248,23 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    //float winding = max(saturate(50 - vert.d0), max(saturate(50 - vert.d1), saturate(50 - vert.d2)));
-    
-    /**/
-    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
+   float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
     a *= invdet, b *= invdet, c *= invdet, d *= invdet;
-
-    const float dilation = -0.5;
+/*
+    float dilation = vert.color.w < 1 && !meshState.showTriangles ? -0.06 : -0.5;
     float x2 = b * vert.v - d * vert.u, y2 = vert.u * c - vert.v * a;
     float x0 = x2 + d, y0 = y2 - c;
     float x1 = x2 - b, y1 = y2 + a;
-    
-    float left0 = vert.left0 ? 1 : -1;
-    float left1 = vert.left1 ? 1 : -1;
-    float left2 = vert.left2 ? 1 : -1;
-    
+    float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
     float winding = edgeCoverage(x0, y0, x1, y1, float((left0 * min(left0 * vert.d0, left0 * vert.d1)) > 1 && !vert.ef0) * dilation)
     + edgeCoverage(x1, y1, x2, y2, float((left1 * min(left1 * vert.d2, left1 * vert.d3)) > 1 && !vert.ef1) * dilation)
     + edgeCoverage(x2, y2, x0, y0, float((left2 * min(left2 * vert.d4, left2 * vert.d5)) > 1 && !vert.ef2) * dilation);
-    
-//    float winding = edgeCoverage(x0, y0, x1, y1, float(vert.d0 > 1 && vert.d1 > 1 && !vert.ef0) * dilation)
-//    + edgeCoverage(x1, y1, x2, y2, float(vert.d1 > 1 && vert.d2 > 1 && !vert.ef1) * dilation)
-//    + edgeCoverage(x2, y2, x0, y0, float(vert.d2 > 1 && vert.d0 > 1 && !vert.ef2) * dilation);
-    
-    /*
+    */
+ 
     float x2 = 0.5 + b * vert.v - d * vert.u, y2 = 0.5 + vert.u * c - vert.v * a;
     float x0 = x2 + d, y0 = y2 - c;
     float x1 = x2 - b, y1 = y2 + a;
     float winding = edgeWinding(x0, y0, x1, y1) + edgeWinding(x1, y1, x2, y2) + edgeWinding(x2, y2, x0, y0);
-    */
+    
     return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * abs(winding);
 }
