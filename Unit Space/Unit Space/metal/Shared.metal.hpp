@@ -122,7 +122,10 @@ struct Triangle {
         kFlagsEdge0 = 1U << 31,
         kFlagsEdge1 = 1U << 30,
         kFlagsEdge2 = 1U << 29,
-        kFlagsMask = ~(kFlagsEdge0 | kFlagsEdge1 | kFlagsEdge2),
+        kFlagsLeft0 = 1U << 28,
+        kFlagsLeft1 = 1U << 27,
+        kFlagsLeft2 = 1U << 26,
+        kFlagsMask = ~(kFlagsEdge0 | kFlagsEdge1 | kFlagsEdge2 | kFlagsLeft0 | kFlagsLeft1 | kFlagsLeft2),
     };
     
     Triangle(int p, bool ef0, bool ef1, bool ef2, float t,
