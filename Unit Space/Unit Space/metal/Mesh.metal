@@ -177,29 +177,29 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     uint p = tri.p & Triangle::kFlagsMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
 	Bounds bounds = paths[p].bounds;
-	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    float a = w * CTM.a, b = w * CTM.b, c = h * CTM.c, d = h * CTM.d;
+	float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
+    float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
     float tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
-    float2 p0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
-    float2 p1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
-    float2 p2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
+    float x0 = tri.x0 * a + tri.y0 * c + tx, y0 = tri.x0 * b + tri.y0 * d + ty;
+    float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
+    float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
     
     const float dilation = -0.5, hmin = 0.1;
-    float area = cross(float3(p1 - p0, 0), float3(p2 - p1, 0)).z;
-    float l01 = rsqrt(length_squared(p1 - p0)), l12 = rsqrt(length_squared(p2 - p1)), l20 = rsqrt(length_squared(p0 - p2));
-    
-	float du = dilation / max(hmin, area * l12);
-    float dv = dilation / max(hmin, area * l20);
-    float dw = dilation / max(hmin, area * l01);
+    float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, cx = x0 - x2, cy = y0 - y2;
+    float area = ax * by - ay * bx;
+    float du = dilation / max(hmin, area * rsqrt(bx * bx + by * by));
+    float dv = dilation / max(hmin, area * rsqrt(cx * cx + cy * cy));
+    float dw = dilation / max(hmin, area * rsqrt(ax * ax + ay * ay));
     float u = select(du, 1 - dv - dw, vid == 0);
     float v = select(dv, 1 - du - dw, vid == 1);
-    float2 devicePoint = float(area > 1e-2) * (p0 * u + p1 * v + p2 * (1 - u - v));
+    float dx = float(area > 1e-2) * (x0 * u + x1 * v + x2 * (1 - u - v));
+    float dy = float(area > 1e-2) * (y0 * u + y1 * v + y2 * (1 - u - v));
     
     RGBA8 color = paths[p].color;
     
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
-    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
+    vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.u = u;
     vert.v = v;
     /*
