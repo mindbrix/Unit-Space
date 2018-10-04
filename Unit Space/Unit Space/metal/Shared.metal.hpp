@@ -128,10 +128,13 @@ struct Triangle {
         kFlagsMask = ~(kFlagsEdge0 | kFlagsEdge1 | kFlagsEdge2 | kFlagsLeft0 | kFlagsLeft1 | kFlagsLeft2),
     };
     
-    Triangle(int p, bool ef0, bool ef1, bool ef2, float t,
+    Triangle(int p, bool ef0, bool ef1, bool ef2,
+             bool left0, bool left1, bool left2,
+             float t,
 			 float x0, float y0, float x1, float y1, float x2, float y2,
 			 float ix0, float iy0, float ix1, float iy1, float ix2, float iy2)
-    : p((unsigned int)p | (ef0 ? kFlagsEdge0 : 0) | (ef1 ? kFlagsEdge1 : 0) | (ef2 ? kFlagsEdge2 : 0)), t(t),
+    : p((unsigned int)p | (ef0 ? kFlagsEdge0 : 0) | (ef1 ? kFlagsEdge1 : 0) | (ef2 ? kFlagsEdge2 : 0) | (left0 ? kFlagsLeft0 : 0) | (left1 ? kFlagsLeft1 : 0) | (left2 ? kFlagsLeft2 : 0)),
+    t(t),
     x0(x0 < 0 ? 0 : x0), y0(y0 < 0 ? 0 : y0), x1(x1 < 0 ? 0 : x1), y1(y1 < 0 ? 0 : y1), x2(x2 < 0 ? 0 : x2), y2(y2 < 0 ? 0 : y2),
     ix0(ix0 < -kShortMax ? -kShortMax : ix0 > kShortMax ? kShortMax : ix0), iy0(iy0 < -kShortMax ? -kShortMax : iy0 > kShortMax ? kShortMax : iy0),
     ix1(ix1 < -kShortMax ? -kShortMax : ix1 > kShortMax ? kShortMax : ix1), iy1(iy1 < -kShortMax ? -kShortMax : iy1 > kShortMax ? kShortMax : iy1),
