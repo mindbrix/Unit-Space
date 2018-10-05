@@ -32,7 +32,7 @@ struct Mesh {
                 w = (path->bounds.ux - path->bounds.lx) * 0.5 * (ctm.a + ctm.c), h = (path->bounds.uy - path->bounds.ly) * 0.5 * (ctm.b + ctm.d);
                 rp = std::sqrt(w * w + h * h);
                 visibles[p] = vx * vx + vy * vy < (rd + rp) * (rd + rp);
-                opaques[p] = path->color.a == 255 || rp < 20;
+                opaques[p] = path->color.a == 255;// || rp < 20;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
