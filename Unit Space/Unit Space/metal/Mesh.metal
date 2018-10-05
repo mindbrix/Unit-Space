@@ -183,36 +183,36 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float x0 = tri.x0 * a + tri.y0 * c + tx, y0 = tri.x0 * b + tri.y0 * d + ty;
     float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
     float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
-    bool df0 = meshState.showTriangles || !bool(tri.p & Triangle::kFlagsEdge0);
-    bool df1 = meshState.showTriangles || !bool(tri.p & Triangle::kFlagsEdge1);
-    bool df2 = meshState.showTriangles || !bool(tri.p & Triangle::kFlagsEdge2);
-    const float dilation = 0.5, overlap = 0.0, hmin = 0.1;
-    float d0 = float(df0) * overlap, d1 = float(df1) * overlap, d2 = float(df2) * overlap;
     
+    bool df0 = meshState.showTriangles && !bool(tri.p & Triangle::kFlagsEdge0);
+    bool df1 = meshState.showTriangles && !bool(tri.p & Triangle::kFlagsEdge1);
+    bool df2 = meshState.showTriangles && !bool(tri.p & Triangle::kFlagsEdge2);
+    
+    const float dilation = 0.5, overlap = 0.425, hmin = 0.1;
+    float d0 = float(df0) * overlap, d1 = float(df1) * overlap, d2 = float(df2) * overlap;
     float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, cx = x0 - x2, cy = y0 - y2;
     float area = ax * by - ay * bx;
     float u0 = -(dilation + d1) / max(hmin, area * rsqrt(bx * bx + by * by));
     float v0 = -(dilation + d2) / max(hmin, area * rsqrt(cx * cx + cy * cy));
     float w0 = -(dilation + d0) / max(hmin, area * rsqrt(ax * ax + ay * ay));
-    float u1 = 1 - v0 - w0, v1 = 1 - u0 - w0;
-    float u = select(u0, u1, vid == 0);
-    float v = select(v0, v1, vid == 1);
+    float u = select(u0, 1 - v0 - w0, vid == 0);
+    float v = select(v0, 1 - u0 - w0, vid == 1);
     float dx = float(area > 1e-2) * (x0 * u + x1 * v + x2 * (1 - u - v));
     float dy = float(area > 1e-2) * (y0 * u + y1 * v + y2 * (1 - u - v));
     
     RGBA8 color = paths[p].color;
-    
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
-    float tu0 = -u0 / (u1 - u0) * dilation / (dilation + d1);
-    vert.u = select(-u1 * tu0 / (1 - tu0), u1, vid == 0);
-    float tv0 = -v0 / (v1 - v0) * dilation / (dilation + d2);
-    vert.v = select(-v1 * tv0 / (1 - tv0), v1, vid == 1);
-    
+    u0 *= 1 - d1 / (dilation + d1);
+    v0 *= 1 - d2 / (dilation + d2);
+    w0 *= 1 - d0 / (dilation + d0);
+    vert.u = select(u0, 1 - v0 - w0, vid == 0);
+    vert.v = select(v0, 1 - u0 - w0, vid == 1);
 //    vert.u = u;
 //    vert.v = v;
+    
     /*
     vert.ef0 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge0);
     vert.ef1 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge1);
