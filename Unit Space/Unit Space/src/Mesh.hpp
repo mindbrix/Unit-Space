@@ -32,16 +32,15 @@ struct Mesh {
                 w = (path->bounds.ux - path->bounds.lx) * 0.5 * (ctm.a + ctm.c), h = (path->bounds.uy - path->bounds.ly) * 0.5 * (ctm.b + ctm.d);
                 rp = std::sqrt(w * w + h * h);
                 visibles[p] = vx * vx + vy * vy < (rd + rp) * (rd + rp);
-                opaques[p] = path->color.a == 255;// || rp < 20;
+                opaques[p] = path->color.a == 255;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
                 end = p + 8 > paths.size() ? (int)paths.size() : p + 8;
                 for (j = p; j < end && !set; j++)
-                set |= visibles[j];// && opaques[j];
+                set |= visibles[j];
                 for (j = p; j < end && set; j++)
-                    //if (opaques[j])
-                        visibles[j] = true;
+                   visibles[j] = true;
             }
             vector<int> ranges;
 			for (p = 0; p < paths.size(); ) {
@@ -95,22 +94,6 @@ struct Mesh {
                         base = mesh._idxs[ranges[i]], end = mesh._idxs[ranges[i + 1]], count = end - base;
                         calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
                     }
-//                    for (i = 0; i < ranges.size(); i += 2)
-//                        for (call = nullptr, p = ranges[i]; p < ranges[i + 1]; p++) {
-//                            base = mesh._idxs[p], end = mesh._idxs[p + 1], count = end - base;
-//                            if (opaques[p]) {
-//                                if (call == nullptr) {
-//                                    calls.emplace_back(kCallTypeMeshTriangles, 0, base, state, meshState);
-//                                    call = & calls.back();
-//                                }
-//                                call->instanceCount += count;
-//                            } else {
-//                                calls.emplace_back(kCallTypeMeshInteriorBlend, count, base, state, meshState);
-//                                calls.back().meshState.reverseCount = end;
-//                                calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
-//                                call = nullptr;
-//                            }
-//                        }
                 }
             }
             
