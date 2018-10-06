@@ -12,6 +12,7 @@
 using namespace metal;
 
 float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
+float simpleBarycentricWinding(float u, float v, float f);
 float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2);
 float adjustedT(float t);
 float winding(float y0, float y1, float a0, float a1, float cosine);

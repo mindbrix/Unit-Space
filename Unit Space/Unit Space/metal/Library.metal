@@ -34,6 +34,23 @@ float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     return select(1.0, -1.0, u < 0 || v < 0 || w < 0) * sqrt(min(d2, min(d0, d1)));
 }
 
+float simpleBarycentricWinding(float u, float v, float f) {
+    float w = 1.0 - u - v;
+    float eu = sign(u) * u * u / max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
+    float ev = sign(v) * v * v / max(1e-13, (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
+    float ew = sign(w) * w * w / max(1e-13, (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
+    
+    float t0 = v + w, t1 = w + u, t2 = u + v;
+    float et0 = sign(t0) * t0 * t0 / max(1e-13, (dfdx(t0) * dfdx(t0) + dfdy(t0) * dfdy(t0)));
+    float et1 = sign(t1) * t1 * t1 / max(1e-13, (dfdx(t1) * dfdx(t1) + dfdy(t1) * dfdy(t1)));
+    float et2 = sign(t2) * t2 * t2 / max(1e-13, (dfdx(t2) * dfdx(t2) + dfdy(t2) * dfdy(t2)));
+    
+    float m = min(eu, min(ev, ew));
+    float mt = min(et0, min(et1, et2));
+    
+    return saturate(sign(m) * sqrt(abs(min(m, mt))) + f) * saturate(sign(mt) * sqrt(abs(mt)) + f);
+}
+
 float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
     float w = 1.0 - u - v;
 	float eu = float(!ef0) * 1e12 + sign(u) * u * u / max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
