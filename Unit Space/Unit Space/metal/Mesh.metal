@@ -160,6 +160,7 @@ struct TriangleVertex
 {
     float4 position [[position]];
     float u, v;
+    bool left0, left1, left2;
     float d0, d1, d2, d3, d4, d5;
     float4 color;
 };
@@ -183,13 +184,25 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
     float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
     
+    float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, area = ax * by - ay * bx;
     
-    bool df0 =  !bool(tri.p & Triangle::kFlagsEdge0);
-    bool df1 =  !bool(tri.p & Triangle::kFlagsEdge1);
+    float ms = rscale / kShortMax * kInteriorMax;
+    device short *iv = & tri.ix0;
+    float2 iv0 = { iv[0] * CTM.a * ms + iv[1] * CTM.c * ms, iv[0] * CTM.b * ms + iv[1] * CTM.d * ms };
+    float2 iv1 = { iv[2] * CTM.a * ms + iv[3] * CTM.c * ms, iv[2] * CTM.b * ms + iv[3] * CTM.d * ms };
+    float2 iv2 = { iv[4] * CTM.a * ms + iv[5] * CTM.c * ms, iv[4] * CTM.b * ms + iv[5] * CTM.d * ms };
+    float s = 1.5;
+    x0 -= iv0.x * s, y0 -= iv0.y * s, x1 -= iv1.x * s, y1 -= iv1.y * s, x2 -= iv2.x * s, y2 -= iv2.y * s;
+    float dx = float(area > 1e-2) * select(select(x2, x1, vid == 1), x0, vid == 0);
+    float dy = float(area > 1e-2) * select(select(y2, y1, vid == 1), y0, vid == 0);
+    
+    /*
+    bool df0 = !bool(tri.p & Triangle::kFlagsEdge0);
+    bool df1 = !bool(tri.p & Triangle::kFlagsEdge1);
     bool df2 = !bool(tri.p & Triangle::kFlagsEdge2);
     
-    const float dilation = 0.5, overlap = 0.425, hmin = 0.1;
-    float d0 = float(df0) * -0.495, d1 = float(df1) * -0.495, d2 = float(df2) * -0.495;
+    const float dilation = 1, hmin = 0.1; // , overlap = 0.425
+    float d0 = float(df0) * -0.995, d1 = float(df1) * -0.995, d2 = float(df2) * -0.995;
     //float d0 = float(df0) * overlap, d1 = float(df1) * overlap, d2 = float(df2) * overlap;
     
     float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, cx = x0 - x2, cy = y0 - y2;
@@ -201,24 +214,20 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float v = select(v0, 1 - u0 - w0, vid == 1);
     float dx = float(area > 1e-2) * (x0 * u + x1 * v + x2 * (1 - u - v));
     float dy = float(area > 1e-2) * (y0 * u + y1 * v + y2 * (1 - u - v));
+    */
     
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
-    u0 *= 1 - d1 / (dilation + d1);
-    v0 *= 1 - d2 / (dilation + d2);
-    w0 *= 1 - d0 / (dilation + d0);
-    vert.u = select(u0, 1 - v0 - w0, vid == 0);
-    vert.v = select(v0, 1 - u0 - w0, vid == 1);
+//    u0 *= 1 - d1 / (dilation + d1);
+//    v0 *= 1 - d2 / (dilation + d2);
+//    w0 *= 1 - d0 / (dilation + d0);
+//    vert.u = select(u0, 1 - v0 - w0, vid == 0);
+//    vert.v = select(v0, 1 - u0 - w0, vid == 1);
     
-    float ms = rscale / kShortMax * kInteriorMax;
-    device short *iv = & tri.ix0;
-    float2 iv0 = { iv[0] * CTM.a * ms + iv[1] * CTM.c * ms, iv[0] * CTM.b * ms + iv[1] * CTM.d * ms };
-    float2 iv1 = { iv[2] * CTM.a * ms + iv[3] * CTM.c * ms, iv[2] * CTM.b * ms + iv[3] * CTM.d * ms };
-    float2 iv2 = { iv[4] * CTM.a * ms + iv[5] * CTM.c * ms, iv[4] * CTM.b * ms + iv[5] * CTM.d * ms };
-    
+    x0 += iv0.x, y0 += iv0.y, x1 += iv1.x, y1 += iv1.y, x2 += iv2.x, y2 += iv2.y;
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
     ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x0, vy = dy - y0;
@@ -241,6 +250,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d5 = rl * (nx * vx + ny * vy);
     
+    vert.left0 = tri.p & Triangle::kFlagsLeft0;
+    vert.left1 = tri.p & Triangle::kFlagsLeft1;
+    vert.left2 = tri.p & Triangle::kFlagsLeft2;
+    
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
@@ -249,8 +262,13 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float d01 = min(vert.d0, vert.d1), d23 = min(vert.d2, vert.d3), d45 = min(vert.d4, vert.d5);
-    float winding = saturate(min(d01, min(d23, d45)) + 0.5);
+    float d01 = select(max(vert.d0, vert.d1), min(vert.d0, vert.d1), vert.left0);
+    float d23 = select(max(vert.d2, vert.d3), min(vert.d2, vert.d3), vert.left1);
+    float d45 = select(max(vert.d4, vert.d5), min(vert.d4, vert.d5), vert.left2);
+    
+//    float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
+//    float d01 = left0 * min(left0 * vert.d0, left0 * vert.d1), d23 = left1 * min(left1 * vert.d2, left1 * vert.d3), d45 = left2 * min(left2 * vert.d4, left2 * vert.d5);
+    float winding = saturate(min(d01, min(d23, d45)));
     
 //    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
 //    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
