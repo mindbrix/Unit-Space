@@ -160,7 +160,7 @@ struct TriangleVertex
 {
     float4 position [[position]];
     float u, v;
-    float d0, d1, d2;
+    float d0, d1, d2, d3, d4, d5;
     float4 color;
 };
 
@@ -174,6 +174,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     device Triangle& tri = tris[iid];
     uint p = tri.p & Triangle::kFlagsMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
+    float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
 	Bounds bounds = paths[p].bounds;
 	float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
@@ -182,12 +183,15 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
     float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
     
-    bool df0 = meshState.showTriangles && !bool(tri.p & Triangle::kFlagsEdge0);
-    bool df1 = meshState.showTriangles && !bool(tri.p & Triangle::kFlagsEdge1);
-    bool df2 = meshState.showTriangles && !bool(tri.p & Triangle::kFlagsEdge2);
+    
+    bool df0 =  !bool(tri.p & Triangle::kFlagsEdge0);
+    bool df1 =  !bool(tri.p & Triangle::kFlagsEdge1);
+    bool df2 = !bool(tri.p & Triangle::kFlagsEdge2);
     
     const float dilation = 0.5, overlap = 0.425, hmin = 0.1;
-    float d0 = float(df0) * overlap, d1 = float(df1) * overlap, d2 = float(df2) * overlap;
+    float d0 = float(df0) * -0.495, d1 = float(df1) * -0.495, d2 = float(df2) * -0.495;
+    //float d0 = float(df0) * overlap, d1 = float(df1) * overlap, d2 = float(df2) * overlap;
+    
     float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, cx = x0 - x2, cy = y0 - y2;
     float area = ax * by - ay * bx;
     float u0 = -(dilation + d1) / max(hmin, area * rsqrt(bx * bx + by * by));
@@ -209,6 +213,34 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.u = select(u0, 1 - v0 - w0, vid == 0);
     vert.v = select(v0, 1 - u0 - w0, vid == 1);
     
+    float ms = rscale / kShortMax * kInteriorMax;
+    device short *iv = & tri.ix0;
+    float2 iv0 = { iv[0] * CTM.a * ms + iv[1] * CTM.c * ms, iv[0] * CTM.b * ms + iv[1] * CTM.d * ms };
+    float2 iv1 = { iv[2] * CTM.a * ms + iv[3] * CTM.c * ms, iv[2] * CTM.b * ms + iv[3] * CTM.d * ms };
+    float2 iv2 = { iv[4] * CTM.a * ms + iv[5] * CTM.c * ms, iv[4] * CTM.b * ms + iv[5] * CTM.d * ms };
+    
+    float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
+    ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+    vx = dx - x0, vy = dy - y0;
+    nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
+    vert.d0 = rl * (nx * vx + ny * vy);
+    nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
+    vert.d1 = rl * (nx * vx + ny * vy);
+    
+    ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+    vx = dx - x1, vy = dy - y1;
+    nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
+    vert.d2 = rl * (nx * vx + ny * vy);
+    nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
+    vert.d3 = rl * (nx * vx + ny * vy);
+    
+    ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+    vx = dx - x2, vy = dy - y2;
+    nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
+    vert.d4 = rl * (nx * vx + ny * vy);
+    nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
+    vert.d5 = rl * (nx * vx + ny * vy);
+    
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
@@ -217,7 +249,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float winding = simpleBarycentricWinding(vert.u, vert.v, 0.5);
+    float d01 = min(vert.d0, vert.d1), d23 = min(vert.d2, vert.d3), d45 = min(vert.d4, vert.d5);
+    float winding = saturate(min(d01, min(d23, d45)) + 0.5);
     
 //    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
 //    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
