@@ -262,12 +262,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     float f = 0.5;
-    float d0 = clamp(vert.d0, -f, f), d1 = clamp(vert.d1, -f, f), d2 = clamp(vert.d2, -f, f);
-    float d3 = clamp(vert.d3, -f, f), d4 = clamp(vert.d4, -f, f), d5 = clamp(vert.d5, -f, f);
     float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
-    float d01 = left0 * min(left0 * d0, left0 * d1);
-    float d23 = left1 * min(left1 * d2, left1 * d3);
-    float d45 = left2 * min(left2 * d4, left2 * d5);
+    float d01 = left0 * min(left0 * vert.d0, left0 * vert.d1);
+    float d23 = left1 * min(left1 * vert.d2, left1 * vert.d3);
+    float d45 = left2 * min(left2 * vert.d4, left2 * vert.d5);
     float winding = saturate(min(d01, min(d23, d45)) + f);
     
 //    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
