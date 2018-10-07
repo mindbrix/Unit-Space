@@ -79,7 +79,7 @@ struct libTess {
     }
     
     static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2, bool *concave) {
-        float limit = 5e-1;
+        float limit = 5e-2;
         float px, py, nx, ny, x, y;
         bool left, edge, tangent;
         
