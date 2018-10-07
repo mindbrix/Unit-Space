@@ -36,19 +36,16 @@ float barycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
 
 float simpleBarycentricWinding(float u, float v, float f) {
     float w = 1.0 - u - v;
-    float eu = sign(u) * u * u / max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u)));
-    float ev = sign(v) * v * v / max(1e-13, (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v)));
-    float ew = sign(w) * w * w / max(1e-13, (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w)));
-    
+    float eu = u * rsqrt(max(1e-13, (dfdx(u) * dfdx(u) + dfdy(u) * dfdy(u))));
+    float ev = v * rsqrt(max(1e-13, (dfdx(v) * dfdx(v) + dfdy(v) * dfdy(v))));
+    float ew = w * rsqrt(max(1e-13, (dfdx(w) * dfdx(w) + dfdy(w) * dfdy(w))));
+
     float t0 = v + w, t1 = w + u, t2 = u + v;
-    float et0 = sign(t0) * t0 * t0 / max(1e-13, (dfdx(t0) * dfdx(t0) + dfdy(t0) * dfdy(t0)));
-    float et1 = sign(t1) * t1 * t1 / max(1e-13, (dfdx(t1) * dfdx(t1) + dfdy(t1) * dfdy(t1)));
-    float et2 = sign(t2) * t2 * t2 / max(1e-13, (dfdx(t2) * dfdx(t2) + dfdy(t2) * dfdy(t2)));
-    
-    float m = min(eu, min(ev, ew));
-    float mt = min(et0, min(et1, et2));
-    
-    return saturate(sign(m) * sqrt(abs(min(m, mt))) + f) * saturate(sign(mt) * sqrt(abs(mt)) + f);
+    float et0 = t0 * rsqrt(max(1e-13, (dfdx(t0) * dfdx(t0) + dfdy(t0) * dfdy(t0))));
+    float et1 = t1 * rsqrt(max(1e-13, (dfdx(t1) * dfdx(t1) + dfdy(t1) * dfdy(t1))));
+    float et2 = t2 * rsqrt(max(1e-13, (dfdx(t2) * dfdx(t2) + dfdy(t2) * dfdy(t2))));
+    float m = 1.5;
+    return saturate(eu + f) * saturate(ev + f) * saturate(ew + f) * saturate(et0 + m * f) * saturate(et1 + m * f) * saturate(et2 + m * f);
 }
 
 float simpleBarycentricDistance(float u, float v, bool ef0, bool ef1, bool ef2) {
