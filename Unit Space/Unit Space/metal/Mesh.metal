@@ -231,28 +231,28 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x0, vy = dy - y0;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d0 = rl * (nx * vx + ny * vy);
+    vert.d0 = rl * (nx * vx + ny * vy) - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d1 = rl * (nx * vx + ny * vy);
+    vert.d1 = rl * (nx * vx + ny * vy) - s;
     
     ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x1, vy = dy - y1;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d2 = rl * (nx * vx + ny * vy);
+    vert.d2 = rl * (nx * vx + ny * vy) - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d3 = rl * (nx * vx + ny * vy);
+    vert.d3 = rl * (nx * vx + ny * vy) - s;
     
     ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x2, vy = dy - y2;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d4 = rl * (nx * vx + ny * vy);
+    vert.d4 = rl * (nx * vx + ny * vy) - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d5 = rl * (nx * vx + ny * vy);
+    vert.d5 = rl * (nx * vx + ny * vy) - s;
     
     vert.left0 = tri.p & Triangle::kFlagsLeft0;
     vert.left1 = tri.p & Triangle::kFlagsLeft1;
     vert.left2 = tri.p & Triangle::kFlagsLeft2;
-    //vert.left0 = vert.left1 = vert.left2 = false;
+    
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
@@ -262,8 +262,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     float f = 0.5;
-    float d0 = clamp(vert.d0 - f, -f, f), d1 = clamp(vert.d1 - f, -f, f), d2 = clamp(vert.d2 - f, -f, f);
-    float d3 = clamp(vert.d3 - f, -f, f), d4 = clamp(vert.d4 - f, -f, f), d5 = clamp(vert.d5 - f, -f, f);
+    float d0 = clamp(vert.d0, -f, f), d1 = clamp(vert.d1, -f, f), d2 = clamp(vert.d2, -f, f);
+    float d3 = clamp(vert.d3, -f, f), d4 = clamp(vert.d4, -f, f), d5 = clamp(vert.d5, -f, f);
     float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
     float d01 = left0 * min(left0 * d0, left0 * d1);
     float d23 = left1 * min(left1 * d2, left1 * d3);
