@@ -145,7 +145,7 @@ struct libTess {
         Memory<Edge> _edges;
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
-			float lx, ly, rw, rh, ms = kShortMax / kInteriorMax;
+            float lx, ly, rw, rh;
 			lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
 			ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
 
@@ -238,9 +238,7 @@ struct libTess {
                                            (x0 - lx) * rw, (y0 - ly) * rh,
                                            (x1 - lx) * rw, (y1 - ly) * rh,
                                            (x2 - lx) * rw, (y2 - ly) * rh,
-                                           m0.x * ms, m0.y * ms,
-                                           m1.x * ms, m1.y * ms,
-                                           m2.x * ms, m2.y * ms
+                                           m0.x, m0.y, m1.x, m1.y, m2.x, m2.y
                         );
                     }
                 }
