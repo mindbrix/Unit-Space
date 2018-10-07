@@ -115,7 +115,7 @@ struct Bounds {
 
 #define kShortMax 32767.0
 #define kUnsignedShortMax 65535.0
-#define kInteriorMax 100.0
+#define kInteriorMax 10.0
 
 struct Triangle {
     enum Flags : unsigned int {
