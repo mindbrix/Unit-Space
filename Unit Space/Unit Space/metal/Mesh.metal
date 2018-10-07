@@ -227,27 +227,38 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 //    vert.u = select(u0, 1 - v0 - w0, vid == 0);
 //    vert.v = select(v0, 1 - u0 - w0, vid == 1);
     
+    const float dmin = sqrt(area) * 0.0001;
+    
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
     ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x0, vy = dy - y0;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d0 = rl * (nx * vx + ny * vy) - s;
+    vert.d0 = rl * (nx * vx + ny * vy);
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d1 = rl * (nx * vx + ny * vy) - s;
+    vert.d1 = rl * (nx * vx + ny * vy);
+    vert.d0 *= float(abs(vert.d0) > dmin);
+    vert.d1 *= float(abs(vert.d1) > dmin);
+    vert.d0 -= s, vert.d1 -= s;
     
     ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x1, vy = dy - y1;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d2 = rl * (nx * vx + ny * vy) - s;
+    vert.d2 = rl * (nx * vx + ny * vy);
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d3 = rl * (nx * vx + ny * vy) - s;
+    vert.d3 = rl * (nx * vx + ny * vy);
+    vert.d2 *= float(abs(vert.d2) > dmin);
+    vert.d3 *= float(abs(vert.d3) > dmin);
+    vert.d2 -= s, vert.d3 -= s;
     
     ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x2, vy = dy - y2;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d4 = rl * (nx * vx + ny * vy) - s;
+    vert.d4 = rl * (nx * vx + ny * vy);
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d5 = rl * (nx * vx + ny * vy) - s;
+    vert.d5 = rl * (nx * vx + ny * vy);
+    vert.d4 *= float(abs(vert.d4) > dmin);
+    vert.d5 *= float(abs(vert.d5) > dmin);
+    vert.d4 -= s, vert.d5 -= s;
     
     vert.left0 = tri.p & Triangle::kFlagsLeft0;
     vert.left1 = tri.p & Triangle::kFlagsLeft1;
