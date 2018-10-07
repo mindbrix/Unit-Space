@@ -191,7 +191,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv0 = { iv[0] * CTM.a * ms + iv[1] * CTM.c * ms, iv[0] * CTM.b * ms + iv[1] * CTM.d * ms };
     float2 iv1 = { iv[2] * CTM.a * ms + iv[3] * CTM.c * ms, iv[2] * CTM.b * ms + iv[3] * CTM.d * ms };
     float2 iv2 = { iv[4] * CTM.a * ms + iv[5] * CTM.c * ms, iv[4] * CTM.b * ms + iv[5] * CTM.d * ms };
-    float s = 1.5;
+    float s = 0.5;
     x0 -= iv0.x * s, y0 -= iv0.y * s, x1 -= iv1.x * s, y1 -= iv1.y * s, x2 -= iv2.x * s, y2 -= iv2.y * s;
     float dx = float(area > 1e-2) * select(select(x2, x1, vid == 1), x0, vid == 0);
     float dy = float(area > 1e-2) * select(select(y2, y1, vid == 1), y0, vid == 0);
@@ -227,7 +227,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 //    vert.u = select(u0, 1 - v0 - w0, vid == 0);
 //    vert.v = select(v0, 1 - u0 - w0, vid == 1);
     
-    x0 += iv0.x, y0 += iv0.y, x1 += iv1.x, y1 += iv1.y, x2 += iv2.x, y2 += iv2.y;
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
     ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x0, vy = dy - y0;
@@ -253,7 +252,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.left0 = tri.p & Triangle::kFlagsLeft0;
     vert.left1 = tri.p & Triangle::kFlagsLeft1;
     vert.left2 = tri.p & Triangle::kFlagsLeft2;
-    
+    //vert.left0 = vert.left1 = vert.left2 = false;
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
 }
@@ -262,13 +261,14 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float d01 = select(max(vert.d0, vert.d1), min(vert.d0, vert.d1), vert.left0);
-    float d23 = select(max(vert.d2, vert.d3), min(vert.d2, vert.d3), vert.left1);
-    float d45 = select(max(vert.d4, vert.d5), min(vert.d4, vert.d5), vert.left2);
-    
-//    float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
-//    float d01 = left0 * min(left0 * vert.d0, left0 * vert.d1), d23 = left1 * min(left1 * vert.d2, left1 * vert.d3), d45 = left2 * min(left2 * vert.d4, left2 * vert.d5);
-    float winding = saturate(min(d01, min(d23, d45)));
+    float f = 0.5;
+    float d0 = clamp(vert.d0 - f, -f, f), d1 = clamp(vert.d1 - f, -f, f), d2 = clamp(vert.d2 - f, -f, f);
+    float d3 = clamp(vert.d3 - f, -f, f), d4 = clamp(vert.d4 - f, -f, f), d5 = clamp(vert.d5 - f, -f, f);
+    float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
+    float d01 = left0 * min(left0 * d0, left0 * d1);
+    float d23 = left1 * min(left1 * d2, left1 * d3);
+    float d45 = left2 * min(left2 * d4, left2 * d5);
+    float winding = saturate(min(d01, min(d23, d45)) + f);
     
 //    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
 //    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
