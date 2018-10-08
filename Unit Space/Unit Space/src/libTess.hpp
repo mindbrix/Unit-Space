@@ -64,11 +64,12 @@ struct libTess {
     }
     
     static void addTessSubPathContour(TESStesselator *dst, SubPath& s) {
-        const float kSharpLimit = 0.017452406437284;
+        
+        const float kSharpTangent = 0.017455064928218;
         Memory<float> subpath;
-        vector<size_t> sharps;
+        vector<float> sharps;
         size_t count = s._quadratics.count();
-        float *qbegin = s._quadratics.get(), *q = qbegin, *qend, x0, y0, x1, y1, x2, y2, ax, ay, bx, by, sine;
+        float *qbegin = s._quadratics.get(), *q = qbegin, *qend, x0, y0, x1, y1, x2, y2, ax, ay, bx, by;
         if (q[0] == q[count - 2] && q[1] == q[count - 1])
             x0 = q[count - 6], y0 = q[count - 5];
         else
@@ -76,9 +77,9 @@ struct libTess {
         for (x1 = q[0], y1 = q[1], qend = q + count - 4; q < qend; q += 4, x0 = x1, y0 = y1, x1 = x2, y1 = y2) {
             x2 = q[4], y2 = q[5];
             ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1;
-            sine = (ax * by - ay * bx) / std::sqrt((ax * ax + ay * ay) * (bx * bx + by * by));
-            if (std::abs(sine) < kSharpLimit)
-                sharps.emplace_back(q - qbegin);
+            if (std::abs((ax * by - ay * bx) / (ax * bx + ay * by)) < kSharpTangent) {
+                sharps.emplace_back(float(q - qbegin));
+            }
         }
         tessAddContour(dst, 2, qbegin, kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
     }
