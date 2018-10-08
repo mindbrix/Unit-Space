@@ -205,7 +205,6 @@ enum CallType : unsigned int {
     kCallTypeShapesSOA = 0,
     kCallTypeFlags,
     kCallTypeMeshInterior,
-    kCallTypeMeshInteriorBlend,
     kCallTypeMeshTriangles,
     kCallTypeResolveQuadSOA,
     kCallTypeQuadraticLines,
