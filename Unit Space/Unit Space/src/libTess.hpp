@@ -78,7 +78,7 @@ struct libTess {
         }
     }
     
-    static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2, bool *concave) {
+    static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2, bool *convex) {
         float limit = 5e-2;
         float px, py, nx, ny, x, y;
         bool left, edge, tangent;
@@ -87,7 +87,7 @@ struct libTess {
         nx = verts[e->next() * 2], ny = verts[e->next() * 2 + 1];
         edge = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0) > 0;
         tangent = (x1 - x0) * (ny - py) - (y1 - y0) * (nx - px);
-        *concave = edge == tangent;
+        *convex = edge == tangent;
         if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
             x = x1, y = y1;
         else
@@ -165,7 +165,7 @@ struct libTess {
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
                     float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2, tp0[2], tp1[2], tp2[2];
-                    bool ef0, ef1, ef2, left0, left1, left2;
+                    bool ef0, ef1, ef2, convex0, convex1, convex2;
                     Vector m0, m1, m2;
                     int i, i0, i1, i2, oi0, oi1, oi2;
                     for (i = 0; i < nelems; i++, polygon += kPolySize) {
@@ -215,9 +215,9 @@ struct libTess {
                        //     continue;
                         
                         
-                        m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2, & left0);
-                        m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0, & left1);
-                        m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1, & left2);
+                        m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2, & convex0);
+                        m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0, & convex1);
+                        m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1, & convex2);
                         solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
                         tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
                         tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
@@ -233,7 +233,7 @@ struct libTess {
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
 						
                         _tris.emplace_back(p, ef0, ef1, ef2,
-                                           left0, left1, left2,
+                                           convex0, convex1, convex2,
 										   ta > t ? ta : t,
                                            (x0 - lx) * rw, (y0 - ly) * rh,
                                            (x1 - lx) * rw, (y1 - ly) * rh,

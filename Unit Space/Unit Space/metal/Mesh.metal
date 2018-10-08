@@ -250,9 +250,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.d5 = rl * (nx * vx + ny * vy);
     vert.d4 -= s, vert.d5 -= s;
     
-    vert.left0 = tri.p & Triangle::kFlagsLeft0;
-    vert.left1 = tri.p & Triangle::kFlagsLeft1;
-    vert.left2 = tri.p & Triangle::kFlagsLeft2;
+    vert.left0 = tri.p & Triangle::kFlagsConvex0;
+    vert.left1 = tri.p & Triangle::kFlagsConvex1;
+    vert.left2 = tri.p & Triangle::kFlagsConvex2;
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
