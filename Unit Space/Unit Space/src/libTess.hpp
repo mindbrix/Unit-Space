@@ -60,40 +60,9 @@ struct libTess {
                     x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
                 }
             } else
-                addTessSubPathContour(dst, s);
+                tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
     }
-    
-    static void addTessSubPathContour(TESStesselator *dst, SubPath& s) {
-        const float kSharpTangent = 0.176326980708465; // 10 degrees
-        Memory<float> subpath;
-        size_t count = s._quadratics.count();
-        float *qbegin = s._quadratics.get(), *q = qbegin, *qend, x0, y0, x1, y1, x2, y2, ax, ay, bx, by, det, dot, A, B, cx, cy, C, nx, ny;
-        bool closed = q[0] == q[count - 2] && q[1] == q[count - 1];
-        x0 = q[count - 6], y0 = q[count - 5], x1 = q[count - 2], y1 = q[count - 1];
-        if (closed)
-            q += 4;
-        x2 = q[0], y2 = q[1];
         
-        for (qend = qbegin + count - 1; q < qend; q += 4, x0 = x1, y0 = y1, x1 = x2, y1 = y2, x2 = q[0], y2 = q[1]) {
-            ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1;
-            det = ax * by - ay * bx, dot = ax * bx + ay * by;
-            nx = ny = 0;
-//            if (std::abs(det / dot) < kSharpTangent && dot < 0) {
-//                A = std::sqrt(ax * ax + ay * ay), B = std::sqrt(bx * bx + by * by);
-//                cx = ax * B + bx * A, cy = ay * B + by * A;
-//                C = std::sqrt(cx * cx + cy * cy);
-//                nx = cx / C, ny = cy / C;
-//                nx *= 1e-2, ny *= 1e-2;
-//            }
-            if ((subpath.count() == 0 && closed) || nx != 0 || ny != 0)
-                subpath.push_back(x1 - nx), subpath.push_back(y1 - ny), subpath.push_back(x1 + nx), subpath.push_back(y1 + ny);
-            else
-                subpath.push_back(x1), subpath.push_back(y1);
-
-        }
-        tessAddContour(dst, 2, subpath.get(), kPointStride, (int)subpath.count() / 2);
-    }
-    
     static void addTessContours(TESStesselator *dst, TESStesselator *tess, Edge *edge) {
         const float *verts = tessGetVertices(tess);
         const int *elems = tessGetElements(tess);
