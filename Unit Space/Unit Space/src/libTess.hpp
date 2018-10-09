@@ -85,17 +85,13 @@ struct libTess {
         
         px = verts[e->prev() * 2], py = verts[e->prev() * 2 + 1];
         nx = verts[e->next() * 2], ny = verts[e->next() * 2 + 1];
-        edge = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0) > 0;
         if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
             x = x1, y = y1;
         else
             x = x2, y = y2;
+        edge = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0) > 0;
         left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
         *convex = edge == left;
-        
-//        if ((x1 == px && y1 == py) || (x1 == nx && y1 == ny))
-//            if ((x2 == px && y2 == py) || (x2 == nx && y2 == ny))
-//                limit = 5e-3;
         return miterVector(x0, y0, px, py, nx, ny, left, limit);
     }
     
