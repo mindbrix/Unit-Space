@@ -23,7 +23,6 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorBlendPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticLinePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticAccumulatePipelineState;
@@ -102,8 +101,6 @@
     descriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOne;
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-    descriptor.label = @"InteriorBlend";
-    self.meshInteriorBlendPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_fragment_main"];
@@ -213,9 +210,8 @@
                 instanceCount = call->instanceCount;
                 break;
             case kCallTypeMeshInterior:
-            case kCallTypeMeshInteriorBlend:
             case kCallTypeMeshTriangles:
-				[commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : call->type == kCallTypeMeshInterior ? _meshInteriorPipelineState : _meshInteriorBlendPipelineState];
+				[commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : _meshInteriorPipelineState];
 				[commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
 				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
