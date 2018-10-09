@@ -64,24 +64,41 @@ struct libTess {
     }
     
     static void addTessSubPathContour(TESStesselator *dst, SubPath& s) {
-        
-        const float kSharpTangent = 0.017455064928218;
+        const float kSharpTangent = 0.087488663525924; // 5 degrees
         Memory<float> subpath;
-        vector<float> sharps;
         size_t count = s._quadratics.count();
-        float *qbegin = s._quadratics.get(), *q = qbegin, *qend, x0, y0, x1, y1, x2, y2, ax, ay, bx, by;
-        if (q[0] == q[count - 2] && q[1] == q[count - 1])
+        float *qbegin = s._quadratics.get(), *q = qbegin, *qend, x0, y0, x1, y1, x2, y2, ax, ay, bx, by, det, dot, A, B, cx, cy, C, nx, ny;
+        bool closed = q[0] == q[count - 2] && q[1] == q[count - 1];
+        if (closed)
             x0 = q[count - 6], y0 = q[count - 5];
         else
-            x0 = q[0], y0 = q[1];
+            x0 = q[count - 2], y0 = q[count - 1];
+        
         for (x1 = q[0], y1 = q[1], qend = q + count - 4; q < qend; q += 4, x0 = x1, y0 = y1, x1 = x2, y1 = y2) {
             x2 = q[4], y2 = q[5];
             ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1;
-            if (std::abs((ax * by - ay * bx) / (ax * bx + ay * by)) < kSharpTangent) {
-                sharps.emplace_back(float(q - qbegin));
+            det = ax * by - ay * bx, dot = ax * bx + ay * by;
+            nx = ny = 0;
+//            if (std::abs(det / dot) < kSharpTangent && dot < 0) {
+//                A = std::sqrt(ax * ax + ay * ay), B = std::sqrt(bx * bx + by * by);
+//                cx = ax * B + bx * A, cy = ay * B + by * A;
+//                C = std::sqrt(cx * cx + cy * cy);
+//                nx = cx / C, ny = cy / C;
+//                nx *= 1e-1, ny *= 1e-1;
+//            }
+            if (q == qbegin) {
+                if (closed)
+                    subpath.push_back(x1 - nx), subpath.push_back(y1 - ny), subpath.push_back(x1 + nx), subpath.push_back(y1 + ny);
+                else
+                    subpath.push_back(x0), subpath.push_back(y0), subpath.push_back(x1), subpath.push_back(y1);
+            } else {
+                if (nx != 0 || ny != 0)
+                    subpath.push_back(x1 - nx), subpath.push_back(y1 - ny), subpath.push_back(x1 + nx), subpath.push_back(y1 + ny);
+                else
+                    subpath.push_back(x1), subpath.push_back(y1);
             }
         }
-        tessAddContour(dst, 2, qbegin, kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
+        tessAddContour(dst, 2, subpath.get(), kPointStride, (int)subpath.count() / 2);
     }
     
     static void addTessContours(TESStesselator *dst, TESStesselator *tess, Edge *edge) {
