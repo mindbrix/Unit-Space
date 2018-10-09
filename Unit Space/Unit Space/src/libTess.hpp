@@ -64,18 +64,17 @@ struct libTess {
     }
     
     static void addTessSubPathContour(TESStesselator *dst, SubPath& s) {
-        const float kSharpTangent = 0.087488663525924; // 5 degrees
+        const float kSharpTangent = 0.176326980708465; // 10 degrees
         Memory<float> subpath;
         size_t count = s._quadratics.count();
         float *qbegin = s._quadratics.get(), *q = qbegin, *qend, x0, y0, x1, y1, x2, y2, ax, ay, bx, by, det, dot, A, B, cx, cy, C, nx, ny;
         bool closed = q[0] == q[count - 2] && q[1] == q[count - 1];
+        x0 = q[count - 6], y0 = q[count - 5], x1 = q[count - 2], y1 = q[count - 1];
         if (closed)
-            x0 = q[count - 6], y0 = q[count - 5];
-        else
-            x0 = q[count - 2], y0 = q[count - 1];
+            q += 4;
+        x2 = q[0], y2 = q[1];
         
-        for (x1 = q[0], y1 = q[1], qend = q + count - 4; q < qend; q += 4, x0 = x1, y0 = y1, x1 = x2, y1 = y2) {
-            x2 = q[4], y2 = q[5];
+        for (qend = qbegin + count - 1; q < qend; q += 4, x0 = x1, y0 = y1, x1 = x2, y1 = y2, x2 = q[0], y2 = q[1]) {
             ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1;
             det = ax * by - ay * bx, dot = ax * bx + ay * by;
             nx = ny = 0;
@@ -84,19 +83,13 @@ struct libTess {
 //                cx = ax * B + bx * A, cy = ay * B + by * A;
 //                C = std::sqrt(cx * cx + cy * cy);
 //                nx = cx / C, ny = cy / C;
-//                nx *= 1e-1, ny *= 1e-1;
+//                nx *= 1e-2, ny *= 1e-2;
 //            }
-            if (q == qbegin) {
-                if (closed)
-                    subpath.push_back(x1 - nx), subpath.push_back(y1 - ny), subpath.push_back(x1 + nx), subpath.push_back(y1 + ny);
-                else
-                    subpath.push_back(x0), subpath.push_back(y0), subpath.push_back(x1), subpath.push_back(y1);
-            } else {
-                if (nx != 0 || ny != 0)
-                    subpath.push_back(x1 - nx), subpath.push_back(y1 - ny), subpath.push_back(x1 + nx), subpath.push_back(y1 + ny);
-                else
-                    subpath.push_back(x1), subpath.push_back(y1);
-            }
+            if ((subpath.count() == 0 && closed) || nx != 0 || ny != 0)
+                subpath.push_back(x1 - nx), subpath.push_back(y1 - ny), subpath.push_back(x1 + nx), subpath.push_back(y1 + ny);
+            else
+                subpath.push_back(x1), subpath.push_back(y1);
+
         }
         tessAddContour(dst, 2, subpath.get(), kPointStride, (int)subpath.count() / 2);
     }
@@ -117,7 +110,7 @@ struct libTess {
     }
     
     static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2, bool *convex) {
-        float limit = 5e-2;
+        float limit = 2e-1;
         float px, py, nx, ny, x, y;
         bool left, edge, tangent;
         
@@ -131,9 +124,9 @@ struct libTess {
         else
             x = x2, y = y2;
         left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
-        if ((x1 == px && y1 == py) || (x1 == nx && y1 == ny))
-            if ((x2 == px && y2 == py) || (x2 == nx && y2 == ny))
-                limit = 5e-3;
+//        if ((x1 == px && y1 == py) || (x1 == nx && y1 == ny))
+//            if ((x2 == px && y2 == py) || (x2 == nx && y2 == ny))
+//                limit = 5e-3;
         return miterVector(x0, y0, px, py, nx, ny, left, limit);
     }
     
