@@ -119,9 +119,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     };
     device float *ix = & tri.ix0 + vid * 2;
     float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale };
-    const float limit = 4;
-    iv *= min(1.0, limit * rsqrt(iv.x * iv.x + iv.y * iv.y));
-    devicePoint = select(devicePoint + iv * 0.5, 0, 1.0 / rscale < t);
+    iv *= 0.5 * min(1.0, kTriangleDilationMax * rsqrt(iv.x * iv.x + iv.y * iv.y));
+	devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
     RGBA8 color = paths[p].color;
     
     InteriorVertex vert;
@@ -183,10 +182,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv1 = { (iv[2] * CTM.a + iv[3] * CTM.c) * rscale, (iv[2] * CTM.b + iv[3] * CTM.d) * rscale };
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
-    const float s = 0.5, limit = 4;
-    float s0 = min(1.0, limit * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
-    float s1 = min(1.0, limit * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
-    float s2 = min(1.0, limit * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
+    const float s = 0.5;
+    float s0 = min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
+    float s1 = min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
+    float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
     
     float dx = float(area > 1e-2) * select(select(x2 - iv2.x * s * s2, x1 - iv1.x * s * s1, vid == 1), x0 - iv0.x * s * s0, vid == 0);
     float dy = float(area > 1e-2) * select(select(y2 - iv2.y * s * s2, y1 - iv1.y * s * s1, vid == 1), y0 - iv0.y * s * s0, vid == 0);
