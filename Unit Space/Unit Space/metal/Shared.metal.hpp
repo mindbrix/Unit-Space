@@ -10,7 +10,6 @@
 
 #define PI 3.1415926536
 #define TWO_PI 6.2831853072
-#define kFatScanlineHeight  4.0f
 
 #pragma clang diagnostic ignored "-Wcomma"
 
@@ -113,8 +112,9 @@ struct Bounds {
     float lx, ly, ux, uy;
 };
 
-#define kShortMax 32767.0
-#define kUnsignedShortMax 65535.0
+#define kShortMax 				32767.0
+#define kUnsignedShortMax 		65535.0
+#define kTriangleDilationMax	8.0
 
 struct Triangle {
     enum Flags : unsigned int {
