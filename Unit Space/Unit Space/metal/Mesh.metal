@@ -183,41 +183,40 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
     const float s = 0.5;
-    float s0 = min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
-    float s1 = min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
-    float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
-    
-    float dx = float(area > 1e-2) * select(select(x2 - iv2.x * s * s2, x1 - iv1.x * s * s1, vid == 1), x0 - iv0.x * s * s0, vid == 0);
-    float dy = float(area > 1e-2) * select(select(y2 - iv2.y * s * s2, y1 - iv1.y * s * s1, vid == 1), y0 - iv0.y * s * s0, vid == 0);
-    
+    iv0 *= min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
+    iv1 *= min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
+    iv2 *= min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
+	
+	float dx = float(area > 1e-2) * select(select(x2 - iv2.x * s, x1 - iv1.x * s, vid == 1), x0 - iv0.x * s, vid == 0);
+	float dy = float(area > 1e-2) * select(select(y2 - iv2.y * s, y1 - iv1.y * s, vid == 1), y0 - iv0.y * s, vid == 0);
+	
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
-    x0 -= iv0.x * s, y0 -= iv0.y * s, x1 -= iv1.x * s, y1 -= iv1.y * s, x2 -= iv2.x * s, y2 -= iv2.y * s;
-    
-	vx = dx - x0, vy = dy - y0;
+	
+	vx = dx - (x0 - iv0.x * s), vy = dy - (y0 - iv0.y * s);
 	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
-    nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
+	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
 	vert.d0 = nx * vx + ny * vy - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d1 = nx * vx + ny * vy - s;
 	
-	vx = dx - x1, vy = dy - y1;
+	vx = dx - (x1 - iv1.x * s), vy = dy - (y1 - iv1.y * s);
 	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
-    nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
+	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
     vert.d2 = nx * vx + ny * vy - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d3 = nx * vx + ny * vy - s;
 	
-	vx = dx - x2, vy = dy - y2;
+	vx = dx - (x2 - iv2.x * s), vy = dy - (y2 - iv2.y * s);
 	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
-    nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
+	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
     vert.d4 = nx * vx + ny * vy - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d5 = nx * vx + ny * vy - s;
