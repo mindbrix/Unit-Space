@@ -110,18 +110,20 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     
-    Bounds bounds = paths[p].bounds;
-	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    device unsigned short *pt = & tri.x0 + vid * 2;
-    float2 devicePoint = {
-        pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,
-        pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
-    };
     device float *ix = & tri.ix0 + vid * 2;
     float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale };
     const float limit = 4;
-    iv *= min(1.0, limit * rsqrt(iv.x * iv.x + iv.y * iv.y));
-    devicePoint = select(devicePoint + iv * 0.5, 0, 1.0 / rscale < t);
+    float s = 0.5 * min(1.0, limit * rsqrt(iv.x * iv.x + iv.y * iv.y));
+    
+    Bounds bounds = paths[p].bounds;
+	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
+    float visible = float(1.0 / rscale > t);
+    device unsigned short *pt = & tri.x0 + vid * 2;
+    float2 devicePoint = {
+        visible * (iv.x * s + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
+        visible * (iv.y * s + pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty)
+    };
+    
     RGBA8 color = paths[p].color;
     
     InteriorVertex vert;
