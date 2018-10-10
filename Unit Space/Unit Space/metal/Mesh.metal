@@ -205,35 +205,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     TriangleVertex vert;
     vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     
-    /*
-    bool df0 = !bool(tri.p & Triangle::kFlagsEdge0);
-    bool df1 = !bool(tri.p & Triangle::kFlagsEdge1);
-    bool df2 = !bool(tri.p & Triangle::kFlagsEdge2);
-    
-    const float dilation = 1, hmin = 0.1; // , overlap = 0.425
-    float d0 = float(df0) * -0.995, d1 = float(df1) * -0.995, d2 = float(df2) * -0.995;
-    //float d0 = float(df0) * overlap, d1 = float(df1) * overlap, d2 = float(df2) * overlap;
-    
-    float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, cx = x0 - x2, cy = y0 - y2;
-    float area = ax * by - ay * bx;
-    float u0 = -(dilation + d1) / max(hmin, area * rsqrt(bx * bx + by * by));
-    float v0 = -(dilation + d2) / max(hmin, area * rsqrt(cx * cx + cy * cy));
-    float w0 = -(dilation + d0) / max(hmin, area * rsqrt(ax * ax + ay * ay));
-    float u = select(u0, 1 - v0 - w0, vid == 0);
-    float v = select(v0, 1 - u0 - w0, vid == 1);
-    float dx = float(area > 1e-2) * (x0 * u + x1 * v + x2 * (1 - u - v));
-    float dy = float(area > 1e-2) * (y0 * u + y1 * v + y2 * (1 - u - v));
-    */
-    
-//    u0 *= 1 - d1 / (dilation + d1);
-//    v0 *= 1 - d2 / (dilation + d2);
-//    w0 *= 1 - d0 / (dilation + d0);
-//    vert.u = select(u0, 1 - v0 - w0, vid == 0);
-//    vert.v = select(v0, 1 - u0 - w0, vid == 1);
-    
+    float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
     x0 -= iv0.x * s, y0 -= iv0.y * s, x1 -= iv1.x * s, y1 -= iv1.y * s, x2 -= iv2.x * s, y2 -= iv2.y * s;
     
-    float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
     ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
     vx = dx - x0, vy = dy - y0;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
@@ -277,12 +251,5 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float d45 = left2 * min(left2 * vert.d4, left2 * vert.d5);
     float winding = saturate(min(d01, min(d23, d45)) + f);
     
-//    float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
-//    a *= invdet, b *= invdet, c *= invdet, d *= invdet;
-//    float x2 = 0.5 + b * vert.v - d * vert.u, y2 = 0.5 + vert.u * c - vert.v * a;
-//    float x0 = x2 + d, y0 = y2 - c;
-//    float x1 = x2 - b, y1 = y2 + a;
-//    float winding = edgeWinding(x0, y0, x1, y1) + edgeWinding(x1, y1, x2, y2) + edgeWinding(x2, y2, x0, y0);
-
     return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * winding;
 }
