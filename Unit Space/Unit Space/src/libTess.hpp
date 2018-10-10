@@ -79,8 +79,7 @@ struct libTess {
     }
     
     static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2, bool *convex) {
-        float limit = 2e-1;
-        float px, py, nx, ny, x, y;
+        float px, py, nx, ny, x, y, det;
         bool left, edge;
         
         px = verts[e->prev() * 2], py = verts[e->prev() * 2 + 1];
@@ -89,10 +88,11 @@ struct libTess {
             x = x1, y = y1;
         else
             x = x2, y = y2;
-        edge = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0) > 0;
+        det = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0);
+        edge = det > 0;
         left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
         *convex = edge == left;
-        return miterVector(x0, y0, px, py, nx, ny, left, limit);
+        return miterVector(x0, y0, px, py, nx, ny, left, 1e-12);
     }
     
     static void triangulate(Mesh& mesh, Scene& scene) {
@@ -227,8 +227,7 @@ struct libTess {
                         }
                         t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
                         ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
-						
-                        _tris.emplace_back(p, ef0, ef1, ef2,
+						_tris.emplace_back(p, ef0, ef1, ef2,
                                            convex0, convex1, convex2,
 										   ta > t ? ta : t,
                                            (x0 - lx) * rw, (y0 - ly) * rh,
