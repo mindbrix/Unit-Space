@@ -243,6 +243,5 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float d23 = left1 * min(left1 * vert.d2, left1 * vert.d3);
     float d45 = left2 * min(left2 * vert.d4, left2 * vert.d5);
     float winding = saturate(min(d01, min(d23, d45)) + f);
-    
-    return select(vert.color, float4(0, 0, 0, 1), meshState.showTriangles) * winding;
+    return vert.color * winding;
 }
