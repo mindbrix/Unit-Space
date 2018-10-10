@@ -198,30 +198,30 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
     x0 -= iv0.x * s, y0 -= iv0.y * s, x1 -= iv1.x * s, y1 -= iv1.y * s, x2 -= iv2.x * s, y2 -= iv2.y * s;
     
-    ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
-    vx = dx - x0, vy = dy - y0;
+	vx = dx - x0, vy = dy - y0;
+	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+	ix *= rl, iy *= rl;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d0 = rl * (nx * vx + ny * vy);
+	vert.d0 = nx * vx + ny * vy - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d1 = rl * (nx * vx + ny * vy);
-    vert.d0 -= s, vert.d1 -= s;
-    
-    ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
-    vx = dx - x1, vy = dy - y1;
+    vert.d1 = nx * vx + ny * vy - s;
+	
+	vx = dx - x1, vy = dy - y1;
+	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+	ix *= rl, iy *= rl;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d2 = rl * (nx * vx + ny * vy);
+    vert.d2 = nx * vx + ny * vy - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d3 = rl * (nx * vx + ny * vy);
-    vert.d2 -= s, vert.d3 -= s;
-    
-    ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
-    vx = dx - x2, vy = dy - y2;
+    vert.d3 = nx * vx + ny * vy - s;
+	
+	vx = dx - x2, vy = dy - y2;
+	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+	ix *= rl, iy *= rl;
     nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d4 = rl * (nx * vx + ny * vy);
+    vert.d4 = nx * vx + ny * vy - s;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d5 = rl * (nx * vx + ny * vy);
-    vert.d4 -= s, vert.d5 -= s;
-    
+    vert.d5 = nx * vx + ny * vy - s;
+	
     vert.left0 = tri.p & Triangle::kFlagsConvex0;
     vert.left1 = tri.p & Triangle::kFlagsConvex1;
     vert.left2 = tri.p & Triangle::kFlagsConvex2;
