@@ -191,9 +191,13 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
     iv0 *= s0, iv1 *= s1, iv2 *= s2;
     
-	float dx = float(area > 1e-2) * select(select(x2 - iv2.x * s, x1 - iv1.x * s, vid == 1), x0 - iv0.x * s, vid == 0);
-	float dy = float(area > 1e-2) * select(select(y2 - iv2.y * s, y1 - iv1.y * s, vid == 1), y0 - iv0.y * s, vid == 0);
-	
+    x0 -= iv0.x * s, y0 -= iv0.y * s;
+    x1 -= iv1.x * s, y1 -= iv1.y * s;
+    x2 -= iv2.x * s, y2 -= iv2.y * s;
+    
+    float dx = float(area > 1e-2) * select(select(x2, x1, vid == 1), x0, vid == 0);
+    float dy = float(area > 1e-2) * select(select(y2, y1, vid == 1), y0, vid == 0);
+    
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
@@ -201,7 +205,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
 	
-	vx = dx - (x0 - iv0.x * s), vy = dy - (y0 - iv0.y * s);
+	vx = dx - x0, vy = dy - y0;
 	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s0), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
@@ -209,7 +213,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d1 = nx * vx + ny * vy - s;
 	
-	vx = dx - (x1 - iv1.x * s), vy = dy - (y1 - iv1.y * s);
+	vx = dx - x1, vy = dy - y1;
 	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s1), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
@@ -217,7 +221,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d3 = nx * vx + ny * vy - s;
 	
-	vx = dx - (x2 - iv2.x * s), vy = dy - (y2 - iv2.y * s);
+	vx = dx - x2, vy = dy - y2;
 	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s2), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
