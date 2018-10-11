@@ -154,7 +154,7 @@ struct TriangleVertex
 {
     float4 position [[position]];
     float u, v;
-    bool left0, left1, left2;
+    bool convex0, convex1, convex2;
     float d0, d1, d2, d3, d4, d5;
     float4 color;
 };
@@ -229,9 +229,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d5 = nx * vx + ny * vy - s;
 	
-    vert.left0 = tri.p & Triangle::kFlagsConvex0;
-    vert.left1 = tri.p & Triangle::kFlagsConvex1;
-    vert.left2 = tri.p & Triangle::kFlagsConvex2;
+    vert.convex0 = tri.p & Triangle::kFlagsConvex0;
+    vert.convex1 = tri.p & Triangle::kFlagsConvex1;
+    vert.convex2 = tri.p & Triangle::kFlagsConvex2;
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
@@ -242,10 +242,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     float f = 0.5;
-    float left0 = vert.left0 ? 1 : -1, left1 = vert.left1 ? 1 : -1, left2 = vert.left2 ? 1 : -1;
-    float d01 = left0 * min(left0 * vert.d0, left0 * vert.d1);
-    float d23 = left1 * min(left1 * vert.d2, left1 * vert.d3);
-    float d45 = left2 * min(left2 * vert.d4, left2 * vert.d5);
+    float convex0 = vert.convex0 ? 1 : -1, convex1 = vert.convex1 ? 1 : -1, convex2 = vert.convex2 ? 1 : -1;
+    float d01 = convex0 * min(convex0 * vert.d0, convex0 * vert.d1);
+    float d23 = convex1 * min(convex1 * vert.d2, convex1 * vert.d3);
+    float d45 = convex2 * min(convex2 * vert.d4, convex2 * vert.d5);
     float winding = saturate(min(d01, min(d23, d45)) + f);
     return vert.color * winding;
 }
