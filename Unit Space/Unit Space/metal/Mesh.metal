@@ -108,7 +108,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     uint p = tri.p & Triangle::kFlagsMask;
     float t = tri.t;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+    float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
     
     const float s = 0.5;
     device float *ix = & tri.ix0 + vid * 2;
