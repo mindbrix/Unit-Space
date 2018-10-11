@@ -112,8 +112,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     
     const float s = 0.5;
     device float *ix = & tri.ix0 + vid * 2;
-    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale };
-    iv *= 0.5 * min(1.0, kTriangleDilationMax * rsqrt(iv.x * iv.x + iv.y * iv.y));
+    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale * 0.5, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale * 0.5 };
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
