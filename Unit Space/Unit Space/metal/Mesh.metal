@@ -187,10 +187,11 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
     const float s = 0.5;
-    iv0 *= min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
-    iv1 *= min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
-    iv2 *= min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
-	
+    float s0 = min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
+    float s1 = min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
+    float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
+    iv0 *= s0, iv1 *= s1, iv2 *= s2;
+    
 	float dx = float(area > 1e-2) * select(select(x2 - iv2.x * s, x1 - iv1.x * s, vid == 1), x0 - iv0.x * s, vid == 0);
 	float dy = float(area > 1e-2) * select(select(y2 - iv2.y * s, y1 - iv1.y * s, vid == 1), y0 - iv0.y * s, vid == 0);
 	
@@ -202,7 +203,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
 	
 	vx = dx - (x0 - iv0.x * s), vy = dy - (y0 - iv0.y * s);
-	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rsqrt(length_squared(iv0 / s0))), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
 	vert.d0 = nx * vx + ny * vy - s;
@@ -210,7 +211,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.d1 = nx * vx + ny * vy - s;
 	
 	vx = dx - (x1 - iv1.x * s), vy = dy - (y1 - iv1.y * s);
-	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rsqrt(length_squared(iv1 / s1))), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
     vert.d2 = nx * vx + ny * vy - s;
@@ -218,7 +219,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.d3 = nx * vx + ny * vy - s;
 	
 	vx = dx - (x2 - iv2.x * s), vy = dy - (y2 - iv2.y * s);
-	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rsqrt(length_squared(iv2 / s2))), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
     vert.d4 = nx * vx + ny * vy - s;
