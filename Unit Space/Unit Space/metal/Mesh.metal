@@ -110,17 +110,17 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
     
-    const float s = 0.5;
+    const float f = kTriangleFilterWidth;
     device float *ix = & tri.ix0 + vid * 2;
-    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale * 0.5, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale * 0.5 };
+    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale * f, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale * f };
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float visible = float(1.0 / rscale > t);
     device unsigned short *pt = & tri.x0 + vid * 2;
     float2 devicePoint = {
-        visible * (iv.x * s + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
-        visible * (iv.y * s + pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty)
+        visible * (iv.x + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
+        visible * (iv.y + pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty)
     };
 
     devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
@@ -185,15 +185,15 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv1 = { (iv[2] * CTM.a + iv[3] * CTM.c) * rscale, (iv[2] * CTM.b + iv[3] * CTM.d) * rscale };
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
-    const float s = 0.5;
+    const float f = kTriangleFilterWidth;
     float s0 = min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
     float s1 = min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
     float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
     iv0 *= s0, iv1 *= s1, iv2 *= s2;
     
-    x0 -= iv0.x * s, y0 -= iv0.y * s;
-    x1 -= iv1.x * s, y1 -= iv1.y * s;
-    x2 -= iv2.x * s, y2 -= iv2.y * s;
+    x0 -= iv0.x * f, y0 -= iv0.y * f;
+    x1 -= iv1.x * f, y1 -= iv1.y * f;
+    x2 -= iv2.x * f, y2 -= iv2.y * f;
     
     float dx = float(area > 1e-2) * select(select(x2, x1, vid == 1), x0, vid == 0);
     float dy = float(area > 1e-2) * select(select(y2, y1, vid == 1), y0, vid == 0);
@@ -209,25 +209,25 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s0), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-	vert.d0 = nx * vx + ny * vy - s;
+	vert.d0 = nx * vx + ny * vy - f;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d1 = nx * vx + ny * vy - s;
+    vert.d1 = nx * vx + ny * vy - f;
 	
 	vx = dx - x1, vy = dy - y1;
 	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s1), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d2 = nx * vx + ny * vy - s;
+    vert.d2 = nx * vx + ny * vy - f;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d3 = nx * vx + ny * vy - s;
+    vert.d3 = nx * vx + ny * vy - f;
 	
 	vx = dx - x2, vy = dy - y2;
 	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s2), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d4 = nx * vx + ny * vy - s;
+    vert.d4 = nx * vx + ny * vy - f;
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d5 = nx * vx + ny * vy - s;
+    vert.d5 = nx * vx + ny * vy - f;
 	
     vert.convex0 = tri.p & Triangle::kFlagsConvex0;
     vert.convex1 = tri.p & Triangle::kFlagsConvex1;
@@ -241,11 +241,11 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
-    float f = 0.5;
+    const float f = kTriangleFilterWidth;
     float convex0 = vert.convex0 ? 1 : -1, convex1 = vert.convex1 ? 1 : -1, convex2 = vert.convex2 ? 1 : -1;
     float d01 = convex0 * min(convex0 * vert.d0, convex0 * vert.d1);
     float d23 = convex1 * min(convex1 * vert.d2, convex1 * vert.d3);
     float d45 = convex2 * min(convex2 * vert.d4, convex2 * vert.d5);
-    float winding = saturate(min(d01, min(d23, d45)) + f);
+    float winding = (clamp(min(d01, min(d23, d45)), -f, f) + f) * 0.5 / f;
     return vert.color * winding;
 }
