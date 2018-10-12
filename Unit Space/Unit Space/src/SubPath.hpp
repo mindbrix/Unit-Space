@@ -29,11 +29,11 @@ static Memory<float> splitCubics(const float *src, int npoints, const float prec
             p += 6;
             ax = x3 - x2, ay = y3 - y2;
             bx = p[2] - x3, by = p[3] - y3;
-            if (bx * bx + by * by < kTinyLimit) {
+            if (bx * bx + by * by < precision) {
                 dx = p[4] - x3, dy = p[5] - y3;
-                if (dx * dx + dy * dy < kTinyLimit) {
+                if (dx * dx + dy * dy < precision) {
                     dx = p[6] - x3, dy = p[7] - y3;
-                    if (dx * dx + dy * dy < kTinyLimit) {
+                    if (dx * dx + dy * dy < precision) {
                         x3 = p[6], y3 = p[7];
                         i += 3;
                         tiny = true;
