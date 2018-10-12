@@ -122,8 +122,6 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
         visible * (iv.x + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
         visible * (iv.y + pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty)
     };
-
-    devicePoint = select(devicePoint + iv, 0, 1.0 / rscale < t);
     RGBA8 color = paths[p].color;
     
     InteriorVertex vert;
