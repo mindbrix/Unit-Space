@@ -191,9 +191,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     x1 -= iv1.x * f, y1 -= iv1.y * f;
     x2 -= iv2.x * f, y2 -= iv2.y * f;
     
-    float area = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
-    float dx = float(area > 0) * select(select(x2, x1, vid == 1), x0, vid == 0);
-    float dy = float(area > 0) * select(select(y2, y1, vid == 1), y0, vid == 0);
+    float visible = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1) > 0;
+    float dx = visible * select(select(x2, x1, vid == 1), x0, vid == 0);
+    float dy = visible * select(select(y2, y1, vid == 1), y0, vid == 0);
     
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
