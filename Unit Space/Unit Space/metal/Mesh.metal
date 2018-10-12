@@ -176,8 +176,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
     float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
     
-    float ax = x1 - x0, ay = y1 - y0, bx = x2 - x1, by = y2 - y1, area = ax * by - ay * bx;
-    
     device float *iv = & tri.ix0;
     float2 iv0 = { (iv[0] * CTM.a + iv[1] * CTM.c) * rscale, (iv[0] * CTM.b + iv[1] * CTM.d) * rscale };
     float2 iv1 = { (iv[2] * CTM.a + iv[3] * CTM.c) * rscale, (iv[2] * CTM.b + iv[3] * CTM.d) * rscale };
@@ -193,8 +191,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     x1 -= iv1.x * f, y1 -= iv1.y * f;
     x2 -= iv2.x * f, y2 -= iv2.y * f;
     
-    float dx = float(area > 1e-2) * select(select(x2, x1, vid == 1), x0, vid == 0);
-    float dy = float(area > 1e-2) * select(select(y2, y1, vid == 1), y0, vid == 0);
+    float area = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
+    float dx = float(area > 0) * select(select(x2, x1, vid == 1), x0, vid == 0);
+    float dy = float(area > 0) * select(select(y2, y1, vid == 1), y0, vid == 0);
     
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
