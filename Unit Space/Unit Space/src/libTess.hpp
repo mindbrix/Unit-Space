@@ -94,7 +94,25 @@ struct libTess {
         *convex = edge == left;
         return miterVector(x0, y0, px, py, nx, ny, left, 1e-12);
     }
-    
+	
+	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
+		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
+		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
+		tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
+		tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
+		tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
+		a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
+		if (t1 != -1) {
+			tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
+			tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
+			tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
+			a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
+		}
+		t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
+		ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
+		return ta > t ? ta : t;
+	}
+	
     static void triangulate(Mesh& mesh, Scene& scene) {
         int p, i, base, divisions = 4, size = (int)scene._paths.size();
         
@@ -160,7 +178,7 @@ struct libTess {
                     float *points = (float *)tessGetVertices(dst);
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
-                    float x0, y0, x1, y1, x2, y2, t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2, tp0[2], tp1[2], tp2[2];
+                    float x0, y0, x1, y1, x2, y2, t, tp0[2], tp1[2], tp2[2];
                     bool ef0, ef1, ef2, convex0, convex1, convex2;
                     Vector m0, m1, m2;
                     int i, i0, i1, i2, oi0, oi1, oi2;
@@ -209,27 +227,14 @@ struct libTess {
                         
                        // if (int(ef0) + int(ef1) + int(ef2) != 1)
                        //     continue;
-                        
-                        
                         m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2, & convex0);
                         m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0, & convex1);
                         m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1, & convex2);
-                        solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
-                        tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
-                        tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
-                        tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-                        a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
-                        if (t1 != -1) {
-                            tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
-                            tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
-                            tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
-                            a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
-                        }
-                        t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
-                        ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
+						t = solveTriangle(x0, y0, m0, x1, y1, m1, x2, y2, m2);
+						
 						_tris.emplace_back(p, ef0, ef1, ef2,
                                            convex0, convex1, convex2,
-										   ta > t ? ta : t,
+										   t,
                                            (x0 - lx) * rw, (y0 - ly) * rh,
                                            (x1 - lx) * rw, (y1 - ly) * rh,
                                            (x2 - lx) * rw, (y2 - ly) * rh,
