@@ -116,7 +116,7 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    float visible = float(1.0 / rscale > t);
+    float visible = float(1.0 / rscale > t / (0.5 / f));
     device unsigned short *pt = & tri.x0 + vid * 2;
     float2 devicePoint = {
         visible * (iv.x + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
@@ -182,10 +182,11 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
     const float f = kTriangleFilterWidth;
+    float s = 1;//min(1.0, (0.5 / rscale) / (tri.t / (0.5 / f)));
     float s0 = min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
     float s1 = min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
     float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
-    iv0 *= s0, iv1 *= s1, iv2 *= s2;
+    iv0 *= s0 * s, iv1 *= s1 * s, iv2 *= s2 * s;
     
     x0 -= iv0.x * f, y0 -= iv0.y * f;
     x1 -= iv1.x * f, y1 -= iv1.y * f;
@@ -203,7 +204,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
 	
 	vx = dx - x0, vy = dy - y0;
-	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s0), sine = sqrt(1 - cosine * cosine);
+	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s0 * s), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
 	vert.d0 = nx * vx + ny * vy - f;
@@ -211,7 +212,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.d1 = nx * vx + ny * vy - f;
 	
 	vx = dx - x1, vy = dy - y1;
-	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s1), sine = sqrt(1 - cosine * cosine);
+	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s1 * s), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
     vert.d2 = nx * vx + ny * vy - f;
@@ -219,7 +220,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.d3 = nx * vx + ny * vy - f;
 	
 	vx = dx - x2, vy = dy - y2;
-	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s2), sine = sqrt(1 - cosine * cosine);
+	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s2 * s), sine = sqrt(1 - cosine * cosine);
 	ix *= rl, iy *= rl;
 	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
     vert.d4 = nx * vx + ny * vy - f;
