@@ -19,7 +19,7 @@ struct Mesh {
         if (mesh._tris.size()) {
             float cx = (clipBounds.lx + clipBounds.ux) * 0.5, cy = (clipBounds.ly + clipBounds.uy) * 0.5;
             float rd = std::sqrt((clipBounds.ux - cx) * (clipBounds.ux - cx) + (clipBounds.uy - cy) * (clipBounds.uy - cy));
-            float mx, my, w, h, rp, vx, vy, a, b, c, d, d0, d1;
+            float mx, my, w, h, rp, dx, dy, a, b, c, d, d0, d1;
             
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], *opaque = opaques, visibles[paths.size()], *visible = visibles;
@@ -33,8 +33,8 @@ struct Mesh {
 				d0 = (a + c) * (a + c) + (b + d) * (b + d);
 				d1 = (a - c) * (a - c) + (b - d) * (b - d);
                 rp = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
-                vx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), vy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
-                *visible++ = vx * vx + vy * vy < (rd + rp) * (rd + rp);
+                dx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), dy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
+                *visible++ = dx * dx + dy * dy < (rd + rp) * (rd + rp);
 				*opaque++ = path->color.a == 255 && rp > 64;
             }
             for (p = 0; p < paths.size(); p += 8) {

@@ -178,7 +178,7 @@ struct libTess {
                     float *points = (float *)tessGetVertices(dst);
                     const int nelems = tessGetElementCount(dst);
                     const TESSindex *polygon = tessGetElements(dst);
-                    float x0, y0, x1, y1, x2, y2, t, tp0[2], tp1[2], tp2[2];
+                    float x0, y0, x1, y1, x2, y2, t, ti, tp0[2], tp1[2], tp2[2];
                     bool ef0, ef1, ef2, convex0, convex1, convex2;
                     Vector m0, m1, m2;
                     int i, i0, i1, i2, oi0, oi1, oi2;
@@ -232,6 +232,8 @@ struct libTess {
                         m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1, & convex2);
 						t = solveTriangle(x0, y0, m0, x1, y1, m1, x2, y2, m2);
 						
+                        ti = solveTriangle(x0, y0, Vector(-m0.x, -m0.y), x1, y1, Vector(-m1.x, -m1.y), x2, y2, Vector(-m2.x, -m2.y));
+                        
 						_tris.emplace_back(p, ef0, ef1, ef2,
                                            convex0, convex1, convex2,
 										   t,
