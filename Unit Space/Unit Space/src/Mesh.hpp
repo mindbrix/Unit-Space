@@ -22,20 +22,20 @@ struct Mesh {
             float mx, my, w, h, rp, vx, vy, a, b, c, d, d0, d1;
             
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
-            bool opaques[paths.size()], visibles[paths.size()];
+            bool opaques[paths.size()], *opaque = opaques, visibles[paths.size()], *visible = visibles;
             AffineTransform ctm;
             const MeshPath *path = & paths[0];
             for (p = 0; p < paths.size(); p++, path++) {
 				ctm = AffineTransformConcat(path->ctm, state.CTM);
+                w = path->bounds.ux - path->bounds.lx, h = path->bounds.uy - path->bounds.ly;
                 mx = (path->bounds.lx + path->bounds.ux) * 0.5, my = (path->bounds.ly + path->bounds.uy) * 0.5;
-                vx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), vy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
-				w = path->bounds.ux - path->bounds.lx, h = path->bounds.uy - path->bounds.ly;
-				a = ctm.a * w, b = ctm.b * w, c = ctm.c * h, d = ctm.d * h;
+                a = ctm.a * w, b = ctm.b * w, c = ctm.c * h, d = ctm.d * h;
 				d0 = (a + c) * (a + c) + (b + d) * (b + d);
 				d1 = (a - c) * (a - c) + (b - d) * (b - d);
-				rp = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
-				visibles[p] = vx * vx + vy * vy < (rd + rp) * (rd + rp);
-				opaques[p] = path->color.a == 255 && rp > 64;
+                rp = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
+                vx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), vy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
+                *visible++ = vx * vx + vy * vy < (rd + rp) * (rd + rp);
+				*opaque++ = path->color.a == 255 && rp > 64;
             }
             for (p = 0; p < paths.size(); p += 8) {
                 bool set = false;
@@ -147,7 +147,7 @@ struct Mesh {
     };
     
     struct Timeline {
-		inline void writeCTMForTime(AffineTransform& ctm, float time, MeshPath& p) {
+		inline void writeCTMForTime(AffineTransform& ctm, float time, const MeshPath& p) {
 			ctm = p.ctm;
             ctm.tx += (p.bounds.ux - p.bounds.lx) * time;
             ctm.ty += (p.bounds.uy - p.bounds.ly) * -time;
