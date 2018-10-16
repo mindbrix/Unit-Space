@@ -17,23 +17,27 @@ struct Mesh {
         vector<Call> & calls = mesh._calls;
         Call *call;
         if (mesh._tris.size()) {
-            float cx = (clipBounds.lx + clipBounds.ux) * 0.5, cy = (clipBounds.ly + clipBounds.uy) * 0.5;
-            float rd = std::sqrt((clipBounds.ux - cx) * (clipBounds.ux - cx) + (clipBounds.uy - cy) * (clipBounds.uy - cy));
-            float mx, my, w, h, rp, dx, dy, a, b, c, d, d0, d1;
-            
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], *opaque = opaques, visibles[paths.size()], *visible = visibles;
-            AffineTransform ctm;
+            AffineTransform inv = AffineTransformInvert(state.CTM);
+            float mx, my, w, h, rp, dx, dy, a, b, c, d, d0, d1, rd, cx, cy;
+            w = clipBounds.ux - clipBounds.lx, h = clipBounds.uy - clipBounds.ly;
+            mx = (clipBounds.lx + clipBounds.ux) * 0.5, my = (clipBounds.ly + clipBounds.uy) * 0.5;
+            a = inv.a * w, b = inv.b * w, c = inv.c * h, d = inv.d * h;
+            d0 = (a + c) * (a + c) + (b + d) * (b + d);
+            d1 = (a - c) * (a - c) + (b - d) * (b - d);
+            rd = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
+            cx = mx * inv.a + my * inv.c + inv.tx, cy = mx * inv.b + my * inv.d + inv.ty;
+            
             const MeshPath *path = & paths[0];
             for (p = 0; p < paths.size(); p++, path++) {
-				ctm = AffineTransformConcat(path->ctm, state.CTM);
                 w = path->bounds.ux - path->bounds.lx, h = path->bounds.uy - path->bounds.ly;
                 mx = (path->bounds.lx + path->bounds.ux) * 0.5, my = (path->bounds.ly + path->bounds.uy) * 0.5;
-                a = ctm.a * w, b = ctm.b * w, c = ctm.c * h, d = ctm.d * h;
+                a = path->ctm.a * w, b = path->ctm.b * w, c = path->ctm.c * h, d = path->ctm.d * h;
 				d0 = (a + c) * (a + c) + (b + d) * (b + d);
 				d1 = (a - c) * (a - c) + (b - d) * (b - d);
                 rp = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
-                dx = cx - (mx * ctm.a + my * ctm.c + ctm.tx), dy = cy - (mx * ctm.b + my * ctm.d + ctm.ty);
+                dx = cx - (mx * path->ctm.a + my * path->ctm.c + path->ctm.tx), dy = cy - (mx * path->ctm.b + my * path->ctm.d + path->ctm.ty);
                 *visible++ = dx * dx + dy * dy < (rd + rp) * (rd + rp);
 				*opaque++ = path->color.a == 255 && rp > 64;
             }
