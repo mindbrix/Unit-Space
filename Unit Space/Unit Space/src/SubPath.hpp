@@ -12,13 +12,13 @@ constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.5;
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
-static Memory<float> splitCubics(const float *src, int npoints, const float precision) {
+static Memory<float> splitCubics(const float *src, int npoints, const float precision, const float tinylimit) {
     Memory<float> quadratics;
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0, cpx, cpy;
     float xD01, yD01, D01, tcubed, t;
     float n01, n12, n23, n012, n123, n0123;
     float dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
-    constexpr float kTinyLimit = 1e-6, kMergeLimit = 1e-3, multiplier = 10.3923048454; // 18/sqrt(3);;
+    constexpr float kMergeLimit = 1e-3, multiplier = 10.3923048454; // 18/sqrt(3);;
     for (int i = 0; i < npoints - 1; i += 3) {
         float *p = (float *)src + i * 2;
         x0 = p[0], y0 = p[1], x1 = p[2], y1 = p[3], x2 = p[4], y2 = p[5], x3 = p[6], y3 = p[7];
@@ -29,11 +29,11 @@ static Memory<float> splitCubics(const float *src, int npoints, const float prec
             p += 6;
             ax = x3 - x2, ay = y3 - y2;
             bx = p[2] - x3, by = p[3] - y3;
-            if (bx * bx + by * by < precision) {
+            if (bx * bx + by * by < tinylimit) {
                 dx = p[4] - x3, dy = p[5] - y3;
-                if (dx * dx + dy * dy < precision) {
+                if (dx * dx + dy * dy < tinylimit) {
                     dx = p[6] - x3, dy = p[7] - y3;
-                    if (dx * dx + dy * dy < precision) {
+                    if (dx * dx + dy * dy < tinylimit) {
                         x3 = p[6], y3 = p[7];
                         i += 3;
                         tiny = true;
@@ -122,7 +122,8 @@ struct SubPath {
         float dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
         
         if (type == kCubic) {
-            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision);
+            float w = _bounds.ux - _bounds.lx, h = _bounds.uy - _bounds.ly;
+            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, 1e-3 * (w < h ? w : h));
             const int nfloats = (int)quadratics.count();
             if (nfloats > 5) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
