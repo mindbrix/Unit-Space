@@ -20,14 +20,14 @@ struct Mesh {
             const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
             bool opaques[paths.size()], *opaque = opaques, visibles[paths.size()], *visible = visibles;
             AffineTransform inv = AffineTransformInvert(state.CTM);
-            float mx, my, w, h, rp, dx, dy, a, b, c, d, d0, d1, rd, cx, cy;
+            float mx, my, w, h, rp, dx, dy, a, b, c, d, d0, d1;
             w = clipBounds.ux - clipBounds.lx, h = clipBounds.uy - clipBounds.ly;
             mx = (clipBounds.lx + clipBounds.ux) * 0.5, my = (clipBounds.ly + clipBounds.uy) * 0.5;
             a = inv.a * w, b = inv.b * w, c = inv.c * h, d = inv.d * h;
             d0 = (a + c) * (a + c) + (b + d) * (b + d);
             d1 = (a - c) * (a - c) + (b - d) * (b - d);
-            rd = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
-            cx = mx * inv.a + my * inv.c + inv.tx, cy = mx * inv.b + my * inv.d + inv.ty;
+            const float rd = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
+            const float cx = mx * inv.a + my * inv.c + inv.tx, cy = mx * inv.b + my * inv.d + inv.ty;
             
             const MeshPath *path = & paths[0];
             for (p = 0; p < paths.size(); p++, path++) {
@@ -38,7 +38,7 @@ struct Mesh {
 				d1 = (a - c) * (a - c) + (b - d) * (b - d);
                 rp = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
                 dx = cx - (mx * path->ctm.a + my * path->ctm.c + path->ctm.tx), dy = cy - (mx * path->ctm.b + my * path->ctm.d + path->ctm.ty);
-                *visible++ = dx * dx + dy * dy < (rd + rp) * (rd + rp);
+                *visible++ = std::sqrt(dx * dx + dy * dy) < rd + rp;
 				*opaque++ = path->color.a == 255 && rp > 64;
             }
             for (p = 0; p < paths.size(); p += 8) {
