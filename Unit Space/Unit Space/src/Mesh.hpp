@@ -28,7 +28,7 @@ struct Mesh {
             d1 = (a - c) * (a - c) + (b - d) * (b - d);
             const float rd = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
             const float cx = mx * inv.a + my * inv.c + inv.tx, cy = mx * inv.b + my * inv.d + inv.ty;
-			const float limit = 64 * std::sqrt(std::abs(inv.a * inv.d - inv.b * inv.d));
+			const float limit = 64 * std::sqrt(std::abs(inv.a * inv.d - inv.b * inv.c));
 			
             const MeshPath *path = & paths[0];
             for (p = 0; p < paths.size(); p++, path++) {
