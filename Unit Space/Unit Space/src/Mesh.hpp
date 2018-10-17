@@ -151,33 +151,28 @@ struct Mesh {
     };
     
     struct Timeline {
-		inline void writeCTMForT(AffineTransform& ctm, float t, const MeshPath& p) {
-			ctm.a = p.ctm.a, ctm.b = p.ctm.b, ctm.c = p.ctm.c, ctm.d = p.ctm.d;
-            ctm.tx = p.ctm.tx + (p.bounds.ux - p.bounds.lx) * t;
-            ctm.ty = p.ctm.ty + (p.bounds.uy - p.bounds.ly) * -t;
-		}
-        void empty() {
-            _paths.resize(0);
-        }
-        vector<MeshPath>& basePaths() {
-            return _paths;
-        }
-        void writePathsForTime(double time, MeshPath *paths) {
+        void empty()                    { _basePaths.resize(0); }
+        vector<MeshPath>& basePaths()   { return _basePaths; }
+        
+		void writePathsForTime(double time, MeshPath *paths) {
             if (time == 0) {
-                for (int p = 0; p < _paths.size(); p++)
-                    paths[p] = _paths[p];
+                memcpy(paths, & _basePaths[0], _basePaths.size() * sizeof(MeshPath));
                 return;
             }
             time *= 0.2;
-            for (int p = 0; p < _paths.size(); p++) {
+            for (int i = 0; i < _basePaths.size(); i++) {
                 double t = time - std::floor(time);
                 t = 1 - std::abs(1 - t * 2);
                 t = (3 - 2 * t) * t * t;
-                writeCTMForT(paths[p].ctm, t, _paths[p]);
+                AffineTransform& ctm = paths[i].ctm;
+                const MeshPath& p = _basePaths[i];
+                ctm.a = p.ctm.a, ctm.b = p.ctm.b, ctm.c = p.ctm.c, ctm.d = p.ctm.d;
+                ctm.tx = p.ctm.tx + (p.bounds.ux - p.bounds.lx) * t;
+                ctm.ty = p.ctm.ty + (p.bounds.uy - p.bounds.ly) * -t;
             }
         }
     private:
-        vector<MeshPath>                _paths;
+        vector<MeshPath>                _basePaths;
     };
     
     vector<Call>                        _calls;
