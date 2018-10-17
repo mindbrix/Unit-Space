@@ -152,9 +152,9 @@ struct Mesh {
     
     struct Timeline {
 		inline void writeCTMForTime(AffineTransform& ctm, float time, const MeshPath& p) {
-			ctm = p.ctm;
-            ctm.tx += (p.bounds.ux - p.bounds.lx) * time;
-            ctm.ty += (p.bounds.uy - p.bounds.ly) * -time;
+			ctm.a = p.ctm.a, ctm.b = p.ctm.b, ctm.c = p.ctm.c, ctm.d = p.ctm.d;
+            ctm.tx = p.ctm.tx + (p.bounds.ux - p.bounds.lx) * time;
+            ctm.ty = p.ctm.ty + (p.bounds.uy - p.bounds.ly) * -time;
 		}
         void empty() {
             _paths.resize(0);
