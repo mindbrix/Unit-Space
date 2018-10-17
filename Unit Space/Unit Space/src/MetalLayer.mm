@@ -138,12 +138,11 @@
 
 - (void)draw {
     Mesh *mesh = nullptr;
-    if ([self.layerDelegate respondsToSelector:@selector(meshForLayer:)])
-        mesh = [self.layerDelegate meshForLayer:self];
+    if ([self.layerDelegate respondsToSelector:@selector(meshForLayer:paths:)])
+        mesh = [self.layerDelegate meshForLayer:self paths:(MeshPath *)_pathsBuffer.contents];
     Call *calls = mesh ? & mesh->_calls[0] : nullptr;
     size_t count = mesh ? mesh->_calls.size() : 0;
     
-    memcpy(_pathsBuffer.contents, & mesh->_timeline.pathsForTime(1)[0], _pathsBuffer.length);
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
     [[self.commandQueue commandBuffer] commit];
     

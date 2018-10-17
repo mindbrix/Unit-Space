@@ -12,13 +12,12 @@ using namespace std;
 #pragma clang diagnostic ignored "-Wcomma"
 
 struct Mesh {
-    static void writePathCalls(Mesh& mesh, Bounds clipBounds, State state, MeshState meshState) {
+    static void writePathCalls(Mesh& mesh, MeshPath *paths, size_t pathsSize, Bounds clipBounds, State state, MeshState meshState) {
         int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
         Call *call;
         if (mesh._tris.size()) {
-            const vector<MeshPath> & paths = mesh._timeline.pathsForTime(1);
-            bool opaques[paths.size()], *opaque = opaques, visibles[paths.size()], *visible = visibles;
+            bool opaques[pathsSize], *opaque = opaques, visibles[pathsSize], *visible = visibles;
             AffineTransform inv = AffineTransformInvert(state.CTM);
             float mx, my, w, h, rp, dx, dy, a, b, c, d, d0, d1;
             w = clipBounds.ux - clipBounds.lx, h = clipBounds.uy - clipBounds.ly;
@@ -31,7 +30,7 @@ struct Mesh {
 			const float limit = 64 * std::sqrt(std::abs(inv.a * inv.d - inv.b * inv.c));
 			
             const MeshPath *path = & paths[0];
-            for (p = 0; p < paths.size(); p++, path++) {
+            for (p = 0; p < pathsSize; p++, path++) {
                 w = path->bounds.ux - path->bounds.lx, h = path->bounds.uy - path->bounds.ly;
                 mx = (path->bounds.lx + path->bounds.ux) * 0.5, my = (path->bounds.ly + path->bounds.uy) * 0.5;
                 a = path->ctm.a * w, b = path->ctm.b * w, c = path->ctm.c * h, d = path->ctm.d * h;
@@ -42,25 +41,25 @@ struct Mesh {
                 dx = cx - (mx * path->ctm.a + my * path->ctm.c + path->ctm.tx), dy = cy - (mx * path->ctm.b + my * path->ctm.d + path->ctm.ty);
                 *visible++ = std::sqrt(dx * dx + dy * dy) < rd + rp;
             }
-            for (p = 0; p < paths.size(); p += 8) {
+            for (p = 0; p < pathsSize; p += 8) {
                 bool set = false;
-                end = p + 8 > paths.size() ? (int)paths.size() : p + 8;
+                end = p + 8 > pathsSize ? (int)pathsSize : p + 8;
                 for (j = p; j < end && !set; j++)
                 set |= visibles[j];
                 for (j = p; j < end && set; j++)
                    visibles[j] = true;
             }
             vector<int> ranges;
-			for (p = 0; p < paths.size(); ) {
-				for (j = p; !visibles[j] && j < paths.size(); j++) {}
-				for (p = j; visibles[p] && p < paths.size(); p++) {}
+			for (p = 0; p < pathsSize; ) {
+				for (j = p; !visibles[j] && j < pathsSize; j++) {}
+				for (p = j; visibles[p] && p < pathsSize; p++) {}
 				if (j != p)
 					ranges.emplace_back(j), ranges.emplace_back(p);
 			}
             if (meshState.showQuadratics) {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == paths.size() ? (int)mesh._quadraticFloats.count(): mesh._quadraticIndices[ranges[i + 1]];
+                    end = ranges[i + 1] == pathsSize ? (int)mesh._quadraticFloats.count(): mesh._quadraticIndices[ranges[i + 1]];
                     
                     calls.emplace_back(kCallTypeQuadraticLines, ((end - base) / meshState.quadraticStride - 1) * meshState.subdivisionCount, base / meshState.quadraticStride * meshState.subdivisionCount, state, meshState);
                 }
@@ -75,7 +74,7 @@ struct Mesh {
                 windingState.CTM = AffineTransformConcat(state.CTM, cell);
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == paths.size() ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
+                    end = ranges[i + 1] == pathsSize ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
                     calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
                 }
                 calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
@@ -83,7 +82,7 @@ struct Mesh {
             } else {
                 call = nullptr;
                 if (meshState.showInterior) {
-                    for (end = (int)mesh._tris.count(), p = (int)paths.size() - 1; p >= 0; p--, end = base) {
+                    for (end = (int)mesh._tris.count(), p = (int)pathsSize - 1; p >= 0; p--, end = base) {
                         base = mesh._idxs[p];
                         if (visibles[p] && opaques[p]) {
                             count = end - base;
@@ -106,9 +105,9 @@ struct Mesh {
             }
             
             if (meshState.showVisibles) {
-                calls.emplace_back(kCallTypeFlags, (int)paths.size(), 0, state, meshState);
+                calls.emplace_back(kCallTypeFlags, (int)pathsSize, 0, state, meshState);
 				mesh._flags.w = mesh._flags.h = 64;
-                for (p = 0; p < paths.size(); p++) {
+                for (p = 0; p < pathsSize; p++) {
                     i = p >> 5, j = p % 32;
                     if (i == kFlagsSize)
                         break;
@@ -158,29 +157,29 @@ struct Mesh {
             ctm.ty += (p.bounds.uy - p.bounds.ly) * -time;
 		}
         void empty() {
-            _paths.resize(0), _tpaths.resize(0);
+            _paths.resize(0);
         }
         vector<MeshPath>& pathsForTime(double time) {
-            if (time == 0 || _tpaths.size() == 0)
-                return _paths;
-            return _tpaths;
+            return _paths;
         }
-        vector<MeshPath>& writePathsForTime(double time) {
-            if (_tpaths.size() == 0)
-                for (MeshPath& path : _paths)
-                    _tpaths.emplace_back(path);
+        void writePathsForTime(double time, MeshPath *paths) {
+            if (time == 0) {
+                for (int p = 0; p < _paths.size(); p++)
+                    paths[p] = _paths[p];
+                return;
+            }
             time *= 0.2;
             for (int p = 0; p < _paths.size(); p++) {
                 double t = time - std::floor(time);
                 t = 1 - std::abs(1 - t * 2);
                 t = (3 - 2 * t) * t * t;
-				writeCTMForTime(_tpaths[p].ctm, t, _paths[p]);
+                writeCTMForTime(paths[p].ctm, t, _paths[p]);
             }
-            return _tpaths;
         }
     private:
-        vector<MeshPath>                _paths, _tpaths;
+        vector<MeshPath>                _paths;
     };
+    
     vector<Call>                        _calls;
     
     Bounds                              _bounds;

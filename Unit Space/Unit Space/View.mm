@@ -45,7 +45,6 @@ using namespace std;
 @property(nonatomic) Scene scene;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
-@property(nonatomic) double timerTime;
 @property(nonatomic) CVDisplayLinkRef displayLink;
 
 - (void)timerFired;
@@ -392,7 +391,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     [self.metalLayer uploadMesh:_mesh];
 }
 
-- (void)writeDrawCalls {
+- (void)writeDrawCalls:(MeshPath *)paths {
     AffineTransform CTM = self.viewCTM;
     AffineTransform inv = AffineTransformInvert(CTM);
     float dx = self.mouseLocation.x * self.layer.contentsScale, dy = self.mouseLocation.y * self.layer.contentsScale;
@@ -401,8 +400,6 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     float scale = std::sqrt(std::abs(AffineTransformArea(CTM)));
     float largeRadius = kLargePointDeviceRadius / scale * self.layer.contentsScale;
     float radius = kPointDeviceRadius / scale * self.layer.contentsScale;
-    
-    vector<MeshPath> & paths = _mesh._timeline.writePathsForTime(self.timerTime);
     
     State uniforms;
     uniforms.CTM = CTM;
@@ -428,7 +425,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     meshState.useQuadraticWinding = _useQuadratics;
     meshState.showVisibles = _showVisibles;
     meshState.useStrokeColor = _useStrokeColor;
-    meshState.colorsSize = (int)paths.size();
+    meshState.colorsSize = (int)_scene._paths.size();
     scale /= uniforms.scaleFactor;
     meshState.subdivisionCount = !_useQuadratics || scale <= 1 ? 1 : ceil(sqrt(scale));
 	meshState.clipBounds = { 0, 0, (float)self.metalLayer.drawableSize.width, (float)self.metalLayer.drawableSize.height };
@@ -481,7 +478,7 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     }
     
     Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
-    Mesh::writePathCalls(_mesh, clipBounds, uniforms, meshState);
+    Mesh::writePathCalls(_mesh, paths, _scene._paths.size(), clipBounds, uniforms, meshState);
     
     if (_showPoints) {
         uniforms.fillColor = { 1, 0, 0, 1 };
@@ -534,9 +531,10 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
 
 #pragma mark - LayerDelegate
 
-- (Mesh *)meshForLayer:(CALayer *)layer {
-    self.timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
-    [self writeDrawCalls];
+- (Mesh *)meshForLayer:(CALayer *)layer paths:(MeshPath *)paths {
+    double timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
+    _mesh._timeline.writePathsForTime(timerTime, paths);
+    [self writeDrawCalls: paths];
     return & _mesh;
 }
 

@@ -11,7 +11,7 @@
 #import "Mesh.hpp"
 
 @protocol LayerDelegate <NSObject>
-- (Mesh *)meshForLayer:(CALayer *)layer;
+- (Mesh *)meshForLayer:(CALayer *)layer paths:(MeshPath *)paths;
 @end
 
 
