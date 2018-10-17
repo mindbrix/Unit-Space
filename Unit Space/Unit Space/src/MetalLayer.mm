@@ -275,9 +275,9 @@
         _trisBuffer = [self.device newBufferWithBytes:(void *)mesh._tris.get()
                                                length:mesh._tris.pagedSize()
                                               options:MTLResourceStorageModeShared];
-    if (mesh._timeline.pathsForTime(0).size())
-        _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.pathsForTime(0)[0]
-                                                length:mesh._timeline.pathsForTime(0).size() * sizeof(MeshPath)
+    if (mesh._timeline.basePaths().size())
+        _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.basePaths()[0]
+                                                length:mesh._timeline.basePaths().size() * sizeof(MeshPath)
                                                options:MTLResourceStorageModeManaged];
 }
 

@@ -159,7 +159,7 @@ struct Mesh {
         void empty() {
             _paths.resize(0);
         }
-        vector<MeshPath>& pathsForTime(double time) {
+        vector<MeshPath>& basePaths() {
             return _paths;
         }
         void writePathsForTime(double time, MeshPath *paths) {

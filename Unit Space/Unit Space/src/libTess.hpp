@@ -121,7 +121,7 @@ struct libTess {
             return;
         
         for (p = 0; p < size; p++)
-            mesh._timeline.pathsForTime(0).emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
+            mesh._timeline.basePaths().emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
         int counts[size], count, total;
         for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
