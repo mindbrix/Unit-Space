@@ -440,10 +440,13 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
             if (_scene._paths[i].contains(ux * inv.a + uy * inv.c + inv.tx, ux * inv.b + uy * inv.d + inv.ty))
                 p = i;
         }
-    MeshPath *path = & paths[0];
-    for (int i = 0; i < _scene._paths.size(); i++, path++)
-		path->color = _showTriangles || _showPolygons ? RGBA8::Black() : i == p ? RGBA8::Red() : _showColors ? _scene._paths[i]._color : RGBA8::Black();
-    
+	MeshPath *path = & paths[0];
+	for (int i = 0; i < _scene._paths.size(); i++, path++)
+		path->color = _showColors ? _scene._paths[i]._color : RGBA8::Black();
+	
+	if (p != -1)
+		paths[p].color = RGBA8::Red();
+	
     if (_flags & 16) {
         int dimension = 330, r = 10, g = r * 2 / 0.618, count = dimension * dimension, idx;
         
