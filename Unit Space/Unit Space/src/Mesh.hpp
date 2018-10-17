@@ -151,7 +151,7 @@ struct Mesh {
     };
     
     struct Timeline {
-		inline void writeCTMForTime(AffineTransform& ctm, float t, const MeshPath& p) {
+		inline void writeCTMForT(AffineTransform& ctm, float t, const MeshPath& p) {
 			ctm.a = p.ctm.a, ctm.b = p.ctm.b, ctm.c = p.ctm.c, ctm.d = p.ctm.d;
             ctm.tx = p.ctm.tx + (p.bounds.ux - p.bounds.lx) * t;
             ctm.ty = p.ctm.ty + (p.bounds.uy - p.bounds.ly) * -t;
@@ -173,7 +173,7 @@ struct Mesh {
                 double t = time - std::floor(time);
                 t = 1 - std::abs(1 - t * 2);
                 t = (3 - 2 * t) * t * t;
-                writeCTMForTime(paths[p].ctm, t, _paths[p]);
+                writeCTMForT(paths[p].ctm, t, _paths[p]);
             }
         }
     private:
