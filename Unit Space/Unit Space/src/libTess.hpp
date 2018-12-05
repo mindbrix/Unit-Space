@@ -114,7 +114,7 @@ struct libTess {
 	}
 	
     static void triangulate(Mesh& mesh, Scene& scene) {
-        int p, i, base, divisions = 4, size = (int)scene._paths.size();
+        int p, i, base, divisions = 16, size = (int)scene._paths.size();
         
         mesh.empty();
         if (size == 0)
