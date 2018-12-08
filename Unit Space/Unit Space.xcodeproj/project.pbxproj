@@ -453,6 +453,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Unit Space/Unit_Space.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = WUZW9LMF53;
 				INFOPLIST_FILE = "Unit Space/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
