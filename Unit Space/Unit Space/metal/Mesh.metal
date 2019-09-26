@@ -147,9 +147,26 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
 	if (meshState.showTriangles || meshState.showPolygons) {
-		float w = max(1.0, state.width);
-		float d = simpleBarycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
-		return vert.color * saturate(w - d);
+        float2 unit = vert.u * float2(1.0, 0.0) + vert.v * float2(0.5, 1.0) + (1.0 - vert.u - vert.v) * float2(0.0, 1.0);
+        return vert.color * quadraticDistance(unit, 0.5);
+        
+        float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v), invdet = 1.0 / (a * d - b * c);
+        a *= invdet, b *= invdet, c *= invdet, d *= invdet;
+        float x2 = b * vert.v - d * vert.u, y2 = vert.u * c - vert.v * a;
+        float x0 = x2 + d, y0 = y2 - c;
+        float x1 = x2 - b, y1 = y2 + a;
+        float dy1 = -0.5, dy0 = 1.0;
+        x0 -= 0.5, y0 += dy1, x1 -= 0.5, y1 += dy1, x2 -= 0.5, y2 += dy1;
+        a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
+        float a1 = 4.0 * b * d - a * a;
+        x0 += 1.0, y0 += dy0, x1 += 1.0, y1 += dy0, x2 += 1.0, y2 += dy0;
+        a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
+        float a0 = 4.0 * b * d - a * a;
+        return vert.color * saturate(-a0 / (a1 - a0));
+        
+//        float w = max(1.0, state.width);
+//        float d = simpleBarycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
+//        return vert.color * saturate(w - d);
 	} else
 		return vert.color;
 }
