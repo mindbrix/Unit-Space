@@ -148,26 +148,7 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
         ux = u + 0.5 * v, a0 = u - ux * ux;
         
         return vert.color * saturate(-a0 / (a1 - a0));
-        
-        /*
-        float ux = vert.u + 0.5 * vert.v, imp = vert.u - ux * ux;
-        return vert.color * saturate(imp);
-        
-        
-        float invdet = 1.0 / (a * d - b * c);
-        a *= invdet, b *= invdet, c *= invdet, d *= invdet;
-        float x2 = b * vert.v - d * vert.u, y2 = vert.u * c - vert.v * a;
-        float x0 = x2 + d, y0 = y2 - c;
-        float x1 = x2 - b, y1 = y2 + a;
-        const float dy1 = -0.5, dy0 = 1.0;
-        x0 -= 0.5, y0 += dy1, x1 -= 0.5, y1 += dy1, x2 -= 0.5, y2 += dy1;
-        a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
-        float a1 = 4.0 * b * d - a * a;
-        x0 += 1.0, y0 += dy0, x1 += 1.0, y1 += dy0, x2 += 1.0, y2 += dy0;
-        a = x0 * y2 - y0 * x2, b = x1 * y0 - y1 * x0, d = x2 * y1 - y2 * x1;
-        float a0 = 4.0 * b * d - a * a;
-        return vert.color * saturate(-a0 / (a1 - a0));
-        */
+
 //        float w = max(1.0, state.width);
 //        float d = simpleBarycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
 //        return vert.color * saturate(w - d);
