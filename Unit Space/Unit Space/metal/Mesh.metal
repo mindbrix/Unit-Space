@@ -139,14 +139,13 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
 	if (meshState.showTriangles || meshState.showPolygons) {
-        float a = dfdx(vert.u), b = dfdy(vert.u), c = dfdx(vert.v), d = dfdy(vert.v);
+        float du = 0.5 * (dfdx(vert.u) + dfdy(vert.u));
+        float dv = 0.5 * (dfdx(vert.v) + dfdy(vert.v));
         float u, v, ux, a1, a0;
-        u = vert.u - 0.5 * (a + b), v = vert.v - 0.5 * (c + d);
+        u = vert.u - du, v = vert.v - dv;
         ux = u + 0.5 * v, a1 = u - ux * ux;
-        
-        u = vert.u + 0.5 * (a + b), v = vert.v + 0.5 * (c + d);
+        u = vert.u + du, v = vert.v + dv;
         ux = u + 0.5 * v, a0 = u - ux * ux;
-        
         return vert.color * saturate(-a0 / (a1 - a0));
 
 //        float w = max(1.0, state.width);
