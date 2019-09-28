@@ -139,11 +139,14 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
 fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
 	if (meshState.showTriangles || meshState.showPolygons) {
-        float du, dv, u, v, ux, a1, a0;
-        du = 0.5 * (dfdx(vert.u) + dfdy(vert.u)), dv = 0.5 * (dfdx(vert.v) + dfdy(vert.v));
-        u = vert.u - du, v = vert.v - dv, ux = u + 0.5 * v, a1 = u - ux * ux;
-        u = vert.u + du, v = vert.v + dv, ux = u + 0.5 * v, a0 = u - ux * ux;
-        return vert.color * saturate(-a0 / (a1 - a0));
+        float ux = vert.u + 0.5 * vert.v, a = vert.u - ux * ux, da = dfdx(a) + dfdy(a);
+        return vert.color * saturate(a / da + 0.5);
+        
+//        float du, dv, u, v, ux, a1, a0;
+//        du = 0.5 * (dfdx(vert.u) + dfdy(vert.u)), dv = 0.5 * (dfdx(vert.v) + dfdy(vert.v));
+//        u = vert.u - du, v = vert.v - dv, ux = u + 0.5 * v, a1 = u - ux * ux;
+//        u = vert.u + du, v = vert.v + dv, ux = u + 0.5 * v, a0 = u - ux * ux;
+        //return vert.color * saturate(-a0 / (a1 - a0));
 
 //        float w = max(1.0, state.width);
 //        float d = simpleBarycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
