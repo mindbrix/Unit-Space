@@ -16,9 +16,9 @@ using namespace metal;
 
 struct AccumulateVertex
 {
-    void write(AffineTransform CTM, float ux, uint vid, device float *points, constant State &state, Bounds clipBounds, uint kStride, float offset) {
+    void write(AffineTransform CTM, float ux, uint vid, const device float *points, constant State &state, Bounds clipBounds, uint kStride, float offset) {
         float dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, dx4, dy4, lx, ly, uy, dx, dy;
-        device float *px, *py;
+        const device float *px, *py;
         
         px = points, py = px + 1;
         dx0 = *px * CTM.a + *py * CTM.c + CTM.tx, dy0 = *px * CTM.b + *py * CTM.d + CTM.ty;
@@ -59,8 +59,9 @@ struct AccumulateVertex
 };
 
 vertex AccumulateVertex quadratic_accumulate_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                             device MeshPath *paths [[buffer(9)]],
-                                             device float *quadratics [[buffer(10)]], device int *ps [[buffer(11)]],
+                                             const device MeshPath *paths [[buffer(9)]],
+                                             const device float *quadratics [[buffer(10)]],
+                                             const device int *ps [[buffer(11)]],
                                              uint vid [[vertex_id]], uint iid [[instance_id]])
 {
     uint idx = iid * meshState.quadraticStride;
@@ -100,24 +101,24 @@ struct InteriorVertex
 };
 
 vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                           device Triangle *tris [[buffer(8)]], device MeshPath *paths [[buffer(9)]],
+                                           const device Triangle *tris [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
                                            uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
     uint idx = select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
-    device Triangle& tri = tris[idx];
+    const device Triangle& tri = tris[idx];
     uint p = tri.p & Triangle::kFlagsMask;
     float t = tri.t;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = min(1.0, rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c))));
     
     const float f = kTriangleFilterWidth;
-    device float *ix = & tri.ix0 + vid * 2;
+    const device float *ix = & tri.ix0 + vid * 2;
     float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale * f, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale * f };
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float visible = float(1.0 / rscale > t / (0.5 / f));
-    device unsigned short *pt = & tri.x0 + vid * 2;
+    const device unsigned short *pt = & tri.x0 + vid * 2;
     float2 devicePoint = {
         visible * (iv.x + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
         visible * (iv.y + pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty)
@@ -163,11 +164,11 @@ struct TriangleVertex
 #pragma mark Vertex
 
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                       device Triangle *tris [[buffer(8)]],
-                                       device MeshPath *paths [[buffer(9)]],
+                                       const device Triangle *tris [[buffer(8)]],
+                                       const device MeshPath *paths [[buffer(9)]],
                                        uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
 {
-    device Triangle& tri = tris[iid];
+    const device Triangle& tri = tris[iid];
     uint p = tri.p & Triangle::kFlagsMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
@@ -179,7 +180,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
     float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
     
-    device float *iv = & tri.ix0;
+    const device float *iv = & tri.ix0;
     float2 iv0 = { (iv[0] * CTM.a + iv[1] * CTM.c) * rscale, (iv[0] * CTM.b + iv[1] * CTM.d) * rscale };
     float2 iv1 = { (iv[2] * CTM.a + iv[3] * CTM.c) * rscale, (iv[2] * CTM.b + iv[3] * CTM.d) * rscale };
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
