@@ -16,6 +16,8 @@
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> trisBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorIdxsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> quadraticTsBuffer;
@@ -23,6 +25,7 @@
 @property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorIndexedPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticLinePipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> quadraticAccumulatePipelineState;
@@ -93,6 +96,11 @@
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
     self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_indexed_vertex_main"];
+    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_indexed_fragment_main"];
+    descriptor.label = @"InteriorIndexed";
+    self.meshInteriorIndexedPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 	
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
@@ -189,7 +197,7 @@
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = 1, baseInstance = 0;
-        BOOL drawQuads = YES;
+        BOOL drawQuads = YES, drawIndexed = NO, drawStream = NO;
         switch (call->type) {
             case kCallTypeShapesSOA:
                 [commandEncoder setRenderPipelineState:_shapePipelineState];
@@ -215,6 +223,14 @@
 				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawQuads = NO;
+                drawStream = call->type == kCallTypeMeshTriangles;
+                break;
+            case kCallTypeMeshInteriorIndexed:
+                [commandEncoder setRenderPipelineState:_meshInteriorIndexedPipelineState];
+                [commandEncoder setVertexBuffer:_interiorVertsBuffer offset:0 atIndex:8];
+                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
+                drawIndexed = YES;
                 break;
            case kCallTypeResolveQuadSOA:
                 [commandEncoder setRenderPipelineState:_resolveQuadSOAPipelineState];
@@ -240,11 +256,24 @@
 		[commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
 		[commandEncoder setFragmentBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
 	
-        [commandEncoder drawPrimitives:drawQuads ? MTLPrimitiveTypeTriangleStrip : MTLPrimitiveTypeTriangle
-                           vertexStart:0
-                           vertexCount:drawQuads ? 4 : 3
-                         instanceCount:instanceCount
-                          baseInstance:baseInstance];
+        if (drawIndexed) {
+            // Index buffer triangles are counter-clockwise in path space; a mirroring CTM flips them.
+            [commandEncoder setCullMode:MTLCullModeBack];
+            [commandEncoder setFrontFacingWinding:AffineTransformArea(call->state.CTM) < 0 ? MTLWindingClockwise : MTLWindingCounterClockwise];
+            [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                       indexCount:instanceCount * 3
+                                        indexType:MTLIndexTypeUInt32
+                                      indexBuffer:_interiorIdxsBuffer
+                                indexBufferOffset:baseInstance * 3 * sizeof(uint32_t)];
+            [commandEncoder setCullMode:MTLCullModeNone];
+        } else if (drawStream)
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
+        else
+            [commandEncoder drawPrimitives:drawQuads ? MTLPrimitiveTypeTriangleStrip : MTLPrimitiveTypeTriangle
+                               vertexStart:0
+                               vertexCount:drawQuads ? 4 : 3
+                             instanceCount:instanceCount
+                              baseInstance:baseInstance];
     }
     [commandEncoder endEncoding];
     __block dispatch_semaphore_t block_sema = _inflight_semaphore;
@@ -274,6 +303,14 @@
         _trisBuffer = [self.device newBufferWithBytes:(void *)mesh._tris.get()
                                                length:mesh._tris.pagedSize()
                                               options:MTLResourceStorageModeShared];
+    if (mesh._interiorVerts.pagedSize())
+        _interiorVertsBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorVerts.get()
+                                                        length:mesh._interiorVerts.pagedSize()
+                                                       options:MTLResourceStorageModeShared];
+    if (mesh._interiorIdxs.pagedSize())
+        _interiorIdxsBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorIdxs.get()
+                                                       length:mesh._interiorIdxs.pagedSize()
+                                                      options:MTLResourceStorageModeShared];
     if (mesh._timeline.basePaths().size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.basePaths()[0]
                                                 length:mesh._timeline.basePaths().size() * sizeof(MeshPath)

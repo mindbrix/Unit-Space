@@ -10,6 +10,7 @@
 
 #import "Scene.hpp"
 #import <vector>
+#import <unordered_map>
 #import "tesselator.h"
 #import "Algorithms.hpp"
 
@@ -151,6 +152,42 @@ struct libTess {
                 mesh._idxs.emplace_back(base + idx);
         }
         mesh._idxs.emplace_back((int)mesh._tris.count());
+        writeIndexedInterior(mesh);
+    }
+    
+    // Shares vertices between triangles so the interior pass transforms each vertex once instead of three times.
+    // Triangles are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
+    // back-face culling drops triangles that the miter inset has inverted.
+    static void writeIndexedInterior(Mesh& mesh) {
+        struct Hash {
+            size_t operator()(const MeshVertex& v) const {
+                uint64_t a, b;
+                memcpy(& a, & v, sizeof(a)), memcpy(& b, (const char *)& v + sizeof(a), sizeof(b));
+                return std::hash<uint64_t>()(a * 0x9E3779B97F4A7C15ULL ^ b);
+            }
+        };
+        struct Equal {
+            bool operator()(const MeshVertex& a, const MeshVertex& b) const { return memcmp(& a, & b, sizeof(MeshVertex)) == 0; }
+        };
+        size_t ntris = mesh._tris.count(), i;
+        if (ntris == 0)
+            return;
+        std::unordered_map<MeshVertex, unsigned int, Hash, Equal> lookup;
+        lookup.reserve(ntris * 3 / 2);
+        unsigned int *idx = mesh._interiorIdxs.new_ptr(ntris * 3);
+        for (i = 0; i < ntris; i++) {
+            Triangle& t = mesh._tris[ntris - 1 - i];
+            unsigned int p = t.p & Triangle::kFlagsMask;
+            MeshVertex v[3] = { { p, t.x0, t.y0, t.ix0, t.iy0 }, { p, t.x1, t.y1, t.ix1, t.iy1 }, { p, t.x2, t.y2, t.ix2, t.iy2 } };
+            if (int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0) < 0)
+                std::swap(v[1], v[2]);
+            for (int k = 0; k < 3; k++) {
+                auto it = lookup.emplace(v[k], (unsigned int)lookup.size());
+                if (it.second)
+                    *mesh._interiorVerts.new_ptr(1) = v[k];
+                *idx++ = it.first->second;
+            }
+        }
     }
     
     static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {

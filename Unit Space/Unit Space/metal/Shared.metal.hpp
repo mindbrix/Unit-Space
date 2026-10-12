@@ -146,6 +146,15 @@ struct Triangle {
     float ix0, iy0, ix1, iy1, ix2, iy2;
 };
 
+// A shared interior mesh vertex: quantised position within its path's bounds plus its miter vector.
+struct MeshVertex {
+    MeshVertex() {}
+    MeshVertex(unsigned int p, unsigned short x, unsigned short y, float ix, float iy) : p(p), x(x), y(y), ix(ix), iy(iy) {}
+    unsigned int p;
+    unsigned short x, y;
+    float ix, iy;
+};
+
 struct Vector {
     Vector() {}
     Vector(float x, float y) : x(x), y(y) {}
@@ -212,6 +221,7 @@ enum CallType : unsigned int {
     kCallTypeResolveQuadSOA,
     kCallTypeQuadraticLines,
     kCallTypeQuadraticAccumulate,
+    kCallTypeMeshInteriorIndexed,
 };
 
 enum ShapeType : short {

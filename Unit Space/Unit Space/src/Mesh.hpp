@@ -82,16 +82,21 @@ struct Mesh {
             } else {
                 call = nullptr;
                 if (meshState.showInterior) {
-                    for (end = (int)mesh._tris.count(), p = (int)pathsSize - 1; p >= 0; p--, end = base) {
+                    // Indexed calls address the reversed index buffer, so a merged run keeps its start and only grows.
+                    bool indexed = !meshState.showTriangles && !meshState.showPolygons;
+                    int total = (int)mesh._tris.count(), runBase = -1;
+                    for (end = total, p = (int)pathsSize - 1; p >= 0; p--, end = base) {
                         base = mesh._idxs[p];
                         if (visibles[p] && opaques[p]) {
                             count = end - base;
-                            if (call == nullptr || call->baseInstance != end) {
-                                calls.emplace_back(kCallTypeMeshInterior, 0, base, state, meshState);
+                            if (call == nullptr || runBase != end) {
+                                calls.emplace_back(indexed ? kCallTypeMeshInteriorIndexed : kCallTypeMeshInterior, 0, indexed ? total - end : base, state, meshState);
                                 call = & calls.back();
                                 call->meshState.reverseCount = end;
                             }
-                            call->baseInstance = base;
+                            if (!indexed)
+                                call->baseInstance = base;
+                            runBase = base;
                             call->instanceCount += count;
                         }
                     }
@@ -188,6 +193,8 @@ struct Mesh {
     
     vector<int>                         _idxs;
     Memory<Triangle, true>              _tris;
+    Memory<MeshVertex, true>            _interiorVerts;
+    Memory<unsigned int, true>          _interiorIdxs;
     
     ShapesSOA                           _shapesSOA;
 	Flags								_flags;
@@ -196,5 +203,6 @@ struct Mesh {
         _bounds = Bounds(0, 0, 0, 0);
         _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticTs = Memory<float, true>(), _quadraticIndices = Memory<int>();
         _timeline.empty(), _idxs.resize(0), _tris = Memory<Triangle, true>();
+        _interiorVerts = Memory<MeshVertex, true>(), _interiorIdxs = Memory<unsigned int, true>();
     }
 };

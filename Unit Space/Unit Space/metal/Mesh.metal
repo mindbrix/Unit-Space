@@ -150,15 +150,55 @@ fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constan
 		return vert.color;
 }
 
+#pragma mark - Indexed interior
+
+struct IndexedInteriorVertex
+{
+    float4 position [[position]];
+    float4 color [[flat]];
+};
+
+vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                                          const device MeshVertex *verts [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
+                                                          uint vid [[vertex_id]])
+{
+    const device MeshVertex& v = verts[vid];
+    uint p = v.p;
+    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
+    float rscale = min(1.0, rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c))));
+    
+    const float f = kTriangleFilterWidth;
+    float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale * f, (v.ix * CTM.b + v.iy * CTM.d) * rscale * f };
+    
+    Bounds bounds = paths[p].bounds;
+    float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
+    float2 devicePoint = {
+        iv.x + v.x * w * CTM.a + v.y * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,
+        iv.y + v.x * w * CTM.b + v.y * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
+    };
+    RGBA8 color = paths[p].color;
+    
+    IndexedInteriorVertex vert;
+    float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
+    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
+    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
+    return vert;
+}
+
+fragment float4 interior_indexed_fragment_main(IndexedInteriorVertex vert [[stage_in]])
+{
+    return vert.color;
+}
+
 #pragma mark - Triangle
 
+// Kept small: every scalar here is written out per vertex, and output size measurably limits this pass.
 struct TriangleVertex
 {
     float4 position [[position]];
-    float u, v;
-    bool convex0, convex1, convex2;
     float d0, d1, d2, d3, d4, d5;
-    float4 color;
+    uint convex [[flat]];   // Triangle::kFlagsConvex0..2 shifted down to bits 2, 1, 0.
+    float4 color [[flat]];
 };
 
 #pragma mark Vertex
@@ -166,8 +206,10 @@ struct TriangleVertex
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                        const device Triangle *tris [[buffer(8)]],
                                        const device MeshPath *paths [[buffer(9)]],
-                                       uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
+                                       uint vertexId [[vertex_id]])
 {
+    // Drawn as one non-instanced stream of 3 vertices per triangle: one instance per triangle is much slower.
+    uint iid = vertexId / 3, vid = vertexId - iid * 3;
     const device Triangle& tri = tris[iid];
     uint p = tri.p & Triangle::kFlagsMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
@@ -231,9 +273,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
     vert.d5 = nx * vx + ny * vy - f;
 	
-    vert.convex0 = tri.p & Triangle::kFlagsConvex0;
-    vert.convex1 = tri.p & Triangle::kFlagsConvex1;
-    vert.convex2 = tri.p & Triangle::kFlagsConvex2;
+    vert.convex = (tri.p >> 26) & 7;
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
@@ -244,7 +284,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     const float f = kTriangleFilterWidth;
-    float convex0 = vert.convex0 ? 1 : -1, convex1 = vert.convex1 ? 1 : -1, convex2 = vert.convex2 ? 1 : -1;
+    float convex0 = (vert.convex & 4) ? 1 : -1, convex1 = (vert.convex & 2) ? 1 : -1, convex2 = (vert.convex & 1) ? 1 : -1;
     float d01 = convex0 * min(convex0 * vert.d0, convex0 * vert.d1);
     float d23 = convex1 * min(convex1 * vert.d2, convex1 * vert.d3);
     float d45 = convex2 * min(convex2 * vert.d4, convex2 * vert.d5);
