@@ -193,25 +193,42 @@ private:
         return (bx - ax) * (p.x2 - p.x0) + (by - ay) * (p.y2 - p.y0) <= 0;
     }
 
-    // The chain along one side, offset by d (positive is left), through every piece and join.
+    // The chain along one side, offset by d (positive is left), through every piece and join. Folded pieces follow the
+    // curve itself, and inner corners pass through the corner point, so the chain only steps out to the offset where
+    // the next part needs it: stepping out and straight back would be a zero-width spike.
     void side(vector<float>& s, float d, bool closed) {
         int n = (int)pieces.size();
         Piece& first = pieces[0];
-        s.push_back(first.x0 + d * first.n0x), s.push_back(first.y0 + d * first.n0y);
+        bool firstFolds = folds(first, d);
+        if (closed && firstFolds)
+            s.push_back(first.x0), s.push_back(first.y0);
+        else
+            s.push_back(first.x0 + d * first.n0x), s.push_back(first.y0 + d * first.n0y);
         for (int i = 0; i < n; i++) {
-            Piece& p = pieces[i];
+            Piece& p = pieces[i], &next = pieces[(i + 1) % n];
+            bool joined = sharp[i] && (closed || i < n - 1), inner = joined && isInner(p, next, d);
+            bool nextFolds = (closed || i < n - 1) && folds(next, d);
             const float q[6] = { p.x0, p.y0, p.cx, p.cy, p.x2, p.y2 };
             if (folds(p, d)) {
                 // Follow the curve itself; addFold covers the region beyond it.
-                lineTo(s, p.x0, p.y0), quadTo(s, p.cx, p.cy, p.x2, p.y2), lineTo(s, p.x2 + d * p.n2x, p.y2 + d * p.n2y);
+                lineTo(s, p.x0, p.y0), quadTo(s, p.cx, p.cy, p.x2, p.y2);
+                if (!inner && !(nextFolds && !joined))
+                    lineTo(s, p.x2 + d * p.n2x, p.y2 + d * p.n2y);
             } else
                 appendOffset(s, q, p.n0x, p.n0y, p.n2x, p.n2y, d, 0);
-            if (sharp[i] && (closed || i < n - 1))
-                addJoin(s, p, pieces[(i + 1) % n], d);
+            if (inner) {
+                lineTo(s, p.x2, p.y2);
+                if (!nextFolds)
+                    lineTo(s, p.x2 + d * next.n0x, p.y2 + d * next.n0y);
+            } else if (joined)
+                addJoin(s, p, next, d);
         }
-        if (closed)
+        if (closed && !firstFolds)
             s[s.size() - 2] = s[0], s[s.size() - 1] = s[1];
     }
+
+    // Whether the corner from a to b turns toward the side offset by d.
+    static bool isInner(const Piece& a, const Piece& b, float d) { return (a.t2x * b.t0y - a.t2y * b.t0x > 0) == (d > 0); }
 
     // Appends the offset of the quadratic q by d, given its end normals, to the chain (its start point is already there).
     void appendOffset(vector<float>& s, const float *q, float n0x, float n0y, float n2x, float n2y, float d, int depth) {
@@ -241,18 +258,15 @@ private:
                 return;
             }
         }
-        quadTo(s, cx, cy, bx, by);
+        // Part of a piece can fold even when the whole doesn't, collapsing its offset to a point.
+        if (bx != s[s.size() - 2] || by != s[s.size() - 1])
+            quadTo(s, cx, cy, bx, by);
     }
 
-    // The corner from a's end to b's start on the side offset by d: the join if it is the outer side, and through the
-    // corner point if it is the inner one.
+    // The outer corner from a's end to b's start on the side offset by d: the miter, round or bevel join.
     void addJoin(vector<float>& s, Piece& a, Piece& b, float d) {
         float cross = a.t2x * b.t0y - a.t2y * b.t0x, dot = a.t2x * b.t0x + a.t2y * b.t0y;
         float px = a.x2, py = a.y2, bx = px + d * b.n0x, by = py + d * b.n0y;
-        if ((cross > 0) == (d > 0)) {   // turning toward this side: the inner side
-            lineTo(s, px, py), lineTo(s, bx, by);
-            return;
-        }
         if (join == kRound)
             arcTo(s, px, py, bx, by, cross > 0 ? 1.f : -1.f);   // the normal turns with the tangent
         else if (join == kMiter && dot > -0.9999f && 1.f / std::sqrt((1.f + dot) * 0.5f) <= miterLimit) {
@@ -274,23 +288,32 @@ private:
             lineTo(chain, x - nx, y - ny);
     }
 
+    // A zero-length subpath: a circle for round caps, an axis-aligned square for square ones (it has no direction), and
+    // nothing for butt caps.
     void addDot(float x, float y) {
-        if (cap != kRoundCap)
-            return;
-        chain.assign({ x + w, y });
-        arcTo(chain, x, y, x - w, y, -1.f, true), arcTo(chain, x, y, x + w, y, -1.f, true);
-        addContour();
+        if (cap == kRoundCap) {
+            chain.assign({ x + w, y });
+            arcTo(chain, x, y, x - w, y, -1.f, true), arcTo(chain, x, y, x + w, y, -1.f, true);
+            addContour();
+        } else if (cap == kSquare) {
+            chain.assign({ x - w, y - w });
+            lineTo(chain, x - w, y + w), lineTo(chain, x + w, y + w), lineTo(chain, x + w, y - w);
+            addContour();
+        }
     }
 
     // Covers the far side of a piece folding at offset d: the curve to the centre of curvature, and from there to the
-    // folded offset's ends.
+    // folded offset's ends. A piece only just folding puts the centre on an offset end, collapsing the triangle to a
+    // line that retraces itself, so leave that out.
     void addFold(Piece& p, float d) {
         float den = p.n0x * p.n2y - p.n0y * p.n2x;
         if (den == 0)
             return;
         float u = ((p.x2 - p.x0) * p.n2y - (p.y2 - p.y0) * p.n2x) / den, xx = p.x0 + u * p.n0x, xy = p.y0 + u * p.n0y;
+        float ax = p.x0 + d * p.n0x, ay = p.y0 + d * p.n0y, bx = p.x2 + d * p.n2x, by = p.y2 + d * p.n2y;
         chain.assign({ p.x0, p.y0 }), quadTo(chain, p.cx, p.cy, p.x2, p.y2), lineTo(chain, xx, xy), addContour(true);
-        chain.assign({ xx, xy }), lineTo(chain, p.x2 + d * p.n2x, p.y2 + d * p.n2y), lineTo(chain, p.x0 + d * p.n0x, p.y0 + d * p.n0y), addContour(true);
+        if ((xx != ax || xy != ay) && (xx != bx || xy != by) && (ax != bx || ay != by))
+            chain.assign({ xx, xy }), lineTo(chain, bx, by), lineTo(chain, ax, ay), addContour(true);
     }
 
     // Arcs around (cx, cy) from the chain's end to (bx, by), turning by sign (+1 counter-clockwise), in quadratics of at
@@ -326,32 +349,10 @@ private:
             std::swap(s[i * 2], s[j * 2]), std::swap(s[i * 2 + 1], s[j * 2 + 1]);
     }
 
-    // Drops zero-length segments, and lines that retrace the previous line exactly (A -> B -> A). Inner corners of tight,
-    // folding pieces produce these zero-width spikes, which break the tessellator's Delaunay pass.
-    void removeSpikes() {
-        auto isLine = [](const float *a, const float *c, const float *b) { return c[0] == (a[0] + b[0]) * 0.5f && c[1] == (a[1] + b[1]) * 0.5f; };
-        vector<float> s(chain.begin(), chain.begin() + 2);
-        for (size_t i = 2; i + 3 < chain.size(); i += 4) {
-            const float *c = & chain[i], *p = & chain[i + 2], *last = & s[s.size() - 2];
-            if (p[0] == last[0] && p[1] == last[1])
-                continue;
-            if (s.size() >= 6) {
-                const float *prev = & s[s.size() - 6], *pc = & s[s.size() - 4];
-                if (p[0] == prev[0] && p[1] == prev[1] && isLine(prev, pc, last) && isLine(last, c, p)) {
-                    s.resize(s.size() - 4);
-                    continue;
-                }
-            }
-            s.push_back(c[0]), s.push_back(c[1]), s.push_back(p[0]), s.push_back(p[1]);
-        }
-        chain.swap(s);
-    }
-
     // Closes the chain back to its start and adds it. Stroke bodies already wind clockwise by construction; separate
     // pieces (orient) are made to.
     void addContour(bool orient = false) {
         lineTo(chain, chain[0], chain[1]);
-        removeSpikes();
         int npoints = (int)chain.size() / 2;
         if (npoints < 5)
             return;

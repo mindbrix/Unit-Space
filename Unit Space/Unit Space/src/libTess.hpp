@@ -73,10 +73,7 @@ struct libTess {
             int base = 0;
             for (SubPath& s : path._subPaths) {
                 bases.push_back(base), subPaths.push_back(& s);
-                int n = (int)s._quadratics.count() / 4 + 1;
-                for (int i = 0; i < n; i++)
-                    positions[key(s._quadratics[i * 4], s._quadratics[i * 4 + 1])].push_back(base + i);
-                base += n;
+                base += (int)s._quadratics.count() / 4 + 1;
             }
             bases.push_back(base);
         }
@@ -86,6 +83,13 @@ struct libTess {
             Segment seg = segment(a, b);
             if (seg.found || stroked || a == TESS_UNDEF || b == TESS_UNDEF)
                 return seg;
+            // Most paths have no merged vertices, so only index positions once a lookup misses.
+            if (!indexed) {
+                for (int sp = 0; sp < (int)subPaths.size(); sp++)
+                    for (int i = 0; i < bases[sp + 1] - bases[sp]; i++)
+                        positions[key(subPaths[sp]->_quadratics[i * 4], subPaths[sp]->_quadratics[i * 4 + 1])].push_back(bases[sp] + i);
+                indexed = true;
+            }
             auto ia = positions.find(key(pa[0], pa[1])), ib = positions.find(key(pb[0], pb[1]));
             if (ia == positions.end() || ib == positions.end() || (ia->second.size() == 1 && ib->second.size() == 1))
                 return seg;
@@ -123,7 +127,7 @@ struct libTess {
             memcpy(& ux, & x, 4), memcpy(& uy, & y, 4);
             return (uint64_t)ux << 32 | uy;
         }
-        bool stroked;
+        bool stroked, indexed = false;
         vector<int> bases;
         vector<SubPath *> subPaths;
         unordered_map<uint64_t, vector<int>> positions;
@@ -324,6 +328,22 @@ struct libTess {
         tris.back().curves = curves;
     }
     
+    // Splits paths into contiguous divisions of about equal cost: begins[i] is division i's first path, begins[divisions]
+    // the path count. 64-bit, as large scenes' total cost times the division index overflows an int.
+    static void balanceDivisions(const vector<int64_t>& costs, int divisions, int *begins) {
+        int size = (int)costs.size(), p = 0;
+        int64_t total = 0, count = 0;
+        for (int64_t c : costs)
+            total += c;
+        begins[0] = 0, begins[divisions] = size;
+        for (int i = 1; i < divisions; i++) {
+            int64_t target = total * i / divisions;
+            while (p < size && count < target)
+                count += costs[p++];
+            begins[i] = p;
+        }
+    }
+    
     static void triangulate(Mesh& mesh, Scene& scene) {
         int p, i, base, divisions = 64, size = (int)scene._paths.size();
         
@@ -334,19 +354,13 @@ struct libTess {
         for (p = 0; p < size; p++)
             mesh._timeline.basePaths().emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
-        int counts[size], count, total;
         // Balance the divisions by cost: stroke outlines cross themselves, so their segments cost about three times as much.
-        for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
+        vector<int64_t> costs(size, 0);
+        for (p = 0; p < size; p++)
             for (SubPath& s : scene._paths[p]._subPaths)
-                count += s._quadratics.count() * (scene._paths[p]._outline ? 3 : 1);
-        int begins[divisions + 1], target, *b = begins;
-        begins[0] = 0, begins[divisions] = size;
-        for (count = p = 0, i = 1; i < divisions; i++) {
-            target = total * i / divisions;
-            while (count < target)
-                count += counts[p++];
-            begins[i] = p;
-        }
+                costs[p] += (int64_t)s._quadratics.count() * (scene._paths[p]._outline ? 3 : 1);
+        int begins[divisions + 1], *b = begins;
+        balanceDivisions(costs, divisions, begins);
         vector<Triangle> tris[divisions], *triss = tris;
         vector<int> idxs[divisions], *idxss = idxs;
         if (divisions == 1)

@@ -136,8 +136,16 @@ struct Scene {
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                     SubPath s(path->pts, path->npts, SubPath::kCubic);
                     p.addSubPath(s);
-                    if (stroked)
-                        stroke.addSubPath(s._quadratics.get(), (int)s._quadratics.count() / 2, path->closed);
+                    if (stroked) {
+                        // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
+                        bool point = s._quadratics.count() == 0 && path->npts > 0;
+                        for (int i = 1; point && i < path->npts; i++)
+                            point = path->pts[i * 2] == path->pts[0] && path->pts[i * 2 + 1] == path->pts[1];
+                        if (point)
+                            stroke.addSubPath(path->pts, 1, path->closed);
+                        else
+                            stroke.addSubPath(s._quadratics.get(), (int)s._quadratics.count() / 2, path->closed);
+                    }
                 }
                 if (filled)
                     addPath(p);
