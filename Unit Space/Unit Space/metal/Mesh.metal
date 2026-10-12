@@ -113,7 +113,8 @@ vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], 
     
     const float f = kTriangleFilterWidth;
     const device float *ix = & tri.ix0 + vid * 2;
-    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale * f, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale * f };
+    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale };
+    iv *= min(1.0, kTriangleDilationMax * rsqrt(dot(iv, iv))) * f;
     
     Bounds bounds = paths[p].bounds;
 	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
@@ -168,7 +169,9 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     float rscale = min(1.0, rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c))));
     
     const float f = kTriangleFilterWidth;
-    float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale * f, (v.ix * CTM.b + v.iy * CTM.d) * rscale * f };
+    // Clamped like the edge pass's dilation: nearly reversing tangents give very long miters.
+    float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale, (v.ix * CTM.b + v.iy * CTM.d) * rscale };
+    iv *= min(1.0, kTriangleDilationMax * rsqrt(dot(iv, iv))) * f;
     
     Bounds bounds = paths[p].bounds;
     float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
@@ -193,13 +196,35 @@ fragment float4 interior_indexed_fragment_main(IndexedInteriorVertex vert [[stag
 #pragma mark - Triangle
 
 // Kept small: every scalar here is written out per vertex, and output size measurably limits this pass.
+// d0..d5 are two edge lines per corner. A hull triangle instead carries the line at p0 its curve meets (d0), the
+// curve's Loop-Blinn (u, v) (d1, d2) and the line at p2 (d3).
 struct TriangleVertex
 {
     float4 position [[position]];
     float d0, d1, d2, d3, d4, d5;
-    uint convex [[flat]];   // Triangle::kFlagsConvex0..2 shifted down to bits 2, 1, 0.
+    uint convex [[flat]];   // bits 2..0: Triangle::kFlagsConvex0..2; bits 3 and up: Triangle::curves.
     float4 color [[flat]];
 };
+
+// Loop-Blinn coordinates of p for the quadratic a -> c -> b: (0, 0) at a, (1/2, 0) at c and (1, 1) at b, so u^2 = v on the curve.
+static inline float2 loopBlinn(float2 p, float2 a, float2 c, float2 b) {
+    float2 e1 = c - a, e2 = b - a, w = p - a;
+    float rdet = 1.0 / (e1.x * e2.y - e1.y * e2.x);
+    float alpha = (e2.y * w.x - e2.x * w.y) * rdet, beta = (e1.x * w.y - e1.y * w.x) * rdet;
+    return float2(0.5 * alpha + beta, beta);
+}
+
+// Inward distances from p to a corner's two edge lines through vertex v: the unit miter rotated either way by the half
+// angle, whose cosine is 1 / |miter|. The first is the edge most perpendicular to t. Interior vertices have no miter
+// and no corner, so their lines are always inside.
+static inline float2 cornerDistances(float2 iv, float2 v, float2 t, float2 p) {
+    float len2 = dot(iv, iv), rl = rsqrt(len2), cosine = min(1.0, rl), sine = sqrt(1 - cosine * cosine);
+    float2 u = iv * rl, w = p - v;
+    float2 na = float2(u.x * cosine + u.y * sine, u.x * -sine + u.y * cosine);
+    float2 nb = float2(u.x * cosine + u.y * -sine, u.x * sine + u.y * cosine);
+    bool first = abs(dot(na, t)) <= abs(dot(nb, t));
+    return select(float2(dot(select(nb, na, first), w), dot(select(na, nb, first), w)), float2(1e6), len2 == 0);
+}
 
 #pragma mark Vertex
 
@@ -211,16 +236,16 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     // Drawn as one non-instanced stream of 3 vertices per triangle: one instance per triangle is much slower.
     uint iid = vertexId / 3, vid = vertexId - iid * 3;
     const device Triangle& tri = tris[iid];
-    uint p = tri.p & Triangle::kFlagsMask;
+    uint p = tri.p & Triangle::kFlagsMask, curves = tri.curves;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
-	Bounds bounds = paths[p].bounds;
-	float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
+    Bounds bounds = paths[p].bounds;
+    float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
     float tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
-    float x0 = tri.x0 * a + tri.y0 * c + tx, y0 = tri.x0 * b + tri.y0 * d + ty;
-    float x1 = tri.x1 * a + tri.y1 * c + tx, y1 = tri.x1 * b + tri.y1 * d + ty;
-    float x2 = tri.x2 * a + tri.y2 * c + tx, y2 = tri.x2 * b + tri.y2 * d + ty;
+    float2 v0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
+    float2 v1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
+    float2 v2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
     const device float *iv = & tri.ix0;
     float2 iv0 = { (iv[0] * CTM.a + iv[1] * CTM.c) * rscale, (iv[0] * CTM.b + iv[1] * CTM.d) * rscale };
@@ -228,52 +253,29 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
     const float f = kTriangleFilterWidth;
-    float s = 1;//min(1.0, (0.5 / rscale) / (tri.t / (0.5 / f)));
-    float s0 = min(1.0, kTriangleDilationMax * rsqrt(iv0.x * iv0.x + iv0.y * iv0.y));
-    float s1 = min(1.0, kTriangleDilationMax * rsqrt(iv1.x * iv1.x + iv1.y * iv1.y));
-    float s2 = min(1.0, kTriangleDilationMax * rsqrt(iv2.x * iv2.x + iv2.y * iv2.y));
-    iv0 *= s0 * s, iv1 *= s1 * s, iv2 *= s2 * s;
+    float s0 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv0, iv0)));
+    float s1 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv1, iv1)));
+    float s2 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv2, iv2)));
+    float2 p0 = v0 - iv0 * (s0 * f), p1 = v1 - iv1 * (s1 * f), p2 = v2 - iv2 * (s2 * f);
     
-    x0 -= iv0.x * f, y0 -= iv0.y * f;
-    x1 -= iv1.x * f, y1 -= iv1.y * f;
-    x2 -= iv2.x * f, y2 -= iv2.y * f;
-    
-    float visible = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1) > 0;
-    float dx = visible * select(select(x2, x1, vid == 1), x0, vid == 0);
-    float dy = visible * select(select(y2, y1, vid == 1), y0, vid == 0);
+    float visible = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x) > 0;
+    float2 pos = visible * select(select(p2, p1, vid == 1), p0, vid == 0);
     
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
-    vert.position = float4((float2(dx / state.drawableSize.w, dy / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
+    vert.position = float4((pos / float2(state.drawableSize.w, state.drawableSize.h)) * 2.0 - 1.0, z, 1.0);
     
-    float rl, cosine, sine, ix, iy, vx, vy, nx, ny;
-	
-	vx = dx - x0, vy = dy - y0;
-	ix = iv0.x, iy = iv0.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s0 * s), sine = sqrt(1 - cosine * cosine);
-	ix *= rl, iy *= rl;
-	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-	vert.d0 = nx * vx + ny * vy - f;
-    nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d1 = nx * vx + ny * vy - f;
-	
-	vx = dx - x1, vy = dy - y1;
-	ix = iv1.x, iy = iv1.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s1 * s), sine = sqrt(1 - cosine * cosine);
-	ix *= rl, iy *= rl;
-	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d2 = nx * vx + ny * vy - f;
-    nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d3 = nx * vx + ny * vy - f;
-	
-	vx = dx - x2, vy = dy - y2;
-	ix = iv2.x, iy = iv2.y, rl = rsqrt(ix * ix + iy * iy), cosine = min(1.0, rl * s2 * s), sine = sqrt(1 - cosine * cosine);
-	ix *= rl, iy *= rl;
-	nx = ix * cosine + iy * sine, ny = ix * -sine + iy * cosine;
-    vert.d4 = nx * vx + ny * vy - f;
-    nx = ix * cosine + iy * -sine, ny = ix * sine + iy * cosine;
-    vert.d5 = nx * vx + ny * vy - f;
-	
-    vert.convex = (tri.p >> 26) & 7;
+    // A hull triangle's curve meets the outer polygon along a hull edge if convex, or along the chord if concave.
+    bool hull = curves & Triangle::kHull, concave = curves & Triangle::kConcave;
+    float2 k0 = cornerDistances(iv0, v0, select(v1, v2, concave) - v0, pos);
+    float2 k1 = cornerDistances(iv1, v1, v0 - v1, pos);
+    float2 k2 = cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos);
+    float2 uv = loopBlinn(pos, v0, v1, v2);
+    vert.d0 = select(k0.x, k0.y, hull), vert.d1 = select(k0.y, uv.x, hull);
+    vert.d2 = select(k1.x, uv.y, hull), vert.d3 = select(k1.y, k2.y, hull);
+    vert.d4 = k2.x, vert.d5 = k2.y;
+    vert.convex = ((tri.p >> 26) & 7) | (curves << 3);
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     return vert;
@@ -281,13 +283,32 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
 
 #pragma mark Fragment
 
+// A corner joins its two edges: inside both if convex, either if not.
+static inline float corner(float convex, float a, float b) {
+    return convex * min(convex * a, convex * b);
+}
+
+// Signed pixel distance to u^2 = v, positive inside: a convex curve's inside is the parabola's, a concave curve's is outside it.
+static inline float curveDistance(float u, float v, float2 du, float2 dv, bool concave) {
+    float2 g = 2.0 * u * du - dv;
+    float d = (u * u - v) * rsqrt(max(dot(g, g), 1e-24));
+    return select(-d, d, concave);
+}
+
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     const float f = kTriangleFilterWidth;
+    // Derivatives are only defined in uniform control flow, so take them first. (u, v) are affine, so they are exact.
+    float2 du = float2(dfdx(vert.d1), dfdy(vert.d1)), dv = float2(dfdx(vert.d2), dfdy(vert.d2));
+    uint curves = vert.convex >> 3;
+    bool hull = curves & Triangle::kHull, concave = curves & Triangle::kConcave;
     float convex0 = (vert.convex & 4) ? 1 : -1, convex1 = (vert.convex & 2) ? 1 : -1, convex2 = (vert.convex & 1) ? 1 : -1;
-    float d01 = convex0 * min(convex0 * vert.d0, convex0 * vert.d1);
-    float d23 = convex1 * min(convex1 * vert.d2, convex1 * vert.d3);
-    float d45 = convex2 * min(convex2 * vert.d4, convex2 * vert.d5);
-    float winding = (clamp(min(d01, min(d23, d45)), -f, f) + f) * 0.5 / f;
+    
+    float lines = min(corner(convex0, vert.d0, vert.d1), min(corner(convex1, vert.d2, vert.d3), corner(convex2, vert.d4, vert.d5)));
+    // A hull triangle: the curve, joined at p0 and p2 to the neighbouring outer edges. A convex curve's control point
+    // corner is the curve itself; a concave curve's is interior.
+    float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
+    float curve = min(min(corner(convex0, vert.d0, dq), corner(convex2, dq, vert.d3)), select(dq, 1e6, concave));
+    float winding = (clamp(select(lines, curve, hull), -f, f) + f) * 0.5 / f;
     return vert.color * winding;
 }

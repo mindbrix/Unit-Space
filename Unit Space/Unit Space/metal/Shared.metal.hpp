@@ -127,6 +127,9 @@ struct Triangle {
         kFlagsConvex2 = 1U << 26,
         kFlagsMask = ~(kFlagsEdge0 | kFlagsEdge1 | kFlagsEdge2 | kFlagsConvex0 | kFlagsConvex1 | kFlagsConvex2),
     };
+    // A hull triangle is a quadratic's p0 -> c -> p2, and is the only triangle that evaluates that curve.
+    // Concave curves bow into the fill, so their chord is the outer edge and c is interior.
+    enum Curves : unsigned int { kHull = 1, kConcave = 2 };
     
     Triangle(int p, bool ef0, bool ef1, bool ef2,
              bool convex0, bool convex1, bool convex2,
@@ -138,12 +141,13 @@ struct Triangle {
     x0(x0 < 0 ? 0 : x0 > kUnsignedShortMax ? kUnsignedShortMax : x0), y0(y0 < 0 ? 0 : y0 > kUnsignedShortMax ? kUnsignedShortMax : y0),
     x1(x1 < 0 ? 0 : x1 > kUnsignedShortMax ? kUnsignedShortMax : x1), y1(y1 < 0 ? 0 : y1 > kUnsignedShortMax ? kUnsignedShortMax : y1),
     x2(x2 < 0 ? 0 : x2 > kUnsignedShortMax ? kUnsignedShortMax : x2), y2(y2 < 0 ? 0 : y2 > kUnsignedShortMax ? kUnsignedShortMax : y2),
-    ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1), ix2(ix2), iy2(iy2)
+    ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1), ix2(ix2), iy2(iy2), curves(0)
     {}
     unsigned int p;
     float t;
     unsigned short x0, y0, x1, y1, x2, y2;
-    float ix0, iy0, ix1, iy1, ix2, iy2;
+    float ix0, iy0, ix1, iy1, ix2, iy2;     // miters; zero for interior vertices, which have no corner
+    unsigned int curves;
 };
 
 // A shared interior mesh vertex: quantised position within its path's bounds plus its miter vector.

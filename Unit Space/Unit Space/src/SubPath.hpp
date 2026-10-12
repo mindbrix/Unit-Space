@@ -8,7 +8,10 @@
 #import "Memory.hpp"
 
 constexpr int kPointStride = 2 * sizeof(float);
-constexpr float kSplitCubicPrecision = 0.01, kFlattenQuadraticPrecision = 0.5;
+// Edges are anti-aliased as implicit quadratics, so curves are no longer flattened into chords. Cubic error is far
+// less visible than faceting, so cubics split coarsely. Quadratics split only to bound their turn, which bounds the
+// size of their hull triangles (drawn and blended by the edge pass) and keeps concave controls near their curves.
+constexpr float kSplitCubicPrecision = 0.25, kQuadraticTurnLimit = 1.5707963268; // 90 degrees
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
@@ -116,7 +119,7 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    SubPath(const float *points, const int npoints, Type type, float precision = kFlattenQuadraticPrecision) {
+    SubPath(const float *points, const int npoints, Type type) {
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         float dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
@@ -128,11 +131,11 @@ struct SubPath {
             if (nfloats > 5) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
                     quadratics[nfloats - 2] = quadratics[0], quadratics[nfloats - 1] = quadratics[1];
-                _quadratics = flattenQuadratics(& quadratics[0], nfloats / 2, precision);
+                _quadratics = subdivideQuadratics(& quadratics[0], nfloats / 2);
             }
         } else if (type == kQuadratic) {
             if (npoints > 2)
-                _quadratics = flattenQuadratics(points, npoints, precision);
+                _quadratics = subdivideQuadratics(points, npoints);
         } else {
             float x0, y0, x1, y1;
             x0 = points[0], y0 = points[1];
@@ -150,31 +153,25 @@ struct SubPath {
         return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4 + 1, kPointStride * 2);
     }
     
-    Memory<float> flattenQuadratics(const float *points, int npoints, const float precision) {
+    // Splits each quadratic at t = 1/2 until it turns by at most kQuadraticTurnLimit.
+    static Memory<float> subdivideQuadratics(const float *points, int npoints) {
         Memory<float> quadratics;
-        float x0, y0, x1, y1, x2, y2, dx01, dy01, dx02, dy02, det, dot, t, x01, x12, x012, y01, y12, y012;
-        int i;
-        for (x2 = y2 = 0, x0 = *points++, y0 = *points++, i = 1; i < npoints; i += 2, x0 = x2, y0 = y2) {
-            x1 = *points++, y1 = *points++, x2 = *points++, y2 = *points++;
-            
-            do {
-                quadratics.push_back(x0), quadratics.push_back(y0);
-				dx01 = x1 - x0, dy01 = y1 - y0, dx02 = x2 - x0, dy02 = y2 - y0;
-				det = std::abs(dx01 * dy02 - dy01 * dx02), dot = dx02 * dx02 + dy02 * dy02;
-				t = det < 1e-12 ? 1 : precision / det * std::sqrt(dot);
-                if (t >= 1)
-                    quadratics.push_back(x1), quadratics.push_back(y1);
-                else {
-                    t = 1.0 / std::ceil(1.0 / std::sqrt(t));
-                    x01 = lerp(t, x0, x1), x12 = lerp(t, x1, x2), x012 = lerp(t, x01, x12);
-                    y01 = lerp(t, y0, y1), y12 = lerp(t, y1, y2), y012 = lerp(t, y01, y12);
-                    quadratics.push_back(x01), quadratics.push_back(y01);
-                    x0 = x012, y0 = y012, x1 = x12, y1 = y12;
-                }
-            } while (t < 1);
-        }
-        quadratics.push_back(x2), quadratics.push_back(y2);
+        quadratics.push_back(points[0]), quadratics.push_back(points[1]);
+        for (int i = 1; i + 1 < npoints; i += 2)
+            subdivideQuadratic(quadratics, points + i * 2 - 2, 0);
         return quadratics;
+    }
+    
+    static void subdivideQuadratic(Memory<float>& quadratics, const float *q, int depth) {
+        float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3];
+        float la = ax * ax + ay * ay, lb = bx * bx + by * by;
+        if (depth < 8 && la > 0 && lb > 0 && ax * bx + ay * by < std::cos(kQuadraticTurnLimit) * std::sqrt(la * lb)) {
+            float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
+            float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
+            const float a[6] = { q[0], q[1], x01, y01, x, y }, b[6] = { x, y, x12, y12, q[4], q[5] };
+            subdivideQuadratic(quadratics, a, depth + 1), subdivideQuadratic(quadratics, b, depth + 1);
+        } else
+            quadratics.push_back(q[2]), quadratics.push_back(q[3]), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
     }
     
     Memory<float>               _quadratics;

@@ -11,25 +11,21 @@
 #import "Scene.hpp"
 #import <vector>
 #import <unordered_map>
+#import <atomic>
 #import "tesselator.h"
 #import "Algorithms.hpp"
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
+#ifndef LINE_TURN_LIMIT
+#define LINE_TURN_LIMIT 0.0174532925 // 1 degree
+#endif
+// Curves whose tangents turn by less than this are drawn as lines (radians). Each curve costs a hull triangle, so
+// nearly straight ones are cheaper as lines. It is an angle rather than a distance so it is independent of scale:
+// a distance in path units that suits a map leaves small text faceted.
+constexpr float kLineTurnLimit = LINE_TURN_LIMIT;
 
 struct libTess {
-    struct Edge {
-        Edge() {}
-        Edge(float x, float y, int base, int i, int npoints) : x(x), y(y), base((unsigned int)base), i((unsigned short int )i), npoints((unsigned short int )npoints) {}
-        inline int idx()                                { return base + i; }
-        inline int prev()                               { return base + (i + npoints - 1) % npoints; }
-        inline int next()                               { return base + (i + 1) % npoints; }
-        inline bool operator< (const Edge& other) const { return x < other.x || (x == other.x && y < other.y); }
-        float x, y;
-        unsigned int base;
-        unsigned short int i, npoints;
-    };
-    
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
             if (path._strokeWidth) {
@@ -64,38 +60,154 @@ struct libTess {
                 tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
     }
         
-    static void addTessContours(TESStesselator *dst, TESStesselator *tess, Edge *edge) {
-        const float *verts = tessGetVertices(tess);
-        const int *elems = tessGetElements(tess);
-        const int nelems = tessGetElementCount(tess);
-        int e, base, npoints, i;
-        for (e = 0; e < nelems; e++) {
-            base = elems[e * 2], npoints = elems[e * 2 + 1];
-            if (npoints > 2) {
-                tessAddContour(dst, 2, verts + base * 2, kPointStride, npoints);
-                for (i = 0; i < npoints; i++)
-                    new (edge++) Edge(verts[(base + i) * 2], verts[(base + i) * 2 + 1], base, i, npoints);
+    // The path quadratic joining two contour vertices, if there is one.
+    struct Segment {
+        Segment() : found(false), cx(0), cy(0) {}
+        bool found;
+        float cx, cy;
+    };
+    
+    // Maps tessellator input vertices back to a path's quadratics. Each subpath adds its on-curve points in order.
+    struct PathVertices {
+        PathVertices(Path& path) : stroked(path._strokeWidth != 0) {
+            int base = 0;
+            for (SubPath& s : path._subPaths)
+                bases.push_back(base), subPaths.push_back(& s), base += (int)s._quadratics.count() / 4 + 1;
+            bases.push_back(base);
+        }
+        // The segment joining input vertices a and b, if they are neighbours on the same subpath.
+        Segment segment(TESSindex a, TESSindex b) {
+            Segment seg;
+            if (stroked || a == TESS_UNDEF || b == TESS_UNDEF)
+                return seg;
+            int sp = int(upper_bound(bases.begin(), bases.end(), (int)a) - bases.begin()) - 1, la, lb, first;
+            if (sp < 0 || (int)b < bases[sp] || (int)b >= bases[sp + 1])
+                return seg;
+            la = (int)a - bases[sp], lb = (int)b - bases[sp];
+            int n = bases[sp + 1] - bases[sp];
+            const float *q = subPaths[sp]->_quadratics.get();
+            // A closed subpath repeats its first point last, and the tessellator may merge them to either index,
+            // so count its vertices modulo the n - 1 distinct ones.
+            int m = n > 2 && q[0] == q[(n - 1) * 4] && q[1] == q[(n - 1) * 4 + 1] ? n - 1 : 0;
+            if (m)
+                la %= m, lb %= m;
+            if (lb == la + 1 || (m && lb == 0 && la == m - 1)) first = la;
+            else if (la == lb + 1 || (m && la == 0 && lb == m - 1)) first = lb;
+            else return seg;
+            q += first * 4;
+            seg.found = true, seg.cx = q[2], seg.cy = q[3];
+            return seg;
+        }
+        bool stroked;
+        vector<int> bases;
+        vector<SubPath *> subPaths;
+    };
+    
+    // A boundary contour segment from (x, y) to the next segment's start, and its control point when it is a curve.
+    struct ContourSegment {
+        float x, y, cx, cy;
+        bool curved, concave;   // concave: the control point lies inside the fill, so the curve bows inward
+    };
+    
+    // Lines carry their midpoint as control, and curves turning less than kLineTurnLimit are drawn as lines too.
+    // Boundary contours keep the fill on their left, so a control point left of its chord is concave.
+    static void classify(ContourSegment& s, float ex, float ey) {
+        float ax = s.cx - s.x, ay = s.cy - s.y, bx = ex - s.cx, by = ey - s.cy;
+        float turn = std::atan2(std::abs(ax * by - ay * bx), ax * bx + ay * by);
+        s.curved = (ax != 0 || ay != 0) && (bx != 0 || by != 0) && turn > kLineTurnLimit;
+        s.concave = s.curved && (ex - s.x) * (s.cy - s.y) - (ey - s.y) * (s.cx - s.x) > 0;
+    }
+    
+    // Inner polygon edges must not cross, or the interior pass paints outside the fill: concave curves in thin features
+    // can reach across them. Split the curves involved at t = 1/2 until nothing crosses, then fall back to lines.
+    static void resolveCrossings(vector<vector<ContourSegment>>& contours) {
+        struct InnerEdge { float x0, y0, x1, y1, lx, ux; int contour, seg; };
+        auto orient = [](float ax, float ay, float bx, float by, float cx, float cy) { return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); };
+        auto crosses = [&](const InnerEdge& a, const InnerEdge& b) {
+            if ((a.x0 == b.x0 && a.y0 == b.y0) || (a.x0 == b.x1 && a.y0 == b.y1) || (a.x1 == b.x0 && a.y1 == b.y0) || (a.x1 == b.x1 && a.y1 == b.y1))
+                return false;
+            return orient(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0) * orient(a.x0, a.y0, a.x1, a.y1, b.x1, b.y1) < 0
+                && orient(b.x0, b.y0, b.x1, b.y1, a.x0, a.y0) * orient(b.x0, b.y0, b.x1, b.y1, a.x1, a.y1) < 0;
+        };
+        const int kRounds = 6;
+        vector<InnerEdge> edges;
+        vector<vector<char>> marked(contours.size());
+        for (int round = 0; round < kRounds; round++) {
+            edges.resize(0);
+            for (int ci = 0; ci < (int)contours.size(); ci++) {
+                vector<ContourSegment>& c = contours[ci];
+                for (int i = 0, n = (int)c.size(); i < n; i++) {
+                    const ContourSegment &sg = c[i], &e = c[(i + 1) % n];
+                    if (sg.concave) {
+                        edges.push_back({ sg.x, sg.y, sg.cx, sg.cy, std::min(sg.x, sg.cx), std::max(sg.x, sg.cx), ci, i });
+                        edges.push_back({ sg.cx, sg.cy, e.x, e.y, std::min(sg.cx, e.x), std::max(sg.cx, e.x), ci, i });
+                    } else
+                        edges.push_back({ sg.x, sg.y, e.x, e.y, std::min(sg.x, e.x), std::max(sg.x, e.x), ci, i });
+                }
+                marked[ci].assign(c.size(), 0);
+            }
+            std::sort(edges.begin(), edges.end(), [](const InnerEdge& a, const InnerEdge& b) { return a.lx < b.lx; });
+            bool any = false;
+            for (size_t i = 0; i < edges.size(); i++)
+                for (size_t j = i + 1; j < edges.size() && edges[j].lx <= edges[i].ux; j++) {
+                    const InnerEdge &a = edges[i], &b = edges[j];
+                    if (std::max(a.y0, a.y1) < std::min(b.y0, b.y1) || std::max(b.y0, b.y1) < std::min(a.y0, a.y1) || !crosses(a, b))
+                        continue;
+                    if (contours[a.contour][a.seg].curved) marked[a.contour][a.seg] = 1, any = true;
+                    if (contours[b.contour][b.seg].curved) marked[b.contour][b.seg] = 1, any = true;
+                }
+            if (!any)
+                return;
+            for (int ci = 0; ci < (int)contours.size(); ci++) {
+                vector<ContourSegment> &c = contours[ci], split;
+                for (int i = 0, n = (int)c.size(); i < n; i++) {
+                    ContourSegment sg = c[i];
+                    const ContourSegment& e = c[(i + 1) % n];
+                    if (!marked[ci][i])
+                        split.push_back(sg);
+                    else if (round == kRounds - 1)
+                        sg.curved = sg.concave = false, split.push_back(sg);
+                    else {
+                        float x01 = (sg.x + sg.cx) * 0.5f, y01 = (sg.y + sg.cy) * 0.5f, x12 = (sg.cx + e.x) * 0.5f, y12 = (sg.cy + e.y) * 0.5f;
+                        ContourSegment a = { sg.x, sg.y, x01, y01, false, false }, b = { (x01 + x12) * 0.5f, (y01 + y12) * 0.5f, x12, y12, false, false };
+                        classify(a, b.x, b.y), classify(b, e.x, e.y);
+                        split.push_back(a), split.push_back(b);
+                    }
+                }
+                c.swap(split);
             }
         }
     }
     
-    static Vector miter(const float *verts, Edge *e, float x0, float y0, float x1, float y1, float x2, float y2, bool *convex) {
-        float px, py, nx, ny, x, y, det;
-        bool left, edge;
-        
-        px = verts[e->prev() * 2], py = verts[e->prev() * 2 + 1];
-        nx = verts[e->next() * 2], ny = verts[e->next() * 2 + 1];
-        if (!(x1 == px && y1 == py) && !(x1 == nx && y1 == ny))
-            x = x1, y = y1;
-        else
-            x = x2, y = y2;
-        det = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0);
-        edge = det > 0;
-        left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
+    // A vertex of the triangulation. Corners sit on the outer polygon and anti-alias its two edges there, which head
+    // toward (px, py) and (nx, ny). Concave curves' control points are interior and have no corner.
+    struct Point {
+        Point() {}
+        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), corner(false) {}
+        Point(float x, float y, float px, float py, float nx, float ny) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), corner(true) {}
+        float x, y, px, py, nx, ny;
+        bool corner;
+    };
+    
+    // A curve's hull triangle p0 -> c -> p2. It is the only triangle that evaluates the curve.
+    struct Hull {
+        Point p0, c, p2;
+        bool concave;
+    };
+    
+    // Counts vertices the tessellator invented where inner contours cross: thin features whose hulls overlap.
+    static std::atomic<size_t>& innerIntersections() { static std::atomic<size_t> count(0); return count; }
+    
+    // The miter at a corner, and whether the corner is convex. (x, y) is any point inside the fill near the corner.
+    static Vector miter(const Point& v, float x, float y, bool *convex) {
+        float x0 = v.x, y0 = v.y, px = v.px, py = v.py, nx = v.nx, ny = v.ny;
+        float det = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0);
+        bool edge = det > 0;
+        bool left = (x0 - px) * (y - py) - (y0 - py) * (x - px) > 0 || (nx - x0) * (y - y0) - (ny - y0) * (x - x0) > 0;
         *convex = edge == left;
         return miterVector(x0, y0, px, py, nx, ny, left, 1e-12);
     }
-	
+    
 	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
 		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
 		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
@@ -114,6 +226,15 @@ struct libTess {
 		return ta > t ? ta : t;
 	}
 	
+    static void writeTriangle(vector<Triangle>& tris, int p, const Point *v, const Vector *m, const bool *convex,
+                              bool ef0, bool ef1, bool ef2, unsigned int curves, float lx, float ly, float rw, float rh) {
+        float t = solveTriangle(v[0].x, v[0].y, m[0], v[1].x, v[1].y, m[1], v[2].x, v[2].y, m[2]);
+        tris.emplace_back(p, ef0, ef1, ef2, convex[0], convex[1], convex[2], t,
+                          (v[0].x - lx) * rw, (v[0].y - ly) * rh, (v[1].x - lx) * rw, (v[1].y - ly) * rh, (v[2].x - lx) * rw, (v[2].y - ly) * rh,
+                          m[0].x, m[0].y, m[1].x, m[1].y, m[2].x, m[2].y);
+        tris.back().curves = curves;
+    }
+    
     static void triangulate(Mesh& mesh, Scene& scene) {
         int p, i, base, divisions = 16, size = (int)scene._paths.size();
         
@@ -157,7 +278,8 @@ struct libTess {
     
     // Shares vertices between triangles so the interior pass transforms each vertex once instead of three times.
     // Triangles are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
-    // back-face culling drops triangles that the miter inset has inverted.
+    // back-face culling drops triangles that the miter inset has inverted. Hull triangles extend outside the fill,
+    // so they are written degenerate: the interior pass must never paint them.
     static void writeIndexedInterior(Mesh& mesh) {
         struct Hash {
             size_t operator()(const MeshVertex& v) const {
@@ -179,7 +301,9 @@ struct libTess {
             Triangle& t = mesh._tris[ntris - 1 - i];
             unsigned int p = t.p & Triangle::kFlagsMask;
             MeshVertex v[3] = { { p, t.x0, t.y0, t.ix0, t.iy0 }, { p, t.x1, t.y1, t.ix1, t.iy1 }, { p, t.x2, t.y2, t.ix2, t.iy2 } };
-            if (int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0) < 0)
+            if (t.curves & Triangle::kHull)
+                v[1] = v[2] = v[0];
+            else if (int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0) < 0)
                 std::swap(v[1], v[2]);
             for (int k = 0; k < 3; k++) {
                 auto it = lookup.emplace(v[k], (unsigned int)lookup.size());
@@ -190,98 +314,120 @@ struct libTess {
         }
     }
     
+    // Triangulates each path's inner polygon, and adds one hull triangle per curve. On the outer polygon a convex curve
+    // runs p0 -> c -> p2 and a concave curve along its chord, so every curve lies inside its own hull triangle. The inner
+    // polygon cuts those off: chords for convex curves, p0 -> c -> p2 for concave ones.
     static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
-        vector<float> scales;
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
-        Memory<Edge> _edges;
+        vector<Point> points;
+        vector<float> xy;
+        vector<Hull> hulls;
+        vector<vector<ContourSegment>> contours;
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
+            PathVertices pv(path);
             float lx, ly, rw, rh;
-			lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
-			ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
-
+            lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
+            ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
+            
             _idxs.emplace_back((int)_tris.size());
             
             addPathContours(tess, path);
-            if (tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal)) {
-                int count = tessGetVertexCount(tess);
-                const TESSindex *indices = tessGetVertexIndices(tess);
-                const float *verts = tessGetVertices(tess);
-                _edges.empty();
-                Edge *edges = _edges.new_ptr(count), *eend = edges + count, *e0, *e1, *e2;
-                addTessContours(dst, tess, edges);
-                sort(edges, eend);
-                if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
-                    float *points = (float *)tessGetVertices(dst);
-                    const int nelems = tessGetElementCount(dst);
-                    const TESSindex *polygon = tessGetElements(dst);
-                    float x0, y0, x1, y1, x2, y2, t, ti, tp0[2], tp1[2], tp2[2];
-                    bool ef0, ef1, ef2, convex0, convex1, convex2;
-                    Vector m0, m1, m2;
-                    int i, i0, i1, i2, oi0, oi1, oi2;
-                    for (i = 0; i < nelems; i++, polygon += kPolySize) {
-                        i0 = polygon[0], i1 = polygon[1], i2 = polygon[2];
-                        
-                        x0 = points[i0 * 2], y0 = points[i0 * 2 + 1];
-                        x1 = points[i1 * 2], y1 = points[i1 * 2 + 1];
-                        x2 = points[i2 * 2], y2 = points[i2 * 2 + 1];
-                        
-                        e0 = lower_bound(edges, eend, Edge(x0, y0, 0, 0, 0));
-                        e1 = lower_bound(edges, eend, Edge(x1, y1, 0, 0, 0));
-                        e2 = lower_bound(edges, eend, Edge(x2, y2, 0, 0, 0));
-                        if (e0->base != e1->base || e1->base != e2->base || e2->base != e0->base) {
-                            if (e0->base == e1->base) {
-                                while (e2 < eend - 1 && (e2 + 1)->x == x2 && (e2 + 1)->y == y2)
-                                    if ((++e2)->base == e0->base)
-                                        break;
-                            } else if (e1->base == e2->base) {
-                                while (e0 < eend - 1 && (e0 + 1)->x == x0 && (e0 + 1)->y == y0)
-                                    if ((++e0)->base == e1->base)
-                                        break;
-                            } else if (e2->base == e0->base) {
-                                while (e1 < eend - 1 && (e1 + 1)->x == x1 && (e1 + 1)->y == y1)
-                                    if ((++e1)->base == e2->base)
-                                        break;
-                            }
-                        }
-                        ef0 = e0->next() == e1->idx() && e0->base == e1->base;
-                        ef1 = e1->next() == e2->idx() && e1->base == e2->base;
-                        ef2 = e2->next() == e0->idx() && e2->base == e0->base;
-                        
-                        oi0 = indices[e0->idx()], oi1 = indices[e1->idx()], oi2 = indices[e2->idx()];
-                        if (oi0 != TESS_UNDEF) {
-                            path.controlPointForIndex(tp0, oi0 * 2);
-//                            assert(x0 == tp0[0] && y0 == tp0[1]);
-                        }
-                        if (oi1 != TESS_UNDEF) {
-                            path.controlPointForIndex(tp1, oi1 * 2);
-//                            assert(x1 == tp1[0] && y1 == tp1[1]);
-                        }
-                        if (oi2 != TESS_UNDEF) {
-                            path.controlPointForIndex(tp2, oi2 * 2);
-//                            assert(x2 == tp2[0] && y2 == tp2[1]);
-                        }
-                        
-                       // if (int(ef0) + int(ef1) + int(ef2) != 1)
-                       //     continue;
-                        m0 = miter(verts, e0, x0, y0, x1, y1, x2, y2, & convex0);
-                        m1 = miter(verts, e1, x1, y1, x2, y2, x0, y0, & convex1);
-                        m2 = miter(verts, e2, x2, y2, x0, y0, x1, y1, & convex2);
-						t = solveTriangle(x0, y0, m0, x1, y1, m1, x2, y2, m2);
-						
-                        ti = solveTriangle(x0, y0, Vector(-m0.x, -m0.y), x1, y1, Vector(-m1.x, -m1.y), x2, y2, Vector(-m2.x, -m2.y));
-                        
-						_tris.emplace_back(p, ef0, ef1, ef2,
-                                           convex0, convex1, convex2,
-										   t,
-                                           (x0 - lx) * rw, (y0 - ly) * rh,
-                                           (x1 - lx) * rw, (y1 - ly) * rh,
-                                           (x2 - lx) * rw, (y2 - ly) * rh,
-                                           m0.x, m0.y, m1.x, m1.y, m2.x, m2.y
-                        );
+            if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+                continue;
+            const float *verts = tessGetVertices(tess);
+            const TESSindex *indices = tessGetVertexIndices(tess);
+            const int *elems = tessGetElements(tess), nelems = tessGetElementCount(tess);
+            contours.resize(0);
+            for (int e = 0; e < nelems; e++) {
+                int base = elems[e * 2], n = elems[e * 2 + 1], i;
+                if (n < 3)
+                    continue;
+                contours.emplace_back(n);
+                vector<ContourSegment>& c = contours.back();
+                for (i = 0; i < n; i++) {
+                    const float *a = verts + (base + i) * 2, *b = verts + (base + (i + 1) % n) * 2;
+                    Segment q = pv.segment(indices[base + i], indices[base + (i + 1) % n]);
+                    c[i] = { a[0], a[1], q.found ? q.cx : a[0], q.found ? q.cy : a[1], false, false };
+                    if (q.found)
+                        classify(c[i], b[0], b[1]);
+                }
+            }
+            resolveCrossings(contours);
+            
+            points.resize(0), hulls.resize(0);
+            for (vector<ContourSegment>& c : contours) {
+                int n = (int)c.size(), i;
+                // An on-curve vertex's outer edges head to a convex curve's control point, else along the chord.
+                auto corner = [&](int i) {
+                    const ContourSegment &sp = c[(i + n - 1) % n], &sn = c[i], &next = c[(i + 1) % n];
+                    bool cp = sp.curved && !sp.concave, cn = sn.curved && !sn.concave;
+                    return Point(sn.x, sn.y, cp ? sp.cx : sp.x, cp ? sp.cy : sp.y, cn ? sn.cx : next.x, cn ? sn.cy : next.y);
+                };
+                size_t first = points.size();
+                for (i = 0; i < n; i++) {
+                    Point v = corner(i);
+                    points.push_back(v);
+                    const ContourSegment& sg = c[i];
+                    if (sg.curved) {
+                        Hull h;
+                        h.p0 = v, h.p2 = corner((i + 1) % n), h.concave = sg.concave;
+                        h.c = sg.concave ? Point(sg.cx, sg.cy) : Point(sg.cx, sg.cy, v.x, v.y, h.p2.x, h.p2.y);
+                        hulls.push_back(h);
+                        if (sg.concave)
+                            points.push_back(h.c);
                     }
                 }
+                xy.resize(0);
+                for (size_t k = first; k < points.size(); k++)
+                    xy.push_back(points[k].x), xy.push_back(points[k].y);
+                tessAddContour(dst, 2, xy.data(), kPointStride, int(points.size() - first));
+            }
+            
+            if (tessTesselate(dst, TESS_WINDING_NONZERO, TESS_POLYGONS, kPolySize, 2, kTESSNormal)) {
+                const float *dverts = tessGetVertices(dst);
+                const TESSindex *dindices = tessGetVertexIndices(dst), *polygon = tessGetElements(dst);
+                const int ndverts = tessGetVertexCount(dst), ntris = tessGetElementCount(dst);
+                for (int k = 0; k < ndverts; k++)
+                    if (dindices[k] == TESS_UNDEF)
+                        innerIntersections()++;
+                for (int i = 0; i < ntris; i++, polygon += kPolySize) {
+                    Point v[3];
+                    Vector m[3];
+                    bool convex[3], ef[3];
+                    float cx = 0, cy = 0;
+                    for (int k = 0; k < 3; k++) {
+                        TESSindex di = dindices[polygon[k]];
+                        v[k] = di == TESS_UNDEF ? Point(dverts[polygon[k] * 2], dverts[polygon[k] * 2 + 1]) : points[di];
+                        cx += v[k].x / 3, cy += v[k].y / 3;
+                    }
+                    for (int k = 0; k < 3; k++) {
+                        m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
+                        if (!v[k].corner)
+                            convex[k] = false;
+                        TESSindex a = dindices[polygon[k]], b = dindices[polygon[(k + 1) % 3]];
+                        ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (b == a + 1 || a == b + 1);
+                    }
+                    writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], 0, lx, ly, rw, rh);
+                }
+            }
+            
+            // Hull triangles, p0 -> c -> p2. Their insides are on the chord's side for convex curves, and toward the
+            // control point for concave ones.
+            for (Hull& h : hulls) {
+                // Triangles must wind counter-clockwise. A concave control is left of its chord, so reverse the curve.
+                Point v[3] = { h.concave ? h.p2 : h.p0, h.c, h.concave ? h.p0 : h.p2 };
+                Vector m[3];
+                bool convex[3];
+                float ix = h.concave ? h.c.x : (h.p0.x + h.p2.x) * 0.5f, iy = h.concave ? h.c.y : (h.p0.y + h.p2.y) * 0.5f;
+                m[0] = miter(v[0], ix, iy, & convex[0]);
+                m[2] = miter(v[2], ix, iy, & convex[2]);
+                m[1] = h.concave ? Vector(0, 0) : miter(v[1], (h.p0.x + h.p2.x) * 0.5f, (h.p0.y + h.p2.y) * 0.5f, & convex[1]);
+                if (h.concave)
+                    convex[1] = false;
+                writeTriangle(_tris, p, v, m, convex, !h.concave, !h.concave, h.concave,
+                              Triangle::kHull | (h.concave ? Triangle::kConcave : 0), lx, ly, rw, rh);
             }
         }
         tessDeleteTess(tess), tessDeleteTess(dst);
