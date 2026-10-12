@@ -433,16 +433,48 @@ struct libTess {
             const float *verts = tessGetVertices(tess);
             const TESSindex *indices = tessGetVertexIndices(tess);
             const int *elems = tessGetElements(tess), nelems = tessGetElementCount(tess);
+            // Boundary contours can carry microgeometry (vertices a few float ULPs apart, loops smaller than that) where
+            // tight pieces of stroke outlines cross. The Delaunay pass asserts on it, so merge vertices closer than eps
+            // and drop contours that collapse.
+            float extent = std::max(path._bounds.ux - path._bounds.lx, path._bounds.uy - path._bounds.ly);
+            float magnitude = std::max(std::max(std::abs(path._bounds.lx), std::abs(path._bounds.ux)), std::max(std::abs(path._bounds.ly), std::abs(path._bounds.uy)));
+            float eps = extent * 1e-5f + magnitude * 1e-6f;
             contours.resize(0);
+            vector<int> kept;
             for (int e = 0; e < nelems; e++) {
                 int base = elems[e * 2], n = elems[e * 2 + 1], i;
                 if (n < 3)
                     continue;
+                kept.resize(0);
+                for (i = 0; i < n; i++) {
+                    const float *a = verts + (base + i) * 2;
+                    if (kept.size()) {
+                        const float *b = verts + (base + kept.back()) * 2;
+                        if (std::abs(a[0] - b[0]) < eps && std::abs(a[1] - b[1]) < eps)
+                            continue;
+                    }
+                    kept.push_back(i);
+                }
+                while (kept.size() > 1) {
+                    const float *a = verts + (base + kept.back()) * 2, *b = verts + (base + kept[0]) * 2;
+                    if (std::abs(a[0] - b[0]) >= eps || std::abs(a[1] - b[1]) >= eps)
+                        break;
+                    kept.pop_back();
+                }
+                n = (int)kept.size();
+                float area = 0;
+                for (i = 0; i < n; i++) {
+                    const float *a = verts + (base + kept[i]) * 2, *b = verts + (base + kept[(i + 1) % n]) * 2;
+                    area += a[0] * b[1] - a[1] * b[0];
+                }
+                if (n < 3 || std::abs(area) * 0.5f < eps * eps)
+                    continue;
                 contours.emplace_back(n);
                 vector<ContourSegment>& c = contours.back();
                 for (i = 0; i < n; i++) {
-                    const float *a = verts + (base + i) * 2, *b = verts + (base + (i + 1) % n) * 2;
-                    Segment q = pv.segment(indices[base + i], indices[base + (i + 1) % n], a, b);
+                    int ia = base + kept[i], ib = base + kept[(i + 1) % n];
+                    const float *a = verts + ia * 2, *b = verts + ib * 2;
+                    Segment q = pv.segment(indices[ia], indices[ib], a, b);
                     c[i] = { a[0], a[1], q.found ? q.cx : a[0], q.found ? q.cy : a[1], false, false };
                     if (q.found)
                         classify(c[i], b[0], b[1]);
