@@ -293,6 +293,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     vert.convex = ((tri.p >> 26) & 7) | (curves << 3);
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
+    // The edge pass blends premultiplied colour (source factor one), so translucent paths must be premultiplied.
+    vert.color.rgb *= vert.color.a;
     return vert;
 }
 

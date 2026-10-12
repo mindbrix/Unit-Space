@@ -112,14 +112,16 @@ struct Scene {
                         rgba = shape->fill.color;
                         r = rgba & 0xFF, g = (rgba >> 8) & 0xFF, b = (rgba >> 16) & 0xFF, a = rgba >> 24;
                     } else {
-                        nstops = 1;// shape->fill.gradient->nstops;
+                        // Gradients are approximated by the average of their stops, so ones that fade out are translucent.
+                        nstops = shape->fill.gradient->nstops;
                         for (r = b = g = a = i = 0; i < nstops; i++) {
                             rgba = shape->fill.gradient->stops[i].color;
                             r += rgba & 0xFF, g += (rgba >> 8) & 0xFF, b += (rgba >> 16) & 0xFF, a += rgba >> 24;
                         }
                         r /= nstops, g /= nstops, b /= nstops, a /= nstops;
                     }
-                    fillColor = RGBA8(r, g, b, a);
+                    // A shape's opacity (including its group's) is separate from its fill's alpha.
+                    fillColor = RGBA8(r, g, b, int(a * shape->opacity + 0.5f));
                 }
                 Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, fillColor);
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
