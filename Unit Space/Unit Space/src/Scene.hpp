@@ -141,7 +141,7 @@ struct Scene {
         }
         free(data);
     }
-    void empty() { _paths.resize(0); }
+    void empty() { _paths.resize(0), _CTMs.resize(0); }
     
     vector<Path>            _paths;
     vector<AffineTransform> _CTMs;

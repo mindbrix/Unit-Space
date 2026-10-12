@@ -16,6 +16,7 @@
 
 constexpr float kPointDeviceRadius = 4;
 constexpr float kLargePointDeviceRadius = kPointDeviceRadius * 1.41;
+constexpr float kScrollLineDelta = 10;
 
 
 using namespace std;
@@ -45,26 +46,11 @@ using namespace std;
 @property(nonatomic) Scene scene;
 @property(nonatomic) float f;
 @property(nonatomic) int count;
-@property(nonatomic) CVDisplayLinkRef displayLink;
+@property(nonatomic) CADisplayLink *displayLink;
 
 - (void)timerFired;
 
 @end
-
-static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
-								   const CVTimeStamp *now,
-								   const CVTimeStamp *outputTime,
-								   CVOptionFlags flagsIn,
-								   CVOptionFlags *flagsOut,
-								   void *displayLinkContext) {
-	View *view = (__bridge View *)displayLinkContext;
-	@autoreleasepool {
-		dispatch_async(dispatch_get_main_queue(), ^{
-			[view timerFired];
-		});
-	}
-	return kCVReturnSuccess;
-}
 
 @implementation View
 
@@ -89,27 +75,33 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
     return self;
 }
 
-- (void)removeFromSuperview {
-	[self stopTimer];
-    [super removeFromSuperview];
+// The display link retains its target, so invalidate it when leaving or closing the window to break the cycle.
+- (void)viewWillMoveToWindow:(NSWindow *)newWindow {
+	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	if (self.window)
+		[center removeObserver:self name:NSWindowWillCloseNotification object:self.window];
+	if (newWindow)
+		[center addObserver:self selector:@selector(windowWillClose:) name:NSWindowWillCloseNotification object:newWindow];
+	else
+		[self stopTimer];
+    [super viewWillMoveToWindow:newWindow];
 }
 
-#pragma mark - NSTimer
+- (void)windowWillClose:(NSNotification *)notification {
+	[self stopTimer];
+}
+
+#pragma mark - CADisplayLink
 
 - (void)stopTimer {
-	if (_displayLink) {
-		CVDisplayLinkStop(_displayLink);
-		CVDisplayLinkRelease(_displayLink);
-		_displayLink = nil;
-	}
+	[_displayLink invalidate];
+	_displayLink = nil;
 }
 	
 - (void)resetTimer {
 	[self stopTimer];
-	CVReturn cvReturn = CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
-	cvReturn = CVDisplayLinkSetOutputCallback(_displayLink, &OnDisplayLinkFrame, (__bridge void *)self);
-	cvReturn = CVDisplayLinkSetCurrentCGDisplay(_displayLink, CGMainDisplayID());
-	CVDisplayLinkStart(_displayLink);
+	_displayLink = [self displayLinkWithTarget:self selector:@selector(timerFired)];
+	[_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
 }
 
 - (IBAction)toggleTimer:(id)sender {
@@ -227,8 +219,11 @@ static CVReturn OnDisplayLinkFrame(CVDisplayLinkRef displayLink,
         if (_count < 0)
             _count = 0;
         _f += event.deltaY * 0.1;
-    } else
-        [self.transform translateByX:event.deltaX * inversion andY:-event.deltaY * inversion];
+    } else {
+        // Trackpads and Magic Mice report precise point deltas; wheel mice report lines.
+        CGFloat scale = event.hasPreciseScrollingDeltas ? 1.0f : kScrollLineDelta;
+        [self.transform translateByX:event.scrollingDeltaX * scale * inversion andY:-event.scrollingDeltaY * scale * inversion];
+    }
     
     [self redraw];
 }

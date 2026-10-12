@@ -145,11 +145,10 @@ struct libTess {
             });
         }
         for (base = i = 0; i < divisions; base += (int)tris[i].size(), i++) {
-            if (tris[i].size()) {
+            if (tris[i].size())
                 memcpy(mesh._tris.new_ptr(tris[i].size()), & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
-                for (int idx : idxs[i])
-                    mesh._idxs.emplace_back(base + idx);
-            }
+            for (int idx : idxs[i])
+                mesh._idxs.emplace_back(base + idx);
         }
         mesh._idxs.emplace_back((int)mesh._tris.count());
     }

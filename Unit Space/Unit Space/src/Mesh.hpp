@@ -51,8 +51,8 @@ struct Mesh {
             }
             vector<int> ranges;
 			for (p = 0; p < pathsSize; ) {
-				for (j = p; !visibles[j] && j < pathsSize; j++) {}
-				for (p = j; visibles[p] && p < pathsSize; p++) {}
+				for (j = p; j < pathsSize && !visibles[j]; j++) {}
+				for (p = j; p < pathsSize && visibles[p]; p++) {}
 				if (j != p)
 					ranges.emplace_back(j), ranges.emplace_back(p);
 			}
@@ -156,7 +156,7 @@ struct Mesh {
         
 		void writePathsForTime(double time, MeshPath *paths) {
             if (time == 0) {
-                memcpy(paths, & _basePaths[0], _basePaths.size() * sizeof(MeshPath));
+                memcpy(paths, _basePaths.data(), _basePaths.size() * sizeof(MeshPath));
                 return;
             }
             time *= 0.2;
