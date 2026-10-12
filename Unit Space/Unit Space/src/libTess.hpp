@@ -71,9 +71,29 @@ struct libTess {
     struct PathVertices {
         PathVertices(Path& path) : stroked(path._strokeWidth != 0) {
             int base = 0;
-            for (SubPath& s : path._subPaths)
-                bases.push_back(base), subPaths.push_back(& s), base += (int)s._quadratics.count() / 4 + 1;
+            for (SubPath& s : path._subPaths) {
+                bases.push_back(base), subPaths.push_back(& s);
+                int n = (int)s._quadratics.count() / 4 + 1;
+                for (int i = 0; i < n; i++)
+                    positions[key(s._quadratics[i * 4], s._quadratics[i * 4 + 1])].push_back(base + i);
+                base += n;
+            }
             bases.push_back(base);
+        }
+        // The segment joining input vertices a and b. The tessellator merges coincident vertices (stroke joins meet
+        // their runs exactly), returning just one of their indices, so try every input vertex at each position.
+        Segment segment(TESSindex a, TESSindex b, const float *pa, const float *pb) {
+            Segment seg = segment(a, b);
+            if (seg.found || stroked || a == TESS_UNDEF || b == TESS_UNDEF)
+                return seg;
+            auto ia = positions.find(key(pa[0], pa[1])), ib = positions.find(key(pb[0], pb[1]));
+            if (ia == positions.end() || ib == positions.end() || (ia->second.size() == 1 && ib->second.size() == 1))
+                return seg;
+            for (int va : ia->second)
+                for (int vb : ib->second)
+                    if ((seg = segment(va, vb)).found)
+                        return seg;
+            return seg;
         }
         // The segment joining input vertices a and b, if they are neighbours on the same subpath.
         Segment segment(TESSindex a, TESSindex b) {
@@ -98,9 +118,15 @@ struct libTess {
             seg.found = true, seg.cx = q[2], seg.cy = q[3];
             return seg;
         }
+        static uint64_t key(float x, float y) {
+            uint32_t ux, uy;
+            memcpy(& ux, & x, 4), memcpy(& uy, & y, 4);
+            return (uint64_t)ux << 32 | uy;
+        }
         bool stroked;
         vector<int> bases;
         vector<SubPath *> subPaths;
+        unordered_map<uint64_t, vector<int>> positions;
     };
     
     // A boundary contour segment from (x, y) to the next segment's start, and its control point when it is a curve.
@@ -299,7 +325,7 @@ struct libTess {
     }
     
     static void triangulate(Mesh& mesh, Scene& scene) {
-        int p, i, base, divisions = 16, size = (int)scene._paths.size();
+        int p, i, base, divisions = 64, size = (int)scene._paths.size();
         
         mesh.empty();
         if (size == 0)
@@ -309,9 +335,10 @@ struct libTess {
             mesh._timeline.basePaths().emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
         
         int counts[size], count, total;
+        // Balance the divisions by cost: stroke outlines cross themselves, so their segments cost about three times as much.
         for (total = count = p = 0; p < size; counts[p] = count, total += count, count = 0, p++)
             for (SubPath& s : scene._paths[p]._subPaths)
-                count += s._quadratics.count();
+                count += s._quadratics.count() * (scene._paths[p]._outline ? 3 : 1);
         int begins[divisions + 1], target, *b = begins;
         begins[0] = 0, begins[divisions] = size;
         for (count = p = 0, i = 1; i < divisions; i++) {
@@ -395,7 +422,9 @@ struct libTess {
             
             _idxs.emplace_back((int)_tris.size());
             
-            if (!path._strokeWidth)
+            // Stroke outlines cross themselves by construction (inner corners, overlapping pieces), so refining their
+            // crossing chords only multiplies segments.
+            if (!path._strokeWidth && !path._outline)
                 refineChords(path);
             PathVertices pv(path);
             addPathContours(tess, path);
@@ -413,7 +442,7 @@ struct libTess {
                 vector<ContourSegment>& c = contours.back();
                 for (i = 0; i < n; i++) {
                     const float *a = verts + (base + i) * 2, *b = verts + (base + (i + 1) % n) * 2;
-                    Segment q = pv.segment(indices[base + i], indices[base + (i + 1) % n]);
+                    Segment q = pv.segment(indices[base + i], indices[base + (i + 1) % n], a, b);
                     c[i] = { a[0], a[1], q.found ? q.cx : a[0], q.found ? q.cy : a[1], false, false };
                     if (q.found)
                         classify(c[i], b[0], b[1]);

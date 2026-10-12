@@ -9,6 +9,7 @@
 #import "Algorithms.hpp"
 #import "Memory.hpp"
 #import "Path.hpp"
+#import "Stroke.hpp"
 #import "Mesh.hpp"
 #define NANOSVG_IMPLEMENTATION    // Expands implementation
 #import "nanosvg.h"
@@ -101,42 +102,41 @@ struct Scene {
         
         if (image) {
             printf("size: %f x %f\n", image->width, image->height);            
+            // A paint's colour, with gradients approximated by the average of their stops (so ones that fade out are
+            // translucent), and the shape's opacity (including its group's), which is separate from the paint's alpha.
+            auto paintColor = [](NSVGpaint& paint, float opacity) {
+                int r = 0, g = 0, b = 0, a = 0, nstops = paint.type == NSVG_PAINT_COLOR ? 1 : paint.gradient->nstops;
+                for (int i = 0; i < nstops; i++) {
+                    unsigned int rgba = paint.type == NSVG_PAINT_COLOR ? paint.color : paint.gradient->stops[i].color;
+                    r += rgba & 0xFF, g += (rgba >> 8) & 0xFF, b += (rgba >> 16) & 0xFF, a += rgba >> 24;
+                }
+                return RGBA8(r / nstops, g / nstops, b / nstops, int(a / nstops * opacity + 0.5f));
+            };
             int limit = 60000;
             for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next, limit--) {
-                RGBA8 fillColor;
-                if (shape->fill.type != NSVG_PAINT_NONE) {
-                    int r, g, b, a, nstops, i;
-                    unsigned int rgba;
-                    
-                    if (shape->fill.type == NSVG_PAINT_COLOR) {
-                        rgba = shape->fill.color;
-                        r = rgba & 0xFF, g = (rgba >> 8) & 0xFF, b = (rgba >> 16) & 0xFF, a = rgba >> 24;
-                    } else {
-                        // Gradients are approximated by the average of their stops, so ones that fade out are translucent.
-                        nstops = shape->fill.gradient->nstops;
-                        for (r = b = g = a = i = 0; i < nstops; i++) {
-                            rgba = shape->fill.gradient->stops[i].color;
-                            r += rgba & 0xFF, g += (rgba >> 8) & 0xFF, b += (rgba >> 16) & 0xFF, a += rgba >> 24;
-                        }
-                        r /= nstops, g /= nstops, b /= nstops, a /= nstops;
-                    }
-                    // A shape's opacity (including its group's) is separate from its fill's alpha.
-                    fillColor = RGBA8(r, g, b, int(a * shape->opacity + 0.5f));
-                }
-                Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, fillColor);
+                bool filled = shape->fill.type != NSVG_PAINT_NONE, stroked = shape->stroke.type != NSVG_PAINT_NONE && shape->strokeWidth > 0;
+                Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
+                // Strokes are filled outlines (nonzero), painted over the fill.
+                Path strokePath(true, false, 0, stroked ? paintColor(shape->stroke, shape->opacity) : RGBA8());
+                strokePath._outline = true;
+                Stroke stroke(strokePath, shape->strokeWidth,
+                              shape->strokeLineJoin == NSVG_JOIN_ROUND ? Stroke::kRound : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? Stroke::kBevel : Stroke::kMiter,
+                              shape->strokeLineCap == NSVG_CAP_ROUND ? Stroke::kRoundCap : shape->strokeLineCap == NSVG_CAP_SQUARE ? Stroke::kSquare : Stroke::kButt,
+                              shape->miterLimit);
+                if (shape->strokeDashCount > 0)
+                    stroke.setDashes(shape->strokeDashArray, shape->strokeDashCount, shape->strokeDashOffset);
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
                     for (int i = 0; i < path->npts; i++)
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                     SubPath s(path->pts, path->npts, SubPath::kCubic);
                     p.addSubPath(s);
+                    if (stroked)
+                        stroke.addSubPath(s._quadratics.get(), (int)s._quadratics.count() / 2, path->closed);
                 }
-                if (shape->fill.type != NSVG_PAINT_NONE)
+                if (filled)
                     addPath(p);
-//                if (shape->stroke.type == NSVG_PAINT_COLOR) {
-//                    RGBA8 strokeColor(shape->stroke.color & 0xFF, (shape->stroke.color >> 8) & 0xFF, (shape->stroke.color >> 16) & 0xFF, shape->stroke.color >> 24);
-//                    Path strokePath(shape->paths->closed, false, shape->strokeWidth, strokeColor, p._subPaths);
-//                    addPath(strokePath);
-//                }
+                if (stroked)
+                    addPath(strokePath);
             }
             // Delete
             nsvgDelete(image);
