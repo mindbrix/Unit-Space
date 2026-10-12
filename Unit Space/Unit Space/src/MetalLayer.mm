@@ -140,7 +140,7 @@
     Mesh *mesh = nullptr;
     if ([self.layerDelegate respondsToSelector:@selector(meshForLayer:paths:)])
         mesh = [self.layerDelegate meshForLayer:self paths:(MeshPath *)_pathsBuffer.contents];
-    Call *calls = mesh ? & mesh->_calls[0] : nullptr;
+    Call *calls = mesh && mesh->_calls.size() ? & mesh->_calls[0] : nullptr;
     size_t count = mesh ? mesh->_calls.size() : 0;
     
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
@@ -217,7 +217,6 @@
                 drawQuads = NO;
                 break;
            case kCallTypeResolveQuadSOA:
-                [commandEncoder textureBarrier];
                 [commandEncoder setRenderPipelineState:_resolveQuadSOAPipelineState];
                 [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
                 break;
