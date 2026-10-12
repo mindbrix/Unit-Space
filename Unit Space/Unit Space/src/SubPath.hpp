@@ -159,6 +159,13 @@ static Memory<float> splitCubics(const float *src, int npoints, const float prec
         // keep least-error pieces, as tangent-preserving ones stray one-sidedly by twice as far, shifting whole outlines.
         float relative = kSplitCubicRelative * length, tolerance = std::min(precision, relative);
         float allowance = relative < kCubicTangentSize * precision ? kCubicTangentSlack * relative : 0;
+        // A control on its end point (common in Illustrator art) leaves the cubic's end tangent heading for the other
+        // control, which the least-error control ignores: its quadratic hooks off the tangent, then runs straight.
+        // Such cubics keep their tangents at any size, within the usual tolerance.
+        float near = 1e-4f * length;
+        bool degenerate = (std::abs(x1 - x0) <= near && std::abs(y1 - y0) <= near) || (std::abs(x3 - x2) <= near && std::abs(y3 - y2) <= near);
+        if (allowance == 0 && degenerate)
+            allowance = tolerance;
         // Inflections split first, so every tangent-preserving piece is convex and its end tangents meet ahead of both ends.
         float ax0 = x1 - x0, ay0 = y1 - y0, bx0 = x2 - 2.f * x1 + x0, by0 = y2 - 2.f * y1 + y0;
         float cx0 = x3 - 3.f * x2 + 3.f * x1 - x0, cy0 = y3 - 3.f * y2 + 3.f * y1 - y0;
