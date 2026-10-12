@@ -141,13 +141,16 @@ struct Triangle {
     x0(x0 < 0 ? 0 : x0 > kUnsignedShortMax ? kUnsignedShortMax : x0), y0(y0 < 0 ? 0 : y0 > kUnsignedShortMax ? kUnsignedShortMax : y0),
     x1(x1 < 0 ? 0 : x1 > kUnsignedShortMax ? kUnsignedShortMax : x1), y1(y1 < 0 ? 0 : y1 > kUnsignedShortMax ? kUnsignedShortMax : y1),
     x2(x2 < 0 ? 0 : x2 > kUnsignedShortMax ? kUnsignedShortMax : x2), y2(y2 < 0 ? 0 : y2 > kUnsignedShortMax ? kUnsignedShortMax : y2),
-    ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1), ix2(ix2), iy2(iy2), curves(0)
+    ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1), ix2(ix2), iy2(iy2), curves(0), tx0(0), ty0(0), tx2(0), ty2(0)
     {}
     unsigned int p;
     float t;
     unsigned short x0, y0, x1, y1, x2, y2;
     float ix0, iy0, ix1, iy1, ix2, iy2;     // miters; zero for interior vertices, which have no corner
     unsigned int curves;
+    // Hull triangles: quantised points the neighbouring segments' tangents head toward at v0 and v2. Joins use the
+    // neighbours' tangents rather than their chords, which differ for curves and would bump the join.
+    unsigned short tx0, ty0, tx2, ty2;
 };
 
 // A shared interior mesh vertex: quantised position within its path's bounds plus its miter vector.

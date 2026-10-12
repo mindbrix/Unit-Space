@@ -266,15 +266,30 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     TriangleVertex vert;
     vert.position = float4((pos / float2(state.drawableSize.w, state.drawableSize.h)) * 2.0 - 1.0, z, 1.0);
     
-    // A hull triangle's curve meets the outer polygon along a hull edge if convex, or along the chord if concave.
-    bool hull = curves & Triangle::kHull, concave = curves & Triangle::kConcave;
-    float2 k0 = cornerDistances(iv0, v0, select(v1, v2, concave) - v0, pos);
-    float2 k1 = cornerDistances(iv1, v1, v0 - v1, pos);
-    float2 k2 = cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos);
-    float2 uv = loopBlinn(pos, v0, v1, v2);
-    vert.d0 = select(k0.x, k0.y, hull), vert.d1 = select(k0.y, uv.x, hull);
-    vert.d2 = select(k1.x, uv.y, hull), vert.d3 = select(k1.y, k2.y, hull);
-    vert.d4 = k2.x, vert.d5 = k2.y;
+    // Branch rather than select: each path's hull triangles are contiguous, so the branch is mostly coherent.
+    if (curves & Triangle::kHull) {
+        // The curve meets the outer polygon along a hull edge if convex, or along the chord if concave.
+        bool concave = curves & Triangle::kConcave;
+        float2 uv = loopBlinn(pos, v0, v1, v2);
+        // The neighbours' tangent lines at the joins. A convex hull runs p0 -> c -> p2, so its predecessor arrives
+        // along v0 -> t0 with the fill on the right; a concave hull is reversed, so the sides swap.
+        float2 t0 = float2(tri.tx0 * a + tri.ty0 * c + tx, tri.tx0 * b + tri.ty0 * d + ty) - v0;
+        float2 t2 = float2(tri.tx2 * a + tri.ty2 * c + tx, tri.tx2 * b + tri.ty2 * d + ty) - v2;
+        float2 e0 = t0 * rsqrt(dot(t0, t0)), e2 = t2 * rsqrt(dot(t2, t2));
+        float2 n0 = select(float2(e0.y, -e0.x), float2(-e0.y, e0.x), concave), n2 = select(float2(-e2.y, e2.x), float2(e2.y, -e2.x), concave);
+        vert.d0 = dot(t0, t0) > 0 ? dot(n0, pos - v0) : cornerDistances(iv0, v0, select(v1, v2, concave) - v0, pos).y;
+        vert.d1 = uv.x, vert.d2 = uv.y;
+        vert.d3 = dot(t2, t2) > 0 ? dot(n2, pos - v2) : cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos).y;
+        // Which side of each join's bisector (the miter) we are on: positive is this curve's side, where the curve
+        // alone is the boundary. Neighbours' lines only apply beyond it, where sharp corners let the hull overhang.
+        float2 q0 = select(v1, v2, concave) - v0, q2 = select(v1, v0, concave) - v2;
+        float2 b0 = float2(-iv0.y, iv0.x), b2 = float2(-iv2.y, iv2.x);
+        vert.d4 = dot(select(-b0, b0, dot(b0, q0) >= 0), pos - v0);
+        vert.d5 = dot(select(-b2, b2, dot(b2, q2) >= 0), pos - v2);
+    } else {
+        float2 k0 = cornerDistances(iv0, v0, v1 - v0, pos), k1 = cornerDistances(iv1, v1, v0 - v1, pos), k2 = cornerDistances(iv2, v2, v1 - v2, pos);
+        vert.d0 = k0.x, vert.d1 = k0.y, vert.d2 = k1.x, vert.d3 = k1.y, vert.d4 = k2.x, vert.d5 = k2.y;
+    }
     vert.convex = ((tri.p >> 26) & 7) | (curves << 3);
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
@@ -301,14 +316,17 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     // Derivatives are only defined in uniform control flow, so take them first. (u, v) are affine, so they are exact.
     float2 du = float2(dfdx(vert.d1), dfdy(vert.d1)), dv = float2(dfdx(vert.d2), dfdy(vert.d2));
     uint curves = vert.convex >> 3;
-    bool hull = curves & Triangle::kHull, concave = curves & Triangle::kConcave;
     float convex0 = (vert.convex & 4) ? 1 : -1, convex1 = (vert.convex & 2) ? 1 : -1, convex2 = (vert.convex & 1) ? 1 : -1;
-    
-    float lines = min(corner(convex0, vert.d0, vert.d1), min(corner(convex1, vert.d2, vert.d3), corner(convex2, vert.d4, vert.d5)));
-    // A hull triangle: the curve, joined at p0 and p2 to the neighbouring outer edges. A convex curve's control point
-    // corner is the curve itself; a concave curve's is interior.
-    float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
-    float curve = min(min(corner(convex0, vert.d0, dq), corner(convex2, dq, vert.d3)), select(dq, 1e6, concave));
-    float winding = (clamp(select(lines, curve, hull), -f, f) + f) * 0.5 / f;
+    float m;
+    if (curves & Triangle::kHull) {
+        // The curve, joined at p0 and p2 to the neighbouring outer edges. A convex curve's control point corner is the
+        // curve itself; a concave curve's is interior.
+        bool concave = curves & Triangle::kConcave;
+        float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
+        float m0 = select(corner(convex0, vert.d0, dq), dq, vert.d4 >= 0), m2 = select(corner(convex2, dq, vert.d3), dq, vert.d5 >= 0);
+        m = min(min(m0, m2), select(dq, 1e6, concave));
+    } else
+        m = min(corner(convex0, vert.d0, vert.d1), min(corner(convex1, vert.d2, vert.d3), corner(convex2, vert.d4, vert.d5)));
+    float winding = (clamp(m, -f, f) + f) * 0.5 / f;
     return vert.color * winding;
 }

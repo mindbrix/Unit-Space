@@ -179,6 +179,68 @@ struct libTess {
         }
     }
     
+    // The tessellator only sees on-curve points, so where curves come close (glyph hairlines) their chords can cross
+    // although the curves do not. It then invents vertices that match no quadratic, and those curves draw as chords.
+    // Split curves whose chords cross until they separate; genuinely overlapping contours keep their crossings.
+    static void refineChords(Path& path) {
+        struct Chord { float x0, y0, x1, y1, lx, ux; int sub, seg; };
+        auto orient = [](float ax, float ay, float bx, float by, float cx, float cy) { return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); };
+        vector<Chord> chords;
+        vector<vector<char>> marked(path._subPaths.size());
+        for (int round = 0; round < 6; round++) {
+            chords.resize(0);
+            for (int si = 0; si < (int)path._subPaths.size(); si++) {
+                const float *q = path._subPaths[si]._quadratics.get();
+                int n = (int)(path._subPaths[si]._quadratics.count() - 2) / 4;
+                for (int k = 0; k < n; k++) {
+                    const float *a = q + k * 4, *b = a + 4;
+                    chords.push_back({ a[0], a[1], b[0], b[1], std::min(a[0], b[0]), std::max(a[0], b[0]), si, k });
+                }
+                const float *a = q + n * 4;  // the tessellator closes each contour back to its first point
+                chords.push_back({ a[0], a[1], q[0], q[1], std::min(a[0], q[0]), std::max(a[0], q[0]), si, -1 });
+                marked[si].assign(n, 0);
+            }
+            std::sort(chords.begin(), chords.end(), [](const Chord& a, const Chord& b) { return a.lx < b.lx; });
+            bool any = false;
+            for (size_t i = 0; i < chords.size(); i++)
+                for (size_t j = i + 1; j < chords.size() && chords[j].lx <= chords[i].ux; j++) {
+                    const Chord &a = chords[i], &b = chords[j];
+                    if (std::max(a.y0, a.y1) < std::min(b.y0, b.y1) || std::max(b.y0, b.y1) < std::min(a.y0, a.y1))
+                        continue;
+                    if ((a.x0 == b.x0 && a.y0 == b.y0) || (a.x0 == b.x1 && a.y0 == b.y1) || (a.x1 == b.x0 && a.y1 == b.y0) || (a.x1 == b.x1 && a.y1 == b.y1))
+                        continue;
+                    if (orient(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0) * orient(a.x0, a.y0, a.x1, a.y1, b.x1, b.y1) >= 0
+                        || orient(b.x0, b.y0, b.x1, b.y1, a.x0, a.y0) * orient(b.x0, b.y0, b.x1, b.y1, a.x1, a.y1) >= 0)
+                        continue;
+                    if (a.seg >= 0) marked[a.sub][a.seg] = 1, any = true;
+                    if (b.seg >= 0) marked[b.sub][b.seg] = 1, any = true;
+                }
+            if (!any)
+                return;
+            for (int si = 0; si < (int)path._subPaths.size(); si++) {
+                SubPath& sp = path._subPaths[si];
+                const float *q = sp._quadratics.get();
+                int n = (int)(sp._quadratics.count() - 2) / 4;
+                bool changed = false;
+                for (char m : marked[si]) changed |= m;
+                if (!changed)
+                    continue;
+                Memory<float> refined;
+                refined.push_back(q[0]), refined.push_back(q[1]);
+                for (int k = 0; k < n; k++) {
+                    const float *a = q + k * 4;
+                    if (marked[si][k]) {
+                        float x01 = (a[0] + a[2]) * 0.5f, y01 = (a[1] + a[3]) * 0.5f, x12 = (a[2] + a[4]) * 0.5f, y12 = (a[3] + a[5]) * 0.5f;
+                        refined.push_back(x01), refined.push_back(y01), refined.push_back((x01 + x12) * 0.5f), refined.push_back((y01 + y12) * 0.5f);
+                        refined.push_back(x12), refined.push_back(y12), refined.push_back(a[4]), refined.push_back(a[5]);
+                    } else
+                        refined.push_back(a[2]), refined.push_back(a[3]), refined.push_back(a[4]), refined.push_back(a[5]);
+                }
+                sp._quadratics = refined;
+            }
+        }
+    }
+    
     // A vertex of the triangulation. Corners sit on the outer polygon and anti-alias its two edges there, which head
     // toward (px, py) and (nx, ny). Concave curves' control points are interior and have no corner.
     struct Point {
@@ -192,6 +254,7 @@ struct libTess {
     // A curve's hull triangle p0 -> c -> p2. It is the only triangle that evaluates the curve.
     struct Hull {
         Point p0, c, p2;
+        float tpx, tpy, tnx, tny;   // where the segments before p0 and after p2 head from their joins
         bool concave;
     };
     
@@ -326,13 +389,15 @@ struct libTess {
         vector<vector<ContourSegment>> contours;
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
-            PathVertices pv(path);
             float lx, ly, rw, rh;
             lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
             ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
             
             _idxs.emplace_back((int)_tris.size());
             
+            if (!path._strokeWidth)
+                refineChords(path);
+            PathVertices pv(path);
             addPathContours(tess, path);
             if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
                 continue;
@@ -373,6 +438,11 @@ struct libTess {
                     if (sg.curved) {
                         Hull h;
                         h.p0 = v, h.p2 = corner((i + 1) % n), h.concave = sg.concave;
+                        // A neighbour's tangent at the join heads to its control point if it is a curve, else along it.
+                        const ContourSegment &before = c[(i + n - 1) % n], &after = c[(i + 1) % n], &afterEnd = c[(i + 2) % n];
+                        bool bc = before.curved && (before.cx != sg.x || before.cy != sg.y), ac = after.curved && (after.cx != after.x || after.cy != after.y);
+                        h.tpx = bc ? before.cx : before.x, h.tpy = bc ? before.cy : before.y;
+                        h.tnx = ac ? after.cx : afterEnd.x, h.tny = ac ? after.cy : afterEnd.y;
                         h.c = sg.concave ? Point(sg.cx, sg.cy) : Point(sg.cx, sg.cy, v.x, v.y, h.p2.x, h.p2.y);
                         hulls.push_back(h);
                         if (sg.concave)
@@ -426,8 +496,22 @@ struct libTess {
                 m[1] = h.concave ? Vector(0, 0) : miter(v[1], (h.p0.x + h.p2.x) * 0.5f, (h.p0.y + h.p2.y) * 0.5f, & convex[1]);
                 if (h.concave)
                     convex[1] = false;
+                // The joins' convexity follows the tangents: the fill is on the left, so a left turn is convex. Smooth joins
+                // (tangent-preserving quadratics) have no turn to measure, so they take the curve's own convexity.
+                float cx = h.c.x, cy = h.c.y, sine = std::sin(kLineTurnLimit);
+                auto turn = [&](float ax, float ay, float bx, float by) {
+                    float cross = ax * by - ay * bx;
+                    return cross * cross <= sine * sine * (ax * ax + ay * ay) * (bx * bx + by * by) ? !h.concave : cross > 0;
+                };
+                bool start = turn(h.p0.x - h.tpx, h.p0.y - h.tpy, cx - h.p0.x, cy - h.p0.y);
+                bool end = turn(h.p2.x - cx, h.p2.y - cy, h.tnx - h.p2.x, h.tny - h.p2.y);
+                convex[0] = h.concave ? end : start, convex[2] = h.concave ? start : end;
                 writeTriangle(_tris, p, v, m, convex, !h.concave, !h.concave, h.concave,
                               Triangle::kHull | (h.concave ? Triangle::kConcave : 0), lx, ly, rw, rh);
+                Triangle& t = _tris.back();
+                float t0x = h.concave ? h.tnx : h.tpx, t0y = h.concave ? h.tny : h.tpy, t2x = h.concave ? h.tpx : h.tnx, t2y = h.concave ? h.tpy : h.tny;
+                auto q = [](float v) { return (unsigned short)(v < 0 ? 0 : v > kUnsignedShortMax ? kUnsignedShortMax : v + 0.5f); };
+                t.tx0 = q((t0x - lx) * rw), t.ty0 = q((t0y - ly) * rh), t.tx2 = q((t2x - lx) * rw), t.ty2 = q((t2y - ly) * rh);
             }
         }
         tessDeleteTess(tess), tessDeleteTess(dst);
