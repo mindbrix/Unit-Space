@@ -225,12 +225,16 @@ private:
             if ((px - ax) * (bx - ax) + (py - ay) * (by - ay) > 0 && (bx - px) * (bx - ax) + (by - py) * (by - ay) > 0)
                 cx = px, cy = py;
         }
-        // Compare midpoints with the true offset of the curve's midpoint, whose tangent is parallel to its chord.
+        // Compare midpoints with the true offset of the curve's midpoint, whose tangent is parallel to its chord. Also
+        // keep the curve within half the stroke width of its chord (it bows by half its control's distance from the
+        // chord's midpoint): the tessellator only sees chords, and on thin strokes those of opposite sides would cross,
+        // inventing vertices that flatten the curves.
         float mx = (q[0] + 2.f * q[2] + q[4]) * 0.25f, my = (q[1] + 2.f * q[3] + q[5]) * 0.25f;
         float tx = q[4] - q[0], ty = q[5] - q[1], tl = std::sqrt(tx * tx + ty * ty);
-        if (depth < 6 && tl > 0) {
+        if (depth < 10 && tl > 0) {
             float nx = -ty / tl, ny = tx / tl, ex = mx + d * nx - (ax + 2.f * cx + bx) * 0.25f, ey = my + d * ny - (ay + 2.f * cy + by) * 0.25f;
-            if (ex * ex + ey * ey > tolerance * tolerance) {
+            float sx = cx - (ax + bx) * 0.5f, sy = cy - (ay + by) * 0.5f;
+            if ((depth < 6 && ex * ex + ey * ey > tolerance * tolerance) || sx * sx + sy * sy > w * w) {
                 float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
                 const float a[6] = { q[0], q[1], x01, y01, mx, my }, b[6] = { mx, my, x12, y12, q[4], q[5] };
                 appendOffset(s, a, n0x, n0y, nx, ny, d, depth + 1), appendOffset(s, b, nx, ny, n2x, n2y, d, depth + 1);
