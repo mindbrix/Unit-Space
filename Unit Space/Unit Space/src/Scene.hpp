@@ -126,6 +126,12 @@ struct Scene {
                 if (shape->strokeDashCount > 0)
                     stroke.setDashes(shape->strokeDashArray, shape->strokeDashCount, shape->strokeDashOffset);
                 for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+                    // Parser output can be non-finite (degenerate arcs), which would poison bounds and tessellation.
+                    bool finite = true;
+                    for (int i = 0; i < path->npts * 2; i++)
+                        finite &= std::isfinite(path->pts[i]);
+                    if (!finite)
+                        continue;
                     for (int i = 0; i < path->npts; i++)
                         path->pts[i * 2 + 1] = image->height - path->pts[i * 2 + 1];
                     SubPath s(path->pts, path->npts, SubPath::kCubic);
