@@ -73,7 +73,6 @@ struct Bounds {
 #define kShortMax 				32767.0
 #define kUnsignedShortMax 		65535.0
 #define kTriangleDilationMax	8.0
-#define kTriangleTipDilationMax 32.0    // edge pass, convex polygon corners: sharp tips need their whole miter
 #define kTriangleFilterWidth    0.5
 
 struct Triangle {
