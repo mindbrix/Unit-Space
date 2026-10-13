@@ -18,20 +18,11 @@
 @property (nonatomic, strong) id <MTLBuffer> trisBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorIdxsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> quadraticFloatsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> quadraticPsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> quadraticTsBuffer;
-@property (nonatomic, strong) id <MTLRenderPipelineState> shapePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> flagPipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> resolveQuadSOAPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorIndexedPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> quadraticLinePipelineState;
-@property (nonatomic, strong) id <MTLRenderPipelineState> quadraticAccumulatePipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
-@property (nonatomic, strong) id <MTLTexture> accumulationTexture;
 
 @end
 
@@ -69,29 +60,10 @@
     
     MTLRenderPipelineDescriptor *descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = self.pixelFormat;
-    descriptor.colorAttachments[1].blendingEnabled = YES;
-    descriptor.colorAttachments[1].pixelFormat = MTLPixelFormatR32Float;
-    descriptor.colorAttachments[1].rgbBlendOperation = MTLBlendOperationAdd;
-    descriptor.colorAttachments[1].alphaBlendOperation = MTLBlendOperationAdd;
-    descriptor.colorAttachments[1].sourceRGBBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[1].sourceAlphaBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[1].destinationRGBBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[1].destinationAlphaBlendFactor = MTLBlendFactorOne;
-    descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskNone;
-    
     descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     
+    // The interior is opaque, drawn front to back against the depth buffer.
     descriptor.colorAttachments[0].blendingEnabled = NO;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"resolveQuadSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"resolveSOA_fragment_main"];
-    descriptor.label = @"resolveSOAPipelineState";
-    self.resolveQuadSOAPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"flags_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"flags_fragment_main"];
-    descriptor.label = @"flagPipelineState";
-    self.flagPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-	
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
     descriptor.label = @"Interior";
@@ -102,6 +74,7 @@
     descriptor.label = @"InteriorIndexed";
     self.meshInteriorIndexedPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 	
+    // The edges blend premultiplied colour over the interior.
     descriptor.colorAttachments[0].blendingEnabled = YES;
     descriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
     descriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
@@ -110,28 +83,10 @@
     descriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
     
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"shapesSOA_fragment_main"];
-    descriptor.label = @"shapePipelineState";
-    self.shapePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_line_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"line_fragment_main"];
-    descriptor.label = @"quadraticLinePipelineState";
-    self.quadraticLinePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"mesh_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"triangle_fragment_main"];
     descriptor.label = @"Triangle";
     self.meshTrianglePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
-    descriptor.colorAttachments[0].writeMask = MTLColorWriteMaskNone;
-    descriptor.colorAttachments[1].writeMask = MTLColorWriteMaskAll;
-    
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"quadratic_accumulate_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"accumulate_fragment_main"];
-    descriptor.label = @"quadraticAccumulatePipelineState";
-    self.quadraticAccumulatePipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
     
     return self;
 }
@@ -169,22 +124,12 @@
         desc.usage = MTLTextureUsageRenderTarget;
         self.depthTexture = [self.device newTextureWithDescriptor:desc];
         [self.depthTexture setLabel:@"depthTexture"];
-        
-        desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-        desc.pixelFormat = MTLPixelFormatR32Float;
-        self.accumulationTexture = [self.device newTextureWithDescriptor:desc];
-        [self.accumulationTexture setLabel:@"accumulationTexture"];
     }
 	MTLRenderPassDescriptor *descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     descriptor.colorAttachments[0].texture = drawable.texture;
     descriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
     descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
-    
-    descriptor.colorAttachments[1].texture = _accumulationTexture;
-    descriptor.colorAttachments[1].storeAction = MTLStoreActionDontCare;
-    descriptor.colorAttachments[1].loadAction = MTLLoadActionClear;
-    descriptor.colorAttachments[1].clearColor = MTLClearColorMake(0, 0, 0, 0);
     
     descriptor.depthAttachment.texture = _depthTexture;
     descriptor.depthAttachment.loadAction = MTLLoadActionClear;
@@ -196,54 +141,21 @@
 	
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
-        size_t instanceCount = 1, baseInstance = 0;
-        BOOL drawQuads = YES, drawIndexed = NO, drawStream = NO;
+        size_t instanceCount = call->instanceCount, baseInstance = call->baseInstance;
+        BOOL drawIndexed = NO, drawStream = NO;
         switch (call->type) {
-            case kCallTypeShapesSOA:
-                [commandEncoder setRenderPipelineState:_shapePipelineState];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._types[call->baseInstance] length:sizeof(short) * call->instanceCount atIndex:10];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._as[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:11];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._bs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:12];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._cs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:13];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._ds[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:14];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._txs[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:15];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._tys[call->baseInstance] length:sizeof(float) * call->instanceCount atIndex:16];
-                [commandEncoder setVertexBytes:& mesh->_shapesSOA._colors[call->baseInstance] length:sizeof(RGBA8) * call->instanceCount atIndex:17];
-                instanceCount = call->instanceCount;
-                break;
-            case kCallTypeFlags:
-                [commandEncoder setRenderPipelineState:_flagPipelineState];
-                [commandEncoder setVertexBytes:& mesh->_flags length:sizeof(Flags) atIndex:10];
-                instanceCount = call->instanceCount;
-                break;
             case kCallTypeMeshInterior:
             case kCallTypeMeshTriangles:
 				[commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : _meshInteriorPipelineState];
 				[commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
 				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-                drawQuads = NO;
                 drawStream = call->type == kCallTypeMeshTriangles;
                 break;
             case kCallTypeMeshInteriorIndexed:
                 [commandEncoder setRenderPipelineState:_meshInteriorIndexedPipelineState];
                 [commandEncoder setVertexBuffer:_interiorVertsBuffer offset:0 atIndex:8];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 drawIndexed = YES;
-                break;
-           case kCallTypeResolveQuadSOA:
-                [commandEncoder setRenderPipelineState:_resolveQuadSOAPipelineState];
-                [commandEncoder setFragmentTexture:_accumulationTexture atIndex:1];
-                break;
-            case kCallTypeQuadraticLines:
-            case kCallTypeQuadraticAccumulate:
-                [commandEncoder setRenderPipelineState:call->type == kCallTypeQuadraticLines ? _quadraticLinePipelineState : _quadraticAccumulatePipelineState];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:_quadraticFloatsBuffer offset:0 atIndex:10];
-                [commandEncoder setVertexBuffer:_quadraticPsBuffer offset:0 atIndex:11];
-                [commandEncoder setVertexBuffer:_quadraticTsBuffer offset:0 atIndex:12];
-                instanceCount = call->instanceCount, baseInstance = call->baseInstance;
                 break;
         }
         if (instanceCount == 0)
@@ -269,9 +181,9 @@
         } else if (drawStream)
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
         else
-            [commandEncoder drawPrimitives:drawQuads ? MTLPrimitiveTypeTriangleStrip : MTLPrimitiveTypeTriangle
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                                vertexStart:0
-                               vertexCount:drawQuads ? 4 : 3
+                               vertexCount:3
                              instanceCount:instanceCount
                               baseInstance:baseInstance];
     }
@@ -287,18 +199,6 @@
 #pragma mark - Public
 
 - (void)uploadMesh:(Mesh &)mesh {
-    if (mesh._quadraticFloats.pagedSize())
-        _quadraticFloatsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticFloats.get()
-                                                          length:mesh._quadraticFloats.pagedSize()
-                                                         options:MTLResourceStorageModeShared];
-    if (mesh._quadraticPs.pagedSize())
-        _quadraticPsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticPs.get()
-                                                      length:mesh._quadraticPs.pagedSize()
-                                                     options:MTLResourceStorageModeShared];
-    if (mesh._quadraticTs.pagedSize())
-        _quadraticTsBuffer = [self.device newBufferWithBytes:(void *)mesh._quadraticTs.get()
-                                                      length:mesh._quadraticTs.pagedSize()
-                                                     options:MTLResourceStorageModeShared];
     if (mesh._tris.pagedSize())
         _trisBuffer = [self.device newBufferWithBytes:(void *)mesh._tris.get()
                                                length:mesh._tris.pagedSize()

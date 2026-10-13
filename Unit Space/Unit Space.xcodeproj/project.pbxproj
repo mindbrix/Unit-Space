@@ -10,10 +10,8 @@
 		E97D7606211498610015388A /* Headers.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7602211498600015388A /* Headers.metal */; };
 		E97D7607211498610015388A /* Library.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7603211498600015388A /* Library.metal */; };
 		E97D7608211498610015388A /* Mesh.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7604211498600015388A /* Mesh.metal */; };
-		E97D7609211498610015388A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E97D7605211498600015388A /* Shaders.metal */; };
 		E97D76152114995A0015388A /* MetalLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97D76112114995A0015388A /* MetalLayer.mm */; };
 		E97D7618211499E20015388A /* VGAffineTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = E97D7617211499E20015388A /* VGAffineTransform.m */; };
-		E9B31328212A0223008EC18E /* SOA.metal in Sources */ = {isa = PBXBuildFile; fileRef = E9B31327212A0223008EC18E /* SOA.metal */; };
 		E9C24949211724470019B25C /* Nu.icns in Resources */ = {isa = PBXBuildFile; fileRef = E9C24948211724470019B25C /* Nu.icns */; };
 		E9EE5F9220851100005823F7 /* bucketalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7B20851100005823F7 /* bucketalloc.c */; settings = {COMPILER_FLAGS = "-DNDEBUG"; }; };
 		E9EE5F9320851100005823F7 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = E9EE5F7D20851100005823F7 /* dict.c */; settings = {COMPILER_FLAGS = "-DNDEBUG"; }; };
@@ -32,11 +30,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		E937DD2D2109220E00655858 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = nanosvg.h; path = ../../../../nanosvg/src/nanosvg.h; sourceTree = "<group>"; };
+		E937DD2D2109220E00655858 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = nanosvg.h; path = ../../nanosvg/src/nanosvg.h; sourceTree = "<group>"; };
 		E97D7602211498600015388A /* Headers.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Headers.metal; sourceTree = "<group>"; };
 		E97D7603211498600015388A /* Library.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
 		E97D7604211498600015388A /* Mesh.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
-		E97D7605211498600015388A /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		E97D760A2114989D0015388A /* Shared.metal.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Shared.metal.hpp; sourceTree = "<group>"; };
 		E97D760C2114995A0015388A /* Algorithms.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Algorithms.hpp; sourceTree = "<group>"; };
 		E97D760D2114995A0015388A /* libTess.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = libTess.hpp; sourceTree = "<group>"; };
@@ -49,10 +46,8 @@
 		E97D76142114995A0015388A /* SubPath.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SubPath.hpp; sourceTree = "<group>"; };
 		E97D7616211499E20015388A /* VGAffineTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VGAffineTransform.h; sourceTree = "<group>"; };
 		E97D7617211499E20015388A /* VGAffineTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VGAffineTransform.m; sourceTree = "<group>"; };
-		E9B31327212A0223008EC18E /* SOA.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SOA.metal; sourceTree = "<group>"; };
-		E9B31329212C02D3008EC18E /* Quadratics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Quadratics.hpp; sourceTree = "<group>"; };
 		E9C24948211724470019B25C /* Nu.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Nu.icns; path = ../../Designs/Nu.icns; sourceTree = "<group>"; };
-		E9EBC19B20F79EBF0045D338 /* stb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_truetype.h; path = ../../../../stb/stb_truetype.h; sourceTree = "<group>"; };
+		E9EBC19B20F79EBF0045D338 /* stb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = stb_truetype.h; path = ../../stb/stb_truetype.h; sourceTree = "<group>"; };
 		E9EE5F7620851100005823F7 /* tesselator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tesselator.h; sourceTree = "<group>"; };
 		E9EE5F7B20851100005823F7 /* bucketalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bucketalloc.c; sourceTree = "<group>"; };
 		E9EE5F7C20851100005823F7 /* bucketalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bucketalloc.h; sourceTree = "<group>"; };
@@ -103,7 +98,6 @@
 				E937DD2D2109220E00655858 /* nanosvg.h */,
 			);
 			name = libs;
-			path = "Unit Space/libs";
 			sourceTree = SOURCE_ROOT;
 		};
 		E97D7601211498600015388A /* metal */ = {
@@ -112,8 +106,6 @@
 				E97D7602211498600015388A /* Headers.metal */,
 				E97D7603211498600015388A /* Library.metal */,
 				E97D7604211498600015388A /* Mesh.metal */,
-				E97D7605211498600015388A /* Shaders.metal */,
-				E9B31327212A0223008EC18E /* SOA.metal */,
 				E97D760A2114989D0015388A /* Shared.metal.hpp */,
 			);
 			path = metal;
@@ -129,7 +121,6 @@
 				E97D76102114995A0015388A /* MetalLayer.h */,
 				E97D76112114995A0015388A /* MetalLayer.mm */,
 				E97D76122114995A0015388A /* Path.hpp */,
-				E9B31329212C02D3008EC18E /* Quadratics.hpp */,
 				E97D76132114995A0015388A /* Scene.hpp */,
 				E97D76142114995A0015388A /* SubPath.hpp */,
 				E97D7616211499E20015388A /* VGAffineTransform.h */,
@@ -145,7 +136,7 @@
 				E9EE5F7A20851100005823F7 /* Source */,
 			);
 			name = libtess2;
-			path = ../../../../libtess2;
+			path = ../../libtess2;
 			sourceTree = "<group>";
 		};
 		E9EE5F7520851100005823F7 /* Include */ = {
@@ -297,7 +288,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E97D7609211498610015388A /* Shaders.metal in Sources */,
 				E9EE5F9320851100005823F7 /* dict.c in Sources */,
 				E9EE5F9720851100005823F7 /* sweep.c in Sources */,
 				E97D7608211498610015388A /* Mesh.metal in Sources */,
@@ -312,7 +302,6 @@
 				E97D7607211498610015388A /* Library.metal in Sources */,
 				E97D7606211498610015388A /* Headers.metal in Sources */,
 				E9EEAD85200BC63400F2BFB2 /* main.m in Sources */,
-				E9B31328212A0223008EC18E /* SOA.metal in Sources */,
 				E9EEAD77200BC63400F2BFB2 /* AppDelegate.m in Sources */,
 				E9EE5F9420851100005823F7 /* geom.c in Sources */,
 			);

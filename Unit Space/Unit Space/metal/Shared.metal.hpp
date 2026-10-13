@@ -13,41 +13,7 @@
 
 #pragma clang diagnostic ignored "-Wcomma"
 
-struct Circle { float x, y, r; };
-
-struct RGBA { float r, g, b, a;
-    static RGBA hsv2rgb(float H, float S, float V) {
-        RGBA RGB;
-        float P, Q, T;
-        float fract;
-        
-        H *= 360;
-        (H == 360.)?(H = 0.):(H /= 60.);
-        fract = H - int(H);
-        
-        P = V*(1. - S);
-        Q = V*(1. - S*fract);
-        T = V*(1. - S*(1. - fract));
-        
-        if (0. <= H && H < 1.)
-            RGB = (RGBA){.r = V, .g = T, .b = P};
-        else if (1. <= H && H < 2.)
-            RGB = (RGBA){.r = Q, .g = V, .b = P};
-        else if (2. <= H && H < 3.)
-            RGB = (RGBA){.r = P, .g = V, .b = T};
-        else if (3. <= H && H < 4.)
-            RGB = (RGBA){.r = P, .g = Q, .b = V};
-        else if (4. <= H && H < 5.)
-            RGB = (RGBA){.r = T, .g = P, .b = V};
-        else if (5. <= H && H < 6.)
-            RGB = (RGBA){.r = V, .g = P, .b = Q};
-        else
-            RGB = (RGBA){.r = 0., .g = 0., .b = 0.};
-        
-        RGB.a = 1;
-        return RGB;
-    }
-};
+struct RGBA { float r, g, b, a; };
 
 struct RGBA8 {
     static RGBA8 Red() { return RGBA8(255, 0, 0, 255); }
@@ -93,14 +59,6 @@ struct Bounds {
         float ow = other.ux - other.lx, oh = other.uy - other.ly, omin = ow < oh ? ow : oh;
         float w = ux - lx, h = uy - ly, max = w > h ? w : h;
         return omin / max;
-    }
-    static inline Bounds transformUnit(const AffineTransform t) {
-        float wa = t.a < 0 ? 1 : 0, wb = t.b < 0 ? 1 : 0, wc = t.c < 0 ? 1 : 0, wd = t.d < 0 ? 1 : 0;
-        return {
-            t.tx + wa * t.a + wc * t.c,
-            t.ty + wb * t.b + wd * t.d,
-            t.tx + (1 - wa) * t.a + (1 - wc) * t.c,
-            t.ty + (1 - wb) * t.b + (1 - wd) * t.d };
     }
     Bounds united(Bounds other) {
         return { lx < other.lx ? lx : other.lx, ly < other.ly ? ly : other.ly, ux > other.ux ? ux : other.ux, uy > other.uy ? uy : other.uy };
@@ -170,13 +128,6 @@ struct Vector {
 
 struct _Size { float w, h; };
 
-#define kFlagsSize 1022
-
-struct Flags {
-    int                 w, h;
-    unsigned int        flags[kFlagsSize];
-};
-
 struct MeshPath {
     MeshPath() {}
     MeshPath(RGBA8 color, AffineTransform ctm, Bounds bounds) : color(color), ctm(ctm), bounds(bounds) {}
@@ -189,55 +140,24 @@ struct MeshPath {
 struct MeshState {
     bool                showEdgeTriangles;
     bool                showInterior;
-    bool                showColors;
-    bool                showPolygons;
-    bool                showTriangles;
-    bool                showQuadratics;
-    bool                showAccumulations;
-    bool                showVisibles;
-    bool                useStrokeColor;
-    bool                useQuadraticWinding;
+    bool                showPolygons;       // debug: outline the interior polygons
+    bool                showTriangles;      // debug: outline every interior triangle
+    bool                useStrokeColor;     // debug: edges in the state's stroke colour
 	int                 colorsSize;
     int                 reverseCount;
-    unsigned int        quadraticStride;
-    unsigned int        subdivisionCount;
-	Bounds				clipBounds;
-	float               cellSize;
 };
 
 struct State {
-    RGBA                fillColor;
     RGBA                strokeColor;
     AffineTransform     CTM;
     _Size               drawableSize;
-    float               dashLength;
-    float               flatness;
-    float               width;
-    float               cap;
-    float               scaleFactor;
-    bool                evenOdd;
-    bool                roundCap;
+    float               width;              // the debug outline width, in pixels
 };
-
 
 enum CallType : unsigned int {
-    kCallTypeShapesSOA = 0,
-    kCallTypeFlags,
     kCallTypeMeshInterior,
-    kCallTypeMeshTriangles,
-    kCallTypeResolveQuadSOA,
-    kCallTypeQuadraticLines,
-    kCallTypeQuadraticAccumulate,
     kCallTypeMeshInteriorIndexed,
-};
-
-enum ShapeType : short {
-    kShapeTypeEllipse,
-    kShapeTypeLozenge,
-    kShapeTypeRect,
-    kShapeTypeRoundedRect,
-    kShapeTypeQuadratic,
-    kShapeTypeTriangle,
+    kCallTypeMeshTriangles,
 };
 
 struct Call {
@@ -276,11 +196,3 @@ inline AffineTransform AffineTransformInvert(const AffineTransform t) {
     };
 }
 
-inline AffineTransform AffineTransformMakeUnit(const Bounds bounds, const AffineTransform t) {
-    float w = bounds.ux - bounds.lx, h = bounds.uy - bounds.ly;
-    return {
-        t.a * w,                                    t.b * w,
-        t.c * h,                                    t.d * h,
-        bounds.lx * t.a + bounds.ly * t.c + t.tx,   bounds.lx * t.b + bounds.ly * t.d + t.ty
-    };
-}

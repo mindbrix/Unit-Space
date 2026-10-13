@@ -56,104 +56,35 @@ struct Mesh {
 				if (j != p)
 					ranges.emplace_back(j), ranges.emplace_back(p);
 			}
-            if (meshState.showQuadratics) {
-                for (i = 0; i < ranges.size(); i += 2) {
-                    base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == pathsSize ? (int)mesh._quadraticFloats.count(): mesh._quadraticIndices[ranges[i + 1]];
-                    
-                    calls.emplace_back(kCallTypeQuadraticLines, ((end - base) / meshState.quadraticStride - 1) * meshState.subdivisionCount, base / meshState.quadraticStride * meshState.subdivisionCount, state, meshState);
-                }
-            } else if (meshState.showAccumulations) {
-                MeshState resolveMeshState = meshState;
-                resolveMeshState.cellSize = 1;
-                MeshState clipState = resolveMeshState;
-                clipState.clipBounds = { 0, 0, std::ceil(clipBounds.ux / resolveMeshState.cellSize), std::ceil(clipBounds.uy / resolveMeshState.cellSize) };
-                
-                State windingState = state;
-                AffineTransform cell = { 1.0f / resolveMeshState.cellSize, 0, 0, 1.0f / resolveMeshState.cellSize, 0, 0 };
-                windingState.CTM = AffineTransformConcat(state.CTM, cell);
-                for (i = 0; i < ranges.size(); i += 2) {
-                    base = mesh._quadraticIndices[ranges[i]];
-                    end = ranges[i + 1] == pathsSize ? (int)mesh._quadraticFloats.count() : mesh._quadraticIndices[ranges[i + 1]];
-                    calls.emplace_back(kCallTypeQuadraticAccumulate, (end - base) / meshState.quadraticStride - 1, base / meshState.quadraticStride, windingState, clipState);
-                }
-                calls.emplace_back(kCallTypeResolveQuadSOA, 1, 0, state, resolveMeshState);
-                
-            } else {
-                call = nullptr;
-                if (meshState.showInterior) {
-                    // Indexed calls address the reversed index buffer, so a merged run keeps its start and only grows.
-                    bool indexed = !meshState.showTriangles && !meshState.showPolygons;
-                    int total = (int)mesh._tris.count(), runBase = -1;
-                    for (end = total, p = (int)pathsSize - 1; p >= 0; p--, end = base) {
-                        base = mesh._idxs[p];
-                        if (visibles[p] && opaques[p]) {
-                            count = end - base;
-                            if (call == nullptr || runBase != end) {
-                                calls.emplace_back(indexed ? kCallTypeMeshInteriorIndexed : kCallTypeMeshInterior, 0, indexed ? total - end : base, state, meshState);
-                                call = & calls.back();
-                                call->meshState.reverseCount = end;
-                            }
-                            if (!indexed)
-                                call->baseInstance = base;
-                            runBase = base;
-                            call->instanceCount += count;
+            call = nullptr;
+            if (meshState.showInterior) {
+                // Indexed calls address the reversed index buffer, so a merged run keeps its start and only grows.
+                bool indexed = !meshState.showTriangles && !meshState.showPolygons;
+                int total = (int)mesh._tris.count(), runBase = -1;
+                for (end = total, p = (int)pathsSize - 1; p >= 0; p--, end = base) {
+                    base = mesh._idxs[p];
+                    if (visibles[p] && opaques[p]) {
+                        count = end - base;
+                        if (call == nullptr || runBase != end) {
+                            calls.emplace_back(indexed ? kCallTypeMeshInteriorIndexed : kCallTypeMeshInterior, 0, indexed ? total - end : base, state, meshState);
+                            call = & calls.back();
+                            call->meshState.reverseCount = end;
                         }
-                    }
-                }
-                if (!meshState.showEdgeTriangles) {
-                    for (i = 0; i < ranges.size(); i += 2) {
-                        base = mesh._idxs[ranges[i]], end = mesh._idxs[ranges[i + 1]], count = end - base;
-                        calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
+                        if (!indexed)
+                            call->baseInstance = base;
+                        runBase = base;
+                        call->instanceCount += count;
                     }
                 }
             }
-            
-            if (meshState.showVisibles) {
-                calls.emplace_back(kCallTypeFlags, (int)pathsSize, 0, state, meshState);
-				mesh._flags.w = mesh._flags.h = 64;
-                for (p = 0; p < pathsSize; p++) {
-                    i = p >> 5, j = p % 32;
-                    if (i == kFlagsSize)
-                        break;
-                    if (j == 0)
-                        mesh._flags.flags[i] = 0;
-                    if (visibles[p])
-                        mesh._flags.flags[i] |= (1 << j);
+            if (!meshState.showEdgeTriangles) {
+                for (i = 0; i < ranges.size(); i += 2) {
+                    base = mesh._idxs[ranges[i]], end = mesh._idxs[ranges[i + 1]], count = end - base;
+                    calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
                 }
             }
         }
     }
-    
-    static void writeSOACalls(Mesh& mesh, State state, MeshState meshState, CallType type, size_t count) {
-        int i, end;
-        for (i = 0; i < count; i += 1024) {
-            end = i + 1024 > count ? (int)count : i + 1024;
-            mesh._calls.emplace_back(type, end - i, i, state, meshState);
-        }
-    }
-    
-    struct ShapesSOA {
-        static inline AffineTransform circleUnit(float x, float y, float r) {
-            return { std::abs(r) * 2.f, 0, 0, std::abs(r) * 2.f, x - std::abs(r), y - std::abs(r) };
-        }
-        void addCircle(float x, float y, float r, RGBA8 c) {
-            AffineTransform unit = circleUnit(x, y, r);
-            _types.push_back(kShapeTypeEllipse);
-            _as.push_back(unit.a), _bs.push_back(unit.b), _cs.push_back(unit.c), _ds.push_back(unit.d), _txs.push_back(unit.tx), _tys.push_back(unit.ty);
-            _colors.push_back(c);
-        }
-        void empty() {
-            _count = 0;
-            _types = Memory<short>();
-            _as = Memory<float>(), _bs = Memory<float>(), _cs = Memory<float>(), _ds = Memory<float>(), _txs = Memory<float>(), _tys = Memory<float>(),
-            _colors = Memory<RGBA8>();
-        }
-        int                             _count;
-        Memory<short>                   _types;
-        Memory<float>                   _as, _bs, _cs, _ds, _txs, _tys;
-        Memory<RGBA8>                   _colors;
-    };
     
     struct Timeline {
         void empty()                    { _basePaths.resize(0); }
@@ -182,26 +113,14 @@ struct Mesh {
     
     vector<Call>                        _calls;
     
-    Bounds                              _bounds;
-    
-    Memory<float, true>                 _quadraticFloats;
-    Memory<int, true>                   _quadraticPs;
-    Memory<float, true>                 _quadraticTs;
-    Memory<int>                         _quadraticIndices;
-    
     Timeline                            _timeline;
     
     vector<int>                         _idxs;
     Memory<Triangle, true>              _tris;
     Memory<MeshVertex, true>            _interiorVerts;
     Memory<unsigned int, true>          _interiorIdxs;
-    
-    ShapesSOA                           _shapesSOA;
-	Flags								_flags;
 	
     void empty() {
-        _bounds = Bounds(0, 0, 0, 0);
-        _quadraticFloats = Memory<float, true>(), _quadraticPs = Memory<int, true>(), _quadraticTs = Memory<float, true>(), _quadraticIndices = Memory<int>();
         _timeline.empty(), _idxs.resize(0), _tris = Memory<Triangle, true>();
         _interiorVerts = Memory<MeshVertex, true>(), _interiorIdxs = Memory<unsigned int, true>();
     }

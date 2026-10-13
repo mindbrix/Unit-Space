@@ -21,24 +21,13 @@
 - (IBAction)cycleShapes:(id)sender;
 - (IBAction)resetViewCTM:(id)sender;
 
-- (IBAction)toggleOne:(id)sender;
-- (IBAction)toggleTwo:(id)sender;
-- (IBAction)toggleThree:(id)sender;
-- (IBAction)toggleFour:(id)sender;
-- (IBAction)toggleFive:(id)sender;
-
 - (IBAction)toggleShowPolygons:(id)sender;
 - (IBAction)toggleEdges:(id)sender;
 - (IBAction)toggleInterior:(id)sender;
-- (IBAction)toggleUseQuadratics:(id)sender;
-- (IBAction)togglePoints:(id)sender;
 - (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowTriangles:(id)sender;
 - (IBAction)toggleRetina:(id)sender;
-- (IBAction)toggleUseDelaunay:(id)sender;
-- (IBAction)toggleUseMask:(id)sender;
 - (IBAction)toggleUseStrokeColor:(id)sender;
-- (IBAction)toggleShowVisibles:(id)sender;
 - (IBAction)toggleTimer:(id)sender;
 
 @end

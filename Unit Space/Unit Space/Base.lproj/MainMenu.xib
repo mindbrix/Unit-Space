@@ -643,36 +643,6 @@ DQ
                                     <action selector="cycleShapes:" target="-1" id="AKU-Uh-yht"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle 1" keyEquivalent="1" id="v8Y-J0-D5j">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleOne:" target="-1" id="4yt-8m-cZZ"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle 2" keyEquivalent="2" id="kci-1F-FtT">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleTwo:" target="-1" id="QwK-yS-CqX"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle 3" keyEquivalent="3" id="sj2-p7-4qR">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleThree:" target="-1" id="l9M-W6-KKE"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle 4" keyEquivalent="4" id="6BI-pg-D51">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleFour:" target="-1" id="42d-EB-p16"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle 5" keyEquivalent="5" id="owO-NT-gVP">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleFive:" target="-1" id="9Xt-sL-q9y"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Toggle Polygons" keyEquivalent="y" id="87r-mG-RYi">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -691,12 +661,6 @@ DQ
                                     <action selector="toggleInterior:" target="-1" id="A3B-SB-irs"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Points" keyEquivalent="p" id="FEL-y9-7ve">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="togglePoints:" target="-1" id="YNN-Gr-sSm"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Toggle Show Colors" keyEquivalent="c" id="HuF-rl-ijO">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -709,34 +673,10 @@ DQ
                                     <action selector="toggleShowTriangles:" target="-1" id="cUH-c7-nxh"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Toggle Use Delaunay" keyEquivalent="d" id="9z2-Fi-Oav">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleUseDelaunay:" target="-1" id="b8b-se-YJE"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle Use Mask" keyEquivalent="m" id="KkB-dm-jPl">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleUseMask:" target="-1" id="YtA-Ka-hQv"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Toggle Use Stroke Color" keyEquivalent="s" id="7Mj-YO-9gc">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="toggleUseStrokeColor:" target="-1" id="e9r-mh-avO"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle Use Quadratics" keyEquivalent="q" id="9nd-3F-nzD">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleUseQuadratics:" target="-1" id="cWz-xu-csI"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Toggle Show Visibles" keyEquivalent="v" id="3ZK-tU-5yv">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="toggleShowVisibles:" target="-1" id="18Z-QA-1tT"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Toggle Retina" keyEquivalent="r" id="URL-wz-Inw">
