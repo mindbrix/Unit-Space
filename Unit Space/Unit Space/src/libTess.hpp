@@ -323,13 +323,14 @@ struct libTess {
     }
     
     // A vertex of the triangulation. Corners sit on the outer polygon and anti-alias its two edges there, which head
-    // toward (px, py) and (nx, ny). Concave curves' control points are interior and have no corner.
+    // toward (px, py) and (nx, ny). Concave curves' control points are interior: their p0 -> c -> p2 miter only insets
+    // the interior pass, and the edge pass gives them no corner.
     struct Point {
         Point() {}
-        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), corner(false) {}
-        Point(float x, float y, float px, float py, float nx, float ny) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), corner(true) {}
+        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), corner(false), control(false) {}
+        Point(float x, float y, float px, float py, float nx, float ny, bool control = false) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), corner(true), control(control) {}
         float x, y, px, py, nx, ny;
-        bool corner;
+        bool corner, control;   // control: a concave curve's control point, whose p0 -> c -> p2 miter only insets the interior
     };
     
     // A curve's hull triangle p0 -> c -> p2. It is the only triangle that evaluates the curve.
@@ -343,6 +344,31 @@ struct libTess {
     static std::atomic<size_t>& innerIntersections() { static std::atomic<size_t> count(0); return count; }
     
     // The miter at a corner, and whether the corner is convex. (x, y) is any point inside the fill near the corner.
+    // The scale a triangle needs before its inset, its vertices moving along their miters, leaves it whole: the inverse
+    // of where it collapses, and no less than the inverse of its size.
+	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
+		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
+		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
+		tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
+		tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
+		tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
+		a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
+		if (t1 != -1) {
+			tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
+			tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
+			tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
+			a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
+		}
+		t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
+		ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
+		t = ta > t ? ta : t;
+		// Nor may any vertex move further than its shorter edge. Near-reversing corners have huge miters, and a triangle
+		// that stretches rather than collapses has no root to catch them: its inset vertex would cross the picture.
+		float l01 = std::hypot(x1 - x0, y1 - y0), l12 = std::hypot(x2 - x1, y2 - y1), l20 = std::hypot(x0 - x2, y0 - y2);
+		float tm0 = std::hypot(m0.x, m0.y) / std::min(l20, l01), tm1 = std::hypot(m1.x, m1.y) / std::min(l01, l12), tm2 = std::hypot(m2.x, m2.y) / std::min(l12, l20);
+		return std::max(t, std::max(tm0, std::max(tm1, tm2)));
+	}
+	
     static Vector miter(const Point& v, float x, float y, bool *convex) {
         float x0 = v.x, y0 = v.y, px = v.px, py = v.py, nx = v.nx, ny = v.ny;
         float det = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0);
@@ -424,12 +450,16 @@ struct libTess {
     // back-face culling drops triangles that the miter inset has inverted. Hull triangles extend outside the fill,
     // so they are written degenerate: the interior pass must never paint them. The debug outlines need each triangle's
     // polygon edges, which shared vertices cannot carry, so they go in a byte per triangle in index buffer order.
+    // Triangles the inset would collapse at the current scale are left to the edge pass, as solveTriangle() decides.
+    // Each vertex carries its triangle's threshold, which is part of what is shared, so the pass clips a triangle
+    // away whole: shared with a different threshold, a vertex would cull or keep triangles that are not its own.
     static void writeIndexedInterior(Mesh& mesh) {
         struct Hash {
             size_t operator()(const MeshVertex& v) const {
                 uint64_t a, b;
-                memcpy(& a, & v, sizeof(a)), memcpy(& b, (const char *)& v + sizeof(a), sizeof(b));
-                return std::hash<uint64_t>()(a * 0x9E3779B97F4A7C15ULL ^ b);
+                uint32_t c;
+                memcpy(& a, & v, sizeof(a)), memcpy(& b, (const char *)& v + sizeof(a), sizeof(b)), memcpy(& c, & v.t, sizeof(c));
+                return std::hash<uint64_t>()((a * 0x9E3779B97F4A7C15ULL ^ b) * 0xC2B2AE3D27D4EB4FULL ^ c);
             }
         };
         struct Equal {
@@ -442,6 +472,7 @@ struct libTess {
         lookup.reserve(ntris * 3 / 2);
         unsigned int *idx = mesh._interiorIdxs.new_ptr(ntris * 3);
         unsigned char *edges = mesh._interiorEdges.new_ptr(ntris);
+        vector<MeshPath>& paths = mesh._timeline.basePaths();
         for (i = 0; i < ntris; i++) {
             Triangle& t = mesh._tris[ntris - 1 - i];
             unsigned int p = t.p & Triangle::kFlagsMask;
@@ -452,7 +483,16 @@ struct libTess {
             else if (int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0) < 0)
                 std::swap(v[1], v[2]), std::swap(e0, e2);   // edges v0 v2, v2 v1, v1 v0
             *edges++ = e0 | e1 << 1 | e2 << 2;
+            float tt = 0;
+            if (!(t.curves & Triangle::kHull)) {
+                const Bounds& b = paths[p].bounds;
+                float sx = (b.ux - b.lx) / kUnsignedShortMax, sy = (b.uy - b.ly) / kUnsignedShortMax;
+                tt = solveTriangle(b.lx + v[0].x * sx, b.ly + v[0].y * sy, Vector(v[0].ix, v[0].iy),
+                                   b.lx + v[1].x * sx, b.ly + v[1].y * sy, Vector(v[1].ix, v[1].iy),
+                                   b.lx + v[2].x * sx, b.ly + v[2].y * sy, Vector(v[2].ix, v[2].iy));
+            }
             for (int k = 0; k < 3; k++) {
+                v[k].t = tt;
                 auto it = lookup.emplace(v[k], (unsigned int)lookup.size());
                 if (it.second)
                     *mesh._interiorVerts.new_ptr(1) = v[k];
@@ -566,7 +606,7 @@ struct libTess {
                         bool bc = before.curved && (before.cx != sg.x || before.cy != sg.y), ac = after.curved && (after.cx != after.x || after.cy != after.y);
                         h.tpx = bc ? before.cx : before.x, h.tpy = bc ? before.cy : before.y;
                         h.tnx = ac ? after.cx : afterEnd.x, h.tny = ac ? after.cy : afterEnd.y;
-                        h.c = sg.concave ? Point(sg.cx, sg.cy) : Point(sg.cx, sg.cy, v.x, v.y, h.p2.x, h.p2.y);
+                        h.c = Point(sg.cx, sg.cy, v.x, v.y, h.p2.x, h.p2.y, sg.concave);
                         hulls.push_back(h);
                         if (sg.concave)
                             points.push_back(h.c), curveEdge.push_back(true);
@@ -605,6 +645,7 @@ struct libTess {
                     Point v[3];
                     Vector m[3];
                     bool convex[3], ef[3];
+                    unsigned int curves = 0;
                     float cx = 0, cy = 0;
                     TESSindex di[3];
                     for (int k = 0; k < 3; k++) {
@@ -619,7 +660,7 @@ struct libTess {
                             float ra = 1 / std::sqrt(ax * ax + ay * ay), rb = 1 / std::sqrt(bx * bx + by * by);
                             float dx = ax * ra + bx * rb, dy = ay * ra + by * rb;
                             for (int j = di[k]; ; ) {
-                                if (points[j].corner && inside(points[j], dx, dy)) {
+                                if (points[j].corner && !points[j].control && inside(points[j], dx, dy)) {
                                     v[k] = points[j];
                                     break;
                                 }
@@ -631,14 +672,16 @@ struct libTess {
                     }
                     for (int k = 0; k < 3; k++) {
                         m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
-                        if (!v[k].corner)
+                        if (!v[k].corner || v[k].control)
                             convex[k] = false;
+                        if (v[k].control)
+                            curves |= Triangle::kControl0 << k;
                         TESSindex a = di[k], b = di[(k + 1) % 3];
                         // Debug: the polygon's straight edges, contours' closing edges included. Curves' chords and control
                         // legs are left to the hulls, which draw the curves themselves.
                         ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (nextPoint[a] == (int)b ? !curveEdge[a] : nextPoint[b] == (int)a && !curveEdge[b]);
                     }
-                    writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], 0, lx, ly, rw, rh);
+                    writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], curves, lx, ly, rw, rh);
                 }
             }
             

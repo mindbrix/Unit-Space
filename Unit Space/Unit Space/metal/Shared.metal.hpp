@@ -87,7 +87,9 @@ struct Triangle {
     };
     // A hull triangle is a quadratic's p0 -> c -> p2, and is the only triangle that evaluates that curve.
     // Concave curves bow into the fill, so their chord is the outer edge and c is interior.
-    enum Curves : unsigned int { kHull = 1, kConcave = 2 };
+    // kControlN: vertex N is a concave curve's control point. Its miter insets the interior pass and sets t, as every
+    // vertex's did before curves, but it has no corner, so the edge pass ignores it.
+    enum Curves : unsigned int { kHull = 1, kConcave = 2, kControl0 = 4, kControl1 = 8, kControl2 = 16 };
     
     Triangle(int p, bool ef0, bool ef1, bool ef2,
              bool convex0, bool convex1, bool convex2,
@@ -111,10 +113,11 @@ struct Triangle {
 // A shared interior mesh vertex: quantised position within its path's bounds plus its miter vector.
 struct MeshVertex {
     MeshVertex() {}
-    MeshVertex(unsigned int p, unsigned short x, unsigned short y, float ix, float iy) : p(p), x(x), y(y), ix(ix), iy(iy) {}
+    MeshVertex(unsigned int p, unsigned short x, unsigned short y, float ix, float iy) : p(p), x(x), y(y), ix(ix), iy(iy), t(0) {}
     unsigned int p;
     unsigned short x, y;
     float ix, iy;
+    float t;        // its triangle's solveTriangle() threshold, so vertices are only shared within a threshold
 };
 
 struct Vector {

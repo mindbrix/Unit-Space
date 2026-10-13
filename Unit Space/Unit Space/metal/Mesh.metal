@@ -17,6 +17,13 @@ struct IndexedInteriorVertex
 {
     float4 position [[position]];
     float4 color [[flat]];
+    float clip [[clip_distance]] [1];
+};
+
+struct IndexedInteriorFragment
+{
+    float4 position [[position]];
+    float4 color [[flat]];
 };
 
 vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
@@ -29,9 +36,7 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     float rscale = min(1.0, rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c))));
     
     const float f = kTriangleFilterWidth;
-    // Clamped like the edge pass's dilation: nearly reversing tangents give very long miters.
-    float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale, (v.ix * CTM.b + v.iy * CTM.d) * rscale };
-    iv *= min(1.0, kTriangleDilationMax * rsqrt(dot(iv, iv))) * f;
+    float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale * f, (v.ix * CTM.b + v.iy * CTM.d) * rscale * f };
     
     Bounds bounds = paths[p].bounds;
     float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
@@ -42,13 +47,16 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     RGBA8 color = paths[p].color;
     
     IndexedInteriorVertex vert;
+    // As the interior once did per triangle: one the inset would collapse at this scale is left to the edge pass. Its
+    // vertices all carry its threshold, so it is clipped away whole.
+    vert.clip[0] = 1.0 / rscale > v.t / (0.5 / f) ? 1.0 : -1e9;
     float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
 
-fragment float4 interior_indexed_fragment_main(IndexedInteriorVertex vert [[stage_in]])
+fragment float4 interior_indexed_fragment_main(IndexedInteriorFragment vert [[stage_in]])
 {
     return vert.color;
 }
@@ -56,7 +64,7 @@ fragment float4 interior_indexed_fragment_main(IndexedInteriorVertex vert [[stag
 // The debug outlines: every triangle's edges, or only the interior polygons'. Shared vertices cannot carry barycentrics
 // or per-triangle flags, so they come from the rasteriser and a byte per triangle. Barycentric coordinates are not on
 // every GPU, so this is a separate pipeline, only built where they are.
-fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorVertex vert [[stage_in]], float3 b [[barycentric_coord]],
+fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorFragment vert [[stage_in]], float3 b [[barycentric_coord]],
                                                      uint pid [[primitive_id]],
                                                      constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                      const device uchar *edges [[buffer(2)]])
@@ -125,6 +133,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv0 = { (iv[0] * CTM.a + iv[1] * CTM.c) * rscale, (iv[0] * CTM.b + iv[1] * CTM.d) * rscale };
     float2 iv1 = { (iv[2] * CTM.a + iv[3] * CTM.c) * rscale, (iv[2] * CTM.b + iv[3] * CTM.d) * rscale };
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
+    // Control points have no corner here: no dilation and no lines.
+    iv0 = select(iv0, 0, bool(curves & Triangle::kControl0));
+    iv1 = select(iv1, 0, bool(curves & Triangle::kControl1));
+    iv2 = select(iv2, 0, bool(curves & Triangle::kControl2));
     
     const float f = kTriangleFilterWidth;
     float s0 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv0, iv0)));
@@ -201,6 +213,9 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
         // curve itself; a concave curve's is interior.
         bool concave = curves & Triangle::kConcave;
         float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
+        // A concave curve's inside, outside its parabola, spills across its chord (u = v) beyond its ends, so the chord bounds it.
+        float2 dc = du - dv;
+        dq = select(dq, min(dq, (vert.d1 - vert.d2) * rsqrt(max(dot(dc, dc), 1e-24))), concave);
         float m0 = select(corner(convex0, vert.d0, dq), dq, vert.d4 >= 0), m2 = select(corner(convex2, dq, vert.d3), dq, vert.d5 >= 0);
         m = min(min(m0, m2), select(dq, 1e6, concave));
     } else

@@ -8,18 +8,19 @@
 #import "Memory.hpp"
 
 constexpr int kPointStride = 2 * sizeof(float);
-// Edges are anti-aliased as implicit quadratics, so curves are no longer flattened into chords. Cubic error is far
-// less visible than faceting, so cubics split coarsely. Quadratics split only to bound their turn, which bounds the
-// size of their hull triangles (drawn and blended by the edge pass) and keeps concave controls near their curves.
+// Edges are anti-aliased as implicit quadratics, so curves are no longer flattened into chords. Cubics still split
+// finely: where two curves run close, a coarse quadratic strays across the gap between them. Quadratics split only to
+// bound their turn, which bounds the size of their hull triangles (drawn and blended by the edge pass) and keeps
+// concave controls near their curves.
 #ifndef SPLIT_CUBIC_RELATIVE
 #define SPLIT_CUBIC_RELATIVE 0.01
 #endif
 // A cubic's quadratic approximation may stray by kSplitCubicPrecision path units, or by kSplitCubicRelative of the
 // cubic's own control polygon length if that is smaller: small glyphs need far tighter tolerances than maps.
-constexpr float kSplitCubicPrecision = 0.25, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE, kQuadraticTurnLimit = 1.5707963268; // 90 degrees
+constexpr float kSplitCubicPrecision = 0.01, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE, kQuadraticTurnLimit = 1.5707963268; // 90 degrees
 // Cubics whose relative tolerance is below kCubicTangentSize of kSplitCubicPrecision (control polygons shorter than
 // 5 units: glyphs) split into tangent-preserving quadratics, which may stray kCubicTangentSlack times further.
-constexpr float kCubicTangentSize = 0.2, kCubicTangentSlack = 4;
+constexpr float kCubicTangentSize = 0.2, kCubicTangentSlack = 1;
 
 // Whether both of a cubic's end tangents lie within half a degree of its chord, so it turns by less than the one
 // degree that libTess draws as a line.
