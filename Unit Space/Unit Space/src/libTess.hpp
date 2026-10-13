@@ -148,6 +148,65 @@ struct libTess {
         s.concave = s.curved && (ex - s.x) * (s.cy - s.y) - (ey - s.y) * (s.cx - s.x) > 0;
     }
     
+    // Calls f(a, b) once for each pair of segments (x0, y0, x1, y1, with x extent lx, ux) whose bounds overlap or touch.
+    // Few segments sweep along x (sorting them), testing each against those starting before it ends. Many use a uniform
+    // grid sized to them instead: on big paths most segments overlap in x but not y, so the sweep tests hundreds of
+    // times as many pairs. Grid pairs come from the cell holding the lower left corner of their overlap, so each is
+    // reported once.
+    template<typename T, typename F>
+    static void forEachOverlap(vector<T>& segs, F&& f) {
+        constexpr int kGridMin = 1024;
+        auto ly = [](const T& s) { return std::min(s.y0, s.y1); };
+        auto uy = [](const T& s) { return std::max(s.y0, s.y1); };
+        auto overlap = [&](const T& a, const T& b) { return !(a.ux < b.lx || b.ux < a.lx || uy(a) < ly(b) || uy(b) < ly(a)); };
+        int n = (int)segs.size();
+        float cell = 0, lx = 0, by = 0, w = 0, h = 0;
+        if (n >= kGridMin) {
+            float ux = segs[0].ux, ty = uy(segs[0]), size = 0;
+            lx = segs[0].lx, by = ly(segs[0]);
+            for (const T& s : segs) {
+                lx = std::min(lx, s.lx), ux = std::max(ux, s.ux), by = std::min(by, ly(s)), ty = std::max(ty, uy(s));
+                size += std::max(s.ux - s.lx, uy(s) - ly(s));
+            }
+            // Cells about twice the mean segment size, and no more cells than segments.
+            w = ux - lx, h = ty - by, cell = std::max(std::max(2.f * size / n, std::sqrt(w * h / n)), std::max(w, h) * 1e-6f);
+        }
+        if (!(cell > 0)) {
+            std::sort(segs.begin(), segs.end(), [](const T& a, const T& b) { return a.lx < b.lx; });
+            for (int i = 0; i < n; i++)
+                for (int j = i + 1; j < n && segs[j].lx <= segs[i].ux; j++)
+                    if (!(uy(segs[i]) < ly(segs[j]) || uy(segs[j]) < ly(segs[i])))
+                        f(segs[i], segs[j]);
+            return;
+        }
+        int gw = std::min(int(w / cell) + 1, n), gh = std::min(int(h / cell) + 1, n);
+        auto cx = [&](float x) { return std::min(gw - 1, std::max(0, int((x - lx) / cell))); };
+        auto cy = [&](float y) { return std::min(gh - 1, std::max(0, int((y - by) / cell))); };
+        static thread_local vector<int> starts, cells, fill;
+        starts.assign(gw * gh + 1, 0);
+        for (const T& s : segs)
+            for (int y = cy(ly(s)), y1 = cy(uy(s)); y <= y1; y++)
+                for (int c = y * gw + cx(s.lx), c1 = y * gw + cx(s.ux); c <= c1; c++)
+                    starts[c + 1]++;
+        for (int c = 0; c < gw * gh; c++)
+            starts[c + 1] += starts[c];
+        cells.resize(starts[gw * gh]);
+        fill.assign(starts.begin(), starts.end() - 1);
+        for (int i = 0; i < n; i++) {
+            const T& s = segs[i];
+            for (int y = cy(ly(s)), y1 = cy(uy(s)); y <= y1; y++)
+                for (int c = y * gw + cx(s.lx), c1 = y * gw + cx(s.ux); c <= c1; c++)
+                    cells[fill[c]++] = i;
+        }
+        for (int c = 0; c < gw * gh; c++)
+            for (int k = starts[c]; k < starts[c + 1]; k++)
+                for (int l = k + 1; l < starts[c + 1]; l++) {
+                    T &p = segs[cells[k]], &q = segs[cells[l]];
+                    if (overlap(p, q) && cy(std::max(ly(p), ly(q))) * gw + cx(std::max(p.lx, q.lx)) == c)
+                        f(p, q);
+                }
+    }
+    
     // Inner polygon edges must not cross, or the interior pass paints outside the fill: concave curves in thin features
     // can reach across them. Split the curves involved at t = 1/2 until nothing crosses, then fall back to lines.
     static void resolveCrossings(vector<vector<ContourSegment>>& contours) {
@@ -176,16 +235,13 @@ struct libTess {
                 }
                 marked[ci].assign(c.size(), 0);
             }
-            std::sort(edges.begin(), edges.end(), [](const InnerEdge& a, const InnerEdge& b) { return a.lx < b.lx; });
             bool any = false;
-            for (size_t i = 0; i < edges.size(); i++)
-                for (size_t j = i + 1; j < edges.size() && edges[j].lx <= edges[i].ux; j++) {
-                    const InnerEdge &a = edges[i], &b = edges[j];
-                    if (std::max(a.y0, a.y1) < std::min(b.y0, b.y1) || std::max(b.y0, b.y1) < std::min(a.y0, a.y1) || !crosses(a, b))
-                        continue;
-                    if (contours[a.contour][a.seg].curved) marked[a.contour][a.seg] = 1, any = true;
-                    if (contours[b.contour][b.seg].curved) marked[b.contour][b.seg] = 1, any = true;
-                }
+            forEachOverlap(edges, [&](const InnerEdge& a, const InnerEdge& b) {
+                if (!crosses(a, b))
+                    return;
+                if (contours[a.contour][a.seg].curved) marked[a.contour][a.seg] = 1, any = true;
+                if (contours[b.contour][b.seg].curved) marked[b.contour][b.seg] = 1, any = true;
+            });
             if (!any)
                 return;
             for (int ci = 0; ci < (int)contours.size(); ci++) {
@@ -230,21 +286,16 @@ struct libTess {
                 chords.push_back({ a[0], a[1], q[0], q[1], std::min(a[0], q[0]), std::max(a[0], q[0]), si, -1 });
                 marked[si].assign(n, 0);
             }
-            std::sort(chords.begin(), chords.end(), [](const Chord& a, const Chord& b) { return a.lx < b.lx; });
             bool any = false;
-            for (size_t i = 0; i < chords.size(); i++)
-                for (size_t j = i + 1; j < chords.size() && chords[j].lx <= chords[i].ux; j++) {
-                    const Chord &a = chords[i], &b = chords[j];
-                    if (std::max(a.y0, a.y1) < std::min(b.y0, b.y1) || std::max(b.y0, b.y1) < std::min(a.y0, a.y1))
-                        continue;
-                    if ((a.x0 == b.x0 && a.y0 == b.y0) || (a.x0 == b.x1 && a.y0 == b.y1) || (a.x1 == b.x0 && a.y1 == b.y0) || (a.x1 == b.x1 && a.y1 == b.y1))
-                        continue;
-                    if (orient(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0) * orient(a.x0, a.y0, a.x1, a.y1, b.x1, b.y1) >= 0
-                        || orient(b.x0, b.y0, b.x1, b.y1, a.x0, a.y0) * orient(b.x0, b.y0, b.x1, b.y1, a.x1, a.y1) >= 0)
-                        continue;
-                    if (a.seg >= 0) marked[a.sub][a.seg] = 1, any = true;
-                    if (b.seg >= 0) marked[b.sub][b.seg] = 1, any = true;
-                }
+            forEachOverlap(chords, [&](const Chord& a, const Chord& b) {
+                if ((a.x0 == b.x0 && a.y0 == b.y0) || (a.x0 == b.x1 && a.y0 == b.y1) || (a.x1 == b.x0 && a.y1 == b.y0) || (a.x1 == b.x1 && a.y1 == b.y1))
+                    return;
+                if (orient(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0) * orient(a.x0, a.y0, a.x1, a.y1, b.x1, b.y1) >= 0
+                    || orient(b.x0, b.y0, b.x1, b.y1, a.x0, a.y0) * orient(b.x0, b.y0, b.x1, b.y1, a.x1, a.y1) >= 0)
+                    return;
+                if (a.seg >= 0) marked[a.sub][a.seg] = 1, any = true;
+                if (b.seg >= 0) marked[b.sub][b.seg] = 1, any = true;
+            });
             if (!any)
                 return;
             for (int si = 0; si < (int)path._subPaths.size(); si++) {
