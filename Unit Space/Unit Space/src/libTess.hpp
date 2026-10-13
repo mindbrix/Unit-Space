@@ -301,6 +301,13 @@ struct libTess {
         return miterVector(x0, y0, px, py, nx, ny, left, 1e-12);
     }
     
+    // Whether direction (dx, dy) from a corner heads into the fill: left of both edges if convex, of either if not.
+    static bool inside(const Point& v, float dx, float dy) {
+        float ax = v.x - v.px, ay = v.y - v.py, bx = v.nx - v.x, by = v.ny - v.y;
+        bool a = ax * dy - ay * dx > 0, b = bx * dy - by * dx > 0;
+        return ax * by - ay * bx > 0 ? a && b : a || b;
+    }
+    
 	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
 		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
 		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
@@ -428,6 +435,8 @@ struct libTess {
         vector<float> xy;
         vector<Hull> hulls;
         vector<vector<ContourSegment>> contours;
+        vector<int> same;
+        unordered_map<uint64_t, int> heads;
         for (int p = begin; p < end; p++) {
             Path& path = scene._paths[p];
             float lx, ly, rw, rh;
@@ -534,24 +543,58 @@ struct libTess {
                 const float *dverts = tessGetVertices(dst);
                 const TESSindex *dindices = tessGetVertexIndices(dst), *polygon = tessGetElements(dst);
                 const int ndverts = tessGetVertexCount(dst), ntris = tessGetElementCount(dst);
+                int found = 0;
                 for (int k = 0; k < ndverts; k++)
                     if (dindices[k] == TESS_UNDEF)
                         innerIntersections()++;
+                    else
+                        found++;
+                // The tessellator merges coincident points (where contours touch themselves or each other) and returns
+                // one of their indices, whichever its sweep kept. Each occurrence has its own edges, so ring them and
+                // give each triangle the one whose wedge holds it, else the miters depend on the contours' order.
+                same.resize(0);
+                if (found < (int)points.size()) {
+                    same.resize(points.size());
+                    heads.clear();
+                    for (int k = 0; k < (int)points.size(); k++) {
+                        auto it = heads.emplace(PathVertices::key(points[k].x, points[k].y), k);
+                        same[k] = it.second ? k : same[it.first->second];
+                        same[it.first->second] = k;
+                    }
+                }
                 for (int i = 0; i < ntris; i++, polygon += kPolySize) {
                     Point v[3];
                     Vector m[3];
                     bool convex[3], ef[3];
                     float cx = 0, cy = 0;
+                    TESSindex di[3];
                     for (int k = 0; k < 3; k++) {
-                        TESSindex di = dindices[polygon[k]];
-                        v[k] = di == TESS_UNDEF ? Point(dverts[polygon[k] * 2], dverts[polygon[k] * 2 + 1]) : points[di];
+                        di[k] = dindices[polygon[k]];
+                        v[k] = di[k] == TESS_UNDEF ? Point(dverts[polygon[k] * 2], dverts[polygon[k] * 2 + 1]) : points[di[k]];
+                    }
+                    for (int k = 0; k < 3; k++) {
+                        if (di[k] != TESS_UNDEF && same.size() && same[di[k]] != (int)di[k]) {
+                            // The triangle's bisector at this vertex.
+                            const Point &a = v[(k + 1) % 3], &b = v[(k + 2) % 3];
+                            float ax = a.x - v[k].x, ay = a.y - v[k].y, bx = b.x - v[k].x, by = b.y - v[k].y;
+                            float ra = 1 / std::sqrt(ax * ax + ay * ay), rb = 1 / std::sqrt(bx * bx + by * by);
+                            float dx = ax * ra + bx * rb, dy = ay * ra + by * rb;
+                            for (int j = di[k]; ; ) {
+                                if (points[j].corner && inside(points[j], dx, dy)) {
+                                    v[k] = points[j];
+                                    break;
+                                }
+                                if ((j = same[j]) == (int)di[k])
+                                    break;
+                            }
+                        }
                         cx += v[k].x / 3, cy += v[k].y / 3;
                     }
                     for (int k = 0; k < 3; k++) {
                         m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
                         if (!v[k].corner)
                             convex[k] = false;
-                        TESSindex a = dindices[polygon[k]], b = dindices[polygon[(k + 1) % 3]];
+                        TESSindex a = di[k], b = di[(k + 1) % 3];
                         ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (b == a + 1 || a == b + 1);
                     }
                     writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], 0, lx, ly, rw, rh);
