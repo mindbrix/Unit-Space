@@ -199,10 +199,18 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
         // curve itself; a concave curve's is interior.
         bool concave = curves & Triangle::kConcave;
         float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
+        // Debug: the polygon view outlines the curve itself, as the interior outlines the straight edges.
+        if (meshState.showPolygons)
+            return vert.color * saturate(max(1.0, state.width) * 0.5 + 0.5 - abs(dq));
         float m0 = select(corner(convex0, vert.d0, dq), dq, vert.d4 >= 0), m2 = select(corner(convex2, dq, vert.d3), dq, vert.d5 >= 0);
         m = min(min(m0, m2), select(dq, 1e6, concave));
-    } else
+    } else {
         m = min(corner(convex0, vert.d0, vert.d1), min(corner(convex1, vert.d2, vert.d3), corner(convex2, vert.d4, vert.d5)));
+        // Debug: the polygon view outlines only the path's own edges, where the coverage crosses its boundary, so the
+        // dilated triangles along curves' chords (the edge pass's band around the interior) do not draw.
+        if (meshState.showPolygons)
+            return vert.color * saturate(max(1.0, state.width) * 0.5 + 0.5 - abs(m));
+    }
     float winding = (clamp(m, -f, f) + f) * 0.5 / f;
     return vert.color * winding;
 }

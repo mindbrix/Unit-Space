@@ -27,8 +27,10 @@ struct Mesh {
             d1 = (a - c) * (a - c) + (b - d) * (b - d);
             const float rd = 0.5 * std::sqrt(d0 > d1 ? d0 : d1);
             const float cx = mx * inv.a + my * inv.c + inv.tx, cy = mx * inv.b + my * inv.d + inv.ty;
-			const float limit = 64 * std::sqrt(std::abs(inv.a * inv.d - inv.b * inv.c));
-			
+			// Paths smaller than this on screen are left to the edge pass, except in the debug views, which show every
+			// interior triangle at any scale.
+			const float limit = meshState.showTriangles || meshState.showPolygons ? 0 : 64 * std::sqrt(std::abs(inv.a * inv.d - inv.b * inv.c));
+
             const MeshPath *path = & paths[0];
             for (p = 0; p < pathsSize; p++, path++) {
                 w = path->bounds.ux - path->bounds.lx, h = path->bounds.uy - path->bounds.ly;

@@ -468,6 +468,7 @@ struct libTess {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         vector<Point> points;
+        vector<char> curveEdge;     // whether the polygon edge from each point to the next is a curve's chord or control legs
         vector<float> xy;
         vector<Hull> hulls;
         vector<vector<ContourSegment>> contours;
@@ -541,7 +542,7 @@ struct libTess {
             }
             resolveCrossings(contours);
             
-            points.resize(0), hulls.resize(0);
+            points.resize(0), curveEdge.resize(0), hulls.resize(0);
             for (vector<ContourSegment>& c : contours) {
                 int n = (int)c.size(), i;
                 // An on-curve vertex's outer edges head to a convex curve's control point, else along the chord.
@@ -555,6 +556,7 @@ struct libTess {
                     Point v = corner(i);
                     points.push_back(v);
                     const ContourSegment& sg = c[i];
+                    curveEdge.push_back(sg.curved);
                     if (sg.curved) {
                         Hull h;
                         h.p0 = v, h.p2 = corner((i + 1) % n), h.concave = sg.concave;
@@ -566,7 +568,7 @@ struct libTess {
                         h.c = sg.concave ? Point(sg.cx, sg.cy) : Point(sg.cx, sg.cy, v.x, v.y, h.p2.x, h.p2.y);
                         hulls.push_back(h);
                         if (sg.concave)
-                            points.push_back(h.c);
+                            points.push_back(h.c), curveEdge.push_back(true);
                     }
                 }
                 xy.resize(0);
@@ -631,7 +633,9 @@ struct libTess {
                         if (!v[k].corner)
                             convex[k] = false;
                         TESSindex a = di[k], b = di[(k + 1) % 3];
-                        ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (b == a + 1 || a == b + 1);
+                        // Debug: the polygon's straight edges. Curves' chords and control legs are left to the hulls, which
+                        // draw the curves themselves.
+                        ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (b == a + 1 || a == b + 1) && !curveEdge[std::min(a, b)];
                     }
                     writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], 0, lx, ly, rw, rh);
                 }
