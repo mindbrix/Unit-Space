@@ -469,6 +469,7 @@ struct libTess {
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         vector<Point> points;
         vector<char> curveEdge;     // whether the polygon edge from each point to the next is a curve's chord or control legs
+        vector<int> nextPoint;      // the next point in each point's contour
         vector<float> xy;
         vector<Hull> hulls;
         vector<vector<ContourSegment>> contours;
@@ -542,7 +543,7 @@ struct libTess {
             }
             resolveCrossings(contours);
             
-            points.resize(0), curveEdge.resize(0), hulls.resize(0);
+            points.resize(0), curveEdge.resize(0), nextPoint.resize(0), hulls.resize(0);
             for (vector<ContourSegment>& c : contours) {
                 int n = (int)c.size(), i;
                 // An on-curve vertex's outer edges head to a convex curve's control point, else along the chord.
@@ -573,7 +574,7 @@ struct libTess {
                 }
                 xy.resize(0);
                 for (size_t k = first; k < points.size(); k++)
-                    xy.push_back(points[k].x), xy.push_back(points[k].y);
+                    xy.push_back(points[k].x), xy.push_back(points[k].y), nextPoint.push_back(k + 1 == points.size() ? (int)first : (int)k + 1);
                 tessAddContour(dst, 2, xy.data(), kPointStride, int(points.size() - first));
             }
             
@@ -633,9 +634,9 @@ struct libTess {
                         if (!v[k].corner)
                             convex[k] = false;
                         TESSindex a = di[k], b = di[(k + 1) % 3];
-                        // Debug: the polygon's straight edges. Curves' chords and control legs are left to the hulls, which
-                        // draw the curves themselves.
-                        ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (b == a + 1 || a == b + 1) && !curveEdge[std::min(a, b)];
+                        // Debug: the polygon's straight edges, contours' closing edges included. Curves' chords and control
+                        // legs are left to the hulls, which draw the curves themselves.
+                        ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (nextPoint[a] == (int)b ? !curveEdge[a] : nextPoint[b] == (int)a && !curveEdge[b]);
                     }
                     writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], 0, lx, ly, rw, rh);
                 }

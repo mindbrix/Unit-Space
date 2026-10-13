@@ -127,9 +127,16 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
     
     const float f = kTriangleFilterWidth;
-    float s0 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv0, iv0)));
-    float s1 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv1, iv1)));
-    float s2 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv2, iv2)));
+    // A convex polygon corner's whole miter, up to a sharp limit, so the fringe beside a sharp tip is covered; the
+    // capped corner ends its coverage just past the tip. Other corners keep the shorter limit: a concave corner's
+    // miter heads out of its notch, and past the notch's mouth one of its edges would claim the outside.
+    bool hull = curves & Triangle::kHull;
+    float l0 = !hull && (tri.p & Triangle::kFlagsConvex0) ? kTriangleTipDilationMax : kTriangleDilationMax;
+    float l1 = !hull && (tri.p & Triangle::kFlagsConvex1) ? kTriangleTipDilationMax : kTriangleDilationMax;
+    float l2 = !hull && (tri.p & Triangle::kFlagsConvex2) ? kTriangleTipDilationMax : kTriangleDilationMax;
+    float s0 = min(1.0, l0 * rsqrt(dot(iv0, iv0)));
+    float s1 = min(1.0, l1 * rsqrt(dot(iv1, iv1)));
+    float s2 = min(1.0, l2 * rsqrt(dot(iv2, iv2)));
     float2 p0 = v0 - iv0 * (s0 * f), p1 = v1 - iv1 * (s1 * f), p2 = v2 - iv2 * (s2 * f);
     
     float visible = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x) > 0;
@@ -179,6 +186,14 @@ static inline float corner(float convex, float a, float b) {
     return convex * min(convex * a, convex * b);
 }
 
+// A polygon corner, whose convex tip is also capped where its bisector leaves the vertex: past a sharp tip both edge
+// lines stay within a filter width for as long as the miter, a faint needle the shape does not have. The cap's
+// distance is the lines' sum over its gradient, whose length is twice the sine of the half angle.
+static inline float cappedCorner(float convex, float a, float b, float2 ga, float2 gb) {
+    float2 g = ga + gb;
+    return convex > 0 ? min(min(a, b), (a + b) * rsqrt(max(dot(g, g), 1e-24))) : max(a, b);
+}
+
 // Signed pixel distance to u^2 = v, positive inside: a convex curve's inside is the parabola's, a concave curve's is outside it.
 static inline float curveDistance(float u, float v, float2 du, float2 dv, bool concave) {
     float2 g = 2.0 * u * du - dv;
@@ -191,6 +206,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     const float f = kTriangleFilterWidth;
     // Derivatives are only defined in uniform control flow, so take them first. (u, v) are affine, so they are exact.
     float2 du = float2(dfdx(vert.d1), dfdy(vert.d1)), dv = float2(dfdx(vert.d2), dfdy(vert.d2));
+    float2 g0 = float2(dfdx(vert.d0), dfdy(vert.d0)), g3 = float2(dfdx(vert.d3), dfdy(vert.d3));
+    float2 g4 = float2(dfdx(vert.d4), dfdy(vert.d4)), g5 = float2(dfdx(vert.d5), dfdy(vert.d5));
     uint curves = vert.convex >> 3;
     float convex0 = (vert.convex & 4) ? 1 : -1, convex1 = (vert.convex & 2) ? 1 : -1, convex2 = (vert.convex & 1) ? 1 : -1;
     float m;
@@ -199,18 +216,14 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
         // curve itself; a concave curve's is interior.
         bool concave = curves & Triangle::kConcave;
         float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
-        // Debug: the polygon view outlines the curve itself, as the interior outlines the straight edges.
-        if (meshState.showPolygons)
-            return vert.color * saturate(max(1.0, state.width) * 0.5 + 0.5 - abs(dq));
         float m0 = select(corner(convex0, vert.d0, dq), dq, vert.d4 >= 0), m2 = select(corner(convex2, dq, vert.d3), dq, vert.d5 >= 0);
         m = min(min(m0, m2), select(dq, 1e6, concave));
-    } else {
-        m = min(corner(convex0, vert.d0, vert.d1), min(corner(convex1, vert.d2, vert.d3), corner(convex2, vert.d4, vert.d5)));
-        // Debug: the polygon view outlines only the path's own edges, where the coverage crosses its boundary, so the
-        // dilated triangles along curves' chords (the edge pass's band around the interior) do not draw.
-        if (meshState.showPolygons)
-            return vert.color * saturate(max(1.0, state.width) * 0.5 + 0.5 - abs(m));
-    }
+    } else
+        m = min(cappedCorner(convex0, vert.d0, vert.d1, g0, du), min(cappedCorner(convex1, vert.d2, vert.d3, dv, g3), cappedCorner(convex2, vert.d4, vert.d5, g4, g5)));
     float winding = (clamp(m, -f, f) + f) * 0.5 / f;
+    // Debug: the polygon view draws the edges as usual, continued inside as the interior outlines straight edges (which
+    // it covers), so curves get the same line. The band the edge pass covers along curves' chords is further in.
+    if (meshState.showPolygons && m >= f)
+        winding = saturate(max(1.0, state.width) + f - m);
     return vert.color * winding;
 }
