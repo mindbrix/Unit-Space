@@ -359,28 +359,9 @@ struct libTess {
         return ax * by - ay * bx > 0 ? a && b : a || b;
     }
     
-	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
-		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
-		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
-		tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
-		tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
-		tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-		a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
-		if (t1 != -1) {
-			tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
-			tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
-			tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
-			a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
-		}
-		t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
-		ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
-		return ta > t ? ta : t;
-	}
-	
     static void writeTriangle(vector<Triangle>& tris, int p, const Point *v, const Vector *m, const bool *convex,
                               bool ef0, bool ef1, bool ef2, unsigned int curves, float lx, float ly, float rw, float rh) {
-        float t = solveTriangle(v[0].x, v[0].y, m[0], v[1].x, v[1].y, m[1], v[2].x, v[2].y, m[2]);
-        tris.emplace_back(p, ef0, ef1, ef2, convex[0], convex[1], convex[2], t,
+        tris.emplace_back(p, ef0, ef1, ef2, convex[0], convex[1], convex[2],
                           (v[0].x - lx) * rw, (v[0].y - ly) * rh, (v[1].x - lx) * rw, (v[1].y - ly) * rh, (v[2].x - lx) * rw, (v[2].y - ly) * rh,
                           m[0].x, m[0].y, m[1].x, m[1].y, m[2].x, m[2].y);
         tris.back().curves = curves;
@@ -441,7 +422,8 @@ struct libTess {
     // Shares vertices between triangles so the interior pass transforms each vertex once instead of three times.
     // Triangles are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
     // back-face culling drops triangles that the miter inset has inverted. Hull triangles extend outside the fill,
-    // so they are written degenerate: the interior pass must never paint them.
+    // so they are written degenerate: the interior pass must never paint them. The debug outlines need each triangle's
+    // polygon edges, which shared vertices cannot carry, so they go in a byte per triangle in index buffer order.
     static void writeIndexedInterior(Mesh& mesh) {
         struct Hash {
             size_t operator()(const MeshVertex& v) const {
@@ -459,14 +441,17 @@ struct libTess {
         std::unordered_map<MeshVertex, unsigned int, Hash, Equal> lookup;
         lookup.reserve(ntris * 3 / 2);
         unsigned int *idx = mesh._interiorIdxs.new_ptr(ntris * 3);
+        unsigned char *edges = mesh._interiorEdges.new_ptr(ntris);
         for (i = 0; i < ntris; i++) {
             Triangle& t = mesh._tris[ntris - 1 - i];
             unsigned int p = t.p & Triangle::kFlagsMask;
             MeshVertex v[3] = { { p, t.x0, t.y0, t.ix0, t.iy0 }, { p, t.x1, t.y1, t.ix1, t.iy1 }, { p, t.x2, t.y2, t.ix2, t.iy2 } };
+            bool e0 = t.p & Triangle::kFlagsEdge0, e1 = t.p & Triangle::kFlagsEdge1, e2 = t.p & Triangle::kFlagsEdge2;
             if (t.curves & Triangle::kHull)
-                v[1] = v[2] = v[0];
+                v[1] = v[2] = v[0], e0 = e1 = e2 = false;
             else if (int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0) < 0)
-                std::swap(v[1], v[2]);
+                std::swap(v[1], v[2]), std::swap(e0, e2);   // edges v0 v2, v2 v1, v1 v0
+            *edges++ = e0 | e1 << 1 | e2 << 2;
             for (int k = 0; k < 3; k++) {
                 auto it = lookup.emplace(v[k], (unsigned int)lookup.size());
                 if (it.second)

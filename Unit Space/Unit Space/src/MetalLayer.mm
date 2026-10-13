@@ -18,8 +18,9 @@
 @property (nonatomic, strong) id <MTLBuffer> trisBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorIdxsBuffer;
-@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorPipelineState;
+@property (nonatomic, strong) id <MTLBuffer> interiorEdgesBuffer;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorIndexedPipelineState;
+@property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorDebugPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
 @property (nonatomic, strong) id <MTLDepthStencilState> depthState;
 @property (nonatomic, strong) id <MTLTexture> depthTexture;
@@ -64,15 +65,17 @@
     
     // The interior is opaque, drawn front to back against the depth buffer.
     descriptor.colorAttachments[0].blendingEnabled = NO;
-    descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_vertex_main"];
-    descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_fragment_main"];
-    descriptor.label = @"Interior";
-    self.meshInteriorPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
-    
     descriptor.vertexFunction = [self.defaultLibrary newFunctionWithName:@"interior_indexed_vertex_main"];
     descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_indexed_fragment_main"];
     descriptor.label = @"InteriorIndexed";
     self.meshInteriorIndexedPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    
+    // The debug outlines need barycentric coordinates, which not every GPU has. Without them the interior draws plain.
+    if (self.device.supportsShaderBarycentricCoordinates) {
+        descriptor.fragmentFunction = [self.defaultLibrary newFunctionWithName:@"interior_indexed_debug_fragment_main"];
+        descriptor.label = @"InteriorDebug";
+        self.meshInteriorDebugPipelineState = [self.device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+    }
 	
     // The edges blend premultiplied colour over the interior.
     descriptor.colorAttachments[0].blendingEnabled = YES;
@@ -142,19 +145,20 @@
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-        BOOL drawIndexed = NO, drawStream = NO;
+        BOOL drawIndexed = NO, debug = call->meshState.showTriangles || call->meshState.showPolygons;
         switch (call->type) {
-            case kCallTypeMeshInterior:
             case kCallTypeMeshTriangles:
-				[commandEncoder setRenderPipelineState:call->type == kCallTypeMeshTriangles ? _meshTrianglePipelineState : _meshInteriorPipelineState];
+				[commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
 				[commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
 				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                drawStream = call->type == kCallTypeMeshTriangles;
                 break;
             case kCallTypeMeshInteriorIndexed:
-                [commandEncoder setRenderPipelineState:_meshInteriorIndexedPipelineState];
+                debug = debug && _meshInteriorDebugPipelineState != nil;
+                [commandEncoder setRenderPipelineState:debug ? _meshInteriorDebugPipelineState : _meshInteriorIndexedPipelineState];
                 [commandEncoder setVertexBuffer:_interiorVertsBuffer offset:0 atIndex:8];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+                if (debug)
+                    [commandEncoder setFragmentBuffer:_interiorEdgesBuffer offset:0 atIndex:2];
                 drawIndexed = YES;
                 break;
         }
@@ -178,14 +182,8 @@
                                       indexBuffer:_interiorIdxsBuffer
                                 indexBufferOffset:baseInstance * 3 * sizeof(uint32_t)];
             [commandEncoder setCullMode:MTLCullModeNone];
-        } else if (drawStream)
+        } else
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
-        else
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle
-                               vertexStart:0
-                               vertexCount:3
-                             instanceCount:instanceCount
-                              baseInstance:baseInstance];
     }
     [commandEncoder endEncoding];
     __block dispatch_semaphore_t block_sema = _inflight_semaphore;
@@ -211,6 +209,10 @@
         _interiorIdxsBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorIdxs.get()
                                                        length:mesh._interiorIdxs.pagedSize()
                                                       options:MTLResourceStorageModeShared];
+    if (mesh._interiorEdges.pagedSize())
+        _interiorEdgesBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorEdges.get()
+                                                        length:mesh._interiorEdges.pagedSize()
+                                                       options:MTLResourceStorageModeShared];
     if (mesh._timeline.basePaths().size())
         _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.basePaths()[0]
                                                 length:mesh._timeline.basePaths().size() * sizeof(MeshPath)

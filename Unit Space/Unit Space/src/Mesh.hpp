@@ -58,20 +58,17 @@ struct Mesh {
 			}
             call = nullptr;
             if (meshState.showInterior) {
-                // Indexed calls address the reversed index buffer, so a merged run keeps its start and only grows.
-                bool indexed = !meshState.showTriangles && !meshState.showPolygons;
+                // Calls address the reversed index buffer, so a merged run keeps its start and only grows.
                 int total = (int)mesh._tris.count(), runBase = -1;
                 for (end = total, p = (int)pathsSize - 1; p >= 0; p--, end = base) {
                     base = mesh._idxs[p];
                     if (visibles[p] && opaques[p]) {
                         count = end - base;
                         if (call == nullptr || runBase != end) {
-                            calls.emplace_back(indexed ? kCallTypeMeshInteriorIndexed : kCallTypeMeshInterior, 0, indexed ? total - end : base, state, meshState);
+                            calls.emplace_back(kCallTypeMeshInteriorIndexed, 0, total - end, state, meshState);
                             call = & calls.back();
-                            call->meshState.reverseCount = end;
+                            call->meshState.baseTriangle = total - end;
                         }
-                        if (!indexed)
-                            call->baseInstance = base;
                         runBase = base;
                         call->instanceCount += count;
                     }
@@ -119,9 +116,10 @@ struct Mesh {
     Memory<Triangle, true>              _tris;
     Memory<MeshVertex, true>            _interiorVerts;
     Memory<unsigned int, true>          _interiorIdxs;
+    Memory<unsigned char, true>         _interiorEdges;     // debug: per index buffer triangle, bit k set if edge k is a polygon edge
 	
     void empty() {
         _timeline.empty(), _idxs.resize(0), _tris = Memory<Triangle, true>();
-        _interiorVerts = Memory<MeshVertex, true>(), _interiorIdxs = Memory<unsigned int, true>();
+        _interiorVerts = Memory<MeshVertex, true>(), _interiorIdxs = Memory<unsigned int, true>(), _interiorEdges = Memory<unsigned char, true>();
     }
 };

@@ -13,67 +13,6 @@ using namespace metal;
 
 #pragma mark - Interior
 
-struct InteriorVertex
-{
-    float4 position [[position]];
-    float u, v;
-    bool ef0, ef1, ef2;
-    float4 color;
-};
-
-vertex InteriorVertex interior_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                           const device Triangle *tris [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
-                                           uint vid [[vertex_id]], uint iid [[instance_id]], uint biid [[base_instance]])
-{
-    uint idx = select(iid, meshState.reverseCount - 1 - iid + biid, meshState.reverseCount);
-    const device Triangle& tri = tris[idx];
-    uint p = tri.p & Triangle::kFlagsMask;
-    float t = tri.t;
-    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float rscale = min(1.0, rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c))));
-    
-    const float f = kTriangleFilterWidth;
-    const device float *ix = & tri.ix0 + vid * 2;
-    float2 iv = { (ix[0] * CTM.a + ix[1] * CTM.c) * rscale, (ix[0] * CTM.b + ix[1] * CTM.d) * rscale };
-    iv *= min(1.0, kTriangleDilationMax * rsqrt(dot(iv, iv))) * f;
-    
-    Bounds bounds = paths[p].bounds;
-	float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    float visible = float(1.0 / rscale > t / (0.5 / f));
-    const device unsigned short *pt = & tri.x0 + vid * 2;
-    float2 devicePoint = {
-        visible * (iv.x + pt[0] * w * CTM.a + pt[1] * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx),
-        visible * (iv.y + pt[0] * w * CTM.b + pt[1] * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty)
-    };
-    RGBA8 color = paths[p].color;
-    
-    InteriorVertex vert;
-    float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
-    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
-    vert.u = float(vid == 2);
-    vert.v = float(vid == 0);
-    vert.ef0 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge0);
-    vert.ef1 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge1);
-    vert.ef2 = meshState.showTriangles | bool(tri.p & Triangle::kFlagsEdge2);
-    vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
-    return vert;
-}
-
-fragment float4 interior_fragment_main(InteriorVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
-{
-	if (meshState.showTriangles || meshState.showPolygons) {
-//        float ux = vert.u + 0.5 * vert.v, a = vert.u - ux * ux, da = dfdx(a) + dfdy(a);
-//        return vert.color * saturate(a / da + 0.5);
-        
-        float w = max(1.0, state.width);
-        float d = simpleBarycentricDistance(vert.u, vert.v, vert.ef0, vert.ef1, vert.ef2);
-        return vert.color * saturate(w - d);
-	} else
-		return vert.color;
-}
-
-#pragma mark - Indexed interior
-
 struct IndexedInteriorVertex
 {
     float4 position [[position]];
@@ -112,6 +51,20 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
 fragment float4 interior_indexed_fragment_main(IndexedInteriorVertex vert [[stage_in]])
 {
     return vert.color;
+}
+
+// The debug outlines: every triangle's edges, or only the interior polygons'. Shared vertices cannot carry barycentrics
+// or per-triangle flags, so they come from the rasteriser and a byte per triangle. Barycentric coordinates are not on
+// every GPU, so this is a separate pipeline, only built where they are.
+fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorVertex vert [[stage_in]], float3 b [[barycentric_coord]],
+                                                     uint pid [[primitive_id]],
+                                                     constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
+                                                     const device uchar *edges [[buffer(2)]])
+{
+    uchar e = meshState.showTriangles ? 7 : edges[meshState.baseTriangle + pid];
+    float w = max(1.0, state.width);
+    float d = simpleBarycentricDistance(b.z, b.x, e & 1, e & 2, e & 4);
+    return vert.color * saturate(w - d);
 }
 
 #pragma mark - Triangle
