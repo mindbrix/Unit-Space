@@ -101,7 +101,7 @@ static void appendCubic(Memory<float>& quadratics, const float *c, float toleran
 
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
-static Memory<float> splitCubics(const float *src, int npoints, const float precision, const float tinylimit) {
+static Memory<float> splitCubics(const float *src, int npoints, const float precision, const float tinylimit, bool tangents) {
     Memory<float> quadratics;
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0;
     float n12, n23, dx, dy, ax, ay, bx, by, dot, cosine, cx, cy, rt, tx1, ty1, tx2, ty2, tx3, ty3;
@@ -161,10 +161,11 @@ static Memory<float> splitCubics(const float *src, int npoints, const float prec
         float allowance = relative < kCubicTangentSize * precision ? kCubicTangentSlack * relative : 0;
         // A control on its end point (common in Illustrator art) leaves the cubic's end tangent heading for the other
         // control, which the least-error control ignores: its quadratic hooks off the tangent, then runs straight.
-        // Such cubics keep their tangents at any size, within the usual tolerance.
+        // Such cubics keep their tangents at any size, within the usual tolerance, as do all cubics when asked (stroke
+        // centrelines: least-error pieces kink by degrees where cubics meet, and the stroke turns those into corners).
         float near = 1e-4f * length;
         bool degenerate = (std::abs(x1 - x0) <= near && std::abs(y1 - y0) <= near) || (std::abs(x3 - x2) <= near && std::abs(y3 - y2) <= near);
-        if (allowance == 0 && degenerate)
+        if (allowance == 0 && (degenerate || tangents))
             allowance = tolerance;
         // Inflections split first, so every tangent-preserving piece is convex and its end tangents meet ahead of both ends.
         float ax0 = x1 - x0, ay0 = y1 - y0, bx0 = x2 - 2.f * x1 + x0, by0 = y2 - 2.f * y1 + y0;
@@ -229,14 +230,15 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    SubPath(const float *points, const int npoints, Type type) {
+    // tangents: cubics convert to tangent-preserving quadratics (see splitCubics).
+    SubPath(const float *points, const int npoints, Type type, bool tangents = false) {
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         float dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
         
         if (type == kCubic) {
             float w = _bounds.ux - _bounds.lx, h = _bounds.uy - _bounds.ly;
-            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, 1e-3 * (w < h ? w : h));
+            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, 1e-3 * (w < h ? w : h), tangents);
             const int nfloats = (int)quadratics.count();
             if (nfloats > 5) {
                 if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
