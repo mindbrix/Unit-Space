@@ -394,6 +394,10 @@ struct libTess {
         return ax * by - ay * bx > 0 ? a && b : a || b;
     }
     
+    // Quantises a coordinate as Triangle's constructor quantises vertices, so points the edge pass compares or measures
+    // from vertices (curves' ends, neighbours' tangents) are on the same grid.
+    static unsigned short quantise(float v) { return (unsigned short)(v < 0 ? 0 : v > kUnsignedShortMax ? kUnsignedShortMax : v); }
+    
     static void writeTriangle(vector<Triangle>& tris, int p, const Point *v, const Vector *m, const bool *convex,
                               bool ef0, bool ef1, bool ef2, unsigned int curves, float lx, float ly, float rw, float rh) {
         tris.emplace_back(p, ef0, ef1, ef2, convex[0], convex[1], convex[2],
@@ -699,7 +703,7 @@ struct libTess {
                         if (di[k] != TESS_UNDEF && same.size() && same[di[k]] != (int)di[k]) {
                             for (int j = di[k]; ; ) {
                                 if (points[j].corner && !points[j].control && inside(points[j], dx, dy)) {
-                                    v[k] = points[j];
+                                    v[k] = points[j], di[k] = j;
                                     break;
                                 }
                                 if ((j = same[j]) == (int)di[k])
@@ -722,9 +726,10 @@ struct libTess {
                             convex[k] = false;
                         if (v[k].control)
                             curves |= Triangle::kControl0 << k;
+                        // The polygon's straight edges, contours' closing edges included, between the occurrences chosen
+                        // above: they set the edge pass's bevels and the debug outlines. Curves' chords and control legs are
+                        // left to the hulls, which draw the curves themselves.
                         TESSindex a = di[k], b = di[(k + 1) % 3];
-                        // Debug: the polygon's straight edges, contours' closing edges included. Curves' chords and control
-                        // legs are left to the hulls, which draw the curves themselves.
                         ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (nextPoint[a] == (int)b ? !curveEdge[a] : nextPoint[b] == (int)a && !curveEdge[b]);
                     }
                     writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], curves, lx, ly, rw, rh);
@@ -732,10 +737,8 @@ struct libTess {
                     // with the curve itself: its control's p0 and p2.
                     if (curves) {
                         const Point& cp = v[curves & Triangle::kControl0 ? 0 : curves & Triangle::kControl1 ? 1 : 2];
-                        // Quantised as Triangle's constructor quantises vertices, so the edge pass can match them exactly.
-                        auto q = [](float v) { return (unsigned short)(v < 0 ? 0 : v > kUnsignedShortMax ? kUnsignedShortMax : v); };
                         Triangle& t = _tris.back();
-                        t.tx0 = q((cp.px - lx) * rw), t.ty0 = q((cp.py - ly) * rh), t.tx2 = q((cp.nx - lx) * rw), t.ty2 = q((cp.ny - ly) * rh);
+                        t.tx0 = quantise((cp.px - lx) * rw), t.ty0 = quantise((cp.py - ly) * rh), t.tx2 = quantise((cp.nx - lx) * rw), t.ty2 = quantise((cp.ny - ly) * rh);
                     }
                 }
             }
@@ -768,8 +771,7 @@ struct libTess {
                               Triangle::kHull | (h.concave ? Triangle::kConcave : 0), lx, ly, rw, rh);
                 Triangle& t = _tris.back();
                 float t0x = h.concave ? h.tnx : h.tpx, t0y = h.concave ? h.tny : h.tpy, t2x = h.concave ? h.tpx : h.tnx, t2y = h.concave ? h.tpy : h.tny;
-                auto q = [](float v) { return (unsigned short)(v < 0 ? 0 : v > kUnsignedShortMax ? kUnsignedShortMax : v + 0.5f); };
-                t.tx0 = q((t0x - lx) * rw), t.ty0 = q((t0y - ly) * rh), t.tx2 = q((t2x - lx) * rw), t.ty2 = q((t2y - ly) * rh);
+                t.tx0 = quantise((t0x - lx) * rw), t.ty0 = quantise((t0y - ly) * rh), t.tx2 = quantise((t2x - lx) * rw), t.ty2 = quantise((t2y - ly) * rh);
             }
         }
         tessDeleteTess(tess), tessDeleteTess(dst);
