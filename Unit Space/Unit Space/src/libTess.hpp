@@ -348,6 +348,9 @@ struct libTess {
     // of where it collapses, and no less than the inverse of its size.
 	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
 		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
+		// Solved relative to the first vertex: the area terms cancel, so in absolute coordinates far from the origin
+		// (maps) their rounding swamps small triangles.
+		x1 -= x0, y1 -= y0, x2 -= x0, y2 -= y0, x0 = y0 = 0;
 		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
 		tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
 		tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
@@ -359,8 +362,11 @@ struct libTess {
 			tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
 			a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
 		}
-		t = 1.0 / std::abs(t1 > 1e-2 && (a1 < 1 || a1 < a0) ? t1 : t);
-		ta = 1.0 / std::sqrt(0.5 * std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)));
+		// The nearer root is the collapse if it is not noise and does shrink the triangle. Both tests are relative to the
+		// triangle's size, so they hold in any units: a glyph a few units across as much as a map.
+		float area2 = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)), size = std::sqrt(0.5f * area2);
+		t = 1.0 / std::abs(t1 > 1e-2 * size && (a1 < area2 || a1 < a0) ? t1 : t);
+		ta = 1.0 / size;
 		t = ta > t ? ta : t;
 		// Nor may any vertex move further than its shorter edge. Near-reversing corners have huge miters, and a triangle
 		// that stretches rather than collapses has no root to catch them: its inset vertex would cross the picture.
