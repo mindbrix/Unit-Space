@@ -178,9 +178,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         float2 t2 = float2(tri.tx2 * a + tri.ty2 * c + tx, tri.tx2 * b + tri.ty2 * d + ty) - v2;
         float2 e0 = t0 * rsqrt(dot(t0, t0)), e2 = t2 * rsqrt(dot(t2, t2));
         float2 n0 = select(float2(e0.y, -e0.x), float2(-e0.y, e0.x), concave), n2 = select(float2(-e2.y, e2.x), float2(e2.y, -e2.x), concave);
-        vert.d0 = dot(t0, t0) > 0 ? dot(n0, pos - v0) : cornerDistances(iv0, v0, select(v1, v2, concave) - v0, pos).y;
+        vert.d0 = select(cornerDistances(iv0, v0, select(v1, v2, concave) - v0, pos).y, dot(n0, pos - v0), dot(t0, t0) > 0);
         vert.d1 = uv.x, vert.d2 = uv.y;
-        vert.d3 = dot(t2, t2) > 0 ? dot(n2, pos - v2) : cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos).y;
+        vert.d3 = select(cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos).y, dot(n2, pos - v2), dot(t2, t2) > 0);
         // Which side of each join's bisector (the miter) we are on: positive is this curve's side, where the curve
         // alone is the boundary. Neighbours' lines only apply beyond it, where sharp corners let the hull overhang.
         float2 q0 = select(v1, v2, concave) - v0, q2 = select(v1, v0, concave) - v2;
@@ -205,8 +205,12 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         // Each corner's first line is the one along t: the chord at the curve's ends.
         float2 t0 = select(v1 - v0, select(cp0, cp2, p00) - v0, e0), t1 = select(v0 - v1, select(cp0, cp2, p01) - v1, e1);
         float2 t2 = select(v1 - v2, select(cp0, cp2, p02) - v2, e2);
-        float2 k0 = cornerDistances(iv0, v0, t0, pos) - f * (1 - s0), k1 = cornerDistances(iv1, v1, t1, pos) - f * (1 - s1), k2 = cornerDistances(iv2, v2, t2, pos) - f * (1 - s2);
-        bool2 a0 = e0 ? alongEdge(iv0, v0, t0) : bool2(false), a1 = e1 ? alongEdge(iv1, v1, t1) : bool2(false), a2 = e2 ? alongEdge(iv2, v2, t2) : bool2(false);
+        float2 k0 = cornerDistances(iv0, v0, t0, pos) - f * (1 - s0);
+        float2 k1 = cornerDistances(iv1, v1, t1, pos) - f * (1 - s1);
+        float2 k2 = cornerDistances(iv2, v2, t2, pos) - f * (1 - s2);
+        bool2 a0 = select(bool2(false), alongEdge(iv0, v0, t0), bool2(e0));
+        bool2 a1 = select(bool2(false), alongEdge(iv1, v1, t1), bool2(e1));
+        bool2 a2 = select(bool2(false), alongEdge(iv2, v2, t2), bool2(e2));
         lines = uint(a0.x) | uint(a0.y) << 1 | uint(a1.x) << 2 | uint(a1.y) << 3 | uint(a2.x) << 4 | uint(a2.y) << 5;
         if (any) {
             float2 uv = loopBlinn(pos, cp0, vc, cp2);
@@ -246,7 +250,6 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     const float f = kTriangleFilterWidth;
     uint curves = (vert.convex >> 3) & 31, lines = vert.convex >> 8;
     bool hull = curves & Triangle::kHull, c0 = curves & Triangle::kControl0, c1 = curves & Triangle::kControl1 && !c0;
-    bool c2 = curves & Triangle::kControl2 && !c0 && !c1;
     // The curve's Loop-Blinn (u, v): a hull's d1, d2, or a polygon triangle's in its first control vertex's distances.
     float su = select(select(select(vert.d4, vert.d2, c1), vert.d0, c0), vert.d1, hull);
     float sv = select(select(select(vert.d5, vert.d3, c1), vert.d1, c0), vert.d2, hull);
