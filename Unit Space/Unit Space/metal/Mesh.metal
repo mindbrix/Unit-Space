@@ -33,7 +33,7 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     const device MeshVertex& v = verts[vid];
     uint p = v.p;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float rscale = min(1.0, rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c))));
+    float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
     
     const float f = kTriangleFilterWidth;
     float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale * f, (v.ix * CTM.b + v.iy * CTM.d) * rscale * f };
