@@ -118,7 +118,7 @@ struct Scene {
                 Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
                 // Strokes are filled outlines (nonzero), painted over the fill.
                 Path strokePath(true, false, 0, stroked ? paintColor(shape->stroke, shape->opacity) : RGBA8());
-                strokePath._outline = true;
+                strokePath._outline = true, strokePath._penWidth = shape->strokeWidth;
                 Stroke stroke(strokePath, shape->strokeWidth,
                               shape->strokeLineJoin == NSVG_JOIN_ROUND ? Stroke::kRound : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? Stroke::kBevel : Stroke::kMiter,
                               shape->strokeLineCap == NSVG_CAP_ROUND ? Stroke::kRoundCap : shape->strokeLineCap == NSVG_CAP_SQUARE ? Stroke::kSquare : Stroke::kButt,

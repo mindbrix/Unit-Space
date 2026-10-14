@@ -568,13 +568,35 @@ struct libTess {
                         break;
                     kept.pop_back();
                 }
+                // Where stroke pieces nearly coincide the union also leaves needles: the contour reverses into a spike
+                // far narrower than the pen, whose tip has a near-infinite miter. Real stroke corners are wider (a miter
+                // join at the default limit is still about half the pen), so remove such tips until none are left.
+                if (path._outline && path._penWidth > 0) {
+                    const float minWidth = 0.1f * path._penWidth;
+                    for (bool removed = true; removed && kept.size() > 3; ) {
+                        removed = false;
+                        for (size_t k = 0; k < kept.size() && kept.size() > 3; ) {
+                            const float *a = verts + (base + kept[(k + kept.size() - 1) % kept.size()]) * 2, *b = verts + (base + kept[k]) * 2, *c = verts + (base + kept[(k + 1) % kept.size()]) * 2;
+                            float abx = b[0] - a[0], aby = b[1] - a[1], bcx = c[0] - b[0], bcy = c[1] - b[1];
+                            float longest = std::max(std::hypot(abx, aby), std::hypot(bcx, bcy));
+                            if (abx * bcx + aby * bcy < 0 && std::abs(abx * bcy - aby * bcx) < minWidth * longest)
+                                kept.erase(kept.begin() + k), removed = true;
+                            else
+                                k++;
+                        }
+                    }
+                }
                 n = (int)kept.size();
                 float area = 0;
                 for (i = 0; i < n; i++) {
                     const float *a = verts + (base + kept[i]) * 2, *b = verts + (base + kept[(i + 1) % n]) * 2;
                     area += a[0] * b[1] - a[1] * b[0];
                 }
-                if (n < 3 || std::abs(area) * 0.5f < eps * eps)
+                // Overlapping stroke pieces also leave islands and holes far smaller than the pen, which no stroke can
+                // have. Their spiky vertices become constraints inside the fill, and their near-reversing miters wreck
+                // the triangles around them, so they go too.
+                float pen = path._outline ? 0.25f * path._penWidth : 0;
+                if (n < 3 || std::abs(area) * 0.5f < std::max(eps * eps, pen * pen))
                     continue;
                 contours.emplace_back(n);
                 vector<ContourSegment>& c = contours.back();
@@ -659,12 +681,12 @@ struct libTess {
                         v[k] = di[k] == TESS_UNDEF ? Point(dverts[polygon[k] * 2], dverts[polygon[k] * 2 + 1]) : points[di[k]];
                     }
                     for (int k = 0; k < 3; k++) {
+                        // The triangle's bisector at this vertex.
+                        const Point &a = v[(k + 1) % 3], &b = v[(k + 2) % 3];
+                        float ax = a.x - v[k].x, ay = a.y - v[k].y, bx = b.x - v[k].x, by = b.y - v[k].y;
+                        float ra = 1 / std::sqrt(ax * ax + ay * ay), rb = 1 / std::sqrt(bx * bx + by * by);
+                        float dx = ax * ra + bx * rb, dy = ay * ra + by * rb;
                         if (di[k] != TESS_UNDEF && same.size() && same[di[k]] != (int)di[k]) {
-                            // The triangle's bisector at this vertex.
-                            const Point &a = v[(k + 1) % 3], &b = v[(k + 2) % 3];
-                            float ax = a.x - v[k].x, ay = a.y - v[k].y, bx = b.x - v[k].x, by = b.y - v[k].y;
-                            float ra = 1 / std::sqrt(ax * ax + ay * ay), rb = 1 / std::sqrt(bx * bx + by * by);
-                            float dx = ax * ra + bx * rb, dy = ay * ra + by * rb;
                             for (int j = di[k]; ; ) {
                                 if (points[j].corner && !points[j].control && inside(points[j], dx, dy)) {
                                     v[k] = points[j];
@@ -674,6 +696,11 @@ struct libTess {
                                     break;
                             }
                         }
+                        // A triangle outside its vertex's wedge is not bounded by that corner: the vertex is the tip of a
+                        // piece nested inside the fill (stroke outlines' overlapping pieces leave these). Its lines would cut
+                        // the triangle away, so here it has no corner.
+                        if (v[k].corner && !v[k].control && !inside(v[k], dx, dy))
+                            v[k].corner = false;
                         cx += v[k].x / 3, cy += v[k].y / 3;
                     }
                     for (int k = 0; k < 3; k++) {

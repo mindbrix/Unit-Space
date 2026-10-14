@@ -48,6 +48,7 @@ struct Path {
     RGBA8                       _color;
     bool                        _closed, _evenOdd;
     bool                        _outline = false;   // a stroke expanded into a filled outline, which crosses itself
+    float                       _penWidth = 0;      // an outline's stroke width
     float                       _strokeWidth;
     Bounds                      _bounds;
     vector<SubPath>             _subPaths;
