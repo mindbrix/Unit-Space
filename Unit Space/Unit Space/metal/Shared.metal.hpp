@@ -107,6 +107,7 @@ struct Triangle {
     unsigned int curves;
     // Hull triangles: quantised points the neighbouring segments' tangents head toward at v0 and v2. Joins use the
     // neighbours' tangents rather than their chords, which differ for curves and would bump the join.
+    // Polygon triangles with a control vertex: its curve's quantised end points, p0 and p2.
     unsigned short tx0, ty0, tx2, ty2;
 };
 

@@ -325,11 +325,14 @@ struct libTess {
     // A vertex of the triangulation. Corners sit on the outer polygon and anti-alias its two edges there, which head
     // toward (px, py) and (nx, ny). Concave curves' control points are interior: their p0 -> c -> p2 miter only insets
     // the interior pass, and the edge pass gives them no corner.
+    // The interior insets along the curves' tangents instead, (tpx, tpy) and (tnx, tny): a concave curve leaves its end
+    // inside its chord, so insetting from the chord would let the interior reach the curve.
     struct Point {
         Point() {}
-        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), corner(false), control(false) {}
-        Point(float x, float y, float px, float py, float nx, float ny, bool control = false) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), corner(true), control(control) {}
-        float x, y, px, py, nx, ny;
+        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), tpx(0), tpy(0), tnx(0), tny(0), corner(false), control(false) {}
+        Point(float x, float y, float px, float py, float nx, float ny, bool control = false) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), tpx(px), tpy(py), tnx(nx), tny(ny), corner(true), control(control) {}
+        Point tangents() const { Point t = *this; t.px = tpx, t.py = tpy, t.nx = tnx, t.ny = tny; return t; }
+        float x, y, px, py, nx, ny, tpx, tpy, tnx, tny;
         bool corner, control;   // control: a concave curve's control point, whose p0 -> c -> p2 miter only insets the interior
     };
     
@@ -433,17 +436,19 @@ struct libTess {
         int begins[divisions + 1], *b = begins;
         balanceDivisions(costs, divisions, begins);
         vector<Triangle> tris[divisions], *triss = tris;
+        vector<float> imiters[divisions], *imiterss = imiters;
         vector<int> idxs[divisions], *idxss = idxs;
         if (divisions == 1)
-            triangulateRange(tris[0], idxss[0], scene, 0, size);
+            triangulateRange(tris[0], imiters[0], idxss[0], scene, 0, size);
         else {
             dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t idx) {
-                triangulateRange(triss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
+                triangulateRange(triss[idx], imiterss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
         }
         for (base = i = 0; i < divisions; base += (int)tris[i].size(), i++) {
             if (tris[i].size())
                 memcpy(mesh._tris.new_ptr(tris[i].size()), & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
+            mesh._interiorMiters.insert(mesh._interiorMiters.end(), imiters[i].begin(), imiters[i].end());
             for (int idx : idxs[i])
                 mesh._idxs.emplace_back(base + idx);
         }
@@ -482,7 +487,8 @@ struct libTess {
         for (i = 0; i < ntris; i++) {
             Triangle& t = mesh._tris[ntris - 1 - i];
             unsigned int p = t.p & Triangle::kFlagsMask;
-            MeshVertex v[3] = { { p, t.x0, t.y0, t.ix0, t.iy0 }, { p, t.x1, t.y1, t.ix1, t.iy1 }, { p, t.x2, t.y2, t.ix2, t.iy2 } };
+            const float *im = & mesh._interiorMiters[(ntris - 1 - i) * 6];
+            MeshVertex v[3] = { { p, t.x0, t.y0, im[0], im[1] }, { p, t.x1, t.y1, im[2], im[3] }, { p, t.x2, t.y2, im[4], im[5] } };
             bool e0 = t.p & Triangle::kFlagsEdge0, e1 = t.p & Triangle::kFlagsEdge1, e2 = t.p & Triangle::kFlagsEdge2;
             if (t.curves & Triangle::kHull)
                 v[1] = v[2] = v[0], e0 = e1 = e2 = false;
@@ -510,7 +516,8 @@ struct libTess {
     // Triangulates each path's inner polygon, and adds one hull triangle per curve. On the outer polygon a convex curve
     // runs p0 -> c -> p2 and a concave curve along its chord, so every curve lies inside its own hull triangle. The inner
     // polygon cuts those off: chords for convex curves, p0 -> c -> p2 for concave ones.
-    static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {
+    // _imiters: each triangle's interior miters, x and y per vertex. Hulls, which the interior never paints, get zeros.
+    static void triangulateRange(vector<Triangle>& _tris, vector<float>& _imiters, vector<int>& _idxs, Scene& scene, int begin, int end) {
         TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
         tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
         vector<Point> points;
@@ -614,11 +621,14 @@ struct libTess {
             points.resize(0), curveEdge.resize(0), nextPoint.resize(0), hulls.resize(0);
             for (vector<ContourSegment>& c : contours) {
                 int n = (int)c.size(), i;
-                // An on-curve vertex's outer edges head to a convex curve's control point, else along the chord.
+                // An on-curve vertex's outer edges head to a convex curve's control point, else along the chord: the hulls'
+                // outer edges, which the edge pass dilates away from. Its interior inset follows every curve's tangent.
                 auto corner = [&](int i) {
                     const ContourSegment &sp = c[(i + n - 1) % n], &sn = c[i], &next = c[(i + 1) % n];
                     bool cp = sp.curved && !sp.concave, cn = sn.curved && !sn.concave;
-                    return Point(sn.x, sn.y, cp ? sp.cx : sp.x, cp ? sp.cy : sp.y, cn ? sn.cx : next.x, cn ? sn.cy : next.y);
+                    Point v(sn.x, sn.y, cp ? sp.cx : sp.x, cp ? sp.cy : sp.y, cn ? sn.cx : next.x, cn ? sn.cy : next.y);
+                    v.tpx = sp.curved ? sp.cx : sp.x, v.tpy = sp.curved ? sp.cy : sp.y, v.tnx = sn.curved ? sn.cx : next.x, v.tny = sn.curved ? sn.cy : next.y;
+                    return v;
                 };
                 size_t first = points.size();
                 for (i = 0; i < n; i++) {
@@ -704,6 +714,9 @@ struct libTess {
                         cx += v[k].x / 3, cy += v[k].y / 3;
                     }
                     for (int k = 0; k < 3; k++) {
+                        bool unused;
+                        Vector mi = v[k].corner ? miter(v[k].tangents(), cx, cy, & unused) : Vector(0, 0);
+                        _imiters.push_back(mi.x), _imiters.push_back(mi.y);
                         m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
                         if (!v[k].corner || v[k].control)
                             convex[k] = false;
@@ -715,6 +728,15 @@ struct libTess {
                         ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (nextPoint[a] == (int)b ? !curveEdge[a] : nextPoint[b] == (int)a && !curveEdge[b]);
                     }
                     writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], curves, lx, ly, rw, rh);
+                    // Its first control point's curve, so the edge pass can bound the polygon along that curve's hull edges
+                    // with the curve itself: its control's p0 and p2.
+                    if (curves) {
+                        const Point& cp = v[curves & Triangle::kControl0 ? 0 : curves & Triangle::kControl1 ? 1 : 2];
+                        // Quantised as Triangle's constructor quantises vertices, so the edge pass can match them exactly.
+                        auto q = [](float v) { return (unsigned short)(v < 0 ? 0 : v > kUnsignedShortMax ? kUnsignedShortMax : v); };
+                        Triangle& t = _tris.back();
+                        t.tx0 = q((cp.px - lx) * rw), t.ty0 = q((cp.py - ly) * rh), t.tx2 = q((cp.nx - lx) * rw), t.ty2 = q((cp.ny - ly) * rh);
+                    }
                 }
             }
             
@@ -741,6 +763,7 @@ struct libTess {
                 bool start = turn(h.p0.x - h.tpx, h.p0.y - h.tpy, cx - h.p0.x, cy - h.p0.y);
                 bool end = turn(h.p2.x - cx, h.p2.y - cy, h.tnx - h.p2.x, h.tny - h.p2.y);
                 convex[0] = h.concave ? end : start, convex[2] = h.concave ? start : end;
+                _imiters.insert(_imiters.end(), 6, 0.f);
                 writeTriangle(_tris, p, v, m, convex, !h.concave, !h.concave, h.concave,
                               Triangle::kHull | (h.concave ? Triangle::kConcave : 0), lx, ly, rw, rh);
                 Triangle& t = _tris.back();

@@ -116,6 +116,7 @@ struct Mesh {
     
     vector<int>                         _idxs;
     Memory<Triangle, true>              _tris;
+    vector<float>                       _interiorMiters;    // per triangle, the interior pass's miters: x, y per vertex
     Memory<MeshVertex, true>            _interiorVerts;
     Memory<unsigned int, true>          _interiorIdxs;
     Memory<unsigned char, true>         _interiorEdges;     // debug: per index buffer triangle, bit k set if edge k is a polygon edge
@@ -123,5 +124,6 @@ struct Mesh {
     void empty() {
         _timeline.empty(), _idxs.resize(0), _tris = Memory<Triangle, true>();
         _interiorVerts = Memory<MeshVertex, true>(), _interiorIdxs = Memory<unsigned int, true>(), _interiorEdges = Memory<unsigned char, true>();
+        _interiorMiters.resize(0);
     }
 };

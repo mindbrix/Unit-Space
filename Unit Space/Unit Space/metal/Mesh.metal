@@ -84,7 +84,8 @@ struct TriangleVertex
 {
     float4 position [[position]];
     float d0, d1, d2, d3, d4, d5;
-    uint convex [[flat]];   // bits 2..0: Triangle::kFlagsConvex0..2; bits 3 and up: Triangle::curves.
+    uint convex [[flat]];   // bits 2..0: Triangle::kFlagsConvex0..2; bits 7..3: Triangle::curves; bits 13..8: which of
+                            // d0..d5 are a concave curve's chord, which the curve replaces.
     float4 color [[flat]];
 };
 
@@ -106,6 +107,11 @@ static inline float2 cornerDistances(float2 iv, float2 v, float2 t, float2 p) {
     float2 nb = float2(u.x * cosine + u.y * -sine, u.x * sine + u.y * cosine);
     bool first = abs(dot(na, t)) <= abs(dot(nb, t));
     return select(float2(dot(select(nb, na, first), w), dot(select(na, nb, first), w)), float2(1e6), len2 == 0);
+}
+
+// Whether a corner's lines (first, second) run along t, to within about a degree.
+static inline bool2 alongEdge(float2 iv, float2 v, float2 t) {
+    return abs(cornerDistances(iv, v, t, v + t)) < 0.02 * length(t);
 }
 
 #pragma mark Vertex
@@ -152,6 +158,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     TriangleVertex vert;
     vert.position = float4((pos / float2(state.drawableSize.w, state.drawableSize.h)) * 2.0 - 1.0, z, 1.0);
     
+    uint lines = 0;     // polygon triangles: which corner lines (d0..d5) are a concave curve's chord
     // Branch rather than select: each path's hull triangles are contiguous, so the branch is mostly coherent.
     if (curves & Triangle::kHull) {
         // The curve meets the outer polygon along a hull edge if convex, or along the chord if concave.
@@ -175,10 +182,31 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     } else {
         // A clamped corner's lines move in by what its dilation fell short of the miter, so they meet at the clamped
         // vertex as the dilated triangle does: a sharp tip's coverage ends with its geometry instead of being cut off.
-        float2 k0 = cornerDistances(iv0, v0, v1 - v0, pos) - f * (1 - s0), k1 = cornerDistances(iv1, v1, v0 - v1, pos) - f * (1 - s1), k2 = cornerDistances(iv2, v2, v1 - v2, pos) - f * (1 - s2);
+        // A concave curve's control point has no corner, and the corners at its ends have its chord as a line, which the
+        // hull shares and is dilated from. Inside the hull the chord is beyond the curve, so the polygon would paint past
+        // it. So the triangle carries its first control point's curve, in that vertex's unused distances, and the fragment
+        // replaces the chord lines at the curve's ends with the curve itself.
+        bool c0 = curves & Triangle::kControl0, c1 = curves & Triangle::kControl1, c2 = curves & Triangle::kControl2;
+        bool k0c = c0, k1c = c1 && !c0, k2c = c2 && !c0 && !c1, any = k0c || k1c || k2c;
+        float2 vc = select(select(v2, v1, k1c), v0, k0c);
+        float2 cp0 = float2(tri.tx0 * a + tri.ty0 * c + tx, tri.tx0 * b + tri.ty0 * d + ty), cp2 = float2(tri.tx2 * a + tri.ty2 * c + tx, tri.tx2 * b + tri.ty2 * d + ty);
+        // Which corners are the curve's ends (their positions are quantised identically), and the chord from each.
+        bool p00 = tri.x0 == tri.tx0 && tri.y0 == tri.ty0, p01 = tri.x1 == tri.tx0 && tri.y1 == tri.ty0, p02 = tri.x2 == tri.tx0 && tri.y2 == tri.ty0;
+        bool p20 = tri.x0 == tri.tx2 && tri.y0 == tri.ty2, p21 = tri.x1 == tri.tx2 && tri.y1 == tri.ty2, p22 = tri.x2 == tri.tx2 && tri.y2 == tri.ty2;
+        bool e0 = any && !k0c && (p00 || p20), e1 = any && !k1c && (p01 || p21), e2 = any && !k2c && (p02 || p22);
+        // Each corner's first line is the one along t: the chord at the curve's ends.
+        float2 t0 = select(v1 - v0, select(cp0, cp2, p00) - v0, e0), t1 = select(v0 - v1, select(cp0, cp2, p01) - v1, e1);
+        float2 t2 = select(v1 - v2, select(cp0, cp2, p02) - v2, e2);
+        float2 k0 = cornerDistances(iv0, v0, t0, pos) - f * (1 - s0), k1 = cornerDistances(iv1, v1, t1, pos) - f * (1 - s1), k2 = cornerDistances(iv2, v2, t2, pos) - f * (1 - s2);
+        bool2 a0 = e0 ? alongEdge(iv0, v0, t0) : bool2(false), a1 = e1 ? alongEdge(iv1, v1, t1) : bool2(false), a2 = e2 ? alongEdge(iv2, v2, t2) : bool2(false);
+        lines = uint(a0.x) | uint(a0.y) << 1 | uint(a1.x) << 2 | uint(a1.y) << 3 | uint(a2.x) << 4 | uint(a2.y) << 5;
+        if (any) {
+            float2 uv = loopBlinn(pos, cp0, vc, cp2);
+            k0 = select(k0, uv, k0c), k1 = select(k1, uv, k1c), k2 = select(k2, uv, k2c);
+        }
         vert.d0 = k0.x, vert.d1 = k0.y, vert.d2 = k1.x, vert.d3 = k1.y, vert.d4 = k2.x, vert.d5 = k2.y;
     }
-    vert.convex = ((tri.p >> 26) & 7) | (curves << 3);
+    vert.convex = ((tri.p >> 26) & 7) | (curves << 3) | (lines << 8);
     
     vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
     // The edge pass blends premultiplied colour (source factor one), so translucent paths must be premultiplied.
@@ -203,23 +231,34 @@ static inline float curveDistance(float u, float v, float2 du, float2 dv, bool c
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     const float f = kTriangleFilterWidth;
+    uint curves = (vert.convex >> 3) & 31, lines = vert.convex >> 8;
+    bool hull = curves & Triangle::kHull, c0 = curves & Triangle::kControl0, c1 = curves & Triangle::kControl1 && !c0;
+    bool c2 = curves & Triangle::kControl2 && !c0 && !c1;
+    // The curve's Loop-Blinn (u, v): a hull's d1, d2, or a polygon triangle's in its first control vertex's distances.
+    float su = select(select(select(vert.d4, vert.d2, c1), vert.d0, c0), vert.d1, hull);
+    float sv = select(select(select(vert.d5, vert.d3, c1), vert.d1, c0), vert.d2, hull);
     // Derivatives are only defined in uniform control flow, so take them first. (u, v) are affine, so they are exact.
-    float2 du = float2(dfdx(vert.d1), dfdy(vert.d1)), dv = float2(dfdx(vert.d2), dfdy(vert.d2));
-    uint curves = vert.convex >> 3;
+    float2 du = float2(dfdx(su), dfdy(su)), dv = float2(dfdx(sv), dfdy(sv));
     float convex0 = (vert.convex & 4) ? 1 : -1, convex1 = (vert.convex & 2) ? 1 : -1, convex2 = (vert.convex & 1) ? 1 : -1;
+    bool concave = hull ? bool(curves & Triangle::kConcave) : true;
+    float dq = curveDistance(su, sv, du, dv, concave);
+    // A concave curve's inside, outside its parabola, spills across its chord (u = v) beyond its ends, so the chord bounds it.
+    float2 dc = du - dv;
+    dq = select(dq, min(dq, (su - sv) * rsqrt(max(dot(dc, dc), 1e-24))), concave);
     float m;
-    if (curves & Triangle::kHull) {
+    if (hull) {
         // The curve, joined at p0 and p2 to the neighbouring outer edges. A convex curve's control point corner is the
         // curve itself; a concave curve's is interior.
-        bool concave = curves & Triangle::kConcave;
-        float dq = curveDistance(vert.d1, vert.d2, du, dv, concave);
-        // A concave curve's inside, outside its parabola, spills across its chord (u = v) beyond its ends, so the chord bounds it.
-        float2 dc = du - dv;
-        dq = select(dq, min(dq, (vert.d1 - vert.d2) * rsqrt(max(dot(dc, dc), 1e-24))), concave);
         float m0 = select(corner(convex0, vert.d0, dq), dq, vert.d4 >= 0), m2 = select(corner(convex2, dq, vert.d3), dq, vert.d5 >= 0);
         m = min(min(m0, m2), select(dq, 1e6, concave));
-    } else
-        m = min(corner(convex0, vert.d0, vert.d1), min(corner(convex1, vert.d2, vert.d3), corner(convex2, vert.d4, vert.d5)));
+    } else {
+        // The curve replaces its chord's lines, and control points have no corner.
+        bool k0 = curves & Triangle::kControl0, k1 = curves & Triangle::kControl1, k2 = curves & Triangle::kControl2;
+        float l0 = select(select(vert.d0, dq, bool(lines & 1)), 1e6, k0), l1 = select(select(vert.d1, dq, bool(lines & 2)), 1e6, k0);
+        float l2 = select(select(vert.d2, dq, bool(lines & 4)), 1e6, k1), l3 = select(select(vert.d3, dq, bool(lines & 8)), 1e6, k1);
+        float l4 = select(select(vert.d4, dq, bool(lines & 16)), 1e6, k2), l5 = select(select(vert.d5, dq, bool(lines & 32)), 1e6, k2);
+        m = min(corner(convex0, l0, l1), min(corner(convex1, l2, l3), corner(convex2, l4, l5)));
+    }
     float winding = (clamp(m, -f, f) + f) * 0.5 / f;
     // Debug: the polygon view draws the edges as usual, continued inside as the interior outlines straight edges (which
     // it covers), so curves get the same line. The band the edge pass covers along curves' chords is further in.
