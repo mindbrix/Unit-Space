@@ -17,7 +17,7 @@ constexpr int kPointStride = 2 * sizeof(float);
 #endif
 // A cubic's quadratic approximation may stray by kSplitCubicPrecision path units, or by kSplitCubicRelative of the
 // cubic's own control polygon length if that is smaller: small glyphs need far tighter tolerances than maps.
-constexpr float kSplitCubicPrecision = 0.01, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE, kQuadraticTurnLimit = 1.5707963268; // 90 degrees
+constexpr float kSplitCubicPrecision = 0.25, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE, kQuadraticTurnLimit = 1.5707963268; // 90 degrees
 // Cubics whose relative tolerance is below kCubicTangentSize of kSplitCubicPrecision (control polygons shorter than
 // 5 units: glyphs) split into tangent-preserving quadratics, which may stray kCubicTangentSlack times further.
 constexpr float kCubicTangentSize = 0.2, kCubicTangentSlack = 1;
