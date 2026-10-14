@@ -73,6 +73,9 @@ struct Bounds {
 #define kShortMax 				32767.0
 #define kUnsignedShortMax 		65535.0
 #define kTriangleDilationMax	8.0
+// Bevelled corners dilate further: their bevel ends coverage at the vertex, so a sharp tip's long miter only costs
+// fragments, while a shorter one would clip its edges' anti-aliasing near the tip.
+#define kTriangleDilationMaxBevel	64.0
 #define kTriangleFilterWidth    0.5
 
 struct Triangle {

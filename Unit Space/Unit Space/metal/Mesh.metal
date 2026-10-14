@@ -144,10 +144,18 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     iv1 = select(iv1, 0, bool(curves & Triangle::kControl1));
     iv2 = select(iv2, 0, bool(curves & Triangle::kControl2));
     
+    // Bevels: in a polygon triangle with only convex corners, a corner that owns both its outline edges (an ear's tip, or
+    // any corner of a triangular contour) needs only one of its lines, as the other edge is the previous corner's. Its
+    // other slot gets a bevel through its vertex, perpendicular to its miter, which ends a sharp tip's coverage there.
+    uint convex = Triangle::kFlagsConvex0 | Triangle::kFlagsConvex1 | Triangle::kFlagsConvex2;
+    bool owned = !(curves & Triangle::kHull) && (tri.p & convex) == convex;
+    bool e01 = tri.p & Triangle::kFlagsEdge0, e12 = tri.p & Triangle::kFlagsEdge1, e20 = tri.p & Triangle::kFlagsEdge2;
+    bool bevel0 = owned && e20 && e01, bevel1 = owned && e01 && e12, bevel2 = owned && e12 && e20;
+    
     const float f = kTriangleFilterWidth;
-    float s0 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv0, iv0)));
-    float s1 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv1, iv1)));
-    float s2 = min(1.0, kTriangleDilationMax * rsqrt(dot(iv2, iv2)));
+    float s0 = min(1.0, (bevel0 ? kTriangleDilationMaxBevel : kTriangleDilationMax) * rsqrt(dot(iv0, iv0)));
+    float s1 = min(1.0, (bevel1 ? kTriangleDilationMaxBevel : kTriangleDilationMax) * rsqrt(dot(iv1, iv1)));
+    float s2 = min(1.0, (bevel2 ? kTriangleDilationMaxBevel : kTriangleDilationMax) * rsqrt(dot(iv2, iv2)));
     float2 p0 = v0 - iv0 * (s0 * f), p1 = v1 - iv1 * (s1 * f), p2 = v2 - iv2 * (s2 * f);
     
     float visible = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x) > 0;
@@ -204,6 +212,11 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
             float2 uv = loopBlinn(pos, cp0, vc, cp2);
             k0 = select(k0, uv, k0c), k1 = select(k1, uv, k1c), k2 = select(k2, uv, k2c);
         }
+        // A bevelled corner keeps the line along its edge to the next vertex, so a triangular contour has 3 edges and 3 bevels.
+        // Its lines are its two triangle edges: the one toward the next vertex is v0's first, v1's second and v2's second.
+        k0 = select(k0, float2(dot(iv0 * rsqrt(dot(iv0, iv0)), pos - v0), k0.x), bevel0);
+        k1 = select(k1, float2(dot(iv1 * rsqrt(dot(iv1, iv1)), pos - v1), k1.y), bevel1);
+        k2 = select(k2, float2(dot(iv2 * rsqrt(dot(iv2, iv2)), pos - v2), k2.y), bevel2);
         vert.d0 = k0.x, vert.d1 = k0.y, vert.d2 = k1.x, vert.d3 = k1.y, vert.d4 = k2.x, vert.d5 = k2.y;
     }
     vert.convex = ((tri.p >> 26) & 7) | (curves << 3) | (lines << 8);
