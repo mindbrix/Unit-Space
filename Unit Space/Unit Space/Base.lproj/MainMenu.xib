@@ -685,6 +685,12 @@ DQ
                                     <action selector="toggleRetina:" target="-1" id="ime-V6-d8z"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Core Graphics" keyEquivalent="0" id="Cg0-Ly-rTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleCoreGraphics:" target="-1" id="Cg1-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Timer" keyEquivalent=" " id="7jz-7I-Qc3">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

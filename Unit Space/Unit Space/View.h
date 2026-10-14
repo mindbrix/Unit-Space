@@ -27,6 +27,7 @@
 - (IBAction)toggleShowColors:(id)sender;
 - (IBAction)toggleShowTriangles:(id)sender;
 - (IBAction)toggleRetina:(id)sender;
+- (IBAction)toggleCoreGraphics:(id)sender;
 - (IBAction)toggleUseStrokeColor:(id)sender;
 - (IBAction)toggleTimer:(id)sender;
 
