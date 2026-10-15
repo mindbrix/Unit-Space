@@ -252,6 +252,14 @@ using namespace std;
     [self redraw];
 }
 
+// Rebuilds the SVG with the other stroker: Stroke's outlines, or Core Graphics'.
+- (IBAction)toggleCGStroker:(id)sender {
+    _scene._cgStroker = !_scene._cgStroker;
+    NSLog(@"Strokes by %@", _scene._cgStroker ? @"Core Graphics" : @"Stroke");
+    if (_svgData)
+        [self setSvgData:_svgData];
+}
+
 #pragma mark - Inspector
 
 // Hovering highlights the topmost path under the mouse and describes it in the window's subtitle; clicking selects it (or

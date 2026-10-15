@@ -544,9 +544,10 @@ struct libTess {
             
             _idxs.emplace_back((int)_tris.size());
             
-            // Stroke outlines cross themselves by construction (inner corners, overlapping pieces), so refining their
-            // crossing chords only multiplies segments.
-            if (!path._strokeWidth && !path._outline)
+            // Stroke's outlines (those with a pen width) cross themselves by construction (inner corners, overlapping
+            // pieces), so refining their crossing chords only multiplies segments. Core Graphics' outlines cross throughout
+            // too, but a curve split by a crossing would otherwise draw as its chord.
+            if (!path._strokeWidth && !path._penWidth)
                 refineChords(path);
             PathVertices pv(path);
             addPathContours(tess, path);

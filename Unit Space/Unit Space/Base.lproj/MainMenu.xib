@@ -691,6 +691,12 @@ DQ
                                     <action selector="toggleCoreGraphics:" target="-1" id="Cg1-Ac-tTg"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Core Graphics Stroker" keyEquivalent="k" id="Cgs-Mi-tTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleCGStroker:" target="-1" id="Cgs-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Inspector" keyEquivalent="p" id="Ins-Pc-tTg">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
