@@ -371,10 +371,14 @@ struct libTess {
 		t = 1.0 / std::abs(t1 > 1e-2 * size && (a1 < area2 || a1 < a0) ? t1 : t);
 		ta = 1.0 / size;
 		t = ta > t ? ta : t;
-		// Nor may any vertex move further than its shorter edge. Near-reversing corners have huge miters, and a triangle
-		// that stretches rather than collapses has no root to catch them: its inset vertex would cross the picture.
+		// Nor may a vertex with a miter longer than the edge pass dilates move further than its shorter edge. Near-reversing
+		// corners have huge miters, and a triangle that stretches rather than collapses has no root to catch them: its
+		// inset vertex would cross the picture. Ordinary corners move about their inset, and bounding them too culls
+		// whole triangles wherever curves leave short edges.
 		float l01 = std::hypot(x1 - x0, y1 - y0), l12 = std::hypot(x2 - x1, y2 - y1), l20 = std::hypot(x0 - x2, y0 - y2);
-		float tm0 = std::hypot(m0.x, m0.y) / std::min(l20, l01), tm1 = std::hypot(m1.x, m1.y) / std::min(l01, l12), tm2 = std::hypot(m2.x, m2.y) / std::min(l12, l20);
+		float lm0 = std::hypot(m0.x, m0.y), lm1 = std::hypot(m1.x, m1.y), lm2 = std::hypot(m2.x, m2.y);
+		float tm0 = lm0 > kTriangleDilationMax ? lm0 / std::min(l20, l01) : 0, tm1 = lm1 > kTriangleDilationMax ? lm1 / std::min(l01, l12) : 0;
+		float tm2 = lm2 > kTriangleDilationMax ? lm2 / std::min(l12, l20) : 0;
 		return std::max(t, std::max(tm0, std::max(tm1, tm2)));
 	}
 	

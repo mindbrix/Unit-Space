@@ -47,9 +47,11 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     RGBA8 color = paths[p].color;
     
     IndexedInteriorVertex vert;
-    // As the interior once did per triangle: one the inset would collapse at this scale is left to the edge pass. Its
+    // As the interior once did per triangle: one the inset would collapse at this scale is left to the edge pass. The
+    // inset is f / scale along the miters, so that is when the scale falls below f times the threshold, not twice it:
+    // a margin culls triangles that stay whole, which leaves the interior with gaps the edge pass must fill. Its
     // vertices all carry its threshold, so it is clipped away whole.
-    vert.clip[0] = 1.0 / rscale > v.t / (0.5 / f) ? 1.0 : -1e9;
+    vert.clip[0] = 1.0 / rscale > v.t * f ? 1.0 : -1e9;
     float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
