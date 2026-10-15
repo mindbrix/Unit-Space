@@ -691,6 +691,18 @@ DQ
                                     <action selector="toggleCoreGraphics:" target="-1" id="Cg1-Ac-tTg"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Inspector" keyEquivalent="p" id="Ins-Pc-tTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleInspector:" target="-1" id="Ins-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Solo" keyEquivalent="o" id="Sol-Mi-tTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleSolo:" target="-1" id="Sol-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Timer" keyEquivalent=" " id="7jz-7I-Qc3">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

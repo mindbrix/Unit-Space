@@ -49,6 +49,7 @@ struct Path {
     bool                        _closed, _evenOdd;
     bool                        _outline = false;   // a stroke expanded into a filled outline, which crosses itself
     float                       _penWidth = 0;      // an outline's stroke width
+    int                         _source = -1;       // the index of the SVG shape it came from, if any
     float                       _strokeWidth;
     Bounds                      _bounds;
     vector<SubPath>             _subPaths;
