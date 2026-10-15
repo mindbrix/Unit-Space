@@ -112,8 +112,7 @@ struct Scene {
                 }
                 return RGBA8(r / nstops, g / nstops, b / nstops, int(a / nstops * opacity + 0.5f));
             };
-            int limit = 60000;
-            for (NSVGshape *shape = image->shapes; shape != NULL && limit; shape = shape->next, limit--) {
+            for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
                 bool filled = shape->fill.type != NSVG_PAINT_NONE, stroked = shape->stroke.type != NSVG_PAINT_NONE && shape->strokeWidth > 0;
                 Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
                 // Strokes are filled outlines (nonzero), painted over the fill.

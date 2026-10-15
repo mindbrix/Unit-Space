@@ -112,7 +112,8 @@
     [_pathsBuffer didModifyRange:NSMakeRange(0, _pathsBuffer.length)];
     [[self.commandQueue commandBuffer] commit];
     
-    id <CAMetalDrawable> drawable = calls == nullptr || count == 0 ? nil : [self nextDrawable];
+    // Drawn even with no calls, so the pass clears the screen rather than leaving the last frame up.
+    id <CAMetalDrawable> drawable = [self nextDrawable];
     if (drawable == nil) {
         dispatch_semaphore_signal(_inflight_semaphore);
         return;
