@@ -98,17 +98,19 @@ static void appendCubic(Memory<float>& quadratics, const float *cubic, float tol
         appendCubicPiece(quadratics, c, allowance, 0);
 }
 
-// Loads cubic i of src into c, extended over the cubics after it that add nothing: any whose points all lie within
-// tinylimit of its end (compared with squared distances; glyphs often close with several), or that continue it exactly,
-// the same curve run on to their end with their end tangent. Returns the index of the last cubic it took in.
+// Loads cubic i of src into c, starting where the last cubic in c ended, extended over the cubics after it that add
+// nothing: any whose points all lie within tinylimit of its end (compared with squared distances; glyphs often close with
+// several), which are dropped with the end left where it is, or that continue it exactly, the same curve run on to their
+// end with their end tangent. Returns the index of the last cubic it took in.
 static int mergeCubics(const float *src, int npoints, int i, float tinylimit, float *c) {
     constexpr float kMergeLimit = 1e-3;
-    memcpy(c, src + i * 2, 8 * sizeof(float));
+    c[0] = c[6], c[1] = c[7];
+    memcpy(c + 2, src + i * 2 + 2, 6 * sizeof(float));
     for (bool merged = true; merged && i + 3 < npoints - 1; ) {
         const float *p = src + (i + 3) * 2;
         auto near = [&](float x, float y) { return (x - c[6]) * (x - c[6]) + (y - c[7]) * (y - c[7]) < tinylimit; };
         if (near(p[2], p[3]) && near(p[4], p[5]) && near(p[6], p[7])) {
-            c[6] = p[6], c[7] = p[7], i += 3;
+            i += 3;
             continue;
         }
         merged = false;
@@ -185,7 +187,7 @@ static int cubicInflections(const float *c, float tolerance, float *ts) {
 // cubics' tangents (see cubicTolerances).
 static Memory<float> splitCubics(const float *src, int npoints, const float precision, const float tinylimit, bool tangents) {
     Memory<float> quadratics;
-    float c[8] = { 0 }, head[8], ts[3], tolerance, allowance;
+    float c[8] = { 0, 0, 0, 0, 0, 0, src[0], src[1] }, head[8], ts[3], tolerance, allowance;
     for (int i = 0; i < npoints - 1; i += 3) {
         i = mergeCubics(src, npoints, i, tinylimit, c);
         cubicTolerances(c, precision, tangents, & tolerance, & allowance);
@@ -235,15 +237,17 @@ struct SubPath {
     SubPath(const float *points, const int npoints, Type type, bool tangents = false, float precision = kSplitCubicPrecision) {
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
-        float dx = points[0] - points[npoints * 2 - 2], dy = points[1] - points[npoints * 2 - 1];
         
         if (type == kCubic) {
             float w = _bounds.ux - _bounds.lx, h = _bounds.uy - _bounds.ly;
             Memory<float> quadratics = splitCubics(points, npoints, precision, 1e-3 * (w < h ? w : h), tangents);
             const int nfloats = (int)quadratics.count();
             if (nfloats > 5) {
-                if (!(dx == 0 && dy == 0) && dx * dx + dy * dy < 1e-3)
-                    quadratics[nfloats - 2] = quadratics[0], quadratics[nfloats - 1] = quadratics[1];
+                // A gap this small closes on the end, as dropped tiny cubics do, so the last curve keeps its line (an
+                // edge skewed by an ULP leaves the sweep in libTess nowhere to put its crossings).
+                float dx = quadratics[0] - quadratics[nfloats - 2], dy = quadratics[1] - quadratics[nfloats - 1];
+                if (dx * dx + dy * dy < 1e-3)
+                    quadratics[0] = quadratics[nfloats - 2], quadratics[1] = quadratics[nfloats - 1];
                 _quadratics = subdivideQuadratics(& quadratics[0], nfloats / 2);
             }
         } else if (type == kQuadratic) {
