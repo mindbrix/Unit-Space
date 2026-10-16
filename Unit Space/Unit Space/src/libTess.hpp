@@ -624,7 +624,9 @@ struct libTess {
                 }
                 // Where stroke pieces nearly coincide the union also leaves needles: the contour reverses into a spike
                 // far narrower than the pen, whose tip has a near-infinite miter. Real stroke corners are wider (a miter
-                // join at the default limit is still about half the pen), so remove such tips until none are left.
+                // join at the default limit is still about half the pen), so remove such tips until none are left. A tip
+                // must be sharp (its miter longer than kTriangleDilationMax) as well as narrow: next to a short edge, any
+                // corner is narrow at that edge's end, as where a stroke's inner offsets meet.
                 if (path._outline && path._penWidth > 0) {
                     const float minWidth = 0.1f * path._penWidth;
                     for (bool removed = true; removed && kept.size() > 3; ) {
@@ -632,8 +634,10 @@ struct libTess {
                         for (size_t k = 0; k < kept.size() && kept.size() > 3; ) {
                             const float *a = verts + (base + kept[(k + kept.size() - 1) % kept.size()]) * 2, *b = verts + (base + kept[k]) * 2, *c = verts + (base + kept[(k + 1) % kept.size()]) * 2;
                             float abx = b[0] - a[0], aby = b[1] - a[1], bcx = c[0] - b[0], bcy = c[1] - b[1];
-                            float longest = std::max(std::hypot(abx, aby), std::hypot(bcx, bcy));
-                            if (abx * bcx + aby * bcy < 0 && std::abs(abx * bcy - aby * bcx) < minWidth * longest)
+                            float lab = std::hypot(abx, aby), lbc = std::hypot(bcx, bcy), dot = abx * bcx + aby * bcy;
+                            // The tip's miter is 1 / sin(half its angle), and sin^2(half) = (1 + dot / (lab lbc)) / 2.
+                            bool sharp = (lab * lbc + dot) * kTriangleDilationMax * kTriangleDilationMax < 2 * lab * lbc;
+                            if (sharp && std::abs(abx * bcy - aby * bcx) < minWidth * std::max(lab, lbc))
                                 kept.erase(kept.begin() + k), removed = true;
                             else
                                 k++;
