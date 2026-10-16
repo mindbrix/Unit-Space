@@ -23,12 +23,14 @@ constexpr float kSplitCubicPrecision = 0.25, kSplitCubicRelative = SPLIT_CUBIC_R
 constexpr float kCubicTangentSize = 0.2, kCubicTangentSlack = 1;
 
 // Whether both of a cubic's end tangents lie within half a degree of its chord, so it turns by less than the one
-// degree that libTess draws as a line.
+// degree that libTess draws as a line. A cubic that ends where it starts has no chord: it is straight if it runs out
+// along its start tangent and back.
 static inline bool isStraightCubic(const float *p) {
     constexpr float kStraightSine2 = 7.6152e-5f; // sin^2(0.5 degrees)
     float ax = p[2] - p[0], ay = p[3] - p[1], bx = p[6] - p[4], by = p[7] - p[5], wx = p[6] - p[0], wy = p[7] - p[1];
     if (ax == 0 && ay == 0) ax = p[4] - p[0], ay = p[5] - p[1];
     if (bx == 0 && by == 0) bx = p[6] - p[2], by = p[7] - p[3];
+    if (wx == 0 && wy == 0) wx = ax, wy = ay;
     float aw = ax * wy - ay * wx, bw = bx * wy - by * wx, lw = wx * wx + wy * wy;
     return aw * aw <= kStraightSine2 * (ax * ax + ay * ay) * lw && bw * bw <= kStraightSine2 * (bx * bx + by * by) * lw;
 }
@@ -184,12 +186,18 @@ static int cubicInflections(const float *c, float tolerance, float *ts) {
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
 // Converts a chain of cubics (p0, c, c, p1, c, c, p2 ...) to quadratics (p0, c, p1, c, p2 ...). tangents: keep the
-// cubics' tangents (see cubicTolerances).
+// cubics' tangents (see cubicTolerances), and the spikes of straight cubics, as stroke centrelines need.
 static Memory<float> splitCubics(const float *src, int npoints, const float precision, const float tinylimit, bool tangents) {
     Memory<float> quadratics;
     float c[8] = { 0, 0, 0, 0, 0, 0, src[0], src[1] }, head[8], ts[3], tolerance, allowance;
     for (int i = 0; i < npoints - 1; i += 3) {
         i = mergeCubics(src, npoints, i, tinylimit, c);
+        // A straight cubic fills as its chord. Any part running on past an end doubles back along itself and encloses
+        // nothing, but its pieces would not retrace each other exactly, leaving a sliver whose tip miters run off far
+        // beyond the fill. One that ends where it starts is a point, and adds nothing.
+        if (!tangents && isStraightCubic(c))
+            for (int k = 0; k < 2; k++)
+                c[2 + k] = lerp(1.f / 3.f, c[k], c[6 + k]), c[4 + k] = lerp(2.f / 3.f, c[k], c[6 + k]);
         cubicTolerances(c, precision, tangents, & tolerance, & allowance);
         // Inflections split first, so every tangent-preserving piece is convex and its end tangents meet ahead of both ends.
         int n = allowance && !isStraightCubic(c) ? cubicInflections(c, tolerance, ts) : 0;
