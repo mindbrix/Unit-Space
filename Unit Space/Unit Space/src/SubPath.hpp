@@ -79,21 +79,20 @@ static void appendCubicPiece(Memory<float>& quadratics, const float *p, float al
     quadratics.push_back(fits ? cx : mx), quadratics.push_back(fits ? cy : my);
 }
 
-// Appends one convex cubic as quadratics, splitting it into equal pieces whose error is within tolerance: a piece's
-// error as one quadratic grows with t cubed times the cubic's third difference.
+// Appends one convex cubic as quadratics, in the fewest equal pieces whose error is within tolerance: a piece covering
+// 1/n of the cubic has 1/n^3 of its third difference, and its error as one quadratic is that over the multiplier.
 static void appendCubic(Memory<float>& quadratics, const float *cubic, float tolerance, float allowance) {
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3)
+    float dx = cubic[6] + 3.f * (cubic[2] - cubic[4]) - cubic[0], dy = cubic[7] + 3.f * (cubic[3] - cubic[5]) - cubic[1];
+    float r = std::sqrt(dx * dx + dy * dy) / (tolerance * multiplier);
+    int n = r > 1 ? (int)std::ceil(std::cbrt(r)) : 1;
     float c[8], piece[8];
     memcpy(c, cubic, sizeof(c));
-    // Bounded, as tiny cubics far from the origin have a third difference of rounding noise that never shrinks as they split.
-    for (int pieces = 0; pieces < 64; pieces++) {
-        float dx = c[6] + 3.f * (c[2] - c[4]) - c[0], dy = c[7] + 3.f * (c[3] - c[5]) - c[1], d = std::sqrt(dx * dx + dy * dy);
-        float tcubed = d == 0 ? 1 : tolerance * multiplier / d;
-        if (tcubed > 0.999999)
-            break;
-        splitCubic(c, 1.0 / std::ceil(1.0 / cbrt(tcubed)), piece, c);
+    for (int k = n; k > 1; k--) {
+        splitCubic(c, 1.f / k, piece, c);
         appendCubicPiece(quadratics, piece, allowance, 0);
     }
+    // A cubic that is a point adds nothing.
     float cpx = (3.0 * (c[4] + c[2]) - c[0] - c[6]) * 0.25, cpy = (3.0 * (c[5] + c[3]) - c[1] - c[7]) * 0.25;
     if (cpx != c[0] || cpy != c[1])
         appendCubicPiece(quadratics, c, allowance, 0);

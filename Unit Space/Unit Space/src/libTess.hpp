@@ -141,10 +141,13 @@ struct libTess {
     
     // Lines carry their midpoint as control, and curves turning less than kLineTurnLimit are drawn as lines too.
     // Boundary contours keep the fill on their left, so a control point left of its chord is concave.
-    static void classify(ContourSegment& s, float ex, float ey) {
-        float ax = s.cx - s.x, ay = s.cy - s.y, bx = ex - s.cx, by = ey - s.cy;
+    static bool isCurved(float x0, float y0, float cx, float cy, float x2, float y2) {
+        float ax = cx - x0, ay = cy - y0, bx = x2 - cx, by = y2 - cy;
         float turn = std::atan2(std::abs(ax * by - ay * bx), ax * bx + ay * by);
-        s.curved = (ax != 0 || ay != 0) && (bx != 0 || by != 0) && turn > kLineTurnLimit;
+        return (ax != 0 || ay != 0) && (bx != 0 || by != 0) && turn > kLineTurnLimit;
+    }
+    static void classify(ContourSegment& s, float ex, float ey) {
+        s.curved = isCurved(s.x, s.y, s.cx, s.cy, ex, ey);
         s.concave = s.curved && (ex - s.x) * (s.cy - s.y) - (ey - s.y) * (s.cx - s.x) > 0;
     }
     
@@ -293,8 +296,13 @@ struct libTess {
                 if (orient(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0) * orient(a.x0, a.y0, a.x1, a.y1, b.x1, b.y1) >= 0
                     || orient(b.x0, b.y0, b.x1, b.y1, a.x0, a.y0) * orient(b.x0, b.y0, b.x1, b.y1, a.x1, a.y1) >= 0)
                     return;
-                if (a.seg >= 0) marked[a.sub][a.seg] = 1, any = true;
-                if (b.seg >= 0) marked[b.sub][b.seg] = 1, any = true;
+                // Only curves: a line is its own chord, so splitting it only multiplies segments.
+                for (const Chord *c : { &a, &b })
+                    if (c->seg >= 0) {
+                        const float *q = path._subPaths[c->sub]._quadratics.get() + c->seg * 4;
+                        if (isCurved(q[0], q[1], q[2], q[3], q[4], q[5]))
+                            marked[c->sub][c->seg] = 1, any = true;
+                    }
             });
             if (!any)
                 return;
@@ -544,10 +552,8 @@ struct libTess {
             
             _idxs.emplace_back((int)_tris.size());
             
-            // Stroke's outlines (those with a pen width) cross themselves by construction (inner corners, overlapping
-            // pieces), so refining their crossing chords only multiplies segments. Core Graphics' outlines cross throughout
-            // too, but a curve split by a crossing would otherwise draw as its chord.
-            if (!path._strokeWidth && !path._penWidth)
+            // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
+            if (!path._strokeWidth)
                 refineChords(path);
             PathVertices pv(path);
             addPathContours(tess, path);

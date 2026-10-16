@@ -13,7 +13,9 @@
 //  - Corners: the outer side gets the miter, round or bevel join; the inner side passes through the corner point, so
 //    it overlaps the neighbouring pieces with the same winding instead of cutting across them.
 //  - Pieces tighter than the stroke (radius below half its width) fold their inner offset back on itself, so that side
-//    follows the curve itself, and triangles meeting at the centre of curvature cover the rest.
+//    follows the curve itself, and two regions meeting where the piece's end normals cross cover the rest: one back to
+//    the curve, one out to the folded offset. Pieces split where their radius crosses half the width, so each folds
+//    throughout or not at all.
 // Every contour winds clockwise (the body lies right of the left side's travel), so overlaps union rather than cancel.
 struct Stroke {
     enum Join { kMiter, kRound, kBevel };
@@ -112,12 +114,12 @@ private:
     void addSolid(const float *q, int npoints, bool closed) {
         pieces.resize(0);
         for (int i = 0; i + 2 < npoints; i += 2)
-            addPiece(q + i * 2, 0);
+            addPiece(q + i * 2);
         if (closed && npoints > 2) {
             const float *a = q + (npoints - 1) * 2;
             if (a[0] != q[0] || a[1] != q[1]) {
                 const float line[6] = { a[0], a[1], (a[0] + q[0]) * 0.5f, (a[1] + q[1]) * 0.5f, q[0], q[1] };
-                addPiece(line, 0);
+                addPiece(line);
             }
         }
         int n = (int)pieces.size();
@@ -165,21 +167,48 @@ private:
         float t0x, t0y, t2x, t2y, n0x, n0y, n2x, n2y;   // unit tangents and left normals at the ends
     };
 
-    // Splits quadratics until they turn by at most kPieceTurnLimit, so offsets are accurate and folds are detectable.
-    void addPiece(const float *q, int depth) {
+    // A quadratic's curvature is |B' x B''| / |B'|^3, with B'(t) = 2(A + tE) and B'' = 2E (A = c - p0, E = p2 - 2c + p0),
+    // so |A x E| / (2 |A + tE|^3): it peaks once. Its radius therefore crosses the half-width w at most twice, where
+    // |A + tE| = r with r^3 = w |A x E| / 2. Splitting there leaves pieces whose radius is wholly above or below w, so
+    // each piece's offset either folds back on itself throughout or not at all (see folds).
+    void addPiece(const float *q) {
+        float ax = q[2] - q[0], ay = q[3] - q[1], ex = q[4] - 2.f * q[2] + q[0], ey = q[5] - 2.f * q[3] + q[1];
+        float cross = ax * ey - ay * ex, ts[2];
+        int n = 0;
+        if (cross != 0) {
+            float r = std::cbrt(0.5f * w * std::abs(cross)), a = ex * ex + ey * ey, b = ax * ex + ay * ey, c = ax * ax + ay * ay - r * r;
+            float disc = b * b - a * c;
+            if (disc > 0) {
+                float root = std::sqrt(disc);
+                for (float t : { (-b - root) / a, (-b + root) / a })
+                    if (t > 0 && t < 1)
+                        ts[n++] = t;
+            }
+        }
+        float rest[6] = { q[0], q[1], q[2], q[3], q[4], q[5] }, head[6], done = 0;
+        for (int k = 0; k < n; done = ts[k++]) {
+            splitQuadratic(rest, (ts[k] - done) / (1 - done), head, rest);
+            pushPiece(head);
+        }
+        pushPiece(rest);
+    }
+
+    // Splits quadratic q at t: a covers [0, t] and b [t, 1]. b may be q.
+    static void splitQuadratic(const float *q, float t, float *a, float *b) {
+        for (int k = 0; k < 2; k++) {
+            float p01 = q[k] + t * (q[2 + k] - q[k]), p12 = q[2 + k] + t * (q[4 + k] - q[2 + k]), p = p01 + t * (p12 - p01);
+            a[k] = q[k], a[2 + k] = p01, a[4 + k] = p;
+            b[4 + k] = q[4 + k], b[2 + k] = p12, b[k] = p;
+        }
+    }
+
+    void pushPiece(const float *q) {
         float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3], wx = q[4] - q[0], wy = q[5] - q[1];
         if (wx * wx + wy * wy == 0 && ax * ax + ay * ay == 0)
             return;
         if (ax == 0 && ay == 0) ax = wx, ay = wy;
         if (bx == 0 && by == 0) bx = wx, by = wy;
         float la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by);
-        if (depth < 8 && ax * bx + ay * by < std::cos(kPieceTurnLimit) * la * lb) {
-            float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
-            float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
-            const float a[6] = { q[0], q[1], x01, y01, x, y }, b[6] = { x, y, x12, y12, q[4], q[5] };
-            addPiece(a, depth + 1), addPiece(b, depth + 1);
-            return;
-        }
         Piece p;
         p.x0 = q[0], p.y0 = q[1], p.cx = q[2], p.cy = q[3], p.x2 = q[4], p.y2 = q[5];
         p.t0x = ax / la, p.t0y = ay / la, p.t2x = bx / lb, p.t2y = by / lb;
@@ -187,10 +216,12 @@ private:
         pieces.push_back(p);
     }
 
-    // Whether offsetting by d folds the piece back on itself: its radius of curvature is below |d| on that side.
+    // Whether offsetting by d folds the piece back on itself: it turns toward that side, with a radius of curvature below
+    // |d|, 2 |A + E/2|^3 / |A x E| at its middle, and so throughout (see addPiece).
     static bool folds(const Piece& p, float d) {
-        float ax = p.x0 + d * p.n0x, ay = p.y0 + d * p.n0y, bx = p.x2 + d * p.n2x, by = p.y2 + d * p.n2y;
-        return (bx - ax) * (p.x2 - p.x0) + (by - ay) * (p.y2 - p.y0) <= 0;
+        float ax = p.cx - p.x0, ay = p.cy - p.y0, ex = p.x2 - 2.f * p.cx + p.x0, ey = p.y2 - 2.f * p.cy + p.y0, cross = ax * ey - ay * ex;
+        float mx = ax + 0.5f * ex, my = ay + 0.5f * ey, m2 = mx * mx + my * my;
+        return cross != 0 && (cross > 0) == (d > 0) && 2.f * m2 * std::sqrt(m2) < std::abs(d * cross);
     }
 
     // The chain along one side, offset by d (positive is left), through every piece and join. Folded pieces follow the
@@ -242,16 +273,25 @@ private:
             if ((px - ax) * (bx - ax) + (py - ay) * (by - ay) > 0 && (bx - px) * (bx - ax) + (by - py) * (by - ay) > 0)
                 cx = px, cy = py;
         }
-        // Compare midpoints with the true offset of the curve's midpoint, whose tangent is parallel to its chord. Also
-        // keep the curve within half the stroke width of its chord (it bows by half its control's distance from the
-        // chord's midpoint): the tessellator only sees chords, and on thin strokes those of opposite sides would cross,
-        // inventing vertices that flatten the curves.
+        // Measure how far the curve's true offset lies from the offset curve at its quarter points and midpoint (whose
+        // tangent is parallel to its chord), from the offset curve's nearest point rather than at the same parameter: the
+        // two differ along the curve by parameterisation (a nearly straight piece whose control sits near one end), which
+        // no split removes. Also keep the curve within half the stroke width of its chord (it bows by half its control's
+        // distance from the chord's midpoint): the tessellator only sees chords, and on thin strokes those of opposite
+        // sides would cross, inventing vertices that flatten the curves.
         float mx = (q[0] + 2.f * q[2] + q[4]) * 0.25f, my = (q[1] + 2.f * q[3] + q[5]) * 0.25f;
         float tx = q[4] - q[0], ty = q[5] - q[1], tl = std::sqrt(tx * tx + ty * ty);
         if (depth < 10 && tl > 0) {
-            float nx = -ty / tl, ny = tx / tl, ex = mx + d * nx - (ax + 2.f * cx + bx) * 0.25f, ey = my + d * ny - (ay + 2.f * cy + by) * 0.25f;
-            float sx = cx - (ax + bx) * 0.5f, sy = cy - (ay + by) * 0.5f;
-            if ((depth < 6 && ex * ex + ey * ey > tolerance * tolerance) || sx * sx + sy * sy > w * w) {
+            float nx = -ty / tl, ny = tx / tl, sx = cx - (ax + bx) * 0.5f, sy = cy - (ay + by) * 0.5f;
+            const float o[6] = { ax, ay, cx, cy, bx, by };
+            float e = 0;
+            for (float t : { 0.25f, 0.5f, 0.75f }) {
+                float u = 1 - t, px = u * u * q[0] + 2 * u * t * q[2] + t * t * q[4], py = u * u * q[1] + 2 * u * t * q[3] + t * t * q[5];
+                float dx = u * (q[2] - q[0]) + t * (q[4] - q[2]), dy = u * (q[3] - q[1]) + t * (q[5] - q[3]), dl = std::sqrt(dx * dx + dy * dy);
+                if (dl > 0)
+                    e = std::max(e, distanceToQuadratic(o, px - d * dy / dl, py + d * dx / dl));
+            }
+            if ((depth < 6 && e > tolerance) || sx * sx + sy * sy > w * w) {
                 float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
                 const float a[6] = { q[0], q[1], x01, y01, mx, my }, b[6] = { mx, my, x12, y12, q[4], q[5] };
                 appendOffset(s, a, n0x, n0y, nx, ny, d, depth + 1), appendOffset(s, b, nx, ny, n2x, n2y, d, depth + 1);
@@ -261,6 +301,23 @@ private:
         // Part of a piece can fold even when the whole doesn't, collapsing its offset to a point.
         if (bx != s[s.size() - 2] || by != s[s.size() - 1])
             quadTo(s, cx, cy, bx, by);
+    }
+
+    // The distance from (px, py) to quadratic q, from its nearest point: Newton steps from the middle, held to the curve.
+    static float distanceToQuadratic(const float *q, float px, float py) {
+        float t = 0.5f, ex = 0, ey = 0;
+        for (int k = 0; k < 4; k++) {
+            float u = 1 - t, x = u * u * q[0] + 2 * u * t * q[2] + t * t * q[4], y = u * u * q[1] + 2 * u * t * q[3] + t * t * q[5];
+            float dx = 2 * (u * (q[2] - q[0]) + t * (q[4] - q[2])), dy = 2 * (u * (q[3] - q[1]) + t * (q[5] - q[3]));
+            float ddx = 2 * (q[4] - 2 * q[2] + q[0]), ddy = 2 * (q[5] - 2 * q[3] + q[1]);
+            ex = x - px, ey = y - py;
+            float f1 = ex * dx + ey * dy, f2 = dx * dx + dy * dy + ex * ddx + ey * ddy;
+            if (f2 <= 0)
+                break;
+            t = std::max(0.f, std::min(1.f, t - f1 / f2));
+        }
+        float u = 1 - t, x = u * u * q[0] + 2 * u * t * q[2] + t * t * q[4], y = u * u * q[1] + 2 * u * t * q[3] + t * t * q[5];
+        return std::sqrt((x - px) * (x - px) + (y - py) * (y - py));
     }
 
     // The outer corner from a's end to b's start on the side offset by d: the miter, round or bevel join.
@@ -302,9 +359,9 @@ private:
         }
     }
 
-    // Covers the far side of a piece folding at offset d: the curve to the centre of curvature, and from there to the
-    // folded offset's ends. A piece only just folding puts the centre on an offset end, collapsing the triangle to a
-    // line that retraces itself, so leave that out.
+    // Covers the far side of a piece folding at offset d: the curve to where its end normals meet, and from there out to
+    // the folded offset itself, which runs back from b to a. A piece only just folding puts that point on an offset
+    // end, collapsing the region to a line that retraces itself, so leave that out.
     void addFold(Piece& p, float d) {
         float den = p.n0x * p.n2y - p.n0y * p.n2x;
         if (den == 0)
@@ -312,8 +369,10 @@ private:
         float u = ((p.x2 - p.x0) * p.n2y - (p.y2 - p.y0) * p.n2x) / den, xx = p.x0 + u * p.n0x, xy = p.y0 + u * p.n0y;
         float ax = p.x0 + d * p.n0x, ay = p.y0 + d * p.n0y, bx = p.x2 + d * p.n2x, by = p.y2 + d * p.n2y;
         chain.assign({ p.x0, p.y0 }), quadTo(chain, p.cx, p.cy, p.x2, p.y2), lineTo(chain, xx, xy), addContour(true);
-        if ((xx != ax || xy != ay) && (xx != bx || xy != by) && (ax != bx || ay != by))
-            chain.assign({ xx, xy }), lineTo(chain, bx, by), lineTo(chain, ax, ay), addContour(true);
+        if ((xx != ax || xy != ay) && (xx != bx || xy != by) && (ax != bx || ay != by)) {
+            const float q[6] = { p.x0, p.y0, p.cx, p.cy, p.x2, p.y2 };
+            chain.assign({ ax, ay }), appendOffset(chain, q, p.n0x, p.n0y, p.n2x, p.n2y, d, 0), lineTo(chain, xx, xy), addContour(true);
+        }
     }
 
     // Arcs around (cx, cy) from the chain's end to (bx, by), turning by sign (+1 counter-clockwise), in quadratics of at
@@ -362,7 +421,6 @@ private:
         out.addSubPath(s);
     }
 
-    static constexpr float kPieceTurnLimit = 0.5235987756; // 30 degrees
     Path& out;
     float w, tolerance, miterLimit;
     Join join;
