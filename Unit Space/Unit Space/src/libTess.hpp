@@ -374,22 +374,40 @@ struct libTess {
 			a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
 		}
 		// The nearer root is the collapse if it is not noise and does shrink the triangle. Both tests are relative to the
-		// triangle's size, so they hold in any units: a glyph a few units across as much as a map.
+		// triangle's size, so they hold in any units: a glyph a few units across as much as a map. Roots are in miters, so
+		// noise is a distance the fastest vertex moves: a sharp corner's long miter collapses a triangle at a small root.
 		float area2 = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)), size = std::sqrt(0.5f * area2);
-		t = 1.0 / std::abs(t1 > 1e-2 * size && (a1 < area2 || a1 < a0) ? t1 : t);
+		float fastest = std::sqrt(std::max(m0.x * m0.x + m0.y * m0.y, std::max(m1.x * m1.x + m1.y * m1.y, m2.x * m2.x + m2.y * m2.y)));
+		t = 1.0 / std::abs(t1 * fastest > 1e-2 * size && (a1 < area2 || a1 < a0) ? t1 : t);
 		ta = 1.0 / size;
-		t = ta > t ? ta : t;
-		// Nor may a vertex with a miter longer than the edge pass dilates move further than its shorter edge. Near-reversing
-		// corners have huge miters, and a triangle that stretches rather than collapses has no root to catch them: its
-		// inset vertex would cross the picture. Ordinary corners move about their inset, and bounding them too culls
-		// whole triangles wherever curves leave short edges.
-		float l01 = std::hypot(x1 - x0, y1 - y0), l12 = std::hypot(x2 - x1, y2 - y1), l20 = std::hypot(x0 - x2, y0 - y2);
-		float lm0 = std::hypot(m0.x, m0.y), lm1 = std::hypot(m1.x, m1.y), lm2 = std::hypot(m2.x, m2.y);
-		float tm0 = lm0 > kTriangleDilationMax ? lm0 / std::min(l20, l01) : 0, tm1 = lm1 > kTriangleDilationMax ? lm1 / std::min(l01, l12) : 0;
-		float tm2 = lm2 > kTriangleDilationMax ? lm2 / std::min(l12, l20) : 0;
-		return std::max(t, std::max(tm0, std::max(tm1, tm2)));
+		return ta > t ? ta : t;
 	}
 	
+    // A sharp corner's interior inset in a triangle its miter heads outside of (a: the triangle's next vertex, b: the one
+    // after). Insets only shrink a triangle until it collapses, but the miter would stretch this one, carrying it far
+    // across the picture. So here the vertex slides along one of the triangle's own edges instead, just far enough to stay
+    // as far from the corner's edges as the miter keeps it: the triangle then only shrinks, until its collapse.
+    static Vector sharpInset(const Point& v, Vector m, float ax, float ay, float bx, float by) {
+        float e1x = ax - v.x, e1y = ay - v.y, e2x = bx - v.x, e2y = by - v.y, turn = e1x * e2y - e1y * e2x;
+        bool inside = (e1x * m.y - e1y * m.x) * turn >= 0 && (m.x * e2y - m.y * e2x) * turn >= 0;
+        float dax = v.tpx - v.x, day = v.tpy - v.y, dbx = v.tnx - v.x, dby = v.tny - v.y;
+        float la = std::sqrt(dax * dax + day * day), lb = std::sqrt(dbx * dbx + dby * dby);
+        if (m.x * m.x + m.y * m.y <= kTriangleDilationMax * kTriangleDilationMax || inside || la == 0 || lb == 0)
+            return m;
+        dax /= la, day /= la, dbx /= lb, dby /= lb;
+        // The distance from v + e, e a unit edge, to the nearer of the corner's edges, which run from v to its tangent points.
+        auto clearance = [&](float ex, float ey) {
+            auto ray = [&](float dx, float dy) { return ex * dx + ey * dy > 0 ? std::abs(dx * ey - dy * ex) : 1.f; };
+            return std::min(ray(dax, day), ray(dbx, dby));
+        };
+        float l1 = std::sqrt(e1x * e1x + e1y * e1y), l2 = std::sqrt(e2x * e2x + e2y * e2y);
+        e1x /= l1, e1y /= l1, e2x /= l2, e2y /= l2;
+        float c1 = clearance(e1x, e1y), c2 = clearance(e2x, e2y);
+        if (c1 < c2)
+            std::swap(c1, c2), std::swap(e1x, e2x), std::swap(e1y, e2y);
+        return c1 > 0 ? Vector(e1x / c1, e1y / c1) : m;
+    }
+    
     static Vector miter(const Point& v, float x, float y, bool *convex) {
         float x0 = v.x, y0 = v.y, px = v.px, py = v.py, nx = v.nx, ny = v.ny;
         float det = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0);
@@ -745,6 +763,8 @@ struct libTess {
                     for (int k = 0; k < 3; k++) {
                         bool unused;
                         Vector mi = v[k].corner ? miter(v[k].tangents(), cx, cy, & unused) : Vector(0, 0);
+                        if (v[k].corner && !v[k].control)
+                            mi = sharpInset(v[k].tangents(), mi, v[(k + 1) % 3].x, v[(k + 1) % 3].y, v[(k + 2) % 3].x, v[(k + 2) % 3].y);
                         _imiters.push_back(mi.x), _imiters.push_back(mi.y);
                         m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
                         if (!v[k].corner || v[k].control)
