@@ -18,6 +18,25 @@ constexpr float kScrollLineDelta = 10;
 
 using namespace std;
 
+// Editing handles, in points.
+constexpr float kHandleLineWidth = 1, kHandleControlRadius = 3, kHandlePointRadius = 4, kHandlePointInnerRadius = 2.5, kHandleHitRadius = 6;
+
+// A point of the selected shape that can be dragged: an end point, or a curve's control point.
+struct EditPoint {
+    NSVGpath *path;
+    int index;
+};
+
+// A dot or a line drawn over the selected shape. Each is a path after the scene's, whose transform is set every frame
+// so it keeps its size on screen.
+struct EditHandle {
+    enum Kind { kLine, kDot };
+    Kind kind;
+    float x0, y0, x1, y1;   // scene coordinates: the dot's centre, or the line's ends
+    float size;             // the dot's radius or the line's width, in points
+    RGBA8 color;
+};
+
 @interface View () <LayerDelegate, CALayerDelegate>
 
 @property(nonatomic) MetalLayer *metalLayer;
@@ -33,6 +52,13 @@ using namespace std;
 @property(nonatomic) BOOL inspect;              // debug: the path under the mouse is highlighted and described
 @property(nonatomic) BOOL solo;                 // debug: only the inspected path is drawn
 @property(nonatomic) NSInteger hoverPath, selectedPath;
+@property(nonatomic) Mesh editMesh;             // the selected shape's paths while its points are edited
+@property(nonatomic) int editBegin, editEnd;    // those paths' scene indices, which the scene's mesh leaves out
+@property(nonatomic) Mesh handleTemplates;      // a dot and a line, triangulated once, which every handle copies
+@property(nonatomic) Mesh handleMesh;
+@property(nonatomic) vector<EditHandle> handles;
+@property(nonatomic) vector<EditPoint> editPoints;
+@property(nonatomic) EditPoint dragPoint;       // the point being dragged: its path is null when none is
 @property(nonatomic) size_t shapeIndex;
 @property(nonatomic) vector<vector<Vector>> shapes;
 @property(nonatomic) vector<SubPath::Type> shapeTypes;
@@ -60,6 +86,8 @@ using namespace std;
     self.showInterior = YES;
     self.showColors = YES;
     self.hoverPath = self.selectedPath = -1;
+    self.dragPoint = { nullptr, 0 };
+    [self makeHandleTemplates];
     [self resetShapes];
     [self redraw];
     return self;
@@ -127,12 +155,22 @@ using namespace std;
 }
 
 - (void)mouseDown:(NSEvent *)event {
-    if (!_inspect || _solo)
+    NSInteger e = [self editPointAt:event.locationInWindow];
+    _dragPoint = e == -1 ? EditPoint { nullptr, 0 } : _editPoints[e];
+    if (_dragPoint.path || !_inspect || _solo)
         return;
-    _selectedPath = [self pathAt:event.locationInWindow];
+    NSInteger p = [self pathAt:event.locationInWindow];
+    if ([self sourceShape:p] != [self sourceShape:_selectedPath])
+        [self commitEdit];
+    _selectedPath = p;
     if (_selectedPath != -1)
         printf("%s\n", [self describePath:_selectedPath].UTF8String);
+    [self updateHandles];
     [self updateInspector];
+}
+
+- (void)mouseUp:(NSEvent *)event {
+    _dragPoint = { nullptr, 0 };
 }
 
 - (void)mouseMoved:(NSEvent *)event {
@@ -146,6 +184,12 @@ using namespace std;
 }
 
 - (void)mouseDragged:(NSEvent *)event {
+    if (_dragPoint.path) {
+        CGPoint s = [self sourcePointAt:event.locationInWindow];
+        [self moveEditPoint:_dragPoint x:s.x y:s.y];
+        [self rebuildSelectedShape];
+        return;
+    }
     [self.transform translateByX:event.deltaX andY:-event.deltaY];
     [self redraw];
 }
@@ -267,9 +311,11 @@ using namespace std;
 // polygon views show its triangulation alone, and holds it: the mouse no longer changes the inspected path. Copy puts its source shape on the pasteboard as a standalone SVG with the
 // same coordinates, to reproduce it.
 - (IBAction)toggleInspector:(id)sender {
+    [self commitEdit];
     _inspect = !_inspect;
     self.window.acceptsMouseMovedEvents = _inspect;
     _hoverPath = _selectedPath = -1;
+    [self updateHandles];
     [self updateInspector];
 }
 
@@ -304,6 +350,8 @@ using namespace std;
 }
 
 - (NSVGshape *)sourceShape:(NSInteger)p {
+    if (p < 0 || p >= (NSInteger)_scene._paths.size())
+        return nullptr;
     int source = _scene._paths[p]._source;
     NSVGshape *shape = _svgImage && source >= 0 ? _svgImage->shapes : nullptr;
     for (int i = 0; shape && i < source; i++)
@@ -316,14 +364,231 @@ using namespace std;
     size_t quadratics = 0;
     for (SubPath& s : path._subPaths)
         quadratics += s._quadratics.count() / 4;
-    int base = _mesh._idxs[p], end = _mesh._idxs[p + 1], hulls = 0;
+    // An edited path's triangles are in the edit mesh, whose indices start at its first path.
+    bool edited = p >= _editBegin && p < _editEnd;
+    Mesh& mesh = edited ? _editMesh : _mesh;
+    int k = int(edited ? p - _editBegin : p), base = mesh._idxs[k], end = mesh._idxs[k + 1], hulls = 0;
     for (int i = base; i < end; i++)
-        hulls += (_mesh._tris[i].curves & Triangle::kHull) != 0;
+        hulls += (mesh._tris[i].curves & Triangle::kHull) != 0;
     NSVGshape *shape = [self sourceShape:p];
     NSString *source = shape ? [NSString stringWithFormat:@" · shape %d \"%s\"", path._source, shape->id] : @"";
     return [NSString stringWithFormat:@"Path %ld of %zu%@ · %s · %zu subpaths, %zu quadratics · %d triangles, %d hulls · bounds %g %g %g %g",
             (long)p, _scene._paths.size(), source, path._outline ? "stroke" : "fill", path._subPaths.size(), quadratics, end - base, hulls,
             path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy];
+}
+
+#pragma mark - Editing
+
+// A selected path's shape shows its points as handles, which drag to edit it: an end point carries its curves' control
+// points with it, and a closed subpath's start and end move together. Only its paths are triangulated again as they
+// change, into their own mesh, which draws in their place; deselecting triangulates the whole scene again.
+
+// The selected path's shape, whose points can be edited.
+- (NSVGshape *)editedShape {
+    return _inspect && _selectedPath != -1 ? [self sourceShape:_selectedPath] : nullptr;
+}
+
+// A source (SVG) point in device pixels: Scene flips y about the image height.
+- (CGPoint)devicePointForSource:(const float *)p {
+    AffineTransform t = self.viewCTM;
+    float x = p[0], y = _svgImage->height - p[1];
+    return CGPointMake(x * t.a + y * t.c + t.tx, x * t.b + y * t.d + t.ty);
+}
+
+- (CGPoint)sourcePointAt:(NSPoint)location {
+    NSPoint v = [self convertPoint:location fromView:nil];
+    float x = v.x * self.layer.contentsScale, y = v.y * self.layer.contentsScale;
+    AffineTransform inv = AffineTransformInvert(self.viewCTM);
+    return CGPointMake(x * inv.a + y * inv.c + inv.tx, _svgImage->height - (x * inv.b + y * inv.d + inv.ty));
+}
+
+static bool closesOnStart(NSVGpath *path) {
+    return path->npts > 1 && path->pts[0] == path->pts[path->npts * 2 - 2] && path->pts[1] == path->pts[path->npts * 2 - 1];
+}
+
+// The edit point under a location in window coordinates, the nearest within kHandleHitRadius, or -1.
+- (NSInteger)editPointAt:(NSPoint)location {
+    if (![self editedShape])
+        return -1;
+    NSPoint v = [self convertPoint:location fromView:nil];
+    float x = v.x * self.layer.contentsScale, y = v.y * self.layer.contentsScale, r = kHandleHitRadius * self.layer.contentsScale, best = r * r;
+    NSInteger found = -1;
+    for (size_t i = 0; i < _editPoints.size(); i++) {
+        CGPoint d = [self devicePointForSource:_editPoints[i].path->pts + _editPoints[i].index * 2];
+        float d2 = (d.x - x) * (d.x - x) + (d.y - y) * (d.y - y);
+        if (d2 <= best)
+            best = d2, found = i;
+    }
+    return found;
+}
+
+// Moves an edit point to (x, y) in source coordinates. Lines (nanosvg's straight cubics) keep their controls at thirds,
+// so they stay lines; curves' controls move with their end points.
+- (void)moveEditPoint:(EditPoint)e x:(float)x y:(float)y {
+    float *pts = e.path->pts;
+    int n = e.path->npts, i = e.index;
+    if (i % 3) {
+        pts[i * 2] = x, pts[i * 2 + 1] = y;
+        return;
+    }
+    float dx = x - pts[i * 2], dy = y - pts[i * 2 + 1];
+    vector<int> ends = { i };
+    if (i == 0 && closesOnStart(e.path))
+        ends.push_back(n - 1);
+    // Each cubic at a moved end, the control next to that end, and whether the cubic is a line, before anything moves.
+    struct Adjacent { int cubic, control; bool straight; };
+    vector<Adjacent> adjacent;
+    for (int end : ends) {
+        if (end > 0)
+            adjacent.push_back({ end - 3, end - 1, isStraightCubic(pts + (end - 3) * 2) });
+        if (end < n - 1)
+            adjacent.push_back({ end, end + 1, isStraightCubic(pts + end * 2) });
+    }
+    for (int end : ends)
+        pts[end * 2] += dx, pts[end * 2 + 1] += dy;
+    for (Adjacent& a : adjacent) {
+        float *q = pts + a.cubic * 2;
+        if (a.straight)
+            for (int k = 0; k < 2; k++)
+                q[2 + k] = q[k] + (q[6 + k] - q[k]) / 3, q[4 + k] = q[k] + (q[6 + k] - q[k]) * 2 / 3;
+        else
+            pts[a.control * 2] += dx, pts[a.control * 2 + 1] += dy;
+    }
+}
+
+// Converts the selected shape again from its edited points, and triangulates just its paths.
+- (void)rebuildSelectedShape {
+    NSVGshape *shape = [self editedShape];
+    if (!shape)
+        return;
+    int source = _scene._paths[_selectedPath]._source, begin = (int)_selectedPath, end = begin + 1;
+    while (begin > 0 && _scene._paths[begin - 1]._source == source)
+        begin--;
+    while (end < (int)_scene._paths.size() && _scene._paths[end]._source == source)
+        end++;
+    Scene edited;
+    edited._cgStroker = _scene._cgStroker;
+    edited.addShape(shape, _svgImage->height, source);
+    if (edited._paths.size() != size_t(end - begin)) {
+        // A path came or went (it lost all its subpaths, or regained them): the scene's indices change.
+        NSInteger selected = _selectedPath - begin;
+        _scene.empty();
+        _scene.addImage(_svgImage);
+        [self triangulate];
+        for (int p = 0; p < (int)_scene._paths.size(); p++)
+            if (_scene._paths[p]._source == source) {
+                _selectedPath = std::min(p + selected, (NSInteger)_scene._paths.size() - 1);
+                break;
+            }
+        [self updateHandles];
+        [self updateInspector];
+        return;
+    }
+    vector<MeshPath>& base = _mesh._timeline.basePaths();
+    for (int p = begin; p < end; p++) {
+        _scene._paths[p] = edited._paths[p - begin];
+        base[p] = MeshPath(_scene._paths[p]._color, _scene._CTMs[p], _scene._paths[p]._bounds);
+    }
+    libTess::triangulatePaths(_editMesh, _scene, begin, end);
+    [self.metalLayer uploadMesh:_editMesh index:1];
+    _editBegin = begin, _editEnd = end;
+    [self updateHandles];
+    [self updateInspector];
+}
+
+// Folds an edit back into the scene's mesh.
+- (void)commitEdit {
+    if (_editEnd == _editBegin)
+        return;
+    NSInteger selected = _selectedPath;
+    [self triangulate];
+    _selectedPath = selected;
+    [self updateHandles];
+}
+
+- (void)makeHandleTemplates {
+    // A unit circle in eight quadratics, and a unit square: a line's own bounds set its length and width.
+    float circle[34], r = 1 / std::cos(M_PI / 8);
+    for (int k = 0; k <= 16; k++) {
+        float a = k * M_PI / 8, d = k & 1 ? r : 1;
+        circle[k * 2] = d * std::cos(a), circle[k * 2 + 1] = d * std::sin(a);
+    }
+    float square[10] = { 0, -0.5, 1, -0.5, 1, 0.5, 0, 0.5, 0, -0.5 };
+    Scene templates;
+    Path line(true, false, 0, RGBA8::Black(), { SubPath(square, 5, SubPath::kLine) });
+    Path dot(true, false, 0, RGBA8::Black(), { SubPath(circle, 17, SubPath::kQuadratic) });
+    templates.addPath(line), templates.addPath(dot);
+    libTess::triangulatePaths(_handleTemplates, templates, 0, 2);
+}
+
+// The selected shape's handles: lines from end points to their curves' controls, the controls, then the end points.
+- (void)updateHandles {
+    _handles.resize(0), _editPoints.resize(0);
+    NSVGshape *shape = [self editedShape];
+    RGBA8 blue(0, 122, 255, 255), white(255, 255, 255, 255);
+    vector<EditHandle> controls, points;
+    auto source = [&](const float *p) { return CGPointMake(p[0], _svgImage->height - p[1]); };
+    for (NSVGpath *path = shape ? shape->paths : nullptr; path; path = path->next) {
+        float *pts = path->pts;
+        for (int i = 0; i + 3 < path->npts; i += 3) {
+            if (isStraightCubic(pts + i * 2))
+                continue;
+            for (int k : { 1, 2 }) {
+                CGPoint c = source(pts + (i + k) * 2), e = source(pts + (k == 1 ? i : i + 3) * 2);
+                _handles.push_back({ EditHandle::kLine, float(e.x), float(e.y), float(c.x), float(c.y), kHandleLineWidth, blue });
+                controls.push_back({ EditHandle::kDot, float(c.x), float(c.y), 0, 0, kHandleControlRadius, blue });
+                _editPoints.push_back({ path, i + k });
+            }
+        }
+        int n = closesOnStart(path) && path->npts > 1 ? path->npts - 1 : path->npts;
+        for (int i = 0; i < n; i += 3) {
+            CGPoint p = source(pts + i * 2);
+            points.push_back({ EditHandle::kDot, float(p.x), float(p.y), 0, 0, kHandlePointRadius, blue });
+            points.push_back({ EditHandle::kDot, float(p.x), float(p.y), 0, 0, kHandlePointInnerRadius, white });
+            _editPoints.push_back({ path, i });
+        }
+    }
+    _handles.insert(_handles.end(), controls.begin(), controls.end());
+    _handles.insert(_handles.end(), points.begin(), points.end());
+    
+    // Each handle copies its template's triangles as its own path, after the scene's.
+    _handleMesh.empty();
+    int N = (int)_scene._paths.size();
+    for (size_t k = 0; k < _handles.size(); k++) {
+        int t = _handles[k].kind == EditHandle::kLine ? 0 : 1, begin = _handleTemplates._idxs[t], end = _handleTemplates._idxs[t + 1];
+        _handleMesh._idxs.emplace_back((int)_handleMesh._tris.count());
+        Triangle *tris = _handleMesh._tris.new_ptr(end - begin);
+        for (int i = begin; i < end; i++) {
+            tris[i - begin] = _handleTemplates._tris[i];
+            tris[i - begin].p = (tris[i - begin].p & ~Triangle::kFlagsMask) | unsigned(N + k);
+        }
+    }
+    _handleMesh._idxs.emplace_back((int)_handleMesh._tris.count());
+    [self.metalLayer uploadMesh:_handleMesh index:2];
+    [self.metalLayer reservePaths:N + _handles.size()];
+}
+
+// The handles' paths, after the scene's: each one's transform keeps its size on screen at any view transform.
+- (void)writeHandlePaths:(MeshPath *)paths {
+    AffineTransform view = self.viewCTM;
+    float k = std::sqrt(std::abs(AffineTransformArea(view))), pixels = self.layer.contentsScale;
+    vector<MeshPath>& templates = _handleTemplates._timeline.basePaths();
+    MeshPath *path = paths + _scene._paths.size();
+    for (EditHandle& h : _handles) {
+        if (h.kind == EditHandle::kDot) {
+            float r = h.size * pixels / k;
+            *path++ = MeshPath(h.color, { r, 0, 0, r, h.x0, h.y0 }, templates[1].bounds);
+        } else {
+            // In its own space a line runs from (0, 0) along x, in pixels, so its triangles and miters stay the
+            // template's at any length: the transform is a similarity.
+            float dx = h.x1 - h.x0, dy = h.y1 - h.y0, length = std::sqrt(dx * dx + dy * dy);
+            float ex = length ? dx / length : 1, ey = length ? dy / length : 0;
+            *path++ = MeshPath(h.color, { ex / k, ey / k, -ey / k, ex / k, h.x0, h.y0 }, Bounds(0, -h.size * pixels * 0.5f, length * k, h.size * pixels * 0.5f));
+        }
+    }
+    // While animating, only transforms are written, but the edited paths' bounds have changed.
+    for (int p = _editBegin; p < _editEnd; p++)
+        paths[p].bounds = _mesh._timeline.basePaths()[p].bounds, paths[p].color = _mesh._timeline.basePaths()[p].color;
 }
 
 // The inspected path's source shape as a standalone SVG: its cubics exactly as parsed, and only the fill or the stroke.
@@ -405,7 +670,12 @@ using namespace std;
     }
     libTess::triangulate(_mesh, _scene);
     [self.metalLayer uploadMesh:_mesh];
+    _editMesh.empty();
+    [self.metalLayer uploadMesh:_editMesh index:1];
+    _editBegin = _editEnd = 0;
     _hoverPath = _selectedPath = -1;
+    _dragPoint = { nullptr, 0 };
+    [self updateHandles];
 }
 
 - (void)writeDrawCalls:(MeshPath *)paths {
@@ -420,7 +690,8 @@ using namespace std;
     meshState.showPolygons = _showPolygons;
     meshState.showTriangles = _showTriangles;
     meshState.useStrokeColor = _useStrokeColor;
-    meshState.colorsSize = (int)_scene._paths.size();
+    int N = (int)_scene._paths.size();
+    meshState.colorsSize = N + (int)_handles.size();
     
     _mesh._calls.resize(0);
 	MeshPath *path = & paths[0];
@@ -435,7 +706,39 @@ using namespace std;
     }
     
     Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
-    Mesh::writePathCalls(_mesh, paths, _scene._paths.size(), clipBounds, uniforms, meshState);
+    Mesh::writePathCalls(_mesh, paths, N, clipBounds, uniforms, meshState, 0, 0, _editBegin, _editEnd);
+    if (_editEnd == _editBegin && _handles.size() == 0)
+        return;
+    // The edited paths' edges draw in their place among the scene's, which blend in order, and the handles' last. The
+    // interiors are opaque and ordered by depth.
+    _editMesh._calls.resize(0), _handleMesh._calls.resize(0);
+    if (_editEnd > _editBegin)
+        Mesh::writePathCalls(_editMesh, paths + _editBegin, _editEnd - _editBegin, clipBounds, uniforms, meshState, 1, _editBegin);
+    MeshState handleState = meshState;
+    handleState.showInterior = false;
+    if (_handles.size())
+        Mesh::writePathCalls(_handleMesh, paths + N, _handles.size(), clipBounds, uniforms, handleState, 2, N);
+    vector<Call> calls;
+    for (vector<Call> *v : { & _mesh._calls, & _editMesh._calls })
+        for (Call& c : *v)
+            if (c.type == kCallTypeMeshInteriorIndexed)
+                calls.push_back(c);
+    bool edited = false;
+    for (Call& c : _mesh._calls)
+        if (c.type == kCallTypeMeshTriangles) {
+            if (!edited && c.firstPath >= _editEnd) {
+                for (Call& e : _editMesh._calls)
+                    if (e.type == kCallTypeMeshTriangles)
+                        calls.push_back(e);
+                edited = true;
+            }
+            calls.push_back(c);
+        }
+    for (Call& e : _editMesh._calls)
+        if (!edited && e.type == kCallTypeMeshTriangles)
+            calls.push_back(e);
+    calls.insert(calls.end(), _handleMesh._calls.begin(), _handleMesh._calls.end());
+    _mesh._calls = calls;
 }
 
 - (void)redraw {
@@ -545,6 +848,7 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
 - (Mesh *)meshForLayer:(CALayer *)layer paths:(MeshPath *)paths {
     double timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
     _mesh._timeline.writePathsForTime(timerTime, paths);
+    [self writeHandlePaths:paths];
     [self writeDrawCalls: paths];
     return & _mesh;
 }
@@ -574,9 +878,9 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
         _svgImage = nsvgParse(data, "px", 96);
         free(data);
     }
-    if (_svgData) {
+    if (_svgImage) {
         _scene.empty();
-        _scene.addSVG(_svgData.bytes, _svgData.length);
+        _scene.addImage(_svgImage);
     }
     [self triangulate];
     [self redraw];

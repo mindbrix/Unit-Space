@@ -12,7 +12,10 @@ using namespace std;
 #pragma clang diagnostic ignored "-Wcomma"
 
 struct Mesh {
-    static void writePathCalls(Mesh& mesh, MeshPath *paths, size_t pathsSize, Bounds clipBounds, State state, MeshState meshState) {
+    // Paths [skipBegin, skipEnd) are left out, as when another mesh draws them. Each call is tagged with meshIndex,
+    // and edge calls with their first path, offset by pathBase (paths is then that far into the paths buffer).
+    static void writePathCalls(Mesh& mesh, MeshPath *paths, size_t pathsSize, Bounds clipBounds, State state, MeshState meshState,
+                               int meshIndex = 0, int pathBase = 0, int skipBegin = 0, int skipEnd = 0) {
         int base, end, count, p, i, j;
         vector<Call> & calls = mesh._calls;
         Call *call;
@@ -51,6 +54,8 @@ struct Mesh {
                 for (j = p; j < end && set; j++)
                    visibles[j] = true;
             }
+            for (p = skipBegin; p < skipEnd; p++)
+                visibles[p] = false;
             vector<int> ranges;
 			for (p = 0; p < pathsSize; ) {
 				for (j = p; j < pathsSize && !visibles[j]; j++) {}
@@ -69,6 +74,7 @@ struct Mesh {
                         if (call == nullptr || runBase != end) {
                             calls.emplace_back(kCallTypeMeshInteriorIndexed, 0, total - end, state, meshState);
                             call = & calls.back();
+                            call->mesh = meshIndex;
                             call->meshState.baseTriangle = total - end;
                         }
                         runBase = base;
@@ -80,6 +86,7 @@ struct Mesh {
                 for (i = 0; i < ranges.size(); i += 2) {
                     base = mesh._idxs[ranges[i]], end = mesh._idxs[ranges[i + 1]], count = end - base;
                     calls.emplace_back(kCallTypeMeshTriangles, count, base, state, meshState);
+                    calls.back().mesh = meshIndex, calls.back().firstPath = pathBase + ranges[i];
                 }
             }
         }

@@ -166,10 +166,12 @@ enum CallType : unsigned int {
 struct Call {
     Call() {}
     Call(CallType type, int instanceCount, int baseInstance, State state, MeshState meshState)
-	: type(type), instanceCount(instanceCount), baseInstance(baseInstance), state(state), meshState(meshState) {}
+	: type(type), instanceCount(instanceCount), baseInstance(baseInstance), state(state), meshState(meshState), mesh(0), firstPath(0) {}
     
     CallType    type;
     int         instanceCount, baseInstance;
+    int         mesh;           // which of the layer's meshes it draws
+    int         firstPath;      // edge calls: the scene index of their first path, which orders them
 	State       state;
     MeshState   meshState;
 };

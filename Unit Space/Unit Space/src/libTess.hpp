@@ -472,6 +472,20 @@ struct libTess {
         writeIndexedInterior(mesh);
     }
     
+    // Triangulates scene paths [begin, end) alone, as when one is being edited. The triangles keep their scene path
+    // indices, so the mesh's paths cover the whole scene, but its _idxs start at begin.
+    static void triangulatePaths(Mesh& mesh, Scene& scene, int begin, int end) {
+        mesh.empty();
+        for (int p = 0; p < (int)scene._paths.size(); p++)
+            mesh._timeline.basePaths().emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
+        vector<Triangle> tris;
+        triangulateRange(tris, mesh._interiorMiters, mesh._idxs, scene, begin, end);
+        if (tris.size())
+            memcpy(mesh._tris.new_ptr(tris.size()), & tris[0], tris.size() * sizeof(tris[0]));
+        mesh._idxs.emplace_back((int)mesh._tris.count());
+        writeIndexedInterior(mesh);
+    }
+    
     // Shares vertices between triangles so the interior pass transforms each vertex once instead of three times.
     // Triangles are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
     // back-face culling drops triangles that the miter inset has inverted. Hull triangles extend outside the fill,

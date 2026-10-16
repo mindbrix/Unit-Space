@@ -9,16 +9,24 @@
 #import <Metal/Metal.h>
 #import "MetalLayer.h"
 
+// One mesh's buffers. The layer draws several meshes, each call naming its own, over the one paths buffer.
+@interface MeshBuffers : NSObject
+@property (nonatomic, strong) id <MTLBuffer> trisBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorIdxsBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorEdgesBuffer;
+@end
+
+@implementation MeshBuffers
+@end
+
 @interface MetalLayer ()
 
 @property (nonatomic, strong) dispatch_semaphore_t inflight_semaphore;
 @property (nonatomic, strong) id <MTLCommandQueue> commandQueue;
 @property (nonatomic, strong) id <MTLLibrary> defaultLibrary;
 @property (nonatomic, strong) id <MTLBuffer> pathsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> trisBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorIdxsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorEdgesBuffer;
+@property (nonatomic, strong) NSArray<MeshBuffers *> *meshes;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorIndexedPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshInteriorDebugPipelineState;
 @property (nonatomic, strong) id <MTLRenderPipelineState> meshTrianglePipelineState;
@@ -53,6 +61,7 @@
     self.commandQueue = [self.device newCommandQueue];
     self.defaultLibrary = [self.device newDefaultLibrary];
     self.inflight_semaphore = dispatch_semaphore_create(1);
+    self.meshes = @[ [MeshBuffers new], [MeshBuffers new], [MeshBuffers new] ];
     
     MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
     depthStencilDescriptor.depthWriteEnabled = YES;
@@ -147,24 +156,27 @@
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = call->instanceCount, baseInstance = call->baseInstance;
         BOOL drawIndexed = NO, debug = call->meshState.showTriangles || call->meshState.showPolygons;
+        MeshBuffers *buffers = _meshes[call->mesh];
+        if (instanceCount == 0 || buffers.trisBuffer == nil)
+            continue;
         switch (call->type) {
             case kCallTypeMeshTriangles:
 				[commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
-				[commandEncoder setVertexBuffer:_trisBuffer offset:0 atIndex:8];
+				[commandEncoder setVertexBuffer:buffers.trisBuffer offset:0 atIndex:8];
 				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 break;
             case kCallTypeMeshInteriorIndexed:
+                if (buffers.interiorIdxsBuffer == nil)
+                    continue;
                 debug = debug && _meshInteriorDebugPipelineState != nil;
                 [commandEncoder setRenderPipelineState:debug ? _meshInteriorDebugPipelineState : _meshInteriorIndexedPipelineState];
-                [commandEncoder setVertexBuffer:_interiorVertsBuffer offset:0 atIndex:8];
+                [commandEncoder setVertexBuffer:buffers.interiorVertsBuffer offset:0 atIndex:8];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
                 if (debug)
-                    [commandEncoder setFragmentBuffer:_interiorEdgesBuffer offset:0 atIndex:2];
+                    [commandEncoder setFragmentBuffer:buffers.interiorEdgesBuffer offset:0 atIndex:2];
                 drawIndexed = YES;
                 break;
         }
-        if (instanceCount == 0)
-            continue;
 		
 		State state = call->state;
 		state.drawableSize = { float(drawable.texture.width), float(drawable.texture.height) };
@@ -180,7 +192,7 @@
             [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                        indexCount:instanceCount * 3
                                         indexType:MTLIndexTypeUInt32
-                                      indexBuffer:_interiorIdxsBuffer
+                                      indexBuffer:buffers.interiorIdxsBuffer
                                 indexBufferOffset:baseInstance * 3 * sizeof(uint32_t)];
             [commandEncoder setCullMode:MTLCullModeNone];
         } else
@@ -198,26 +210,31 @@
 #pragma mark - Public
 
 - (void)uploadMesh:(Mesh &)mesh {
-    if (mesh._tris.pagedSize())
-        _trisBuffer = [self.device newBufferWithBytes:(void *)mesh._tris.get()
-                                               length:mesh._tris.pagedSize()
-                                              options:MTLResourceStorageModeShared];
-    if (mesh._interiorVerts.pagedSize())
-        _interiorVertsBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorVerts.get()
-                                                        length:mesh._interiorVerts.pagedSize()
-                                                       options:MTLResourceStorageModeShared];
-    if (mesh._interiorIdxs.pagedSize())
-        _interiorIdxsBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorIdxs.get()
-                                                       length:mesh._interiorIdxs.pagedSize()
-                                                      options:MTLResourceStorageModeShared];
-    if (mesh._interiorEdges.pagedSize())
-        _interiorEdgesBuffer = [self.device newBufferWithBytes:(void *)mesh._interiorEdges.get()
-                                                        length:mesh._interiorEdges.pagedSize()
-                                                       options:MTLResourceStorageModeShared];
-    if (mesh._timeline.basePaths().size())
-        _pathsBuffer = [self.device newBufferWithBytes:(void *)& mesh._timeline.basePaths()[0]
-                                                length:mesh._timeline.basePaths().size() * sizeof(MeshPath)
-                                               options:MTLResourceStorageModeManaged];
+    [self uploadMesh:mesh index:0];
+    _pathsBuffer = mesh._timeline.basePaths().size() == 0 ? nil : [self.device newBufferWithBytes:(void *)& mesh._timeline.basePaths()[0]
+                                                                                           length:mesh._timeline.basePaths().size() * sizeof(MeshPath)
+                                                                                          options:MTLResourceStorageModeManaged];
+}
+
+- (void)uploadMesh:(Mesh &)mesh index:(NSUInteger)index {
+    auto buffer = [&](size_t length, const void *bytes) {
+        return length == 0 ? nil : [self.device newBufferWithBytes:bytes length:length options:MTLResourceStorageModeShared];
+    };
+    MeshBuffers *buffers = _meshes[index];
+    buffers.trisBuffer = buffer(mesh._tris.pagedSize(), mesh._tris.get());
+    buffers.interiorVertsBuffer = buffer(mesh._interiorVerts.pagedSize(), mesh._interiorVerts.get());
+    buffers.interiorIdxsBuffer = buffer(mesh._interiorIdxs.pagedSize(), mesh._interiorIdxs.get());
+    buffers.interiorEdgesBuffer = buffer(mesh._interiorEdges.pagedSize(), mesh._interiorEdges.get());
+}
+
+- (void)reservePaths:(size_t)count {
+    size_t length = count * sizeof(MeshPath);
+    if (length <= _pathsBuffer.length)
+        return;
+    id <MTLBuffer> paths = [self.device newBufferWithLength:length options:MTLResourceStorageModeManaged];
+    if (_pathsBuffer)
+        memcpy(paths.contents, _pathsBuffer.contents, _pathsBuffer.length);
+    _pathsBuffer = paths;
 }
 
 @end
