@@ -98,9 +98,9 @@ static void appendCubic(Memory<float>& quadratics, const float *cubic, float tol
         appendCubicPiece(quadratics, c, allowance, 0);
 }
 
-// Loads cubic i of src into c, extended over the cubics after it that add nothing: one whose points all lie within
-// tinylimit of its end (compared with squared distances), or any number that continue it exactly, the same curve run on
-// to their end with their end tangent. Returns the index of the last cubic it took in.
+// Loads cubic i of src into c, extended over the cubics after it that add nothing: any whose points all lie within
+// tinylimit of its end (compared with squared distances; glyphs often close with several), or that continue it exactly,
+// the same curve run on to their end with their end tangent. Returns the index of the last cubic it took in.
 static int mergeCubics(const float *src, int npoints, int i, float tinylimit, float *c) {
     constexpr float kMergeLimit = 1e-3;
     memcpy(c, src + i * 2, 8 * sizeof(float));
@@ -108,8 +108,8 @@ static int mergeCubics(const float *src, int npoints, int i, float tinylimit, fl
         const float *p = src + (i + 3) * 2;
         auto near = [&](float x, float y) { return (x - c[6]) * (x - c[6]) + (y - c[7]) * (y - c[7]) < tinylimit; };
         if (near(p[2], p[3]) && near(p[4], p[5]) && near(p[6], p[7])) {
-            c[6] = p[6], c[7] = p[7];
-            return i + 3;
+            c[6] = p[6], c[7] = p[7], i += 3;
+            continue;
         }
         merged = false;
         float ax = c[6] - c[4], ay = c[7] - c[5], bx = p[2] - c[6], by = p[3] - c[7], dot = ax * bx + ay * by;
