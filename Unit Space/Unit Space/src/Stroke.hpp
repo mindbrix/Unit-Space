@@ -129,7 +129,9 @@ private:
             return;
         }
         // Joins turning so little that sharing one normal moves the offset by less than twice the tolerance (smooth
-        // joins, and the kinks of least-error quadratics) need no join, and their offsets meet exactly.
+        // joins, and the kinks of least-error quadratics) need no join, and their offsets meet exactly. Joins as close to
+        // a half turn are reversals: opposite normals put each side's corner exactly on the other's, where computing
+        // both would leave them a rounding apart, and the union keeps whichever it meets first.
         float smooth = 2.f * tolerance / w;
         sharp.assign(n, true);
         for (int i = 0; i < (closed ? n : n - 1); i++) {
@@ -139,6 +141,9 @@ private:
                 float nx = a.n2x + b.n0x, ny = a.n2y + b.n0y, rl = 1.f / std::sqrt(nx * nx + ny * ny);
                 a.n2x = b.n0x = nx * rl, a.n2y = b.n0y = ny * rl;
                 sharp[i] = false;
+            } else if (dot < 0 && cross * cross < smooth * smooth) {
+                float nx = a.n2x - b.n0x, ny = a.n2y - b.n0y, rl = 1.f / std::sqrt(nx * nx + ny * ny);
+                a.n2x = nx * rl, a.n2y = ny * rl, b.n0x = -a.n2x, b.n0y = -a.n2y;
             }
         }
         vector<float> left, right;

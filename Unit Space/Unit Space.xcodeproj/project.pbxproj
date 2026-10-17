@@ -30,6 +30,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E90B12A23083DDE40017C78C /* Stroke.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Stroke.hpp; sourceTree = "<group>"; };
 		E937DD2D2109220E00655858 /* nanosvg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = nanosvg.h; path = ../../nanosvg/src/nanosvg.h; sourceTree = "<group>"; };
 		E97D7602211498600015388A /* Headers.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Headers.metal; sourceTree = "<group>"; };
 		E97D7603211498600015388A /* Library.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
@@ -122,6 +123,7 @@
 				E97D76112114995A0015388A /* MetalLayer.mm */,
 				E97D76122114995A0015388A /* Path.hpp */,
 				E97D76132114995A0015388A /* Scene.hpp */,
+				E90B12A23083DDE40017C78C /* Stroke.hpp */,
 				E97D76142114995A0015388A /* SubPath.hpp */,
 				E97D7616211499E20015388A /* VGAffineTransform.h */,
 				E97D7617211499E20015388A /* VGAffineTransform.m */,

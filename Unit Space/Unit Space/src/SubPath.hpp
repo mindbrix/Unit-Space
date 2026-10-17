@@ -241,8 +241,10 @@ struct SubPath {
     }
     
     // Merges each run of on-curve points closer than limit into its first, as libTess would, dropping the quadratics
-    // between them. The gap fades along the quadratic after (its control moves half as far), so lines stay straight; the
-    // last has none after it, so the one before takes its end. A closed subpath's end then closes exactly on its start.
+    // between them. The gap fades along the quadratic after (its control moves half as far), so lines stay straight. In a
+    // closed subpath a run reaching the end wraps through the start, so the start moves onto its first point instead (an
+    // edge skewed by an ULP leaves the sweep in libTess nowhere to put its crossings); in an open one the last
+    // quadratic has none after it, so the one before takes its end.
     // A quadratic whose control lies within limit of its chord is a line, its control moved to the chord's midpoint, so
     // no near-straight curve leaves a control vertex beside its end for libTess. Consecutive lines join while every
     // vertex between stays within limit of the joined line, so neither moves the outline further than limit. That
@@ -274,7 +276,10 @@ struct SubPath {
             const float *s = q + k * 4, *e = s + 4;
             float *p = last();
             if (near(p, e) && out.size() > 2 && k + 1 == n) {
-                fade(p - 2, p, e), p[0] = e[0], p[1] = e[1];
+                if (closed && e[0] == q[0] && e[1] == q[1])
+                    fade(out.data() + 2, out.data(), p), out[0] = p[0], out[1] = p[1];
+                else
+                    fade(p - 2, p, e), p[0] = e[0], p[1] = e[1];
                 continue;
             }
             if (near(p, e) && k + 1 < n)
@@ -306,10 +311,10 @@ struct SubPath {
             bool closes = end[0] == start[0] && end[1] == start[1];
             moved = true;
             if (closes && near(end - 4, start)) {
-                out.resize(out.size() - 4), end = last();
-                fade(end - 2, end, start), end[0] = start[0], end[1] = start[1];
+                out.resize(out.size() - 4), start = out.data(), end = last();
+                fade(start + 2, start, end), start[0] = end[0], start[1] = end[1];
             } else if (!closes && near(end, start))
-                fade(end - 2, end, start), end[0] = start[0], end[1] = start[1];
+                fade(start + 2, start, end), start[0] = end[0], start[1] = end[1];
             else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
                 end[-2] = (end[-4] + start[0]) * 0.5f, end[-1] = (end[-3] + start[1]) * 0.5f, end[0] = start[0], end[1] = start[1];
             else
