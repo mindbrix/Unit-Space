@@ -243,9 +243,11 @@ struct SubPath {
     // Merges each run of on-curve points closer than limit into its first, as libTess would, dropping the quadratics
     // between them. The gap fades along the quadratic after (its control moves half as far), so lines stay straight; the
     // last has none after it, so the one before takes its end. A closed subpath's end then closes exactly on its start.
-    // Consecutive lines join while every vertex between stays within limit of the joined line, so neither moves the
-    // outline further than limit. That includes a line doubling back on the one before, a spike enclosing nothing, and
-    // the closing line libTess adds from a closed subpath's end to its start.
+    // A quadratic whose control lies within limit of its chord is a line, its control moved to the chord's midpoint, so
+    // no near-straight curve leaves a control vertex beside its end for libTess. Consecutive lines join while every
+    // vertex between stays within limit of the joined line, so neither moves the outline further than limit. That
+    // includes a line doubling back on the one before, a spike enclosing nothing, and the closing line libTess adds
+    // from a closed subpath's end to its start.
     void mergeVertices(float limit, bool closed) {
         const float *q = _quadratics.get();
         int n = ((int)_quadratics.count() - 2) / 4;
@@ -255,11 +257,12 @@ struct SubPath {
         auto fade = [](float *control, const float *from, const float *to) {
             control[0] += (to[0] - from[0]) * 0.5f, control[1] += (to[1] - from[1]) * 0.5f;
         };
-        // Whether x lies within limit of the line through a and b, and whether it also lies between them.
+        // Whether x lies within limit of the line through a and b.
         auto onLine = [&](const float *a, const float *x, const float *b) {
             float bx = b[0] - a[0], by = b[1] - a[1], cross = bx * (x[1] - a[1]) - by * (x[0] - a[0]);
             return cross * cross < limit * limit * (bx * bx + by * by);
         };
+        // Whether x lies within limit of the line through a and b, and projects strictly between them.
         auto between = [&](const float *a, const float *x, const float *b) {
             float bx = b[0] - a[0], by = b[1] - a[1], dot = bx * (x[0] - a[0]) + by * (x[1] - a[1]);
             return onLine(a, x, b) && dot > 0 && dot < bx * bx + by * by;
@@ -278,6 +281,8 @@ struct SubPath {
                 continue;
             float control[2] = { s[2], s[3] };
             fade(control, s, p);
+            if (between(p, control, e))
+                control[0] = (p[0] + e[0]) * 0.5f, control[1] = (p[1] + e[1]) * 0.5f;
             if (out.size() > 2 && between(p, control, e) && between(p - 4, p - 2, p)) {
                 bool on = true;
                 for (int j = run < 0 ? k : run; on && j <= k; j++)
