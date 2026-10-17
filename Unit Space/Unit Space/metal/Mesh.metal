@@ -79,16 +79,16 @@ fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorFragment ver
 
 #pragma mark - Triangle
 
-// Kept small: every scalar here is written out per vertex, and output size measurably limits this pass.
-// d0..d5 are two edge lines per corner. A hull triangle instead carries the line at p0 its curve meets (d0), the
+// Kept small: every scalar here is written out per vertex, and output size measurably limits this pass, so d0..d5 are
+// half. They are two edge lines per corner. A hull triangle instead carries the line at p0 its curve meets (d0), the
 // curve's Loop-Blinn (u, v) (d1, d2) and the line at p2 (d3).
 struct TriangleVertex
 {
     float4 position [[position]];
-    float d0, d1, d2, d3, d4, d5;
+    half d0, d1, d2, d3, d4, d5;
     uint convex [[flat]];   // bits 2..0: Triangle::kFlagsConvex0..2; bits 7..3: Triangle::curves; bits 13..8: which of
                             // d0..d5 are a concave curve's chord, which the curve replaces.
-    float4 color [[flat]];
+    uint color [[flat]];    // RGBA8, r in the low byte, not premultiplied
 };
 
 // Loop-Blinn coordinates of p for the quadratic a -> c -> b: (0, 0) at a, (1/2, 0) at c and (1, 1) at b, so u^2 = v on the curve.
@@ -227,9 +227,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     }
     vert.convex = ((tri.p >> 26) & 7) | (curves << 3) | (lines << 8);
     
-    vert.color = select(float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0), float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a), meshState.useStrokeColor);
-    // The edge pass blends premultiplied colour (source factor one), so translucent paths must be premultiplied.
-    vert.color.rgb *= vert.color.a;
+    uint rgba8 = uint(color.r) | uint(color.g) << 8 | uint(color.b) << 16 | uint(color.a) << 24;
+    vert.color = select(rgba8, pack_float_to_unorm4x8(float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a)), meshState.useStrokeColor);
     return vert;
 }
 
@@ -250,11 +249,12 @@ static inline float curveDistance(float u, float v, float2 du, float2 dv, bool c
 fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]])
 {
     const float f = kTriangleFilterWidth;
+    float d0 = vert.d0, d1 = vert.d1, d2 = vert.d2, d3 = vert.d3, d4 = vert.d4, d5 = vert.d5;
     uint curves = (vert.convex >> 3) & 31, lines = vert.convex >> 8;
     bool hull = curves & Triangle::kHull, c0 = curves & Triangle::kControl0, c1 = curves & Triangle::kControl1 && !c0;
     // The curve's Loop-Blinn (u, v): a hull's d1, d2, or a polygon triangle's in its first control vertex's distances.
-    float su = select(select(select(vert.d4, vert.d2, c1), vert.d0, c0), vert.d1, hull);
-    float sv = select(select(select(vert.d5, vert.d3, c1), vert.d1, c0), vert.d2, hull);
+    float su = select(select(select(d4, d2, c1), d0, c0), d1, hull);
+    float sv = select(select(select(d5, d3, c1), d1, c0), d2, hull);
     // Derivatives are only defined in uniform control flow, so take them first. (u, v) are affine, so they are exact.
     float2 du = float2(dfdx(su), dfdy(su)), dv = float2(dfdx(sv), dfdy(sv));
     float convex0 = (vert.convex & 4) ? 1 : -1, convex1 = (vert.convex & 2) ? 1 : -1, convex2 = (vert.convex & 1) ? 1 : -1;
@@ -267,14 +267,14 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     if (hull) {
         // The curve, joined at p0 and p2 to the neighbouring outer edges. A convex curve's control point corner is the
         // curve itself; a concave curve's is interior.
-        float m0 = select(corner(convex0, vert.d0, dq), dq, vert.d4 >= 0), m2 = select(corner(convex2, dq, vert.d3), dq, vert.d5 >= 0);
+        float m0 = select(corner(convex0, d0, dq), dq, d4 >= 0), m2 = select(corner(convex2, dq, d3), dq, d5 >= 0);
         m = min(min(m0, m2), select(dq, 1e6, concave));
     } else {
         // The curve replaces its chord's lines, and control points have no corner.
         bool k0 = curves & Triangle::kControl0, k1 = curves & Triangle::kControl1, k2 = curves & Triangle::kControl2;
-        float l0 = select(select(vert.d0, dq, bool(lines & 1)), 1e6, k0), l1 = select(select(vert.d1, dq, bool(lines & 2)), 1e6, k0);
-        float l2 = select(select(vert.d2, dq, bool(lines & 4)), 1e6, k1), l3 = select(select(vert.d3, dq, bool(lines & 8)), 1e6, k1);
-        float l4 = select(select(vert.d4, dq, bool(lines & 16)), 1e6, k2), l5 = select(select(vert.d5, dq, bool(lines & 32)), 1e6, k2);
+        float l0 = select(select(d0, dq, bool(lines & 1)), 1e6, k0), l1 = select(select(d1, dq, bool(lines & 2)), 1e6, k0);
+        float l2 = select(select(d2, dq, bool(lines & 4)), 1e6, k1), l3 = select(select(d3, dq, bool(lines & 8)), 1e6, k1);
+        float l4 = select(select(d4, dq, bool(lines & 16)), 1e6, k2), l5 = select(select(d5, dq, bool(lines & 32)), 1e6, k2);
         m = min(corner(convex0, l0, l1), min(corner(convex1, l2, l3), corner(convex2, l4, l5)));
     }
     float winding = (clamp(m, -f, f) + f) * 0.5 / f;
@@ -282,5 +282,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     // it covers), so curves get the same line. The band the edge pass covers along curves' chords is further in.
     if (meshState.showPolygons && m >= f)
         winding = saturate(max(1.0, state.width) + f - m);
-    return vert.color * winding;
+    float4 color = unpack_unorm4x8_to_float(vert.color);
+    // The edge pass blends premultiplied colour (source factor one), so translucent paths must be premultiplied.
+    color.rgb *= color.a;
+    return color * winding;
 }
