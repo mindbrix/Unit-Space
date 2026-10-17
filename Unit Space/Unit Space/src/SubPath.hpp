@@ -256,9 +256,11 @@ struct SubPath {
         if (n < 2)
             return;
         auto near = [&](const float *a, const float *b) { return std::abs(a[0] - b[0]) < limit && std::abs(a[1] - b[1]) < limit; };
-        auto fade = [](float *control, const float *from, const float *to) {
-            control[0] += (to[0] - from[0]) * 0.5f, control[1] += (to[1] - from[1]) * 0.5f;
+        // Moves an end point, its quadratic's control moving half as far.
+        auto moveOnto = [](float *point, float *control, const float *to) {
+            control[0] += (to[0] - point[0]) * 0.5f, control[1] += (to[1] - point[1]) * 0.5f, point[0] = to[0], point[1] = to[1];
         };
+        auto straighten = [](float *quad) { quad[2] = (quad[0] + quad[4]) * 0.5f, quad[3] = (quad[1] + quad[5]) * 0.5f; };
         // Whether x lies within limit of the line through a and b.
         auto onLine = [&](const float *a, const float *x, const float *b) {
             float bx = b[0] - a[0], by = b[1] - a[1], cross = bx * (x[1] - a[1]) - by * (x[0] - a[0]);
@@ -273,22 +275,20 @@ struct SubPath {
         auto last = [&]() { return out.data() + out.size() - 2; };
         int run = -1;  // the first vertex of the current run of joined lines
         for (int k = 0; k < n; k++) {
-            const float *s = q + k * 4, *e = s + 4;
+            const float *e = q + k * 4 + 4;
             float *p = last();
-            if (near(p, e) && out.size() > 2 && k + 1 == n) {
-                if (closed && e[0] == q[0] && e[1] == q[1])
-                    fade(out.data() + 2, out.data(), p), out[0] = p[0], out[1] = p[1];
-                else
-                    fade(p - 2, p, e), p[0] = e[0], p[1] = e[1];
+            if (near(p, e) && (k + 1 < n || closed))
+                continue;
+            if (near(p, e) && out.size() > 2) {
+                moveOnto(p, p - 2, e);
                 continue;
             }
-            if (near(p, e) && k + 1 < n)
-                continue;
-            float control[2] = { s[2], s[3] };
-            fade(control, s, p);
-            if (between(p, control, e))
-                control[0] = (p[0] + e[0]) * 0.5f, control[1] = (p[1] + e[1]) * 0.5f;
-            if (out.size() > 2 && between(p, control, e) && between(p - 4, p - 2, p)) {
+            float quad[6] = { e[-4], e[-3], e[-2], e[-1], e[0], e[1] };
+            moveOnto(quad, quad + 2, p);
+            bool line = between(quad, quad + 2, quad + 4);
+            if (line)
+                straighten(quad);
+            if (out.size() > 2 && line && between(p - 4, p - 2, p)) {
                 bool on = true;
                 for (int j = run < 0 ? k : run; on && j <= k; j++)
                     on = onLine(p - 4, q + j * 4, e);
@@ -298,25 +298,24 @@ struct SubPath {
                     if (near(p - 4, e) && k + 1 < n)
                         out.resize(out.size() - 4), run = -1;
                     else
-                        p[-2] = (p[-4] + e[0]) * 0.5f, p[-1] = (p[-3] + e[1]) * 0.5f, p[0] = e[0], p[1] = e[1];
+                        p[0] = e[0], p[1] = e[1], straighten(p - 4);
                     continue;
                 }
             }
             run = -1;
-            out.insert(out.end(), { control[0], control[1], e[0], e[1] });
+            out.insert(out.end(), quad + 2, quad + 6);
         }
         // Closing on the start can bring the vertex before within limit of it in turn, so repeat until nothing moves.
         for (bool moved = closed; moved && out.size() > 6; ) {
             float *start = out.data(), *end = last();
             bool closes = end[0] == start[0] && end[1] == start[1];
             moved = true;
-            if (closes && near(end - 4, start)) {
-                out.resize(out.size() - 4), start = out.data(), end = last();
-                fade(start + 2, start, end), start[0] = end[0], start[1] = end[1];
-            } else if (!closes && near(end, start))
-                fade(start + 2, start, end), start[0] = end[0], start[1] = end[1];
-            else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
-                end[-2] = (end[-4] + start[0]) * 0.5f, end[-1] = (end[-3] + start[1]) * 0.5f, end[0] = start[0], end[1] = start[1];
+            if (near(closes ? end - 4 : end, start)) {
+                if (closes)
+                    out.resize(out.size() - 4), start = out.data(), end = last();
+                moveOnto(start, start + 2, end);
+            } else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
+                end[0] = start[0], end[1] = start[1], straighten(end - 4);
             else
                 moved = false;
         }
