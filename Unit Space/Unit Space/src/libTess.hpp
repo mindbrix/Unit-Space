@@ -597,9 +597,7 @@ struct libTess {
             // Boundary contours can carry microgeometry (vertices a few float ULPs apart, loops smaller than that) where
             // tight pieces of stroke outlines cross. The Delaunay pass asserts on it, so merge vertices closer than eps
             // and drop contours that collapse.
-            float extent = std::max(path._bounds.ux - path._bounds.lx, path._bounds.uy - path._bounds.ly);
-            float magnitude = std::max(std::max(std::abs(path._bounds.lx), std::abs(path._bounds.ux)), std::max(std::abs(path._bounds.ly), std::abs(path._bounds.uy)));
-            float eps = extent * 1e-5f + magnitude * 1e-6f;
+            float eps = vertexMergeLimit(path._bounds);
             contours.resize(0);
             vector<int> kept;
             for (int e = 0; e < nelems; e++) {

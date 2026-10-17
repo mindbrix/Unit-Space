@@ -6,8 +6,17 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 #import "Memory.hpp"
+#import <vector>
 
 constexpr int kPointStride = 2 * sizeof(float);
+// Points closer than this in both coordinates are one vertex to libTess, which merges them after its union. Paths merge
+// theirs first (Scene::addPath), so no curve loses the vertex it ends on. A fraction of the extent, plus float resolution
+// at the bounds' magnitude.
+static inline float vertexMergeLimit(const Bounds& b) {
+    float extent = std::max(b.ux - b.lx, b.uy - b.ly);
+    float magnitude = std::max(std::max(std::abs(b.lx), std::abs(b.ux)), std::max(std::abs(b.ly), std::abs(b.uy)));
+    return extent * 1e-5f + magnitude * 1e-6f;
+}
 // Edges are anti-aliased as implicit quadratics, so curves are no longer flattened into chords. Cubics still split
 // finely: where two curves run close, a coarse quadratic strays across the gap between them. Quadratics split only to
 // bound their turn, which bounds the size of their hull triangles (drawn and blended by the edge pass) and keeps
@@ -100,42 +109,6 @@ static void appendCubic(Memory<float>& quadratics, const float *cubic, float tol
         appendCubicPiece(quadratics, c, allowance, 0);
 }
 
-// Loads cubic i of src into c, starting where the last cubic in c ended, extended over the cubics after it that add
-// nothing: any whose points all lie within tinylimit of its end (compared with squared distances; glyphs often close with
-// several), which are dropped with the end left where it is, or that continue it exactly, the same curve run on to their
-// end with their end tangent. Returns the index of the last cubic it took in.
-static int mergeCubics(const float *src, int npoints, int i, float tinylimit, float *c) {
-    constexpr float kMergeLimit = 1e-3;
-    c[0] = c[6], c[1] = c[7];
-    memcpy(c + 2, src + i * 2 + 2, 6 * sizeof(float));
-    for (bool merged = true; merged && i + 3 < npoints - 1; ) {
-        const float *p = src + (i + 3) * 2;
-        auto near = [&](float x, float y) { return (x - c[6]) * (x - c[6]) + (y - c[7]) * (y - c[7]) < tinylimit; };
-        if (near(p[2], p[3]) && near(p[4], p[5]) && near(p[6], p[7])) {
-            i += 3;
-            continue;
-        }
-        merged = false;
-        float ax = c[6] - c[4], ay = c[7] - c[5], bx = p[2] - c[6], by = p[3] - c[7], dot = ax * bx + ay * by;
-        if (dot <= 0 || std::sqrt(dot * dot / ((ax * ax + ay * ay) * (bx * bx + by * by))) <= 0.99999)
-            break;
-        // The cubic run on past t = 1 until its last leg reaches the next cubic's first control.
-        float cx = p[2] - c[4], cy = p[3] - c[5], rt = 1.0 / std::sqrt((ax * ax + ay * ay) / (cx * cx + cy * cy)), e[8];
-        for (int k = 0; k < 2; k++) {
-            float n12 = lerp(rt, c[2 + k], c[4 + k]);
-            e[2 + k] = lerp(rt, c[k], c[2 + k]), e[4 + k] = lerp(rt, e[2 + k], n12), e[6 + k] = lerp(rt, e[4 + k], lerp(rt, n12, p[2 + k]));
-        }
-        // Merge only when that ends on the next end point with the next end tangent, so joins stay G1.
-        float dx = e[6] - p[6], dy = e[7] - p[7], ex = e[6] - e[4], ey = e[7] - e[5], fx = p[6] - p[4], fy = p[7] - p[5];
-        float d = ex * fx + ey * fy;
-        if (dx * dx + dy * dy < std::min(kMergeLimit, tinylimit * tinylimit) && d > 0 && d * d > 0.99999f * (ex * ex + ey * ey) * (fx * fx + fy * fy)) {
-            c[2] = e[2], c[3] = e[3], c[4] = e[4], c[5] = e[5], c[6] = p[6], c[7] = p[7];
-            i += 3, merged = true;
-        }
-    }
-    return i;
-}
-
 // The error a cubic's quadratics may have, and how far tangent-preserving pieces may stray from least-error ones
 // (zero for least-error pieces). Small curves (glyphs) show kinks far more than offsets, so their pieces keep the cubic's
 // tangents. Larger curves keep least-error pieces, as tangent-preserving ones stray one-sidedly by twice as far,
@@ -187,11 +160,12 @@ static int cubicInflections(const float *c, float tolerance, float *ts) {
 //
 // Converts a chain of cubics (p0, c, c, p1, c, c, p2 ...) to quadratics (p0, c, p1, c, p2 ...). tangents: keep the
 // cubics' tangents (see cubicTolerances), and the spikes of straight cubics, as stroke centrelines need.
-static Memory<float> splitCubics(const float *src, int npoints, const float precision, const float tinylimit, bool tangents) {
+static Memory<float> splitCubics(const float *src, int npoints, const float precision, bool tangents) {
     Memory<float> quadratics;
     float c[8] = { 0, 0, 0, 0, 0, 0, src[0], src[1] }, head[8], ts[3], tolerance, allowance;
     for (int i = 0; i < npoints - 1; i += 3) {
-        i = mergeCubics(src, npoints, i, tinylimit, c);
+        c[0] = c[6], c[1] = c[7];
+        memcpy(c + 2, src + i * 2 + 2, 6 * sizeof(float));
         // A straight cubic fills as its chord. Any part running on past an end doubles back along itself and encloses
         // nothing, but its pieces would not retrace each other exactly, leaving a sliver whose tip miters run off far
         // beyond the fill. One that ends where it starts is a point, and adds nothing.
@@ -247,17 +221,10 @@ struct SubPath {
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         
         if (type == kCubic) {
-            float w = _bounds.ux - _bounds.lx, h = _bounds.uy - _bounds.ly;
-            Memory<float> quadratics = splitCubics(points, npoints, precision, 1e-3 * (w < h ? w : h), tangents);
+            Memory<float> quadratics = splitCubics(points, npoints, precision, tangents);
             const int nfloats = (int)quadratics.count();
-            if (nfloats > 5) {
-                // A gap this small closes on the end, as dropped tiny cubics do, so the last curve keeps its line (an
-                // edge skewed by an ULP leaves the sweep in libTess nowhere to put its crossings).
-                float dx = quadratics[0] - quadratics[nfloats - 2], dy = quadratics[1] - quadratics[nfloats - 1];
-                if (dx * dx + dy * dy < 1e-3)
-                    quadratics[0] = quadratics[nfloats - 2], quadratics[1] = quadratics[nfloats - 1];
+            if (nfloats > 5)
                 _quadratics = subdivideQuadratics(& quadratics[0], nfloats / 2);
-            }
         } else if (type == kQuadratic) {
             if (npoints > 2)
                 _quadratics = subdivideQuadratics(points, npoints);
@@ -271,6 +238,81 @@ struct SubPath {
                 _quadratics.push_back(x1), _quadratics.push_back(y1);
             }
         }
+    }
+    
+    // Merges each run of on-curve points closer than limit into its first, as libTess would, dropping the quadratics
+    // between them. The gap fades along the quadratic after (its control moves half as far), so lines stay straight; the
+    // last has none after it, so the one before takes its end. A closed subpath's end then closes exactly on its start.
+    // Consecutive lines join while every vertex between stays within limit of the joined line, so neither moves the
+    // outline further than limit. That includes a line doubling back on the one before, a spike enclosing nothing, and
+    // the closing line libTess adds from a closed subpath's end to its start.
+    void mergeVertices(float limit, bool closed) {
+        const float *q = _quadratics.get();
+        int n = ((int)_quadratics.count() - 2) / 4;
+        if (n < 2)
+            return;
+        auto near = [&](const float *a, const float *b) { return std::abs(a[0] - b[0]) < limit && std::abs(a[1] - b[1]) < limit; };
+        auto fade = [](float *control, const float *from, const float *to) {
+            control[0] += (to[0] - from[0]) * 0.5f, control[1] += (to[1] - from[1]) * 0.5f;
+        };
+        // Whether x lies within limit of the line through a and b, and whether it also lies between them.
+        auto onLine = [&](const float *a, const float *x, const float *b) {
+            float bx = b[0] - a[0], by = b[1] - a[1], cross = bx * (x[1] - a[1]) - by * (x[0] - a[0]);
+            return cross * cross < limit * limit * (bx * bx + by * by);
+        };
+        auto between = [&](const float *a, const float *x, const float *b) {
+            float bx = b[0] - a[0], by = b[1] - a[1], dot = bx * (x[0] - a[0]) + by * (x[1] - a[1]);
+            return onLine(a, x, b) && dot > 0 && dot < bx * bx + by * by;
+        };
+        std::vector<float> out(q, q + 2);
+        auto last = [&]() { return out.data() + out.size() - 2; };
+        int run = -1;  // the first vertex of the current run of joined lines
+        for (int k = 0; k < n; k++) {
+            const float *s = q + k * 4, *e = s + 4;
+            float *p = last();
+            if (near(p, e) && out.size() > 2 && k + 1 == n) {
+                fade(p - 2, p, e), p[0] = e[0], p[1] = e[1];
+                continue;
+            }
+            if (near(p, e) && k + 1 < n)
+                continue;
+            float control[2] = { s[2], s[3] };
+            fade(control, s, p);
+            if (out.size() > 2 && between(p, control, e) && between(p - 4, p - 2, p)) {
+                bool on = true;
+                for (int j = run < 0 ? k : run; on && j <= k; j++)
+                    on = onLine(p - 4, q + j * 4, e);
+                if (on) {
+                    run = run < 0 ? k : run;
+                    // A spike folding back within limit of where it started goes altogether.
+                    if (near(p - 4, e) && k + 1 < n)
+                        out.resize(out.size() - 4), run = -1;
+                    else
+                        p[-2] = (p[-4] + e[0]) * 0.5f, p[-1] = (p[-3] + e[1]) * 0.5f, p[0] = e[0], p[1] = e[1];
+                    continue;
+                }
+            }
+            run = -1;
+            out.insert(out.end(), { control[0], control[1], e[0], e[1] });
+        }
+        // Closing on the start can bring the vertex before within limit of it in turn, so repeat until nothing moves.
+        for (bool moved = closed; moved && out.size() > 6; ) {
+            float *start = out.data(), *end = last();
+            bool closes = end[0] == start[0] && end[1] == start[1];
+            moved = true;
+            if (closes && near(end - 4, start)) {
+                out.resize(out.size() - 4), end = last();
+                fade(end - 2, end, start), end[0] = start[0], end[1] = start[1];
+            } else if (!closes && near(end, start))
+                fade(end - 2, end, start), end[0] = start[0], end[1] = start[1];
+            else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
+                end[-2] = (end[-4] + start[0]) * 0.5f, end[-1] = (end[-3] + start[1]) * 0.5f, end[0] = start[0], end[1] = start[1];
+            else
+                moved = false;
+        }
+        Memory<float> merged;
+        memcpy(merged.new_ptr(out.size()), out.data(), out.size() * sizeof(float));
+        _quadratics = merged;
     }
     
     int pointWinding(float x, float y) {

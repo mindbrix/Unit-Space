@@ -88,6 +88,10 @@ struct Scene {
 
     void addPath(Path& path, AffineTransform *CTM = nullptr) {
         if (path._subPaths.size() != 0) {
+            // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
+            float limit = vertexMergeLimit(path._bounds);
+            for (SubPath& s : path._subPaths)
+                s.mergeVertices(limit, true);
             if (_paths.size() == 0)
                 _bounds = path._bounds;
             _bounds.unite(path._bounds);
@@ -225,6 +229,7 @@ struct Scene {
             if (stroked && !_cgStroker) {
                 // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth.
                 SubPath c(pts, path->npts, SubPath::kCubic, true);
+                c.mergeVertices(vertexMergeLimit(c._bounds), path->closed);
                 // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
                 bool point = c._quadratics.count() == 0 && path->npts > 0;
                 for (int i = 1; point && i < path->npts; i++)
