@@ -649,7 +649,9 @@ struct libTess {
         vector<int> same;
         unordered_map<uint64_t, int> heads;
         for (int p = begin; p < end; p++) {
-            Path& path = scene._paths[p];
+            // A copy, which refineChords() changes: the scene keeps its paths as built, so triangulating it again (after
+            // every edit) gives the same mesh. Copies share their quadratics until refineChords() replaces them.
+            Path path = scene._paths[p];
             float lx, ly, rw, rh;
             lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
             ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);

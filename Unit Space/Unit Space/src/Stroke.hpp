@@ -30,7 +30,7 @@ struct Stroke {
         dashes.assign(lengths, lengths + count);
         if (count & 1)
             dashes.insert(dashes.end(), lengths, lengths + count);
-        float period = 0;
+        period = 0;
         for (float d : dashes)
             period += std::max(0.f, d);
         if (period <= 0)
@@ -38,9 +38,11 @@ struct Stroke {
         dashOffset = period > 0 ? std::fmod(std::fmod(offset, period) + period, period) : 0;
     }
 
-    // q is a quadratic chain: p0, c0, p1, c1, p2 ... (npoints odd).
-    void addSubPath(const float *q, int npoints, bool closed) {
-        if (dashes.size() == 0 || npoints < 3)
+    // q is a quadratic chain: p0, c0, p1, c1, p2 ... (npoints odd), and limit its vertex merge limit. A dash pattern
+    // whose period is within limit is finer than vertices can resolve, which would merge its dashes away, so the chain
+    // strokes solid. Coarser periods each advance the arc length by many float steps, so dashing always progresses.
+    void addSubPath(const float *q, int npoints, bool closed, float limit) {
+        if (dashes.size() == 0 || npoints < 3 || period <= limit)
             addSolid(q, npoints, closed);
         else
             addDashed(q, npoints, closed);
@@ -433,5 +435,5 @@ private:
     vector<Piece> pieces;
     vector<bool> sharp;
     vector<float> chain, dashes;
-    float dashOffset = 0;
+    float period = 0, dashOffset = 0;
 };

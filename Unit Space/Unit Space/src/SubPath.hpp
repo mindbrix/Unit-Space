@@ -17,6 +17,10 @@ static inline float vertexMergeLimit(const Bounds& b) {
     float magnitude = std::max(std::max(std::abs(b.lx), std::abs(b.ux)), std::max(std::abs(b.ly), std::abs(b.uy)));
     return extent * 1e-5f + magnitude * 1e-6f;
 }
+// The largest coordinate magnitude geometry may have. Straightness and turn tests compare squared cross products with
+// products of squared lengths: fourth powers of differences, each up to twice it, so 64 times its fourth power at most.
+// Beyond it they overflow, curves test as straight, and further on the tessellator's own products fail too.
+static inline float coordinateLimit() { static const float limit = std::sqrt(std::sqrt(FLT_MAX / 64)); return limit; }
 // Edges are anti-aliased as implicit quadratics, so curves are no longer flattened into chords. Cubics still split
 // finely: where two curves run close, a coarse quadratic strays across the gap between them. Quadratics split only to
 // bound their turn, which bounds the size of their hull triangles (drawn and blended by the edge pass) and keeps
@@ -113,11 +117,14 @@ static void appendCubic(Memory<float>& quadratics, const float *cubic, float tol
 // (zero for least-error pieces). Small curves (glyphs) show kinks far more than offsets, so their pieces keep the cubic's
 // tangents. Larger curves keep least-error pieces, as tangent-preserving ones stray one-sidedly by twice as far,
 // shifting whole outlines.
-static void cubicTolerances(const float *c, float precision, bool tangents, float *tolerance, float *allowance) {
+// The error is no finer than limit, the subpath's vertex merge limit, which merges any finer detail away. That also
+// bounds a cubic's pieces at any size or magnitude: its third difference is at most 8 times its subpath's extent, and
+// limit is at least 1e-5 of that extent, so appendCubic() makes at most cbrt(8 / (1e-5 * 18 / sqrt(3))), 43, of them.
+static void cubicTolerances(const float *c, float precision, float limit, bool tangents, float *tolerance, float *allowance) {
     float length = std::sqrt((c[2] - c[0]) * (c[2] - c[0]) + (c[3] - c[1]) * (c[3] - c[1])) + std::sqrt((c[4] - c[2]) * (c[4] - c[2]) + (c[5] - c[3]) * (c[5] - c[3]))
         + std::sqrt((c[6] - c[4]) * (c[6] - c[4]) + (c[7] - c[5]) * (c[7] - c[5]));
     float relative = kSplitCubicRelative * length;
-    *tolerance = std::min(precision, relative);
+    *tolerance = std::max(std::min(precision, relative), limit);
     *allowance = relative < kCubicTangentSize * precision ? kCubicTangentSlack * relative : 0;
     // A control on its end point (common in Illustrator art) leaves the cubic's end tangent heading for the other
     // control, which the least-error control ignores: its quadratic hooks off the tangent, then runs straight. Such
@@ -159,8 +166,9 @@ static int cubicInflections(const float *c, float tolerance, float *ts) {
 // Source: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
 //
 // Converts a chain of cubics (p0, c, c, p1, c, c, p2 ...) to quadratics (p0, c, p1, c, p2 ...). tangents: keep the
-// cubics' tangents (see cubicTolerances), and the spikes of straight cubics, as stroke centrelines need.
-static Memory<float> splitCubics(const float *src, int npoints, const float precision, bool tangents) {
+// cubics' tangents (see cubicTolerances), and the spikes of straight cubics, as stroke centrelines need. limit: the
+// chain's vertex merge limit.
+static Memory<float> splitCubics(const float *src, int npoints, const float precision, float limit, bool tangents) {
     Memory<float> quadratics;
     float c[8] = { 0, 0, 0, 0, 0, 0, src[0], src[1] }, head[8], ts[3], tolerance, allowance;
     for (int i = 0; i < npoints - 1; i += 3) {
@@ -172,7 +180,7 @@ static Memory<float> splitCubics(const float *src, int npoints, const float prec
         if (!tangents && isStraightCubic(c))
             for (int k = 0; k < 2; k++)
                 c[2 + k] = lerp(1.f / 3.f, c[k], c[6 + k]), c[4 + k] = lerp(2.f / 3.f, c[k], c[6 + k]);
-        cubicTolerances(c, precision, tangents, & tolerance, & allowance);
+        cubicTolerances(c, precision, limit, tangents, & tolerance, & allowance);
         // Inflections split first, so every tangent-preserving piece is convex and its end tangents meet ahead of both ends.
         int n = allowance && !isStraightCubic(c) ? cubicInflections(c, tolerance, ts) : 0;
         ts[n++] = 1;
@@ -215,12 +223,15 @@ struct SubPath {
     
     SubPath() {}
     // tangents: cubics convert to tangent-preserving quadratics (see splitCubics).
+    // Subpaths beyond coordinateLimit() are left empty, so paths drop them.
     SubPath(const float *points, const int npoints, Type type, bool tangents = false) {
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
-        
+        float limit = coordinateLimit();
+        if (!(_bounds.lx >= -limit && _bounds.ux <= limit && _bounds.ly >= -limit && _bounds.uy <= limit))
+            return;
         if (type == kCubic) {
-            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, tangents);
+            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, vertexMergeLimit(_bounds), tangents);
             const int nfloats = (int)quadratics.count();
             if (nfloats > 5)
                 _quadratics = subdivideQuadratics(& quadratics[0], nfloats / 2);

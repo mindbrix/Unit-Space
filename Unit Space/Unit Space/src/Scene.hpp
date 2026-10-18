@@ -157,15 +157,16 @@ struct Scene {
             if (stroked) {
                 // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth.
                 SubPath c(pts, path->npts, SubPath::kCubic, true);
-                c.mergeVertices(vertexMergeLimit(c._bounds), path->closed);
+                float limit = vertexMergeLimit(c._bounds);
+                c.mergeVertices(limit, path->closed);
                 // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
                 bool point = c._quadratics.count() == 0 && path->npts > 0;
                 for (int i = 1; point && i < path->npts; i++)
                     point = pts[i * 2] == pts[0] && pts[i * 2 + 1] == pts[1];
                 if (point)
-                    stroke.addSubPath(pts, 1, path->closed);
+                    stroke.addSubPath(pts, 1, path->closed, limit);
                 else
-                    stroke.addSubPath(c._quadratics.get(), (int)c._quadratics.count() / 2, path->closed);
+                    stroke.addSubPath(c._quadratics.get(), (int)c._quadratics.count() / 2, path->closed, limit);
             }
         }
         if (filled)
