@@ -83,7 +83,7 @@ struct Scene {
                             *dst++ = px = vertex->x, *dst++ = py = vertex->y;
                         }
                         
-                        Path p(false, false, 0, RGBA8(0, 0, 0, 255));
+                        Path p(false, false, RGBA8(0, 0, 0, 255));
                         for (base = bases, j = 0; j < ncontours; j++, base++) {
                             begin = *base;
                             end = j + 1 == ncontours ? count : *(base + 1);
@@ -129,9 +129,9 @@ struct Scene {
     // so it can be edited and added again.
     void addShape(NSVGshape *shape, float height, int source) {
         bool filled = shape->fill.type != NSVG_PAINT_NONE, stroked = shape->stroke.type != NSVG_PAINT_NONE && shape->strokeWidth > 0;
-        Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
+        Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
         // Strokes are filled outlines (nonzero), painted over the fill.
-        Path strokePath(true, false, 0, stroked ? paintColor(shape->stroke, shape->opacity) : RGBA8());
+        Path strokePath(true, false, stroked ? paintColor(shape->stroke, shape->opacity) : RGBA8());
         strokePath._outline = true, strokePath._penWidth = shape->strokeWidth;
         p._source = strokePath._source = source;
         Stroke stroke(strokePath, shape->strokeWidth,

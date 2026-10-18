@@ -506,8 +506,8 @@ static bool closesOnStart(NSVGpath *path) {
     }
     float square[10] = { 0, -0.5, 1, -0.5, 1, 0.5, 0, 0.5, 0, -0.5 };
     Scene templates;
-    Path line(true, false, 0, RGBA8::Black(), { SubPath(square, 5, SubPath::kLine) });
-    Path dot(true, false, 0, RGBA8::Black(), { SubPath(circle, 17, SubPath::kQuadratic) });
+    Path line(true, false, RGBA8::Black(), { SubPath(square, 5, SubPath::kLine) });
+    Path dot(true, false, RGBA8::Black(), { SubPath(circle, 17, SubPath::kQuadratic) });
     templates.addPath(line), templates.addPath(dot);
     libTess::triangulatePaths(_handleTemplates, templates, 0, 2);
 }
@@ -655,7 +655,7 @@ static bool closesOnStart(NSVGpath *path) {
 
 - (void)triangulate {
     if (_svgData == nil && _fontData == nil) {
-        Path p(true, false, 0, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
+        Path p(true, false, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
         _scene.empty();
         _scene.addPath(p);
     }

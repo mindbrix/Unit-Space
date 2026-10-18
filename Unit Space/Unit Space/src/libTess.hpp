@@ -28,36 +28,7 @@ constexpr float kLineTurnLimit = LINE_TURN_LIMIT;
 struct libTess {
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
-            if (path._strokeWidth) {
-                float w, x0, y0, x1, y1, x2, y2, *q, *qend, dx, dy, l, nx, ny, pnx, pny, det;
-                w = path._strokeWidth * 0.5, pnx = pny = 0;
-                q = s._quadratics.get(), qend = q + s._quadratics.count();
-                if (path._closed) {
-                    x0 = *(qend - 6), y0 = *(qend - 5), x2 = *(qend - 2), y2 = *(qend - 1);
-                    dx = x2 - x0, dy = y2 - y0, l = std::sqrt(dx * dx + dy * dy), pnx = -dy / l, pny = dx / l;
-    
-                    x0 = *(qend - 2), y0 = *(qend - 1), x2 = *q++, y2 = *q++, x1 = (x0 + x2) * 0.5, y1 = (y0 + y2) * 0.5;
-                } else
-                    x0 = *q++, y0 = *q++, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
-                while (q <= qend) {
-                    if (x0 != x2 || y0 != y2) {
-                        dx = x2 - x0, dy = y2 - y0, l = std::sqrt(dx * dx + dy * dy), nx = -dy / l, ny = dx / l;
-                        det = pnx * ny - pny * nx;
-                        float polygon[10] = {
-                            x0 + nx * w, y0 + ny * w,
-                            det == 0 ? x0 : det < 0 ? x0 + pnx * w : x0 - pnx * w, det == 0 ? y0 : det < 0 ? y0 + pny * w : y0 - pny * w,
-                            x0 - nx * w, y0 - ny * w,
-                            x2 - nx * w, y2 - ny * w,
-                            x2 + nx * w, y2 + ny * w,
-                        };
-                        tessAddContour(dst, 2, polygon, kPointStride, 5);
-                        
-                        pnx = nx, pny = ny;
-                    }
-                    x0 = x2, y0 = y2, x1 = *q++, y1 = *q++, x2 = *q++, y2 = *q++;
-                }
-            } else
-                tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
+            tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
     }
         
     // The path quadratic joining two contour vertices, if there is one.
@@ -69,7 +40,7 @@ struct libTess {
     
     // Maps tessellator input vertices back to a path's quadratics. Each subpath adds its on-curve points in order.
     struct PathVertices {
-        PathVertices(Path& path) : stroked(path._strokeWidth != 0) {
+        PathVertices(Path& path) {
             int base = 0;
             for (SubPath& s : path._subPaths) {
                 bases.push_back(base), subPaths.push_back(& s);
@@ -81,7 +52,7 @@ struct libTess {
         // their runs exactly), returning just one of their indices, so try every input vertex at each position.
         Segment segment(TESSindex a, TESSindex b, const float *pa, const float *pb) {
             Segment seg = segment(a, b);
-            if (seg.found || stroked || a == TESS_UNDEF || b == TESS_UNDEF)
+            if (seg.found || a == TESS_UNDEF || b == TESS_UNDEF)
                 return seg;
             // Most paths have no merged vertices, so only index positions once a lookup misses.
             if (!indexed) {
@@ -102,7 +73,7 @@ struct libTess {
         // The segment joining input vertices a and b, if they are neighbours on the same subpath.
         Segment segment(TESSindex a, TESSindex b) {
             Segment seg;
-            if (stroked || a == TESS_UNDEF || b == TESS_UNDEF)
+            if (a == TESS_UNDEF || b == TESS_UNDEF)
                 return seg;
             int sp = int(upper_bound(bases.begin(), bases.end(), (int)a) - bases.begin()) - 1, la, lb, first;
             if (sp < 0 || (int)b < bases[sp] || (int)b >= bases[sp + 1])
@@ -127,7 +98,7 @@ struct libTess {
             memcpy(& ux, & x, 4), memcpy(& uy, & y, 4);
             return (uint64_t)ux << 32 | uy;
         }
-        bool stroked, indexed = false;
+        bool indexed = false;
         vector<int> bases;
         vector<SubPath *> subPaths;
         unordered_map<uint64_t, vector<int>> positions;
@@ -585,8 +556,7 @@ struct libTess {
             _idxs.emplace_back((int)_tris.size());
             
             // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
-            if (!path._strokeWidth)
-                refineChords(path);
+            refineChords(path);
             PathVertices pv(path);
             addPathContours(tess, path);
             if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
