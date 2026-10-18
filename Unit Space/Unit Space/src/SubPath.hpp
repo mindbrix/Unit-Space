@@ -26,7 +26,7 @@ static inline float vertexMergeLimit(const Bounds& b) {
 #endif
 // A cubic's quadratic approximation may stray by kSplitCubicPrecision path units, or by kSplitCubicRelative of the
 // cubic's own control polygon length if that is smaller: small glyphs need far tighter tolerances than maps.
-constexpr float kSplitCubicPrecision = 0.25, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE, kQuadraticTurnLimit = 1.5707963268; // 90 degrees
+constexpr float kSplitCubicPrecision = 0.25, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE;
 // Cubics whose relative tolerance is below kCubicTangentSize of kSplitCubicPrecision (control polygons shorter than
 // 5 units: glyphs) split into tangent-preserving quadratics, which may stray kCubicTangentSlack times further.
 constexpr float kCubicTangentSize = 0.2, kCubicTangentSlack = 1;
@@ -328,7 +328,7 @@ struct SubPath {
         return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4 + 1, kPointStride * 2);
     }
     
-    // Splits each quadratic at t = 1/2 until it turns by at most kQuadraticTurnLimit.
+    // Splits each quadratic at t = 1/2 until it turns by at most a right angle, when its legs' dot product is not negative.
     static Memory<float> subdivideQuadratics(const float *points, int npoints) {
         Memory<float> quadratics;
         quadratics.push_back(points[0]), quadratics.push_back(points[1]);
@@ -339,8 +339,7 @@ struct SubPath {
     
     static void subdivideQuadratic(Memory<float>& quadratics, const float *q, int depth) {
         float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3];
-        float la = ax * ax + ay * ay, lb = bx * bx + by * by;
-        if (depth < 8 && la > 0 && lb > 0 && ax * bx + ay * by < std::cos(kQuadraticTurnLimit) * std::sqrt(la * lb)) {
+        if (depth < 8 && ax * bx + ay * by < 0) {
             float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
             float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
             const float a[6] = { q[0], q[1], x01, y01, x, y }, b[6] = { x, y, x12, y12, q[4], q[5] };

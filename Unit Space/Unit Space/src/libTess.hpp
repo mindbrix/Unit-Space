@@ -17,13 +17,14 @@
 
 constexpr TESSreal kTESSNormal[4] = { 0.0, 0.0, 1.0 };
 constexpr int kPolySize = 3;
-#ifndef LINE_TURN_LIMIT
-#define LINE_TURN_LIMIT 0.0174532925 // 1 degree
+#ifndef LINE_TURN_SINE
+#define LINE_TURN_SINE 0.0174524064 // sin(1 degree)
 #endif
-// Curves whose tangents turn by less than this are drawn as lines (radians). Each curve costs a hull triangle, so
-// nearly straight ones are cheaper as lines. It is an angle rather than a distance so it is independent of scale:
-// a distance in path units that suits a map leaves small text faceted.
-constexpr float kLineTurnLimit = LINE_TURN_LIMIT;
+// Curves whose tangents turn by less than the angle with this sine are drawn as lines. Each curve costs a hull
+// triangle, so nearly straight ones are cheaper as lines. It is an angle rather than a distance so it is independent
+// of scale: a distance in path units that suits a map leaves small text faceted. Turns are measured by the sine, from
+// cross products, so it is kept as one.
+constexpr float kLineTurnSine = LINE_TURN_SINE;
 
 struct libTess {
     // The tessellators' memory for one dispatch_apply() slice. libTess builds and frees a mesh, a dictionary and queues
@@ -148,12 +149,18 @@ struct libTess {
         bool curved, concave;   // concave: the control point lies inside the fill, so the curve bows inward
     };
     
-    // Lines carry their midpoint as control, and curves turning less than kLineTurnLimit are drawn as lines too.
+    // Lines carry their midpoint as control, and curves turning less than kLineTurnSine are drawn as lines too.
     // Boundary contours keep the fill on their left, so a control point left of its chord is concave.
+    // A line is what mergeVertices() makes one: it straightens every quadratic within the merge limit of its chord to
+    // the chord's midpoint, as lines are written. Measuring a line's turn instead would overrule it, as short legs
+    // cannot resolve kLineTurnSine: rounding the midpoint alone turns a chord under a hundred float steps by more.
+    // The legs turn by more than the limit if they turn back, or if the sine of their turn, |a x b| / (|a| |b|), exceeds it.
     static bool isCurved(float x0, float y0, float cx, float cy, float x2, float y2) {
-        float ax = cx - x0, ay = cy - y0, bx = x2 - cx, by = y2 - cy;
-        float turn = std::atan2(std::abs(ax * by - ay * bx), ax * bx + ay * by);
-        return (ax != 0 || ay != 0) && (bx != 0 || by != 0) && turn > kLineTurnLimit;
+        if (cx == (x0 + x2) * 0.5f && cy == (y0 + y2) * 0.5f)
+            return false;
+        float ax = cx - x0, ay = cy - y0, bx = x2 - cx, by = y2 - cy, cross = ax * by - ay * bx;
+        return (ax != 0 || ay != 0) && (bx != 0 || by != 0)
+            && (ax * bx + ay * by <= 0 || cross * cross > kLineTurnSine * kLineTurnSine * (ax * ax + ay * ay) * (bx * bx + by * by));
     }
     static void classify(ContourSegment& s, float ex, float ey) {
         s.curved = isCurved(s.x, s.y, s.cx, s.cy, ex, ey);
@@ -809,10 +816,10 @@ struct libTess {
                     convex[1] = false;
                 // The joins' convexity follows the tangents: the fill is on the left, so a left turn is convex. Smooth joins
                 // (tangent-preserving quadratics) have no turn to measure, so they take the curve's own convexity.
-                float cx = h.c.x, cy = h.c.y, sine = std::sin(kLineTurnLimit);
+                float cx = h.c.x, cy = h.c.y;
                 auto turn = [&](float ax, float ay, float bx, float by) {
                     float cross = ax * by - ay * bx;
-                    return cross * cross <= sine * sine * (ax * ax + ay * ay) * (bx * bx + by * by) ? !h.concave : cross > 0;
+                    return cross * cross <= kLineTurnSine * kLineTurnSine * (ax * ax + ay * ay) * (bx * bx + by * by) ? !h.concave : cross > 0;
                 };
                 bool start = turn(h.p0.x - h.tpx, h.p0.y - h.tpy, cx - h.p0.x, cy - h.p0.y);
                 bool end = turn(h.p2.x - cx, h.p2.y - cy, h.tnx - h.p2.x, h.tny - h.p2.y);
