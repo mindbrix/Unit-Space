@@ -10,7 +10,6 @@
 #import "Memory.hpp"
 #import "Path.hpp"
 #import "Stroke.hpp"
-#import <CoreGraphics/CoreGraphics.h>
 #import "Mesh.hpp"
 #define NANOSVG_IMPLEMENTATION    // Expands implementation
 #import "nanosvg.h"
@@ -19,73 +18,6 @@
 
 
 struct Scene {
-    // Core Graphics strokes the shape's centreline, and its outline becomes the stroke path's cubic subpaths (lines and
-    // quadratics raised to cubics), so strokes share the fills' cubic conversion.
-    static void addCGStroke(Path& out, CGPathRef centreline, NSVGshape *shape) {
-        CGPathRef dashed = nullptr;
-        if (shape->strokeDashCount > 0) {
-            // An odd dash list repeats to make an even one.
-            int count = shape->strokeDashCount * (shape->strokeDashCount & 1 ? 2 : 1);
-            vector<CGFloat> lengths(count);
-            for (int i = 0; i < count; i++)
-                lengths[i] = shape->strokeDashArray[i % shape->strokeDashCount];
-            dashed = CGPathCreateCopyByDashingPath(centreline, nullptr, shape->strokeDashOffset, lengths.data(), count);
-        }
-        CGLineCap cap = shape->strokeLineCap == NSVG_CAP_ROUND ? kCGLineCapRound : shape->strokeLineCap == NSVG_CAP_SQUARE ? kCGLineCapSquare : kCGLineCapButt;
-        CGLineJoin join = shape->strokeLineJoin == NSVG_JOIN_ROUND ? kCGLineJoinRound : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? kCGLineJoinBevel : kCGLineJoinMiter;
-        CGPathRef outline = CGPathCreateCopyByStrokingPath(dashed ? dashed : centreline, nullptr, shape->strokeWidth, cap, join, shape->miterLimit);
-        // Relative to the pen, as an outline's two sides are only its width apart, however long its cubics.
-        float precision = std::min(kSplitCubicPrecision, 0.01f * shape->strokeWidth);
-        vector<float> pts;
-        auto add = [&]() {
-            if (pts.size() > 2) {
-                SubPath s(pts.data(), (int)pts.size() / 2, SubPath::kCubic, false, precision);
-                out.addSubPath(s);
-            }
-            pts.resize(0);
-        };
-        auto cubic = [&](float x1, float y1, float x2, float y2, float x3, float y3) { pts.insert(pts.end(), { x1, y1, x2, y2, x3, y3 }); };
-        auto move = [&](float x, float y) { add(), pts.insert(pts.end(), { x, y }); };
-        auto line = [&](float x, float y) {
-            float x0 = pts[pts.size() - 2], y0 = pts[pts.size() - 1];
-            cubic(x0 + (x - x0) / 3, y0 + (y - y0) / 3, x0 + (x - x0) * 2 / 3, y0 + (y - y0) * 2 / 3, x, y);
-        };
-        auto quad = [&](float cx, float cy, float x, float y) {
-            float x0 = pts[pts.size() - 2], y0 = pts[pts.size() - 1];
-            cubic(x0 + (cx - x0) * 2 / 3, y0 + (cy - y0) * 2 / 3, x + (cx - x) * 2 / 3, y + (cy - y) * 2 / 3, x, y);
-        };
-        auto close = [&]() {
-            if (pts.size() > 2 && (pts[0] != pts[pts.size() - 2] || pts[1] != pts[pts.size() - 1]))
-                line(pts[0], pts[1]);
-            add();
-        };
-        // The block holds copies of the lambdas, which still refer to pts.
-        CGPathApplyWithBlock(outline, ^(const CGPathElement *e) {
-            const CGPoint *p = e->points;
-            switch (e->type) {
-                case kCGPathElementMoveToPoint:
-                    move(p[0].x, p[0].y);
-                    break;
-                case kCGPathElementAddLineToPoint:
-                    line(p[0].x, p[0].y);
-                    break;
-                case kCGPathElementAddQuadCurveToPoint:
-                    quad(p[0].x, p[0].y, p[1].x, p[1].y);
-                    break;
-                case kCGPathElementAddCurveToPoint:
-                    cubic(p[0].x, p[0].y, p[1].x, p[1].y, p[2].x, p[2].y);
-                    break;
-                case kCGPathElementCloseSubpath:
-                    close();
-                    break;
-            }
-        });
-        add();
-        CGPathRelease(outline);
-        if (dashed)
-            CGPathRelease(dashed);
-    }
-
     void addPath(Path& path, AffineTransform *CTM = nullptr) {
         if (path._subPaths.size() != 0) {
             // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
@@ -200,18 +132,14 @@ struct Scene {
         Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, 0, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
         // Strokes are filled outlines (nonzero), painted over the fill.
         Path strokePath(true, false, 0, stroked ? paintColor(shape->stroke, shape->opacity) : RGBA8());
-        strokePath._outline = true;
+        strokePath._outline = true, strokePath._penWidth = shape->strokeWidth;
         p._source = strokePath._source = source;
-        // Either Stroke expands the centreline, or Core Graphics strokes it (see addCGStroke).
         Stroke stroke(strokePath, shape->strokeWidth,
                       shape->strokeLineJoin == NSVG_JOIN_ROUND ? Stroke::kRound : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? Stroke::kBevel : Stroke::kMiter,
                       shape->strokeLineCap == NSVG_CAP_ROUND ? Stroke::kRoundCap : shape->strokeLineCap == NSVG_CAP_SQUARE ? Stroke::kSquare : Stroke::kButt,
                       shape->miterLimit);
-        if (!_cgStroker)
-            strokePath._penWidth = shape->strokeWidth;
         if (shape->strokeDashCount > 0)
             stroke.setDashes(shape->strokeDashArray, shape->strokeDashCount, shape->strokeDashOffset);
-        CGMutablePathRef centreline = CGPathCreateMutable();
         vector<float> buffer;
         for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
             // Parser output can be non-finite (degenerate arcs), which would poison bounds and tessellation.
@@ -226,7 +154,7 @@ struct Scene {
                 pts[i * 2 + 1] = height - pts[i * 2 + 1];
             SubPath s(pts, path->npts, SubPath::kCubic);
             p.addSubPath(s);
-            if (stroked && !_cgStroker) {
+            if (stroked) {
                 // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth.
                 SubPath c(pts, path->npts, SubPath::kCubic, true);
                 c.mergeVertices(vertexMergeLimit(c._bounds), path->closed);
@@ -238,32 +166,15 @@ struct Scene {
                     stroke.addSubPath(pts, 1, path->closed);
                 else
                     stroke.addSubPath(c._quadratics.get(), (int)c._quadratics.count() / 2, path->closed);
-            } else if (stroked) {
-                CGPathMoveToPoint(centreline, nullptr, pts[0], pts[1]);
-                // nanosvg's lines are cubics, which Core Graphics would stroke as curves, splitting them.
-                for (int i = 1; i + 2 < path->npts; i += 3) {
-                    const float *q = pts + i * 2;
-                    if (isStraightCubic(q - 2))
-                        CGPathAddLineToPoint(centreline, nullptr, q[4], q[5]);
-                    else
-                        CGPathAddCurveToPoint(centreline, nullptr, q[0], q[1], q[2], q[3], q[4], q[5]);
-                }
-                if (path->closed)
-                    CGPathCloseSubpath(centreline);
             }
         }
         if (filled)
             addPath(p);
-        if (stroked) {
-            if (_cgStroker)
-                addCGStroke(strokePath, centreline, shape);
+        if (stroked)
             addPath(strokePath);
-        }
-        CGPathRelease(centreline);
     }
     void empty() { _paths.resize(0), _CTMs.resize(0); }
     
-    bool                    _cgStroker = false;     // SVG strokes by Core Graphics rather than Stroke
     vector<Path>            _paths;
     vector<AffineTransform> _CTMs;
     Bounds                  _bounds;

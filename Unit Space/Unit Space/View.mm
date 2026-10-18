@@ -296,14 +296,6 @@ struct EditHandle {
     [self redraw];
 }
 
-// Rebuilds the SVG with the other stroker: Stroke's outlines, or Core Graphics'.
-- (IBAction)toggleCGStroker:(id)sender {
-    _scene._cgStroker = !_scene._cgStroker;
-    NSLog(@"Strokes by %@", _scene._cgStroker ? @"Core Graphics" : @"Stroke");
-    if (_svgData)
-        [self setSvgData:_svgData];
-}
-
 #pragma mark - Inspector
 
 // Hovering highlights the topmost path under the mouse and describes it in the window's subtitle; clicking selects it (or
@@ -467,7 +459,6 @@ static bool closesOnStart(NSVGpath *path) {
     while (end < (int)_scene._paths.size() && _scene._paths[end]._source == source)
         end++;
     Scene edited;
-    edited._cgStroker = _scene._cgStroker;
     edited.addShape(shape, _svgImage->height, source);
     if (edited._paths.size() != size_t(end - begin)) {
         // A path came or went (it lost all its subpaths, or regained them): the scene's indices change.

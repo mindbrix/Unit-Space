@@ -214,14 +214,13 @@ struct SubPath {
     enum Type { kLine, kQuadratic, kCubic };
     
     SubPath() {}
-    // tangents: cubics convert to tangent-preserving quadratics (see splitCubics). precision: the most their quadratics
-    // may stray, in path units.
-    SubPath(const float *points, const int npoints, Type type, bool tangents = false, float precision = kSplitCubicPrecision) {
+    // tangents: cubics convert to tangent-preserving quadratics (see splitCubics).
+    SubPath(const float *points, const int npoints, Type type, bool tangents = false) {
         _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
         boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
         
         if (type == kCubic) {
-            Memory<float> quadratics = splitCubics(points, npoints, precision, tangents);
+            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, tangents);
             const int nfloats = (int)quadratics.count();
             if (nfloats > 5)
                 _quadratics = subdivideQuadratics(& quadratics[0], nfloats / 2);
