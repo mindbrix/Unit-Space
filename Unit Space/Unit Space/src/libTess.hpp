@@ -26,6 +26,44 @@ constexpr int kPolySize = 3;
 constexpr float kLineTurnLimit = LINE_TURN_LIMIT;
 
 struct libTess {
+    // The tessellators' memory for one dispatch_apply() slice. libTess builds and frees a mesh, a dictionary and queues
+    // for every tessellation, which as malloc and free calls from every thread cost more than many tessellations. So
+    // each path's tessellators take their memory in order from blocks the slice keeps, all of it reclaimed at once by
+    // reset() before the next path. Every allocation records its size, which memrealloc() needs to copy it.
+    struct Arena {
+        ~Arena() { for (Block& b : blocks) free(b.base); }
+        void reset() { block = 0, used = 0; }
+        void *alloc(size_t size) {
+            const size_t align = alignof(std::max_align_t), n = align + (size + align - 1) / align * align;
+            while (block < blocks.size() && used + n > blocks[block].size)
+                block++, used = 0;
+            if (block == blocks.size()) {
+                // Each new block at least doubles the arena, so a slice needs only a few, whatever its paths' sizes.
+                size_t total = n;
+                for (Block& b : blocks)
+                    total += b.size;
+                blocks.push_back({ (char *)malloc(total), total });
+            }
+            char *p = blocks[block].base + used;
+            used += n;
+            *(size_t *)p = size;
+            return p + align;
+        }
+        static void *memalloc(void *arena, unsigned int size) { return ((Arena *)arena)->alloc(size); }
+        static void *memrealloc(void *arena, void *ptr, unsigned int size) {
+            void *p = ((Arena *)arena)->alloc(size);
+            if (ptr)
+                memcpy(p, ptr, std::min(size_t(size), *(size_t *)((char *)ptr - alignof(std::max_align_t))));
+            return p;
+        }
+        static void memfree(void *arena, void *ptr) {}
+        TESSalloc tessAlloc() { TESSalloc a = {}; a.memalloc = memalloc, a.memrealloc = memrealloc, a.memfree = memfree, a.userData = this; return a; }
+        
+        struct Block { char *base; size_t size; };
+        vector<Block> blocks;
+        size_t block = 0, used = 0;
+    };
+    
     static void addPathContours(TESStesselator *dst, Path& path) {
         for (SubPath& s : path._subPaths)
             tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
@@ -525,8 +563,8 @@ struct libTess {
     // polygon cuts those off: chords for convex curves, p0 -> c -> p2 for concave ones.
     // _imiters: each triangle's interior miters, x and y per vertex. Hulls, which the interior never paints, get zeros.
     static void triangulateRange(vector<Triangle>& _tris, vector<float>& _imiters, vector<int>& _idxs, Scene& scene, int begin, int end) {
-        TESStesselator *tess = tessNewTess(NULL), *dst = tessNewTess(NULL);
-        tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+        Arena arena;
+        TESSalloc alloc = arena.tessAlloc();
         vector<Point> points;
         vector<char> curveEdge;     // whether the polygon edge from each point to the next is a curve's chord or control legs
         vector<int> nextPoint;      // the next point in each point's contour
@@ -546,6 +584,14 @@ struct libTess {
             // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
             refineChords(path);
             PathVertices pv(path);
+            // The path's own tessellators, which reset() frees with everything they allocated. Their buckets hold as many
+            // items as the path has vertices, as libTess advises, not its defaults of hundreds, which most paths leave
+            // largely unused: the arena does not recycle them as malloc did, so they would only spread its memory out.
+            arena.reset();
+            alloc.meshEdgeBucketSize = alloc.meshVertexBucketSize = alloc.meshFaceBucketSize = std::max(1, pv.bases.back());
+            alloc.dictNodeBucketSize = alloc.regionBucketSize = alloc.meshVertexBucketSize;
+            TESStesselator *tess = tessNewTess(& alloc), *dst = tessNewTess(& alloc);
+            tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             addPathContours(tess, path);
             if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
                 continue;
@@ -779,6 +825,5 @@ struct libTess {
                 t.tx0 = quantise((t0x - lx) * rw), t.ty0 = quantise((t0y - ly) * rh), t.tx2 = quantise((t2x - lx) * rw), t.ty2 = quantise((t2y - ly) * rh);
             }
         }
-        tessDeleteTess(tess), tessDeleteTess(dst);
     }
 };
