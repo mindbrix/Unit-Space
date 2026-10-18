@@ -306,25 +306,39 @@ struct libTess {
             return !same(a0, b0) && !same(a0, b1) && !same(a1, b0) && !same(a1, b1)
                 && orient(a0, a1, b0) * orient(a0, a1, b1) < 0 && orient(b0, b1, a0) * orient(b0, b1, a1) < 0;
         };
-        // Whether r is strictly inside triangle t, wound either way. A flat one has no inside.
-        auto inside = [&](const float *const *t, const float *r) {
+        // Whether r is strictly inside hull t, wound either way. A line's is flat, with no inside.
+        auto inside = [&](const float *const *t, bool curved, const float *r) {
             float s = orient(t[0], t[1], t[2]);
-            return !same(r, t[0]) && !same(r, t[1]) && !same(r, t[2])
+            return curved && !same(r, t[0]) && !same(r, t[1]) && !same(r, t[2])
                 && orient(t[0], t[1], r) * s > 0 && orient(t[1], t[2], r) * s > 0 && orient(t[2], t[0], r) * s > 0;
+        };
+        // Whether r lies strictly inside the wedge at p between legs u and v. A line's legs coincide, so it has none.
+        auto inWedge = [&](const float *p, const float *u, const float *v, bool curved, const float *r) {
+            float s = orient(p, u, v);
+            return curved && orient(p, u, r) * s > 0 && orient(p, r, v) * s > 0;
         };
         // Pieces start as the path's segments in a flat numbering, each subpath's closing chord last; a split one
         // points to its two halves.
         struct Piece { float q[6]; float lx, ly, ux, uy; int child; bool curved; };
         // Whether two pieces' hulls share inside points. Hulls touching at a shared end or along an edge do not.
+        // Most pairs are neighbours, which share an end. Near it each hull is the wedge between its legs from it, and
+        // lies wholly within that wedge, so the hulls overlap only if either wedge holds one of the other's legs.
         auto overlaps = [&](const Piece& a, const Piece& b) {
             float am[2] = { (a.q[0] + a.q[4]) * 0.5f, (a.q[1] + a.q[5]) * 0.5f }, bm[2] = { (b.q[0] + b.q[4]) * 0.5f, (b.q[1] + b.q[5]) * 0.5f };
             const float *ta[3] = { a.q, a.curved ? a.q + 2 : am, a.q + 4 }, *tb[3] = { b.q, b.curved ? b.q + 2 : bm, b.q + 4 };
+            for (int i = 0; i < 3; i += 2)
+                for (int j = 0; j < 3; j += 2)
+                    if (same(ta[i], tb[j])) {
+                        const float *p = ta[i], *ea = ta[2 - i], *eb = tb[2 - j];
+                        return inWedge(p, ta[1], ea, a.curved, tb[1]) || inWedge(p, ta[1], ea, a.curved, eb)
+                            || inWedge(p, tb[1], eb, b.curved, ta[1]) || inWedge(p, tb[1], eb, b.curved, ea);
+                    }
             for (int i = 0; i < 3; i++)
                 for (int j = 0; j < 3; j++)
                     if (crosses(ta[i], ta[(i + 1) % 3], tb[j], tb[(j + 1) % 3]))
                         return true;
             for (int k = 0; k < 3; k++)
-                if (inside(tb, ta[k]) || inside(ta, tb[k]))
+                if (inside(tb, b.curved, ta[k]) || inside(ta, a.curved, tb[k]))
                     return true;
             return false;
         };
