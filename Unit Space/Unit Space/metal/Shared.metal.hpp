@@ -114,14 +114,14 @@ struct Triangle {
     unsigned short tx0, ty0, tx2, ty2;
 };
 
-// A shared interior mesh vertex: quantised position within its path's bounds plus its miter vector.
+// An interior mesh vertex: quantised position within its path's bounds plus its miter vector.
 struct MeshVertex {
     MeshVertex() {}
     MeshVertex(unsigned int p, unsigned short x, unsigned short y, float ix, float iy) : p(p), x(x), y(y), ix(ix), iy(iy), t(0) {}
     unsigned int p;
     unsigned short x, y;
     float ix, iy;
-    float t;        // its triangle's solveTriangle() threshold, so vertices are only shared within a threshold
+    float t;        // its triangle's solveTriangle() threshold
 };
 
 struct Vector {

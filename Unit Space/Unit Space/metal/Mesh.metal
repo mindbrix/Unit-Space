@@ -63,8 +63,8 @@ fragment float4 interior_indexed_fragment_main(IndexedInteriorFragment vert [[st
     return vert.color;
 }
 
-// The debug outlines: every triangle's edges, or only the interior polygons'. Shared vertices cannot carry barycentrics
-// or per-triangle flags, so they come from the rasteriser and a byte per triangle. Barycentric coordinates are not on
+// The debug outlines: every triangle's edges, or only the interior polygons'. The vertices carry no barycentrics or
+// per-triangle flags, so they come from the rasteriser and a byte per triangle. Barycentric coordinates are not on
 // every GPU, so this is a separate pipeline, only built where they are.
 fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorFragment vert [[stage_in]], float3 b [[barycentric_coord]],
                                                      uint pid [[primitive_id]],

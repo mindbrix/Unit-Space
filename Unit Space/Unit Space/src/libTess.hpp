@@ -475,31 +475,18 @@ struct libTess {
         writeIndexedInterior(mesh);
     }
     
-    // Shares vertices between triangles so the interior pass transforms each vertex once instead of three times.
-    // Triangles are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
+    // Each triangle writes its own vertices: a vertex carries its triangle's threshold, below, which neighbouring
+    // triangles rarely share, so sharing vertices saved only 1-3% of them for far more time than it saved. Triangles
+    // are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
     // back-face culling drops triangles that the miter inset has inverted. Hull triangles extend outside the fill,
     // so they are written degenerate: the interior pass must never paint them. The debug outlines need each triangle's
     // polygon edges, which shared vertices cannot carry, so they go in a byte per triangle in index buffer order.
     // Triangles the inset would collapse at the current scale are left to the edge pass, as solveTriangle() decides.
-    // Each vertex carries its triangle's threshold, which is part of what is shared, so the pass clips a triangle
-    // away whole: shared with a different threshold, a vertex would cull or keep triangles that are not its own.
+    // Each vertex carries its triangle's threshold, so the pass clips a triangle away whole.
     static void writeIndexedInterior(Mesh& mesh) {
-        struct Hash {
-            size_t operator()(const MeshVertex& v) const {
-                uint64_t a, b;
-                uint32_t c;
-                memcpy(& a, & v, sizeof(a)), memcpy(& b, (const char *)& v + sizeof(a), sizeof(b)), memcpy(& c, & v.t, sizeof(c));
-                return std::hash<uint64_t>()((a * 0x9E3779B97F4A7C15ULL ^ b) * 0xC2B2AE3D27D4EB4FULL ^ c);
-            }
-        };
-        struct Equal {
-            bool operator()(const MeshVertex& a, const MeshVertex& b) const { return memcmp(& a, & b, sizeof(MeshVertex)) == 0; }
-        };
         size_t ntris = mesh._tris.count(), i;
         if (ntris == 0)
             return;
-        std::unordered_map<MeshVertex, unsigned int, Hash, Equal> lookup;
-        lookup.reserve(ntris * 3 / 2);
         unsigned int *idx = mesh._interiorIdxs.new_ptr(ntris * 3);
         unsigned char *edges = mesh._interiorEdges.new_ptr(ntris);
         vector<MeshPath>& paths = mesh._timeline.basePaths();
@@ -522,13 +509,14 @@ struct libTess {
                                    b.lx + v[1].x * sx, b.ly + v[1].y * sy, Vector(v[1].ix, v[1].iy),
                                    b.lx + v[2].x * sx, b.ly + v[2].y * sy, Vector(v[2].ix, v[2].iy));
             }
-            for (int k = 0; k < 3; k++) {
-                v[k].t = tt;
-                auto it = lookup.emplace(v[k], (unsigned int)lookup.size());
-                if (it.second)
-                    *mesh._interiorVerts.new_ptr(1) = v[k];
-                *idx++ = it.first->second;
-            }
+            // A hull is one vertex, three times over.
+            int count = t.curves & Triangle::kHull ? 1 : 3;
+            unsigned int base = (unsigned int)mesh._interiorVerts.count();
+            MeshVertex *dst = mesh._interiorVerts.new_ptr(count);
+            for (int k = 0; k < count; k++)
+                dst[k] = v[k], dst[k].t = tt;
+            for (int k = 0; k < 3; k++)
+                *idx++ = base + (count == 3 ? k : 0);
         }
     }
     
