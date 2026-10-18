@@ -286,97 +286,96 @@ struct libTess {
     }
     
     // The tessellator only sees on-curve points, so where curves come close (glyph hairlines) their chords can cross
-    // although the curves do not. It then invents vertices that match no quadratic, and those curves draw as chords.
-    // Split curves whose chords cross until they separate; genuinely overlapping contours keep their crossings.
-    // One sweep finds the crossings, and most paths have none. Otherwise a second sweep pairs every curve with each
-    // segment whose box overlaps its hull, the triangle of its ends and control point: halves lie inside their
-    // parent's hull, so only those pairs can ever cross. Each round then splits the marked curves, keeps the halves'
-    // pairs whose boxes still overlap, and tests only those, as pairs that did not change keep their answer.
+    // although the curves do not, and curves can cross although their chords do not. It then invents vertices that
+    // match no quadratic, or misses the crossing, and those curves draw wrongly. Two segments can only cross where their
+    // hulls overlap, the triangles of their ends and control points (a line's is its chord), and halves lie inside their
+    // parent's hull. So one sweep pairs the curves with each segment whose hull overlaps theirs, and most paths have
+    // none. Each round splits the paired curves and keeps the halves' pairs whose hulls still overlap: those that no
+    // longer do never will. Curves that separate drop out, and genuinely overlapping contours keep their crossings.
     static void refineChords(Path& path) {
-        struct Chord { float x0, y0, x1, y1, lx, ux; int sub, seg; };
-        auto orient = [](float ax, float ay, float bx, float by, float cx, float cy) { return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); };
+        // Points that coincide are tested as such: fused multiply-adds leave a point's orientation against an edge
+        // through it a rounding error rather than zero.
+        auto orient = [](const float *a, const float *b, const float *c) { return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]); };
+        auto same = [](const float *a, const float *b) { return a[0] == b[0] && a[1] == b[1]; };
+        // Whether segments a0 a1 and b0 b1 cross at a point inside both.
         auto crosses = [&](const float *a0, const float *a1, const float *b0, const float *b1) {
-            if ((a0[0] == b0[0] && a0[1] == b0[1]) || (a0[0] == b1[0] && a0[1] == b1[1]) || (a1[0] == b0[0] && a1[1] == b0[1]) || (a1[0] == b1[0] && a1[1] == b1[1]))
-                return false;
-            return orient(a0[0], a0[1], a1[0], a1[1], b0[0], b0[1]) * orient(a0[0], a0[1], a1[0], a1[1], b1[0], b1[1]) < 0
-                && orient(b0[0], b0[1], b1[0], b1[1], a0[0], a0[1]) * orient(b0[0], b0[1], b1[0], b1[1], a1[0], a1[1]) < 0;
+            return !same(a0, b0) && !same(a0, b1) && !same(a1, b0) && !same(a1, b1)
+                && orient(a0, a1, b0) * orient(a0, a1, b1) < 0 && orient(b0, b1, a0) * orient(b0, b1, a1) < 0;
         };
-        vector<Chord> chords;
-        vector<int> bases;      // each subpath's first segment in a flat numbering, its closing chord last
-        for (int si = 0; si < (int)path._subPaths.size(); si++) {
-            const float *q = path._subPaths[si]._quadratics.get();
-            int n = (int)(path._subPaths[si]._quadratics.count() - 2) / 4;
-            bases.push_back((int)chords.size());
-            for (int k = 0; k < n; k++) {
-                const float *a = q + k * 4, *b = a + 4;
-                chords.push_back({ a[0], a[1], b[0], b[1], std::min(a[0], b[0]), std::max(a[0], b[0]), si, k });
-            }
-            const float *a = q + n * 4;  // the tessellator closes each contour back to its first point
-            chords.push_back({ a[0], a[1], q[0], q[1], std::min(a[0], q[0]), std::max(a[0], q[0]), si, -1 });
-        }
-        auto quad = [&](int sub, int seg) { return path._subPaths[sub]._quadratics.get() + seg * 4; };
-        vector<char> marked(chords.size(), 0);
-        bool any = false;
-        forEachOverlap(chords, [&](const Chord& a, const Chord& b) {
-            if (!crosses(& a.x0, & a.x1, & b.x0, & b.x1))
-                return;
-            // Only curves: a line is its own chord, so splitting it only multiplies segments.
-            for (const Chord *c : { &a, &b })
-                if (c->seg >= 0) {
-                    const float *q = quad(c->sub, c->seg);
-                    if (isCurved(q[0], q[1], q[2], q[3], q[4], q[5]))
-                        marked[bases[c->sub] + c->seg] = 1, any = true;
-                }
-        });
-        if (!any)
-            return;
-        
-        // Pieces start as the path's segments in the flat numbering; a split one points to its two halves.
-        struct Piece { float q[6]; float lx, ly, ux, uy; int child; bool curved, fresh; };
-        vector<Piece> pieces(chords.size());
+        // Whether r is strictly inside triangle t, wound either way. A flat one has no inside.
+        auto inside = [&](const float *const *t, const float *r) {
+            float s = orient(t[0], t[1], t[2]);
+            return !same(r, t[0]) && !same(r, t[1]) && !same(r, t[2])
+                && orient(t[0], t[1], r) * s > 0 && orient(t[1], t[2], r) * s > 0 && orient(t[2], t[0], r) * s > 0;
+        };
+        // Pieces start as the path's segments in a flat numbering, each subpath's closing chord last; a split one
+        // points to its two halves.
+        struct Piece { float q[6]; float lx, ly, ux, uy; int child; bool curved; };
+        // Whether two pieces' hulls share inside points. Hulls touching at a shared end or along an edge do not.
+        auto overlaps = [&](const Piece& a, const Piece& b) {
+            float am[2] = { (a.q[0] + a.q[4]) * 0.5f, (a.q[1] + a.q[5]) * 0.5f }, bm[2] = { (b.q[0] + b.q[4]) * 0.5f, (b.q[1] + b.q[5]) * 0.5f };
+            const float *ta[3] = { a.q, a.curved ? a.q + 2 : am, a.q + 4 }, *tb[3] = { b.q, b.curved ? b.q + 2 : bm, b.q + 4 };
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    if (crosses(ta[i], ta[(i + 1) % 3], tb[j], tb[(j + 1) % 3]))
+                        return true;
+            for (int k = 0; k < 3; k++)
+                if (inside(tb, ta[k]) || inside(ta, tb[k]))
+                    return true;
+            return false;
+        };
         auto setBounds = [](Piece& p) {
             p.lx = std::min(std::min(p.q[0], p.q[2]), p.q[4]), p.ux = std::max(std::max(p.q[0], p.q[2]), p.q[4]);
             p.ly = std::min(std::min(p.q[1], p.q[3]), p.q[5]), p.uy = std::max(std::max(p.q[1], p.q[3]), p.q[5]);
         };
-        for (const Chord& c : chords) {
-            Piece& p = pieces[bases[c.sub] + (c.seg < 0 ? (int)(path._subPaths[c.sub]._quadratics.count() - 2) / 4 : c.seg)];
-            if (c.seg >= 0)
-                memcpy(p.q, quad(c.sub, c.seg), sizeof(p.q));
-            else
-                p.q[0] = c.x0, p.q[1] = c.y0, p.q[2] = (c.x0 + c.x1) * 0.5f, p.q[3] = (c.y0 + c.y1) * 0.5f, p.q[4] = c.x1, p.q[5] = c.y1;
-            setBounds(p), p.child = -1, p.fresh = false;
-            p.curved = c.seg >= 0 && isCurved(p.q[0], p.q[1], p.q[2], p.q[3], p.q[4], p.q[5]);
+        vector<Piece> pieces;
+        vector<int> bases;      // each subpath's first piece
+        for (int si = 0; si < (int)path._subPaths.size(); si++) {
+            const float *q = path._subPaths[si]._quadratics.get();
+            int n = (int)(path._subPaths[si]._quadratics.count() - 2) / 4;
+            bases.push_back((int)pieces.size());
+            for (int k = 0; k <= n; k++) {
+                // The tessellator closes each contour back to its first point, a line.
+                const float *a = q + k * 4, *b = k < n ? a + 4 : q;
+                Piece p = {{ a[0], a[1], k < n ? a[2] : (a[0] + b[0]) * 0.5f, k < n ? a[3] : (a[1] + b[1]) * 0.5f, b[0], b[1] }};
+                setBounds(p), p.child = -1, p.curved = k < n && isCurved(p.q[0], p.q[1], p.q[2], p.q[3], p.q[4], p.q[5]);
+                pieces.push_back(p);
+            }
         }
-        auto overlap = [&](int a, int b) {
+        auto boxesOverlap = [&](int a, int b) {
             const Piece &p = pieces[a], &q = pieces[b];
             return !(p.ux < q.lx || q.ux < p.lx || p.uy < q.ly || q.uy < p.ly);
         };
-        // Pairs of a curve with any segment whose box overlaps its hull. Two lines never change, so are never paired.
+        // Only pairs with a curve: a line is its own chord, so splitting it only multiplies segments.
         struct Box { float x0, y0, x1, y1, lx, ux; int piece; };
         vector<Box> boxes(pieces.size());
         for (int i = 0; i < (int)pieces.size(); i++)
             boxes[i] = { pieces[i].lx, pieces[i].ly, pieces[i].ux, pieces[i].uy, pieces[i].lx, pieces[i].ux, i };
         vector<std::pair<int, int>> pairs, next;
         forEachOverlap(boxes, [&](const Box& a, const Box& b) {
-            if (pieces[a.piece].curved || pieces[b.piece].curved)
+            if ((pieces[a.piece].curved || pieces[b.piece].curved) && overlaps(pieces[a.piece], pieces[b.piece]))
                 pairs.emplace_back(a.piece, b.piece);
         });
-        for (int round = 0; round < 6 && any; round++) {
-            for (int i = 0, n = (int)pieces.size(); i < n; i++) {
-                pieces[i].fresh = false;
+        if (pairs.empty())
+            return;
+        vector<char> marked;
+        for (int round = 0; round < 6 && pairs.size(); round++) {
+            marked.assign(pieces.size(), 0);
+            for (auto [a, b] : pairs)
+                marked[a] |= pieces[a].curved, marked[b] |= pieces[b].curved;
+            for (int i = 0, n = (int)pieces.size(); i < n; i++)
                 if (marked[i]) {
                     float *a = pieces[i].q, x01 = (a[0] + a[2]) * 0.5f, y01 = (a[1] + a[3]) * 0.5f, x12 = (a[2] + a[4]) * 0.5f, y12 = (a[3] + a[5]) * 0.5f;
                     float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
                     Piece h0 = {{ a[0], a[1], x01, y01, x, y }}, h1 = {{ x, y, x12, y12, a[4], a[5] }};
                     for (Piece *h : { &h0, &h1 })
-                        setBounds(*h), h->child = -1, h->fresh = true, h->curved = isCurved(h->q[0], h->q[1], h->q[2], h->q[3], h->q[4], h->q[5]);
+                        setBounds(*h), h->child = -1, h->curved = isCurved(h->q[0], h->q[1], h->q[2], h->q[3], h->q[4], h->q[5]);
                     pieces[i].child = (int)pieces.size();
                     pieces.push_back(h0), pieces.push_back(h1);
                 }
-            }
             if (round == 5)
                 break;
-            // Each pair's split pieces give way to their halves, kept while their boxes overlap.
+            // Each pair's split pieces give way to their halves, kept while their hulls overlap.
             next.resize(0);
             for (auto [a, b] : pairs) {
                 int as[2] = { a, a }, bs[2] = { b, b }, na = 1, nb = 1;
@@ -384,19 +383,10 @@ struct libTess {
                 if (marked[b]) bs[0] = pieces[b].child, bs[1] = bs[0] + 1, nb = 2;
                 for (int i = 0; i < na; i++)
                     for (int j = 0; j < nb; j++)
-                        if ((pieces[as[i]].curved || pieces[bs[j]].curved) && overlap(as[i], bs[j]))
+                        if ((pieces[as[i]].curved || pieces[bs[j]].curved) && boxesOverlap(as[i], bs[j]) && overlaps(pieces[as[i]], pieces[bs[j]]))
                             next.emplace_back(as[i], bs[j]);
             }
             pairs.swap(next);
-            marked.assign(pieces.size(), 0);
-            any = false;
-            for (auto [a, b] : pairs) {
-                Piece &p = pieces[a], &q = pieces[b];
-                if ((p.fresh || q.fresh) && crosses(p.q, p.q + 4, q.q, q.q + 4)) {
-                    if (p.curved) marked[a] = 1, any = true;
-                    if (q.curved) marked[b] = 1, any = true;
-                }
-            }
         }
         // Each changed subpath is written once, its segments' pieces in order.
         std::function<void(Memory<float>&, int)> write = [&](Memory<float>& out, int i) {
@@ -478,12 +468,15 @@ struct libTess {
     // after). Insets only shrink a triangle until it collapses, but the miter would stretch this one, carrying it far
     // across the picture. So here the vertex slides along one of the triangle's own edges instead, just far enough to stay
     // as far from the corner's edges as the miter keeps it: the triangle then only shrinks, until its collapse.
-    static Vector sharpInset(const Point& v, Vector m, float ax, float ay, float bx, float by) {
+    // A sharp reflex corner (a slit's end) slides in every triangle. Its miter keeps the vertex as far from its edges'
+    // lines, but its edges end at the vertex, so beyond it the vertex itself is the nearest boundary. The miter would
+    // collapse the triangles there almost at once, leaving them to the edge pass, which bounds them by those lines.
+    static Vector sharpInset(const Point& v, Vector m, bool convex, float ax, float ay, float bx, float by) {
         float e1x = ax - v.x, e1y = ay - v.y, e2x = bx - v.x, e2y = by - v.y, turn = e1x * e2y - e1y * e2x;
         bool inside = (e1x * m.y - e1y * m.x) * turn >= 0 && (m.x * e2y - m.y * e2x) * turn >= 0;
         float dax = v.tpx - v.x, day = v.tpy - v.y, dbx = v.tnx - v.x, dby = v.tny - v.y;
         float la = std::sqrt(dax * dax + day * day), lb = std::sqrt(dbx * dbx + dby * dby);
-        if (m.x * m.x + m.y * m.y <= kTriangleDilationMax * kTriangleDilationMax || inside || la == 0 || lb == 0)
+        if (m.x * m.x + m.y * m.y <= kTriangleDilationMax * kTriangleDilationMax || (inside && convex) || la == 0 || lb == 0)
             return m;
         dax /= la, day /= la, dbx /= lb, dby /= lb;
         // The distance from v + e, e a unit edge, to the nearer of the corner's edges, which run from v to its tangent points.
@@ -849,10 +842,10 @@ struct libTess {
                         cx += v[k].x / 3, cy += v[k].y / 3;
                     }
                     for (int k = 0; k < 3; k++) {
-                        bool unused;
-                        Vector mi = v[k].corner ? miter(v[k].tangents(), cx, cy, & unused) : Vector(0, 0);
+                        bool insetConvex = true;
+                        Vector mi = v[k].corner ? miter(v[k].tangents(), cx, cy, & insetConvex) : Vector(0, 0);
                         if (v[k].corner && !v[k].control)
-                            mi = sharpInset(v[k].tangents(), mi, v[(k + 1) % 3].x, v[(k + 1) % 3].y, v[(k + 2) % 3].x, v[(k + 2) % 3].y);
+                            mi = sharpInset(v[k].tangents(), mi, insetConvex, v[(k + 1) % 3].x, v[(k + 1) % 3].y, v[(k + 2) % 3].x, v[(k + 2) % 3].y);
                         _imiters.push_back(mi.x), _imiters.push_back(mi.y);
                         m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
                         if (!v[k].corner || v[k].control)
@@ -890,11 +883,12 @@ struct libTess {
                 if (h.concave)
                     convex[1] = false;
                 // The joins' convexity follows the tangents: the fill is on the left, so a left turn is convex. Smooth joins
-                // (tangent-preserving quadratics) have no turn to measure, so they take the curve's own convexity.
+                // (tangent-preserving quadratics) have no turn to measure, so they take the curve's own convexity. As in
+                // isCurved(), tangents that turn back are not smooth, however small the sine of their turn: a slit's end.
                 float cx = h.c.x, cy = h.c.y;
                 auto turn = [&](float ax, float ay, float bx, float by) {
                     float cross = ax * by - ay * bx;
-                    return cross * cross <= kLineTurnSine * kLineTurnSine * (ax * ax + ay * ay) * (bx * bx + by * by) ? !h.concave : cross > 0;
+                    return ax * bx + ay * by > 0 && cross * cross <= kLineTurnSine * kLineTurnSine * (ax * ax + ay * ay) * (bx * bx + by * by) ? !h.concave : cross > 0;
                 };
                 bool start = turn(h.p0.x - h.tpx, h.p0.y - h.tpy, cx - h.p0.x, cy - h.p0.y);
                 bool end = turn(h.p2.x - cx, h.p2.y - cy, h.tnx - h.p2.x, h.tny - h.p2.y);

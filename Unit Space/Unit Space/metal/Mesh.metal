@@ -185,8 +185,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         vert.d3 = select(cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos).y, dot(n2, pos - v2), dot(t2, t2) > 0);
         // Which side of each join's bisector (the miter) we are on: positive is this curve's side, where the curve
         // alone is the boundary. Neighbours' lines only apply beyond it, where sharp corners let the hull overhang.
+        // Only the sign is used, but the distances are halves: a near-reversing join's miter is thousands long, so
+        // unnormalised they overflow. Miters are at least unit length, and a missing one stays zero.
         float2 q0 = select(v1, v2, concave) - v0, q2 = select(v1, v0, concave) - v2;
-        float2 b0 = float2(-iv0.y, iv0.x), b2 = float2(-iv2.y, iv2.x);
+        float2 b0 = float2(-iv0.y, iv0.x) * min(1.0, rsqrt(dot(iv0, iv0))), b2 = float2(-iv2.y, iv2.x) * min(1.0, rsqrt(dot(iv2, iv2)));
         vert.d4 = dot(select(-b0, b0, dot(b0, q0) >= 0), pos - v0);
         vert.d5 = dot(select(-b2, b2, dot(b2, q2) >= 0), pos - v2);
     } else {
