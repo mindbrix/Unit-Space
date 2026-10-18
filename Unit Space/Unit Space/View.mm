@@ -865,9 +865,11 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
         nsvgDelete(_svgImage), _svgImage = nullptr;
     if (_svgData) {
         char *data = (char *)malloc(_svgData.length + 1);
-        memcpy(data, _svgData.bytes, _svgData.length), data[_svgData.length] = 0;
-        _svgImage = nsvgParse(data, "px", 96);
-        free(data);
+        if (data) {
+            memcpy(data, _svgData.bytes, _svgData.length), data[_svgData.length] = 0;
+            _svgImage = nsvgParse(data, "px", 96);
+            free(data);
+        }
     }
     if (_svgImage) {
         _scene.empty();

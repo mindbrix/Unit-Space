@@ -31,7 +31,8 @@ struct libTess {
     // The tessellators' memory for one dispatch_apply() slice. libTess builds and frees a mesh, a dictionary and queues
     // for every tessellation, which as malloc and free calls from every thread cost more than many tessellations. So
     // each path's tessellators take their memory in order from blocks the slice keeps, all of it reclaimed at once by
-    // reset() before the next path. Every allocation records its size, which memrealloc() needs to copy it.
+    // reset() before the next path. Every allocation records its size, which memrealloc() needs to copy it. A failed
+    // allocation returns null, which libTess handles: tessNewTess() returns null and tessTesselate() fails.
     struct Arena {
         ~Arena() { for (Block& b : blocks) free(b.base); }
         void reset() { block = 0, used = 0; }
@@ -44,7 +45,10 @@ struct libTess {
                 size_t total = n;
                 for (Block& b : blocks)
                     total += b.size;
-                blocks.push_back({ (char *)malloc(total), total });
+                char *base = (char *)malloc(total);
+                if (base == nullptr)
+                    return nullptr;
+                blocks.push_back({ base, total });
             }
             char *p = blocks[block].base + used;
             used += n;
@@ -54,7 +58,7 @@ struct libTess {
         static void *memalloc(void *arena, unsigned int size) { return ((Arena *)arena)->alloc(size); }
         static void *memrealloc(void *arena, void *ptr, unsigned int size) {
             void *p = ((Arena *)arena)->alloc(size);
-            if (ptr)
+            if (p && ptr)
                 memcpy(p, ptr, std::min(size_t(size), *(size_t *)((char *)ptr - alignof(std::max_align_t))));
             return p;
         }
@@ -668,6 +672,8 @@ struct libTess {
             alloc.meshEdgeBucketSize = alloc.meshVertexBucketSize = alloc.meshFaceBucketSize = std::max(1, pv.bases.back());
             alloc.dictNodeBucketSize = alloc.regionBucketSize = alloc.meshVertexBucketSize;
             TESStesselator *tess = tessNewTess(& alloc), *dst = tessNewTess(& alloc);
+            if (tess == nullptr || dst == nullptr)
+                continue;
             tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             addPathContours(tess, path);
             if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))

@@ -100,9 +100,11 @@ struct Scene {
     }
     void addSVG(const void *bytes, size_t size) {
         char *data = (char *)malloc(size + 1);
+        if (data == NULL)
+            return;
         memcpy(data, bytes, size);
         data[size] = 0;
-        struct NSVGimage* image = data ? nsvgParse(data, "px", 96) : NULL;
+        struct NSVGimage* image = nsvgParse(data, "px", 96);
         if (image) {
             printf("size: %f x %f\n", image->width, image->height);
             addImage(image);

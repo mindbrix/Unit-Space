@@ -6,6 +6,9 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 #import <stdlib.h>
+#import <string.h>
+#import <new>
+#import <algorithm>
 
 constexpr size_t kMemoryPageSize = 4096;
 
@@ -20,26 +23,26 @@ struct Memory {
         if (header && (--(header->refCount) == 0))
             free(header->memory), free(header);
     }
+    // Allocation failures throw std::bad_alloc, as std::vector's do, leaving the memory as it was.
     void alloc(size_t count) {
-		size_t size = count * sizeof(T);
-		if (header) {
-			if (page_aligned) {
-				void *memory;
-				posix_memalign(& memory, kMemoryPageSize, pageRounded(size));
-				memcpy(memory, header->memory, header->size);
-				free(header->memory);
-				header->memory = memory;
-			} else
-            	header->memory = ::realloc(header->memory, size);
-		} else {
-            header = (Header *)malloc(sizeof(Header));
-			if (page_aligned)
-				posix_memalign(& header->memory, kMemoryPageSize, pageRounded(size));
-			else
-            	header->memory = malloc(size);
+        size_t size = count * sizeof(T);
+        void *memory = nullptr;
+        if (page_aligned) {
+            if (posix_memalign(& memory, kMemoryPageSize, pageRounded(size)) != 0)
+                throw std::bad_alloc();
+            if (header)
+                memcpy(memory, header->memory, std::min(size, header->size)), free(header->memory);
+        } else if (!(memory = header ? ::realloc(header->memory, size) : malloc(size)) && size)
+            throw std::bad_alloc();
+        if (!header) {
+            if (!(header = (Header *)malloc(sizeof(Header)))) {
+                free(memory);
+                throw std::bad_alloc();
+            }
             header->refCount = 1;
             header->end = 0;
         }
+        header->memory = memory;
         header->size = size;
     }
     Memory clone() {
