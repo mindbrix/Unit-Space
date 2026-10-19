@@ -1,0 +1,14 @@
+# Corpus regression baseline: file, scene floats, triangles, hulls, mesh hash (arm64). Rewrite with ./Tests/run.sh --update.
+SVG/23.svg	87902 44842 16266 e298613c90216380
+SVG/Éclaté_fusée_et_vaisseau_Soyouz.svg	1642160 782461 298252 e6d5ed87cf50daa0
+SVG/contour.svg	859794 81846 0 9a4104f6ebacab45
+SVG/hawaii.svg	810938 433309 167780 1be1b88ccc942bba
+SVG/nano.svg	344 182 64 3b232983d3064208
+SVG/paper-2.svg	729904 372922 130063 93c8b2cf3689342f
+SVG/paris-30k.svg	4980620 1085062 215871 43af915243bc4b61
+SVG/reschart.svg	32664 6844 329 132b2a7ee3672c51
+Tests/cases/loop-lens.svg	270 208 80 3620ccefbcb4fb60
+Tests/cases/slit-lobes.svg	258 157 63 b646c387ae3d4620
+Tests/cases/slit-reflex-inset.svg	262 159 64 07e0cf03d9009309
+Tests/cases/slit-reversal-join.svg	262 139 57 7c978db9404c0bd8
+Tests/cases/slit-tangent-facets.svg	286 152 63 139da980f42b2f91
