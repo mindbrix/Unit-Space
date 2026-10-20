@@ -51,6 +51,11 @@ struct EditHandle {
 @property(nonatomic) BOOL useStrokeColor;
 @property(nonatomic) BOOL inspect;              // debug: the path under the mouse is highlighted and described
 @property(nonatomic) BOOL solo;                 // debug: only the inspected path is drawn
+@property(nonatomic) BOOL perspective;          // the page tilted back in perspective
+@property(nonatomic) BOOL cube;                 // the scene on the faces of a turning cube
+@property(nonatomic) BOOL timer;                // the timeline animates the paths
+@property(nonatomic) double cubeStart;          // when the cube started turning
+@property(nonatomic) CGAffineTransform cubeView;    // the view transform then: gestures since move the cube on screen
 @property(nonatomic) NSInteger hoverPath, selectedPath;
 @property(nonatomic) Mesh editMesh;             // the selected shape's paths while its points are edited
 @property(nonatomic) int editBegin, editEnd;    // those paths' scene indices, which the scene's mesh leaves out
@@ -123,11 +128,29 @@ struct EditHandle {
 	[_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
 }
 
+// The display link runs while the timeline or the cube animates.
+- (void)updateDisplayLink {
+    if (!(_timer || _cube))
+        [self stopTimer];
+    else if (!_displayLink)
+        [self resetTimer];
+}
+
 - (IBAction)toggleTimer:(id)sender {
-	if (_displayLink)
-		[self stopTimer];
-	else
-		[self resetTimer];
+    _timer = !_timer;
+    [self updateDisplayLink];
+    [self redraw];
+}
+
+- (IBAction)toggleCube:(id)sender {
+    [self commitEdit];
+    _cube = !_cube;
+    _cubeStart = [NSDate date].timeIntervalSinceReferenceDate;
+    _cubeView = self.transform.affineTransform;
+    _hoverPath = _selectedPath = -1;
+    [self updateHandles];
+    [self updateInspector];
+    [self updateDisplayLink];
     [self redraw];
 }
 
@@ -283,6 +306,11 @@ struct EditHandle {
 // clears the selection), so the view can be zoomed and panned around it. Solo draws only that path, so the triangle and
 // polygon views show its triangulation alone, and holds it: the mouse no longer changes the inspected path. Copy puts its source shape on the pasteboard as a standalone SVG with the
 // same coordinates, to reproduce it.
+- (IBAction)togglePerspective:(id)sender {
+    _perspective = !_perspective;
+    [self redraw];
+}
+
 - (IBAction)toggleInspector:(id)sender {
     [self commitEdit];
     _inspect = !_inspect;
@@ -310,8 +338,10 @@ struct EditHandle {
 
 // The topmost path whose polygon (its quadratics' chords) holds a point in window coordinates.
 - (NSInteger)pathAt:(NSPoint)location {
-    NSPoint v = [self convertPoint:location fromView:nil];
-    float x = v.x * self.layer.contentsScale, y = v.y * self.layer.contentsScale;
+    if (_cube)
+        return -1;
+    CGPoint u = [self unproject:location];
+    float x = u.x, y = u.y;
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float sx = x * inv.a + y * inv.c + inv.tx, sy = x * inv.b + y * inv.d + inv.ty;
     for (NSInteger i = (NSInteger)_scene._paths.size() - 1; i >= 0; i--) {
@@ -365,12 +395,13 @@ struct EditHandle {
 - (CGPoint)devicePointForSource:(const float *)p {
     AffineTransform t = self.viewCTM;
     float x = p[0], y = _svgImage->height - p[1];
-    return CGPointMake(x * t.a + y * t.c + t.tx, x * t.b + y * t.d + t.ty);
+    simd_float3 h = simd_mul(self.projection, simd_make_float3(x * t.a + y * t.c + t.tx, x * t.b + y * t.d + t.ty, 1));
+    return CGPointMake(h.x / h.z, h.y / h.z);
 }
 
 - (CGPoint)sourcePointAt:(NSPoint)location {
-    NSPoint v = [self convertPoint:location fromView:nil];
-    float x = v.x * self.layer.contentsScale, y = v.y * self.layer.contentsScale;
+    CGPoint u = [self unproject:location];
+    float x = u.x, y = u.y;
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     return CGPointMake(x * inv.a + y * inv.c + inv.tx, _svgImage->height - (x * inv.b + y * inv.d + inv.ty));
 }
@@ -381,7 +412,7 @@ static bool closesOnStart(NSVGpath *path) {
 
 // The edit point under a location in window coordinates, the nearest within kHandleHitRadius, or -1.
 - (NSInteger)editPointAt:(NSPoint)location {
-    if (![self editedShape])
+    if (_cube || ![self editedShape])
         return -1;
     NSPoint v = [self convertPoint:location fromView:nil];
     float x = v.x * self.layer.contentsScale, y = v.y * self.layer.contentsScale, r = kHandleHitRadius * self.layer.contentsScale, best = r * r;
@@ -627,6 +658,7 @@ static bool closesOnStart(NSVGpath *path) {
 - (void)writeDrawCalls:(MeshPath *)paths {
     State uniforms;
     uniforms.CTM = self.viewCTM;
+    uniforms.perspective = self.projection;
     uniforms.strokeColor = { 0, 0, 0, 1 };
     uniforms.width = 0;
     
@@ -651,7 +683,18 @@ static bool closesOnStart(NSVGpath *path) {
         paths[inspected].color = RGBA8::Red();
     }
     
-    Bounds clipBounds = { 0, 0, float(std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale)), float(std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale)) };
+    float pw = std::ceil(self.metalLayer.bounds.size.width * self.metalLayer.contentsScale), ph = std::ceil(self.metalLayer.bounds.size.height * self.metalLayer.contentsScale);
+    if (_cube) {
+        [self writeCubeCalls:paths count:N width:pw height:ph uniforms:uniforms meshState:meshState];
+        return;
+    }
+    // What the drawable shows of the flat page: its corners projected back, as perspective shows the far side more of it.
+    simd_float3x3 inverse = simd_inverse(self.projection);
+    Bounds clipBounds = { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
+    for (simd_float3 corner : { simd_make_float3(0, 0, 1), simd_make_float3(pw, 0, 1), simd_make_float3(0, ph, 1), simd_make_float3(pw, ph, 1) }) {
+        simd_float3 h = simd_mul(inverse, corner);
+        clipBounds.unite(Bounds(h.x / h.z, h.y / h.z, h.x / h.z, h.y / h.z));
+    }
     Mesh::writePathCalls(_mesh, paths, N, clipBounds, uniforms, meshState, 0, 0, _editBegin, _editEnd);
     if (_editEnd == _editBegin && _handles.size() == 0)
         return;
@@ -772,7 +815,7 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
 #pragma mark - LayerDelegate
 
 - (Mesh *)meshForLayer:(CALayer *)layer paths:(MeshPath *)paths {
-    double timerTime = _displayLink ? [NSDate date].timeIntervalSinceReferenceDate : 0;
+    double timerTime = _timer ? [NSDate date].timeIntervalSinceReferenceDate : 0;
     _mesh._timeline.writePathsForTime(timerTime, paths);
     [self writeHandlePaths:paths];
     [self writeDrawCalls: paths];
@@ -801,6 +844,64 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
     }
     [self triangulate];
     [self redraw];
+}
+
+// The perspective view's homography of device pixels: the page tilted back by 45 degrees about the drawable's horizontal
+// centre line, seen from the drawable's height away. Relative to the centre, (x, y) goes to (x, y cos) / (1 + y sin / d),
+// so the top recedes. The horizon, where the page's far side converges, lies d cos / sin above the centre: beyond the
+// top for this tilt, so every point on screen projects back onto the page.
+- (simd_float3x3)projection {
+    if (!_perspective)
+        return matrix_identity_float3x3;
+    float w = std::ceil(self.bounds.size.width * self.layer.contentsScale), h = std::ceil(self.bounds.size.height * self.layer.contentsScale);
+    float cx = w * 0.5f, cy = h * 0.5f, d = h, c = std::cos(float(M_PI) / 4), s = std::sin(float(M_PI) / 4), k = s / d;
+    return simd_matrix_from_rows(simd_make_float3(1, cx * k, -cx * cy * k),
+                                 simd_make_float3(0, c + cy * k, cy * (1 - c) - cy * cy * k),
+                                 simd_make_float3(0, k, 1 - cy * k));
+}
+
+// The scene on each face of a cube a third of the drawable across, turning about two axes and seen from twice its size
+// away. A face is the scene fitted to a square of side S, (a, b) in its pixels, at o + a u + b v in 3D, its axes chosen so
+// that u x v points inward and no face reads mirrored from outside. Seen from (0, 0, -D) looking along z, a point P is at
+// (P.xy / w) about the centre with w = 1 + P.z / D, so the face's projection is a homography of its pixels. Only faces
+// turned toward the eye are drawn: they never overlap on screen, so the depth buffer orders each as it does the page.
+// Gestures since the cube appeared (zoom, pan, rotate) move it on screen, as view, a similarity of device pixels. Its
+// scale s also scales the faces' fit, with each projection taking it out again: dilation and anti-aliasing are in fit
+// pixels, so the faces draw at the resolution they are seen at rather than as a magnified image.
+- (void)writeCubeCalls:(MeshPath *)paths count:(int)n width:(float)w height:(float)h uniforms:(State)uniforms meshState:(MeshState)meshState {
+    float S = std::min(w, h) / 3, D = 2 * S, cx = w * 0.5f, cy = h * 0.5f;
+    CGAffineTransform g = CGAffineTransformConcat(CGAffineTransformInvert(_cubeView), self.transform.affineTransform);
+    float px = self.layer.contentsScale, sv = std::sqrt(std::abs(float(g.a * g.d - g.b * g.c)));
+    simd_float3x3 view = simd_matrix(simd_make_float3(g.a, g.b, 0), simd_make_float3(g.c, g.d, 0), simd_make_float3(g.tx * px, g.ty * px, 1));
+    simd_float3x3 unscale = simd_matrix(simd_make_float3(1 / sv, 0, 0), simd_make_float3(0, 1 / sv, 0), simd_make_float3(0, 0, 1));
+    Bounds b = _scene._bounds;
+    float k = S / std::max(b.ux - b.lx, b.uy - b.ly);
+    uniforms.CTM = { k * sv, 0, 0, k * sv, ((S - (b.ux - b.lx) * k) * 0.5f - b.lx * k) * sv, ((S - (b.uy - b.ly) * k) * 0.5f - b.ly * k) * sv };
+    float t = float([NSDate date].timeIntervalSinceReferenceDate - _cubeStart), ay = 0.7f * t, ax = 0.45f * t;
+    simd_float3x3 R = simd_mul(simd_matrix(simd_make_float3(std::cos(ay), 0, -std::sin(ay)), simd_make_float3(0, 1, 0), simd_make_float3(std::sin(ay), 0, std::cos(ay))),
+                               simd_matrix(simd_make_float3(1, 0, 0), simd_make_float3(0, std::cos(ax), std::sin(ax)), simd_make_float3(0, -std::sin(ax), std::cos(ax))));
+    struct Face { simd_float3 n, u, v; };
+    const Face faces[6] = {
+        { { 0, 0, -1 }, { 1, 0, 0 }, { 0, 1, 0 } }, { { 0, 0, 1 }, { -1, 0, 0 }, { 0, 1, 0 } },
+        { { 1, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 } }, { { -1, 0, 0 }, { 0, 0, -1 }, { 0, 1, 0 } },
+        { { 0, 1, 0 }, { 1, 0, 0 }, { 0, 0, 1 } }, { { 0, -1, 0 }, { 1, 0, 0 }, { 0, 0, -1 } },
+    };
+    auto column = [&](simd_float3 p, float one) { return simd_make_float3(p.x + cx * (one + p.z / D), p.y + cy * (one + p.z / D), one + p.z / D); };
+    for (const Face& f : faces) {
+        simd_float3 nr = simd_mul(R, f.n), u = simd_mul(R, f.u), v = simd_mul(R, f.v), c = nr * (S * 0.5f);
+        if (simd_dot(nr, c + simd_make_float3(0, 0, D)) >= 0)
+            continue;
+        simd_float3x3 face = simd_matrix(column(u, 0), column(v, 0), column(c - (u + v) * (S * 0.5f), 1));
+        uniforms.perspective = simd_mul(view, simd_mul(face, unscale));
+        Mesh::writePathCalls(_mesh, paths, n, Bounds(0, 0, S * sv, S * sv), uniforms, meshState);
+    }
+}
+
+// A window location in the flat page's device pixels, before the perspective view.
+- (CGPoint)unproject:(NSPoint)location {
+    NSPoint v = [self convertPoint:location fromView:nil];
+    simd_float3 h = simd_mul(simd_inverse(self.projection), simd_make_float3(v.x * self.layer.contentsScale, v.y * self.layer.contentsScale, 1));
+    return CGPointMake(h.x / h.z, h.y / h.z);
 }
 
 - (AffineTransform)viewCTM {

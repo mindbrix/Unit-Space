@@ -26,6 +26,15 @@ struct IndexedInteriorFragment
     float4 color [[flat]];
 };
 
+// A device point's clip position, through the view's perspective homography. Everything before it stays in the flat
+// page's device pixels; its third coordinate becomes w, so the rasteriser interpolates every varying perspective-correctly,
+// curves' Loop-Blinn coordinates included, and they keep their exact projected shape. Anti-aliasing widths stay in page
+// pixels, so edges soften where the page comes nearer and sharpen where it recedes.
+static inline float4 clipPosition(float2 p, float z, constant State& state) {
+    float3 h = state.perspective * float3(p, 1);
+    return float4(h.xy / float2(state.drawableSize.w, state.drawableSize.h) * 2.0 - h.z, z * h.z, h.z);
+}
+
 vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                           const device MeshVertex *verts [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
                                                           uint vid [[vertex_id]])
@@ -53,7 +62,7 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     // vertices all carry its threshold, so it is clipped away whole.
     vert.clip[0] = 1.0 / rscale > v.t * f ? 1.0 : -1e9;
     float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
-    vert.position = float4((float2(devicePoint.x / state.drawableSize.w, devicePoint.y / state.drawableSize.h) * 2.0 - 1.0), z, 1.0);
+    vert.position = clipPosition(devicePoint, z, state);
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -166,7 +175,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     RGBA8 color = paths[p].color;
     float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
-    vert.position = float4((pos / float2(state.drawableSize.w, state.drawableSize.h)) * 2.0 - 1.0, z, 1.0);
+    vert.position = clipPosition(pos, z, state);
     
     uint lines = 0;     // polygon triangles: which corner lines (d0..d5) are a concave curve's chord
     // Branch rather than select: each path's hull triangles are contiguous, so the branch is mostly coherent.

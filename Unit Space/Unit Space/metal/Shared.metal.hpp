@@ -156,6 +156,7 @@ struct State {
     AffineTransform     CTM;
     _Size               drawableSize;
     float               width;              // the debug outline width, in pixels
+    simd_float3x3       perspective;        // a homography of device pixels applied last, for a projected view; identity if none
 };
 
 enum CallType : unsigned int {

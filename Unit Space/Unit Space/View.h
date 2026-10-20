@@ -16,6 +16,8 @@
 - (IBAction)anticlockwise:(id)sender;
 
 - (IBAction)resetViewCTM:(id)sender;
+- (IBAction)togglePerspective:(id)sender;
+- (IBAction)toggleCube:(id)sender;
 
 - (IBAction)toggleShowPolygons:(id)sender;
 - (IBAction)toggleEdges:(id)sender;

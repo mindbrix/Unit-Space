@@ -691,6 +691,18 @@ DQ
                                     <action selector="toggleSolo:" target="-1" id="Sol-Ac-tTg"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Perspective" keyEquivalent="d" id="Prs-Mi-tTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="togglePerspective:" target="-1" id="Prs-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Toggle Cube" keyEquivalent="k" id="Cub-Mi-tTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleCube:" target="-1" id="Cub-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Timer" keyEquivalent=" " id="7jz-7I-Qc3">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
