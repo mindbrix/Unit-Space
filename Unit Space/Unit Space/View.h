@@ -10,15 +10,11 @@
 
 @interface View : NSView
 
-@property(nonatomic, strong) NSData *fontData;
 @property(nonatomic, strong) NSData *svgData;
 
 - (IBAction)clockwise:(id)sender;
 - (IBAction)anticlockwise:(id)sender;
 
-- (IBAction)resetModel:(id)sender;
-
-- (IBAction)cycleShapes:(id)sender;
 - (IBAction)resetViewCTM:(id)sender;
 
 - (IBAction)toggleShowPolygons:(id)sender;

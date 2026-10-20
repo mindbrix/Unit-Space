@@ -10,7 +10,6 @@
 
 @interface Document ()
 
-@property( nonatomic, strong ) NSData *fontData;
 @property( nonatomic, strong ) NSData *svgData;
 
 @end
@@ -36,10 +35,10 @@
     return @"Document";
 }
 
+// An untitled document shows the sample artwork, the Ghostscript tiger, rather than an empty window.
 - (void)windowControllerDidLoadNib:(NSWindowController *)aController {
     [super windowControllerDidLoadNib:aController];
-    self.view.fontData = self.fontData;
-    self.view.svgData = self.svgData;
+    self.view.svgData = self.svgData ?: [[NSDataAsset alloc] initWithName:@"Sample"].data;
 }
 
 - (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError {
@@ -56,8 +55,6 @@
     // If you override either of these, you should also override -isEntireFileLoaded to return NO if the contents are lazily loaded.
     if ([typeName isEqualToString:@"SVG"])
         self.svgData = data;
-    else if ([typeName isEqualToString:@"TTF"])
-        self.fontData = data;
     return YES;
 }
 

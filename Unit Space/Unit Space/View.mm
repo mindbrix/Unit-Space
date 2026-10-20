@@ -59,9 +59,6 @@ struct EditHandle {
 @property(nonatomic) vector<EditHandle> handles;
 @property(nonatomic) vector<EditPoint> editPoints;
 @property(nonatomic) EditPoint dragPoint;       // the point being dragged: its path is null when none is
-@property(nonatomic) size_t shapeIndex;
-@property(nonatomic) vector<vector<Vector>> shapes;
-@property(nonatomic) vector<SubPath::Type> shapeTypes;
 @property(nonatomic) Mesh mesh;
 @property(nonatomic) Scene scene;
 @property(nonatomic) CADisplayLink *displayLink;
@@ -88,7 +85,6 @@ struct EditHandle {
     self.hoverPath = self.selectedPath = -1;
     self.dragPoint = { nullptr, 0 };
     [self makeHandleTemplates];
-    [self resetShapes];
     [self redraw];
     return self;
 }
@@ -219,21 +215,6 @@ struct EditHandle {
     [self redraw];
 }
 
-- (IBAction)resetModel:(id)sender {
-    [self resetShapes];
-    [self triangulate];
-    [self redraw];
-}
-
-- (IBAction)cycleShapes:(id)sender {
-    _shapeIndex++;
-    if (_shapeIndex == _shapes.size())
-        _shapeIndex = 0;
-    
-    [self resetShapes];
-    [self triangulate];
-    [self redraw];
-}
 - (IBAction)resetViewCTM:(id)sender {
     [self.transform reset];
     [self redraw];
@@ -632,33 +613,7 @@ static bool closesOnStart(NSVGpath *path) {
 
 #pragma mark -
 
-- (void)resetShapes {
-    _shapes =
-    {
-        {   { 0, 0 }, { 10, 100 }, { 0, 100 }                              },
-        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }, { 0, 0 }        },
-        {   { 0, 0 }, { 100, 0 }, { 100, 100 }, { 0, 100 }                  },
-        {   { 0, 0 }, { 50, 50 }, { 100, 100 }, { 50, 100 }, { 0, 100 }     },
-        {   { 0, 0 }, { 100, 0 }, { 0, 100 }, { 100, 100 }                  },
-        {   { 0, 0 }, { 100, 100 }, { 0, 100 }                              },
-    };
-    _shapeTypes =
-    {
-        SubPath::kLine,
-        SubPath::kQuadratic,
-        SubPath::kLine,
-        SubPath::kQuadratic,
-        SubPath::kLine,
-        SubPath::kQuadratic,
-    };
-}
-
 - (void)triangulate {
-    if (_svgData == nil && _fontData == nil) {
-        Path p(true, false, RGBA8::Red(), { SubPath((float *)& _shapes[_shapeIndex][0], (int)_shapes[_shapeIndex].size(), _shapeTypes[_shapeIndex]) });
-        _scene.empty();
-        _scene.addPath(p);
-    }
     libTess::triangulate(_mesh, _scene);
     [self.metalLayer uploadMesh:_mesh];
     _editMesh.empty();
@@ -808,26 +763,6 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
             }
             CGPathRelease(path);
         }
-    } else {
-        for (size_t i = 0; i < _scene._paths.size(); i++) {
-            Path& p = _scene._paths[i];
-            AffineTransform m = _scene._CTMs[i];
-            CGAffineTransform ctm = CGAffineTransformMake(m.a, m.b, m.c, m.d, m.tx, m.ty);
-            CGMutablePathRef path = CGPathCreateMutable();
-            for (SubPath& sub : p._subPaths) {
-                const float *q = sub._quadratics.get();
-                int n = (int)sub._quadratics.count() / 4;
-                CGPathMoveToPoint(path, & ctm, q[0], q[1]);
-                for (int k = 0; k < n; k++)
-                    CGPathAddQuadCurveToPoint(path, & ctm, q[k * 4 + 2], q[k * 4 + 3], q[k * 4 + 4], q[k * 4 + 5]);
-                CGPathCloseSubpath(path);
-            }
-            RGBA8 c = _showColors ? p._color : RGBA8::Black();
-            CGContextSetRGBFillColor(ctx, c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
-            CGContextAddPath(ctx, path);
-            p._evenOdd ? CGContextEOFillPath(ctx) : CGContextFillPath(ctx);
-            CGPathRelease(path);
-        }
     }
     CGImageRef image = CGBitmapContextCreateImage(ctx);
     layer.contents = (__bridge id)image;
@@ -845,17 +780,6 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
 }
 
 #pragma mark - Properties
-
-- (void)setFontData:(NSData *)fontData {
-    _fontData = fontData;
-    
-    if (_fontData) {
-        _scene.empty();
-        _scene.addFont(_fontData.bytes, _fontData.length);
-    }
-    [self triangulate];
-    [self redraw];
-}
 
 - (void)setSvgData:(NSData *)svgData {
     _svgData = svgData;

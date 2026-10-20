@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14113" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="25406" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14113"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="25406"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -621,12 +621,6 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="hB3-LF-h0Y"/>
-                            <menuItem title="Reset Model" keyEquivalent="t" id="KiN-W0-YhM">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="resetModel:" target="-1" id="bpQ-rO-R5g"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Reset View CTM" id="v72-wx-yJQ">
                                 <string key="keyEquivalent" base64-UTF8="YES">
 DQ
@@ -637,12 +631,6 @@ DQ
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="dE8-xK-Qcr"/>
-                            <menuItem title="Cycle Shapes" keyEquivalent="," id="6g3-WI-1Dt">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="cycleShapes:" target="-1" id="AKU-Uh-yht"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Toggle Polygons" keyEquivalent="y" id="87r-mG-RYi">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -757,6 +745,7 @@ DQ
                     </menu>
                 </menuItem>
             </items>
+            <point key="canvasLocation" x="139" y="154"/>
         </menu>
     </objects>
 </document>
