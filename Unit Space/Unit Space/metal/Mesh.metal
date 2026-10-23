@@ -35,39 +35,63 @@ static inline float4 clipPosition(float2 p, float z, constant State& state) {
     return float4(h.xy / float2(state.drawableSize.w, state.drawableSize.h) * 2.0 - h.z, z * h.z, h.z);
 }
 
+// The interior is the edge triangles themselves, drawn from the end of the stream, so opaque paths draw front to back,
+// each corner inset along its dilation miter by the filter width: the opaque fill stops where the edge pass's coverage
+// reaches 1. A corner's inset keeps the filter width from both its edges whichever of its triangles it lands in, but a
+// long miter, a sharp tip's heading out of this triangle or a reflex corner's (a slit's end, where the vertex itself is
+// the nearest boundary), would carry the vertex across the picture, so such a triangle is left to the edge pass, as is one the inset collapses at this scale (its area, a
+// quadratic in the inset, must keep its sign the whole way), one smaller than the filter, and a hull, which lies outside
+// the fill. Each vertex decides from the whole triangle, so all three agree and a triangle is
+// clipped away whole. Triangles keep their path's winding, so this pass does not cull by it.
 vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                                          const device MeshVertex *verts [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
+                                                          const device Triangle *tris [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
                                                           const device TriangleInstance *instances [[buffer(10)]],
                                                           uint vertexId [[vertex_id]])
 {
-    // The interior stream from its end, so opaque paths draw front to back: each instance draws its path's interior
-    // triangles' vertices.
-    uint iid = vertexId / 3;
+    uint iid = vertexId / 3, vid = vertexId - iid * 3;
     TriangleInstance instance = instances[meshState.triangleInstances - 1 - iid];
-    const device MeshVertex& v = verts[instance.triangle * 3 + vertexId - iid * 3];
+    const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
+    Bounds bounds = paths[p].bounds;
+    float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
+    float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
+    float tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
+    float2 v0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
+    float2 v1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
+    float2 v2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
     const float f = kTriangleFilterWidth;
-    float2 iv = { (v.ix * CTM.a + v.iy * CTM.c) * rscale * f, (v.ix * CTM.b + v.iy * CTM.d) * rscale * f };
+    const device float *iv = & tri.ix0;
+    float2 iv0 = float2(iv[0] * CTM.a + iv[1] * CTM.c, iv[0] * CTM.b + iv[1] * CTM.d) * (rscale * f);
+    float2 iv1 = float2(iv[2] * CTM.a + iv[3] * CTM.c, iv[2] * CTM.b + iv[3] * CTM.d) * (rscale * f);
+    float2 iv2 = float2(iv[4] * CTM.a + iv[5] * CTM.c, iv[4] * CTM.b + iv[5] * CTM.d) * (rscale * f);
     
-    Bounds bounds = paths[p].bounds;
-    float w = (bounds.ux - bounds.lx) / kUnsignedShortMax, h = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    float2 devicePoint = {
-        iv.x + v.x * w * CTM.a + v.y * h * CTM.c + bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,
-        iv.y + v.x * w * CTM.b + v.y * h * CTM.d + bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
-    };
+    // The inset triangle's doubled area at inset s in [0, 1] is A0 + s (B + s C).
+    float2 e1 = v1 - v0, e2 = v2 - v0, m1 = iv1 - iv0, m2 = iv2 - iv0;
+    float A0 = e1.x * e2.y - e1.y * e2.x, B = e1.x * m2.y - e1.y * m2.x + m1.x * e2.y - m1.y * e2.x, C = m1.x * m2.y - m1.y * m2.x;
+    float sv = -B / (2.0 * C), Av = A0 + sv * (B + sv * C);
+    bool whole = !(tri.flags & Triangle::kHull) && abs(A0) > 2.0 * f * f && A0 * (A0 + B + C) > 0.0 && !(sv > 0.0 && sv < 1.0 && A0 * Av <= 0.0);
+    // A long miter must be a convex corner's, and keep its vertex inside the triangle, on the inner side of each edge as
+    // the triangle's winding (A0's sign) has it.
+    float2 q[3] = { v0 + iv0, v1 + iv1, v2 + iv2 }, v[3] = { v0, v1, v2 }, m[3] = { iv0, iv1, iv2 };
+    for (int k = 0; k < 3; k++) {
+        if (dot(m[k], m[k]) <= kTriangleDilationMax * kTriangleDilationMax * f * f)
+            continue;
+        whole = whole && (tri.flags & (Triangle::kFlagsConvex0 >> k));
+        for (int j = 0; j < 3; j++) {
+            float2 ea = v[(j + 1) % 3] - v[j], eq = q[k] - v[j];
+            whole = whole && A0 * (ea.x * eq.y - ea.y * eq.x) >= 0.0;
+        }
+    }
+    
+    float2 pos = select(select(v2 + iv2, v1 + iv1, vid == 1), v0 + iv0, vid == 0);
     RGBA8 color = paths[p].color;
-    
     IndexedInteriorVertex vert;
-    // As the interior once did per triangle: one the inset would collapse at this scale is left to the edge pass. The
-    // inset is f / scale along the miters, so that is when the scale falls below f times the threshold, not twice it:
-    // a margin culls triangles that stay whole, which leaves the interior with gaps the edge pass must fill. Its
-    // vertices all carry its threshold, so it is clipped away whole.
-    vert.clip[0] = 1.0 / rscale > v.t * f ? 1.0 : -1e9;
+    vert.clip[0] = whole ? 1.0 : -1e9;
     float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
-    vert.position = clipPosition(devicePoint, z, state);
+    vert.position = clipPosition(pos, z, state);
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
 }
@@ -77,16 +101,17 @@ fragment float4 interior_indexed_fragment_main(IndexedInteriorFragment vert [[st
     return vert.color;
 }
 
-// The debug outlines: every triangle's edges, or only the interior polygons'. The vertices carry no barycentrics or
-// per-triangle flags, so they come from the rasteriser and a byte per triangle. Barycentric coordinates are not on
-// every GPU, so this is a separate pipeline, only built where they are.
+// The debug outlines: every triangle's edges, or only the interior polygons', which the triangle's flags hold. The
+// vertices carry no barycentrics, so they come from the rasteriser. Barycentric coordinates are not on every GPU, so
+// this is a separate pipeline, only built where they are.
 fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorFragment vert [[stage_in]], float3 b [[barycentric_coord]],
                                                      uint pid [[primitive_id]],
                                                      constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                                     const device uchar *edges [[buffer(2)]],
+                                                     const device Triangle *tris [[buffer(2)]],
                                                      const device TriangleInstance *instances [[buffer(3)]])
 {
-    uchar e = meshState.showTriangles ? 7 : edges[instances[meshState.triangleInstances - 1 - (meshState.baseTriangle + pid)].triangle];
+    uint flags = tris[instances[meshState.triangleInstances - 1 - (meshState.baseTriangle + pid)].triangle].flags;
+    uchar e = meshState.showTriangles ? 7 : ((flags >> 31) & 1) | ((flags >> 30) & 1) << 1 | ((flags >> 29) & 1) << 2;
     float w = max(1.0, state.width);
     float d = simpleBarycentricDistance(b.z, b.x, e & 1, e & 2, e & 4);
     return vert.color * saturate(w - d);

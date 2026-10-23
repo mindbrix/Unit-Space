@@ -109,28 +109,3 @@ static void radixSort(T *begin, T *end) {
     free(mem0);
     free(mem1);
 }
-
-// https://math.stackexchange.com/questions/12186/arc-length-of-bézier-curves
-//
-static inline void solveQuadratic(float A, float B, float C, float *t0, float *t1) {
-    *t0 = -C / B, *t1 = -1;
-    if (std::abs(A) > 1e-3) {
-        float discriminant = B * B - 4 * A * C, sqrtDiscriminant = std::sqrt(std::abs(discriminant)), denominator = 0.5 / A;
-        if (discriminant < 0) {
-            float real = -B * denominator, imaginary = sqrtDiscriminant * denominator;
-            *t0 = std::sqrt(real * real + imaginary * imaginary);
-        } else {
-            *t0 = B < 0 ? (-B + sqrtDiscriminant) * denominator : (-B - sqrtDiscriminant) * denominator;
-            *t1 = C / (A * *t0);
-        }
-    }
-}
-
-static inline void solveTriangle(Vector r, Vector s, Vector u, Vector v, Vector w, Vector x, float *t0, float *t1) {
-    float VyXy = v.y - x.y, XySy = x.y - s.y, SyVy = s.y - v.y;
-    float UyWy = u.y - w.y, WyRy = w.y - r.y, RyUy = r.y - u.y;
-    float A =    s.x * VyXy + v.x * XySy + x.x * SyVy;
-    float B =    r.x * VyXy + u.x * XySy + w.x * SyVy + s.x * UyWy + v.x * WyRy + x.x * RyUy;
-    float C =    r.x * UyWy + u.x * WyRy + w.x * RyUy;
-    solveQuadratic(A, B, C, t0, t1);
-}

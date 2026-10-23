@@ -74,12 +74,12 @@ struct Mesh {
 					ranges.emplace_back(j), ranges.emplace_back(p);
 			}
             call = nullptr;
-            if (meshState.showInterior && mesh._interiorInstances.count()) {
-                // Calls address the interior stream reversed, front to back, so a merged run keeps its start and only grows.
-                int total = (int)mesh._interiorInstances.count();
+            if (meshState.showInterior) {
+                // Calls address the stream reversed, front to back, so a merged run keeps its start and only grows.
+                int total = (int)mesh._triangleInstances.count();
                 for (p = (int)pathsSize - 1; p >= 0; p--) {
-                    int first = mesh._interiorIdxs[p];
-                    count = mesh._interiorIdxs[p + 1] - first;
+                    int first = mesh._idxs[p];
+                    count = mesh._idxs[p + 1] - first;
                     if (!visibles[p] || !opaques[p] || count == 0)
                         continue;
                     base = total - first - count;
@@ -135,43 +135,30 @@ struct Mesh {
     Memory<Triangle, true>              _tris;              // each path's triangles, once however many instances draw it
     vector<int>                         _idxs;              // each instance's first triangle instance, then their end
     Memory<TriangleInstance, true>      _triangleInstances; // every instance's triangles, in instance order
-    vector<float>                       _interiorMiters;    // per triangle, the interior pass's miters, x, y per vertex, until writeInterior()
-    // The interior: each path's triangles but its hulls, which it never paints.
-    vector<int>                         _interiorPathIdxs;  // each path's first interior triangle, then their end
-    Memory<MeshVertex, true>            _interiorVerts;     // three per interior triangle
-    Memory<unsigned char, true>         _interiorEdges;     // debug: per interior triangle, bit k set if edge k is a polygon edge
     vector<float>                       _interiorDensities; // per path, its edges per quantised unit of interior area
     vector<int>                         _instancePaths;     // each instance's path
-    vector<int>                         _interiorIdxs;      // each instance's first interior triangle instance, then their end
-    Memory<TriangleInstance, true>      _interiorInstances; // every instance's interior triangles, in instance order
 	
-    // The streams, replacing any before, for count instances numbered from base: instance base + k draws the triangles,
-    // and the interior triangles, of the mesh's path paths[k], which indexes _pathIdxs and _interiorPathIdxs.
+    // The stream, replacing any before, for count instances numbered from base: instance base + k draws the triangles
+    // of the mesh's path paths[k], which indexes _pathIdxs. It is allocated once, at its size.
     void writeTriangleInstances(const int *paths, int count, int base) {
-        // Each stream is allocated once, at its size.
-        auto write = [&](const vector<int>& pathIdxs, vector<int>& idxs, Memory<TriangleInstance, true>& stream) {
-            idxs.resize(0), stream = Memory<TriangleInstance, true>();
-            size_t total = 0;
-            for (int k = 0; k < count; k++)
-                total += pathIdxs[paths[k] + 1] - pathIdxs[paths[k]];
-            TriangleInstance *instance = total ? stream.new_ptr(total) : nullptr;
-            for (int k = 0, end = 0; k < count; k++) {
-                int first = pathIdxs[paths[k]], n = pathIdxs[paths[k] + 1] - first;
-                idxs.emplace_back(end);
-                for (int i = 0; i < n; i++)
-                    *instance++ = { (unsigned int)(base + k), (unsigned int)(first + i) };
-                end += n;
-            }
-            idxs.emplace_back((int)total);
-        };
-        write(_pathIdxs, _idxs, _triangleInstances);
-        write(_interiorPathIdxs, _interiorIdxs, _interiorInstances);
+        _idxs.resize(0), _triangleInstances = Memory<TriangleInstance, true>();
+        size_t total = 0;
+        for (int k = 0; k < count; k++)
+            total += _pathIdxs[paths[k] + 1] - _pathIdxs[paths[k]];
+        TriangleInstance *instance = total ? _triangleInstances.new_ptr(total) : nullptr;
+        for (int k = 0, end = 0; k < count; k++) {
+            int first = _pathIdxs[paths[k]], n = _pathIdxs[paths[k] + 1] - first;
+            _idxs.emplace_back(end);
+            for (int i = 0; i < n; i++)
+                *instance++ = { (unsigned int)(base + k), (unsigned int)(first + i) };
+            end += n;
+        }
+        _idxs.emplace_back((int)total);
         _instancePaths.assign(paths, paths + count);
     }
     
     void empty() {
         _timeline.empty(), _pathIdxs.resize(0), _idxs.resize(0), _tris = Memory<Triangle, true>(), _triangleInstances = Memory<TriangleInstance, true>();
-        _interiorMiters.resize(0), _interiorPathIdxs.resize(0), _interiorDensities.resize(0), _instancePaths.resize(0), _interiorIdxs.resize(0);
-        _interiorVerts = Memory<MeshVertex, true>(), _interiorEdges = Memory<unsigned char, true>(), _interiorInstances = Memory<TriangleInstance, true>();
+        _interiorDensities.resize(0), _instancePaths.resize(0);
     }
 };

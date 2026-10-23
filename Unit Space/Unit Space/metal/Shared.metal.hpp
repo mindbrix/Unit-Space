@@ -119,16 +119,6 @@ struct TriangleInstance {
     unsigned int instance, triangle;
 };
 
-// An interior mesh vertex: quantised position within its path's bounds plus its miter vector. Each path triangle has
-// three, which every instance of the path draws.
-struct MeshVertex {
-    MeshVertex() {}
-    MeshVertex(unsigned short x, unsigned short y, float ix, float iy) : x(x), y(y), ix(ix), iy(iy), t(0) {}
-    unsigned short x, y;
-    float ix, iy;
-    float t;        // its triangle's solveTriangle() threshold
-};
-
 struct Vector {
     Vector() {}
     Vector(float x, float y) : x(x), y(y) {}
@@ -154,7 +144,7 @@ struct MeshState {
     bool                useStrokeColor;     // debug: edges in the state's stroke colour
 	int                 colorsSize;
     int                 baseTriangle;       // debug: an interior call's first triangle, as primitive_id restarts per draw
-    int                 triangleInstances;  // interior calls: the interior stream's length, as they draw it from its end
+    int                 triangleInstances;  // interior calls: the stream's length, as they draw it from its end
 };
 
 struct State {

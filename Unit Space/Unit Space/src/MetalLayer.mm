@@ -13,9 +13,6 @@
 @interface MeshBuffers : NSObject
 @property (nonatomic, strong) id <MTLBuffer> trisBuffer;
 @property (nonatomic, strong) id <MTLBuffer> triangleInstancesBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorInstancesBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorEdgesBuffer;
 @end
 
 @implementation MeshBuffers
@@ -156,30 +153,25 @@
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-        BOOL interior = NO, debug = call->meshState.showTriangles || call->meshState.showPolygons;
+        BOOL debug = call->meshState.showTriangles || call->meshState.showPolygons;
         MeshBuffers *buffers = _meshes[call->mesh];
-        if (instanceCount == 0 || buffers.trisBuffer == nil)
+        if (instanceCount == 0 || buffers.trisBuffer == nil || buffers.triangleInstancesBuffer == nil)
             continue;
+        // Both passes draw the triangles through the stream.
+        [commandEncoder setVertexBuffer:buffers.trisBuffer offset:0 atIndex:8];
+        [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+        [commandEncoder setVertexBuffer:buffers.triangleInstancesBuffer offset:0 atIndex:10];
         switch (call->type) {
             case kCallTypeMeshTriangles:
 				[commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
-				[commandEncoder setVertexBuffer:buffers.trisBuffer offset:0 atIndex:8];
-				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-				[commandEncoder setVertexBuffer:buffers.triangleInstancesBuffer offset:0 atIndex:10];
                 break;
             case kCallTypeMeshInteriorIndexed:
-                if (buffers.interiorVertsBuffer == nil)
-                    continue;
                 debug = debug && _meshInteriorDebugPipelineState != nil;
                 [commandEncoder setRenderPipelineState:debug ? _meshInteriorDebugPipelineState : _meshInteriorIndexedPipelineState];
-                [commandEncoder setVertexBuffer:buffers.interiorVertsBuffer offset:0 atIndex:8];
-                [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                [commandEncoder setVertexBuffer:buffers.interiorInstancesBuffer offset:0 atIndex:10];
                 if (debug) {
-                    [commandEncoder setFragmentBuffer:buffers.interiorEdgesBuffer offset:0 atIndex:2];
-                    [commandEncoder setFragmentBuffer:buffers.interiorInstancesBuffer offset:0 atIndex:3];
+                    [commandEncoder setFragmentBuffer:buffers.trisBuffer offset:0 atIndex:2];
+                    [commandEncoder setFragmentBuffer:buffers.triangleInstancesBuffer offset:0 atIndex:3];
                 }
-                interior = YES;
                 break;
         }
 		
@@ -190,14 +182,7 @@
 		[commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
 		[commandEncoder setFragmentBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
 	
-        if (interior) {
-            // Interior triangles are counter-clockwise in path space; a mirroring CTM flips them.
-            [commandEncoder setCullMode:MTLCullModeBack];
-            [commandEncoder setFrontFacingWinding:AffineTransformArea(call->state.CTM) < 0 ? MTLWindingClockwise : MTLWindingCounterClockwise];
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
-            [commandEncoder setCullMode:MTLCullModeNone];
-        } else
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
+        [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
     }
     [commandEncoder endEncoding];
     __block dispatch_semaphore_t block_sema = _inflight_semaphore;
@@ -232,9 +217,6 @@ static id<MTLBuffer> newBuffer(id<MTLDevice> device, Memory<T, true>& memory) {
     MeshBuffers *buffers = _meshes[index];
     buffers.trisBuffer = newBuffer(self.device, mesh._tris);
     buffers.triangleInstancesBuffer = newBuffer(self.device, mesh._triangleInstances);
-    buffers.interiorInstancesBuffer = newBuffer(self.device, mesh._interiorInstances);
-    buffers.interiorVertsBuffer = newBuffer(self.device, mesh._interiorVerts);
-    buffers.interiorEdgesBuffer = newBuffer(self.device, mesh._interiorEdges);
 }
 
 - (void)reservePaths:(size_t)count {

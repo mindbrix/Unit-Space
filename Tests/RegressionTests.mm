@@ -54,10 +54,7 @@ static uint64_t fnv(const void *bytes, size_t size, uint64_t h = 146959810393466
 }
 static uint64_t meshHash(Mesh& mesh) {
     uint64_t h = fnv(mesh._tris.get(), mesh._tris.count() * sizeof(Triangle));
-    h = fnv(mesh._triangleInstances.get(), mesh._triangleInstances.count() * sizeof(TriangleInstance), h);
-    h = fnv(mesh._interiorInstances.get(), mesh._interiorInstances.count() * sizeof(TriangleInstance), h);
-    h = fnv(mesh._interiorVerts.get(), mesh._interiorVerts.count() * sizeof(MeshVertex), h);
-    return fnv(mesh._interiorEdges.get(), mesh._interiorEdges.count(), h);
+    return fnv(mesh._triangleInstances.get(), mesh._triangleInstances.count() * sizeof(TriangleInstance), h);
 }
 static size_t hulls(Mesh& mesh) {
     size_t n = 0;
@@ -222,24 +219,6 @@ static void testLoopLensSplit() {
 
 #pragma mark - Triangulation
 
-// A slit's end is a reflex corner with a miter thousands long. Its interior inset slides along each triangle's own
-// edge instead, so no interior miter there is that long: the triangle fanning beyond it once kept its, and the
-// interior culled it below 381x.
-static void testReflexInset() {
-    Scene scene = sceneFromFile("Tests/cases/slit-reflex-inset.svg");
-    Mesh mesh;
-    libTess::triangulate(mesh, scene);
-    int corners = 0;
-    for (int p = 0; p + 1 < (int)mesh._interiorPathIdxs.size(); p++)
-        for (int i = mesh._interiorPathIdxs[p] * 3; i < mesh._interiorPathIdxs[p + 1] * 3; i++) {
-            const MeshVertex& v = mesh._interiorVerts[i];
-            if (near(meshPoint(scene, p, v.x, v.y), 212.64f, 127.493f, 510, 1e-3f)) {
-                CHECK(std::hypot(v.ix, v.iy) < kTriangleDilationMax);
-                corners++;
-            }
-        }
-    CHECK(corners > 0);
-}
 // A slit whose two curves leave its end along the same tangent: the join turns back on itself, so it is reflex, not
 // smooth. Classed convex, the hulls were cut away to their chords.
 static void testReversalJoin() {
@@ -310,7 +289,6 @@ static const Test kTests[] = {
     { "refineChords: smooth joins unsplit", testSmoothJoinsUnsplit, 10 },
     { "refineChords: slit lobes split", testSlitLobesSplit, 10 },
     { "refineChords: loop lens split", testLoopLensSplit, 10 },
-    { "triangulate: reflex inset", testReflexInset, 10 },
     { "triangulate: reversal join", testReversalJoin, 10 },
 };
 

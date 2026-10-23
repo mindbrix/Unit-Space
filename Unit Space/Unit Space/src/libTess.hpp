@@ -430,16 +430,13 @@ struct libTess {
     }
     
     // A vertex of the triangulation. Corners sit on the outer polygon and anti-alias its two edges there, which head
-    // toward (px, py) and (nx, ny). Concave curves' control points are interior: their p0 -> c -> p2 miter only insets
-    // the interior pass, and the edge pass gives them no corner.
-    // The interior insets along the curves' tangents instead, (tpx, tpy) and (tnx, tny): a concave curve leaves its end
-    // inside its chord, so insetting from the chord would let the interior reach the curve.
+    // toward (px, py) and (nx, ny); the interior pass insets along the same miters. Concave curves' control points are
+    // interior: their p0 -> c -> p2 miter only insets the interior pass, and the edge pass gives them no corner.
     struct Point {
         Point() {}
-        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), tpx(0), tpy(0), tnx(0), tny(0), corner(false), control(false) {}
-        Point(float x, float y, float px, float py, float nx, float ny, bool control = false) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), tpx(px), tpy(py), tnx(nx), tny(ny), corner(true), control(control) {}
-        Point tangents() const { Point t = *this; t.px = tpx, t.py = tpy, t.nx = tnx, t.ny = tny; return t; }
-        float x, y, px, py, nx, ny, tpx, tpy, tnx, tny;
+        Point(float x, float y) : x(x), y(y), px(0), py(0), nx(0), ny(0), corner(false), control(false) {}
+        Point(float x, float y, float px, float py, float nx, float ny, bool control = false) : x(x), y(y), px(px), py(py), nx(nx), ny(ny), corner(true), control(control) {}
+        float x, y, px, py, nx, ny;
         bool corner, control;   // control: a concave curve's control point, whose p0 -> c -> p2 miter only insets the interior
     };
     
@@ -454,62 +451,6 @@ struct libTess {
     static std::atomic<size_t>& innerIntersections() { static std::atomic<size_t> count(0); return count; }
     
     // The miter at a corner, and whether the corner is convex. (x, y) is any point inside the fill near the corner.
-    // The scale a triangle needs before its inset, its vertices moving along their miters, leaves it whole: the inverse
-    // of where it collapses, and no less than the inverse of its size.
-	static float solveTriangle(float x0, float y0, Vector m0, float x1, float y1, Vector m1, float x2, float y2, Vector m2) {
-		float t, t1, a0, a1, ta, tx0, ty0, tx1, ty1, tx2, ty2;
-		// Solved relative to the first vertex: the area terms cancel, so in absolute coordinates far from the origin
-		// (maps) their rounding swamps small triangles.
-		x1 -= x0, y1 -= y0, x2 -= x0, y2 -= y0, x0 = y0 = 0;
-		::solveTriangle(Vector(x0, y0), m0, Vector(x1, y1), m1, Vector(x2, y2), m2, & t, & t1);
-		tx0 = x0 + m0.x * t, ty0 = y0 + m0.y * t;
-		tx1 = x1 + m1.x * t, ty1 = y1 + m1.y * t;
-		tx2 = x2 + m2.x * t, ty2 = y2 + m2.y * t;
-		a0 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1)), a1 = 0;
-		if (t1 != -1) {
-			tx0 = x0 + m0.x * t1, ty0 = y0 + m0.y * t1;
-			tx1 = x1 + m1.x * t1, ty1 = y1 + m1.y * t1;
-			tx2 = x2 + m2.x * t1, ty2 = y2 + m2.y * t1;
-			a1 = std::abs((tx1 - tx0) * (ty2 - ty1) - (ty1 - ty0) * (tx2 - tx1));
-		}
-		// The nearer root is the collapse if it is not noise and does shrink the triangle. Both tests are relative to the
-		// triangle's size, so they hold in any units: a glyph a few units across as much as a map. Roots are in miters, so
-		// noise is a distance the fastest vertex moves: a sharp corner's long miter collapses a triangle at a small root.
-		float area2 = std::abs((x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)), size = std::sqrt(0.5f * area2);
-		float fastest = std::sqrt(std::max(m0.x * m0.x + m0.y * m0.y, std::max(m1.x * m1.x + m1.y * m1.y, m2.x * m2.x + m2.y * m2.y)));
-		t = 1.0 / std::abs(t1 * fastest > 1e-2 * size && (a1 < area2 || a1 < a0) ? t1 : t);
-		ta = 1.0 / size;
-		return ta > t ? ta : t;
-	}
-	
-    // A sharp corner's interior inset in a triangle its miter heads outside of (a: the triangle's next vertex, b: the one
-    // after). Insets only shrink a triangle until it collapses, but the miter would stretch this one, carrying it far
-    // across the picture. So here the vertex slides along one of the triangle's own edges instead, just far enough to stay
-    // as far from the corner's edges as the miter keeps it: the triangle then only shrinks, until its collapse.
-    // A sharp reflex corner (a slit's end) slides in every triangle. Its miter keeps the vertex as far from its edges'
-    // lines, but its edges end at the vertex, so beyond it the vertex itself is the nearest boundary. The miter would
-    // collapse the triangles there almost at once, leaving them to the edge pass, which bounds them by those lines.
-    static Vector sharpInset(const Point& v, Vector m, bool convex, float ax, float ay, float bx, float by) {
-        float e1x = ax - v.x, e1y = ay - v.y, e2x = bx - v.x, e2y = by - v.y, turn = e1x * e2y - e1y * e2x;
-        bool inside = (e1x * m.y - e1y * m.x) * turn >= 0 && (m.x * e2y - m.y * e2x) * turn >= 0;
-        float dax = v.tpx - v.x, day = v.tpy - v.y, dbx = v.tnx - v.x, dby = v.tny - v.y;
-        float la = std::sqrt(dax * dax + day * day), lb = std::sqrt(dbx * dbx + dby * dby);
-        if (m.x * m.x + m.y * m.y <= kTriangleDilationMax * kTriangleDilationMax || (inside && convex) || la == 0 || lb == 0)
-            return m;
-        dax /= la, day /= la, dbx /= lb, dby /= lb;
-        // The distance from v + e, e a unit edge, to the nearer of the corner's edges, which run from v to its tangent points.
-        auto clearance = [&](float ex, float ey) {
-            auto ray = [&](float dx, float dy) { return ex * dx + ey * dy > 0 ? std::abs(dx * ey - dy * ex) : 1.f; };
-            return std::min(ray(dax, day), ray(dbx, dby));
-        };
-        float l1 = std::sqrt(e1x * e1x + e1y * e1y), l2 = std::sqrt(e2x * e2x + e2y * e2y);
-        e1x /= l1, e1y /= l1, e2x /= l2, e2y /= l2;
-        float c1 = clearance(e1x, e1y), c2 = clearance(e2x, e2y);
-        if (c1 < c2)
-            std::swap(c1, c2), std::swap(e1x, e2x), std::swap(e1y, e2y);
-        return c1 > 0 ? Vector(e1x / c1, e1y / c1) : m;
-    }
-    
     static Vector miter(const Point& v, float x, float y, bool *convex) {
         float x0 = v.x, y0 = v.y, px = v.px, py = v.py, nx = v.nx, ny = v.ny;
         float det = (x0 - px) * (ny - y0) - (y0 - py) * (nx - x0);
@@ -571,13 +512,12 @@ struct libTess {
         int begins[divisions + 1], *b = begins;
         balanceDivisions(costs, divisions, begins);
         vector<Triangle> tris[divisions], *triss = tris;
-        vector<float> imiters[divisions], *imiterss = imiters;
         vector<int> idxs[divisions], *idxss = idxs;
         if (divisions == 1)
-            triangulateRange(tris[0], imiters[0], idxss[0], scene, 0, size);
+            triangulateRange(tris[0], idxss[0], scene, 0, size);
         else {
             dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t idx) {
-                triangulateRange(triss[idx], imiterss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
+                triangulateRange(triss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
         }
         // The mesh's arrays are allocated once, at their size, and each division is freed as it is copied, so the
@@ -586,18 +526,16 @@ struct libTess {
         for (i = 0; i < divisions; i++)
             total += tris[i].size();
         Triangle *dst = total ? mesh._tris.new_ptr(total) : nullptr;
-        mesh._interiorMiters.reserve(total * 6);
         for (base = i = 0; i < divisions; i++) {
             if (tris[i].size())
                 memcpy(dst + base, & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
-            mesh._interiorMiters.insert(mesh._interiorMiters.end(), imiters[i].begin(), imiters[i].end());
             for (int idx : idxs[i])
                 mesh._pathIdxs.emplace_back(base + idx);
             base += (int)tris[i].size();
-            vector<Triangle>().swap(tris[i]), vector<float>().swap(imiters[i]);
+            vector<Triangle>().swap(tris[i]);
         }
         mesh._pathIdxs.emplace_back((int)mesh._tris.count());
-        writeInterior(mesh, scene, 0);
+        writeInteriorDensities(mesh, scene, 0);
         writeTriangleInstances(mesh, scene, 0, (int)scene._instances.size(), 0);
     }
     
@@ -612,11 +550,11 @@ struct libTess {
         for (int i = begin; i < end; i++)
             first = std::min(first, scene._instances[i].path), last = std::max(last, scene._instances[i].path);
         vector<Triangle> tris;
-        triangulateRange(tris, mesh._interiorMiters, mesh._pathIdxs, scene, first, last + 1);
+        triangulateRange(tris, mesh._pathIdxs, scene, first, last + 1);
         if (tris.size())
             memcpy(mesh._tris.new_ptr(tris.size()), & tris[0], tris.size() * sizeof(tris[0]));
         mesh._pathIdxs.emplace_back((int)mesh._tris.count());
-        writeInterior(mesh, scene, first);
+        writeInteriorDensities(mesh, scene, first);
         writeTriangleInstances(mesh, scene, begin, end, first);
     }
     
@@ -628,63 +566,27 @@ struct libTess {
         mesh.writeTriangleInstances(paths.data(), (int)paths.size(), begin);
     }
     
-    // Each path's interior: its triangles but its hulls, which extend outside the fill, so the interior pass must never
-    // paint them. Each triangle writes its own three vertices, which every instance of its path draws: a vertex carries
-    // its triangle's threshold, below, which neighbouring triangles rarely share, so sharing vertices saved only 1-3% of
-    // them for far more time than it saved. They are wound counter-clockwise so back-face culling drops triangles that
-    // the miter inset has inverted. The debug outlines need each triangle's polygon edges, which shared vertices cannot
-    // carry, so they go in a byte per triangle. Triangles the inset would collapse at the current scale are left to the
-    // edge pass, as solveTriangle() decides. Each vertex carries its triangle's threshold, so the pass clips a triangle
-    // away whole. Each path's edges per unit of its interior's area decide whether an instance draws it at all.
-    // The mesh's paths start at scene path pathBase.
-    static void writeInterior(Mesh& mesh, Scene& scene, int pathBase) {
-        // Its vertices and edges are allocated once, at their size.
-        size_t total = 0;
-        for (size_t i = 0; i < mesh._tris.count(); i++)
-            total += !(mesh._tris[i].flags & Triangle::kHull);
-        MeshVertex *dst = total ? mesh._interiorVerts.new_ptr(total * 3) : nullptr;
-        unsigned char *flags = total ? mesh._interiorEdges.new_ptr(total) : nullptr;
-        int count = 0;
+    // Each path's edges per quantised unit of its interior's area (its triangles but its hulls, which lie outside the
+    // fill), which decide whether an instance draws its interior at all. The mesh's paths start at scene path pathBase.
+    static void writeInteriorDensities(Mesh& mesh, Scene& scene, int pathBase) {
         for (size_t p = 0; p + 1 < mesh._pathIdxs.size(); p++) {
-            mesh._interiorPathIdxs.emplace_back(count);
-            Path& path = scene._paths[pathBase + p];
-            const Bounds& b = path._bounds;
-            float sx = (b.ux - b.lx) / kUnsignedShortMax, sy = (b.uy - b.ly) / kUnsignedShortMax;
             double area = 0;
             size_t edges = 0;
-            for (SubPath& s : path._subPaths)
+            for (SubPath& s : scene._paths[pathBase + p]._subPaths)
                 edges += s._quadratics.count() / 4;
             for (int i = mesh._pathIdxs[p]; i < mesh._pathIdxs[p + 1]; i++) {
                 Triangle& t = mesh._tris[i];
-                if (t.flags & Triangle::kHull)
-                    continue;
-                const float *im = & mesh._interiorMiters[size_t(i) * 6];
-                MeshVertex v[3] = { { t.x0, t.y0, im[0], im[1] }, { t.x1, t.y1, im[2], im[3] }, { t.x2, t.y2, im[4], im[5] } };
-                bool e0 = t.flags & Triangle::kFlagsEdge0, e1 = t.flags & Triangle::kFlagsEdge1, e2 = t.flags & Triangle::kFlagsEdge2;
-                int64_t cross = int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0);
-                if (cross < 0)
-                    std::swap(v[1], v[2]), std::swap(e0, e2);   // edges v0 v2, v2 v1, v1 v0
-                area += std::abs(double(cross)) * 0.5;
-                *flags++ = e0 | e1 << 1 | e2 << 2;
-                float tt = solveTriangle(b.lx + v[0].x * sx, b.ly + v[0].y * sy, Vector(v[0].ix, v[0].iy),
-                                         b.lx + v[1].x * sx, b.ly + v[1].y * sy, Vector(v[1].ix, v[1].iy),
-                                         b.lx + v[2].x * sx, b.ly + v[2].y * sy, Vector(v[2].ix, v[2].iy));
-                for (int k = 0; k < 3; k++)
-                    *dst = v[k], (dst++)->t = tt;
-                count++;
+                if (!(t.flags & Triangle::kHull))
+                    area += std::abs(double(int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0))) * 0.5;
             }
             mesh._interiorDensities.push_back(area > 0 ? float(edges / area) : INFINITY);
         }
-        mesh._interiorPathIdxs.emplace_back(count);
-        // The vertices carry the miters now, so the triangles' copy goes.
-        vector<float>().swap(mesh._interiorMiters);
     }
     
     // Triangulates each path's inner polygon, and adds one hull triangle per curve. On the outer polygon a convex curve
     // runs p0 -> c -> p2 and a concave curve along its chord, so every curve lies inside its own hull triangle. The inner
     // polygon cuts those off: chords for convex curves, p0 -> c -> p2 for concave ones.
-    // _imiters: each triangle's interior miters, x and y per vertex. Hulls, which the interior never paints, get zeros.
-    static void triangulateRange(vector<Triangle>& _tris, vector<float>& _imiters, vector<int>& _idxs, Scene& scene, int begin, int end) {
+    static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {
         Arena arena;
         TESSalloc alloc = arena.tessAlloc();
         vector<Point> points;
@@ -808,12 +710,11 @@ struct libTess {
             for (vector<ContourSegment>& c : contours) {
                 int n = (int)c.size(), i;
                 // An on-curve vertex's outer edges head to a convex curve's control point, else along the chord: the hulls'
-                // outer edges, which the edge pass dilates away from. Its interior inset follows every curve's tangent.
+                // outer edges, which the edge pass dilates away from and the interior pass insets from.
                 auto corner = [&](int i) {
                     const ContourSegment &sp = c[(i + n - 1) % n], &sn = c[i], &next = c[(i + 1) % n];
                     bool cp = sp.curved && !sp.concave, cn = sn.curved && !sn.concave;
                     Point v(sn.x, sn.y, cp ? sp.cx : sp.x, cp ? sp.cy : sp.y, cn ? sn.cx : next.x, cn ? sn.cy : next.y);
-                    v.tpx = sp.curved ? sp.cx : sp.x, v.tpy = sp.curved ? sp.cy : sp.y, v.tnx = sn.curved ? sn.cx : next.x, v.tny = sn.curved ? sn.cy : next.y;
                     return v;
                 };
                 size_t first = points.size();
@@ -900,11 +801,6 @@ struct libTess {
                         cx += v[k].x / 3, cy += v[k].y / 3;
                     }
                     for (int k = 0; k < 3; k++) {
-                        bool insetConvex = true;
-                        Vector mi = v[k].corner ? miter(v[k].tangents(), cx, cy, & insetConvex) : Vector(0, 0);
-                        if (v[k].corner && !v[k].control)
-                            mi = sharpInset(v[k].tangents(), mi, insetConvex, v[(k + 1) % 3].x, v[(k + 1) % 3].y, v[(k + 2) % 3].x, v[(k + 2) % 3].y);
-                        _imiters.push_back(mi.x), _imiters.push_back(mi.y);
                         m[k] = v[k].corner ? miter(v[k], cx, cy, & convex[k]) : Vector(0, 0);
                         if (!v[k].corner || v[k].control)
                             convex[k] = false;
@@ -951,7 +847,6 @@ struct libTess {
                 bool start = turn(h.p0.x - h.tpx, h.p0.y - h.tpy, cx - h.p0.x, cy - h.p0.y);
                 bool end = turn(h.p2.x - cx, h.p2.y - cy, h.tnx - h.p2.x, h.tny - h.p2.y);
                 convex[0] = h.concave ? end : start, convex[2] = h.concave ? start : end;
-                _imiters.insert(_imiters.end(), 6, 0.f);
                 writeTriangle(_tris, v, m, convex, !h.concave, !h.concave, h.concave,
                               Triangle::kHull | (h.concave ? Triangle::kConcave : 0), lx, ly, rw, rh);
                 Triangle& t = _tris.back();
