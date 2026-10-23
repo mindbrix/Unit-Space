@@ -35,6 +35,36 @@ static inline float4 clipPosition(float2 p, float z, constant State& state) {
     return float4(h.xy / float2(state.drawableSize.w, state.drawableSize.h) * 2.0 - h.z, z * h.z, h.z);
 }
 
+// A corner's miter in device space, from its miter m in path space. m holds the corner exactly: it is the vector whose
+// dot product with each of the corner's inward unit edge normals is 1, which are its direction u turned either way by
+// the half angle (cosine c = 1 / |m|, sine s): na, nb = c u +- s p, p perpendicular to u. A transform M that is not a
+// similarity (a shear, or a scale that differs by axis) turns normals by its inverse transpose, not as it turns m, so
+// the device miter must have a dot product of 1 with the device normals, which for M w is w . na = alpha / |det| and
+// w . nb = beta / |det|, alpha and beta the lengths of A na and A nb, A the inverse transpose scaled by |det|. In the
+// corner's dual basis that is w = ((alpha + beta) / 2 m + 2 c (A u . A p) / (alpha + beta) p) / |det|, which divides by
+// nothing that vanishes at a sharp corner, and for a similarity is m over its scale, so the miter is just turned, as
+// the callers do when isSimilarity(). Zero, for a vertex with no corner, stays zero.
+static inline float2 deviceMiter(float2 m, AffineTransform CTM) {
+    float len2 = dot(m, m), det = CTM.a * CTM.d - CTM.b * CTM.c, rl = rsqrt(len2), c = min(1.0, rl), s = sqrt(1 - c * c);
+    float2 u = m * rl, p = float2(-u.y, u.x);
+    float2 Au = float2(CTM.d * u.x - CTM.b * u.y, CTM.a * u.y - CTM.c * u.x) * sign(det);
+    float2 Ap = float2(CTM.d * p.x - CTM.b * p.y, CTM.a * p.y - CTM.c * p.x) * sign(det);
+    float sum = length(c * Au + s * Ap) + length(c * Au - s * Ap);
+    float2 w = (0.5 * sum * m + 2 * c * dot(Au, Ap) / sum * p) / abs(det);
+    return select(float2(w.x * CTM.a + w.y * CTM.c, w.x * CTM.b + w.y * CTM.d), float2(0), len2 == 0);
+}
+
+// Whether a transform is exactly a similarity, as its entries show (a = d and b = -c, or mirrored a = -d and b = c): then
+// a miter just turns with it, its matrix over its scale, which does not depend on rounding. It is the same for all an
+// instance's triangles, so the passes' branches on it are coherent.
+static inline bool isSimilarity(AffineTransform CTM) {
+    return (CTM.a == CTM.d && CTM.b == -CTM.c) || (CTM.a == -CTM.d && CTM.b == CTM.c);
+}
+
+static inline float2 turned(float2 v, AffineTransform CTM) {
+    return float2(v.x * CTM.a + v.y * CTM.c, v.x * CTM.b + v.y * CTM.d);
+}
+
 // The interior is the edge triangles themselves, drawn from the end of the stream, so opaque paths draw front to back,
 // each corner inset along its dilation miter by the filter width: the opaque fill stops where the edge pass's coverage
 // reaches 1. A corner's inset keeps the filter width from both its edges whichever of its triangles it lands in, but a
@@ -53,7 +83,6 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
     Bounds bounds = paths[p].bounds;
     float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
@@ -64,9 +93,12 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     
     const float f = kTriangleFilterWidth;
     const device float *iv = & tri.ix0;
-    float2 iv0 = float2(iv[0] * CTM.a + iv[1] * CTM.c, iv[0] * CTM.b + iv[1] * CTM.d) * (rscale * f);
-    float2 iv1 = float2(iv[2] * CTM.a + iv[3] * CTM.c, iv[2] * CTM.b + iv[3] * CTM.d) * (rscale * f);
-    float2 iv2 = float2(iv[4] * CTM.a + iv[5] * CTM.c, iv[4] * CTM.b + iv[5] * CTM.d) * (rscale * f);
+    float2 pm0 = float2(iv[0], iv[1]), pm1 = float2(iv[2], iv[3]), pm2 = float2(iv[4], iv[5]), iv0, iv1, iv2;    // path space
+    if (isSimilarity(CTM)) {
+        float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
+        iv0 = turned(pm0, CTM) * (rscale * f), iv1 = turned(pm1, CTM) * (rscale * f), iv2 = turned(pm2, CTM) * (rscale * f);
+    } else
+        iv0 = deviceMiter(pm0, CTM) * f, iv1 = deviceMiter(pm1, CTM) * f, iv2 = deviceMiter(pm2, CTM) * f;
     
     // The inset triangle's doubled area at inset s in [0, 1] is A0 + s (B + s C).
     float2 e1 = v1 - v0, e2 = v2 - v0, m1 = iv1 - iv0, m2 = iv2 - iv0;
@@ -170,7 +202,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance, flags = tri.flags, curves = flags & Triangle::kCurvesMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     Bounds bounds = paths[p].bounds;
     float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
@@ -180,9 +211,12 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 v2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
     
     const device float *iv = & tri.ix0;
-    float2 iv0 = { (iv[0] * CTM.a + iv[1] * CTM.c) * rscale, (iv[0] * CTM.b + iv[1] * CTM.d) * rscale };
-    float2 iv1 = { (iv[2] * CTM.a + iv[3] * CTM.c) * rscale, (iv[2] * CTM.b + iv[3] * CTM.d) * rscale };
-    float2 iv2 = { (iv[4] * CTM.a + iv[5] * CTM.c) * rscale, (iv[4] * CTM.b + iv[5] * CTM.d) * rscale };
+    float2 pm0 = float2(iv[0], iv[1]), pm1 = float2(iv[2], iv[3]), pm2 = float2(iv[4], iv[5]), iv0, iv1, iv2;    // path space
+    if (isSimilarity(CTM)) {
+        float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+        iv0 = turned(pm0, CTM) * rscale, iv1 = turned(pm1, CTM) * rscale, iv2 = turned(pm2, CTM) * rscale;
+    } else
+        iv0 = deviceMiter(pm0, CTM), iv1 = deviceMiter(pm1, CTM), iv2 = deviceMiter(pm2, CTM);
     // Control points have no corner here: no dilation and no lines.
     iv0 = select(iv0, 0, bool(curves & Triangle::kControl0));
     iv1 = select(iv1, 0, bool(curves & Triangle::kControl1));
