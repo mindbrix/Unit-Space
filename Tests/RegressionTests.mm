@@ -54,18 +54,20 @@ static uint64_t fnv(const void *bytes, size_t size, uint64_t h = 146959810393466
 }
 static uint64_t meshHash(Mesh& mesh) {
     uint64_t h = fnv(mesh._tris.get(), mesh._tris.count() * sizeof(Triangle));
+    h = fnv(mesh._triangleInstances.get(), mesh._triangleInstances.count() * sizeof(TriangleInstance), h);
+    h = fnv(mesh._interiorInstances.get(), mesh._interiorInstances.count() * sizeof(TriangleInstance), h);
     h = fnv(mesh._interiorVerts.get(), mesh._interiorVerts.count() * sizeof(MeshVertex), h);
-    return fnv(mesh._interiorIdxs.get(), mesh._interiorIdxs.count() * sizeof(unsigned int), h);
+    return fnv(mesh._interiorEdges.get(), mesh._interiorEdges.count(), h);
 }
 static size_t hulls(Mesh& mesh) {
     size_t n = 0;
     for (size_t i = 0; i < mesh._tris.count(); i++)
-        n += (mesh._tris[i].curves & Triangle::kHull) != 0;
+        n += (mesh._tris[i].flags & Triangle::kHull) != 0;
     return n;
 }
 // A mesh vertex's position in path space, from its path's bounds.
-static Vector meshPoint(Mesh& mesh, unsigned int p, unsigned short x, unsigned short y) {
-    const Bounds& b = mesh._timeline.basePaths()[p & Triangle::kFlagsMask].bounds;
+static Vector meshPoint(Scene& scene, int p, unsigned short x, unsigned short y) {
+    const Bounds& b = scene._paths[p]._bounds;
     return Vector(b.lx + x * (b.ux - b.lx) / float(kUnsignedShortMax), b.ly + y * (b.uy - b.ly) / float(kUnsignedShortMax));
 }
 // Scene space flips SVG's y about the image height.
@@ -159,10 +161,20 @@ static void testMemoryBadAlloc() {
     try { m.alloc(huge); } catch (std::bad_alloc&) { thrown = true; }
     CHECK(thrown && m.count() == 2 && m[0] == 1 && m[1] == 2);
     Memory<Triangle, true> paged;
-    paged.new_ptr(1)->p = 42;
+    paged.new_ptr(1)->flags = 42;
     thrown = false;
     try { paged.alloc(huge); } catch (std::bad_alloc&) { thrown = true; }
-    CHECK(thrown && paged[0].p == 42);
+    CHECK(thrown && paged[0].flags == 42);
+    // Sizes beyond size_t throw rather than wrap round to small allocations: the bytes, their page rounding, and an
+    // append's end.
+    for (size_t count : { SIZE_MAX / sizeof(Triangle) + 1, SIZE_MAX / sizeof(Triangle) }) {
+        thrown = false;
+        try { paged.alloc(count); } catch (std::bad_alloc&) { thrown = true; }
+        CHECK(thrown && paged.count() == 1 && paged[0].flags == 42);
+    }
+    thrown = false;
+    try { paged.new_ptr(SIZE_MAX); } catch (std::bad_alloc&) { thrown = true; }
+    CHECK(thrown && paged.count() == 1 && paged[0].flags == 42);
 }
 // libTess reports a failed allocator by returning no tessellator, which triangulateRange() relies on.
 static void testTessellatorAllocationFailure() {
@@ -218,18 +230,14 @@ static void testReflexInset() {
     Mesh mesh;
     libTess::triangulate(mesh, scene);
     int corners = 0;
-    for (size_t i = 0; i < mesh._tris.count(); i++) {
-        Triangle& t = mesh._tris[i];
-        if (t.curves & Triangle::kHull)
-            continue;
-        unsigned short xs[3] = { t.x0, t.x1, t.x2 }, ys[3] = { t.y0, t.y1, t.y2 };
-        for (int k = 0; k < 3; k++)
-            if (near(meshPoint(mesh, t.p, xs[k], ys[k]), 212.64f, 127.493f, 510, 1e-3f)) {
-                const float *m = & mesh._interiorMiters[i * 6 + k * 2];
-                CHECK(std::hypot(m[0], m[1]) < kTriangleDilationMax);
+    for (int p = 0; p + 1 < (int)mesh._interiorPathIdxs.size(); p++)
+        for (int i = mesh._interiorPathIdxs[p] * 3; i < mesh._interiorPathIdxs[p + 1] * 3; i++) {
+            const MeshVertex& v = mesh._interiorVerts[i];
+            if (near(meshPoint(scene, p, v.x, v.y), 212.64f, 127.493f, 510, 1e-3f)) {
+                CHECK(std::hypot(v.ix, v.iy) < kTriangleDilationMax);
                 corners++;
             }
-    }
+        }
     CHECK(corners > 0);
 }
 // A slit whose two curves leave its end along the same tangent: the join turns back on itself, so it is reflex, not
@@ -239,19 +247,20 @@ static void testReversalJoin() {
     Mesh mesh;
     libTess::triangulate(mesh, scene);
     int ends = 0;
-    for (size_t i = 0; i < mesh._tris.count(); i++) {
-        Triangle& t = mesh._tris[i];
-        if (!(t.curves & Triangle::kHull))
-            continue;
-        if (near(meshPoint(mesh, t.p, t.x0, t.y0), 212.64f, 127.493f, 510, 1e-3f)) {
-            CHECK(!(t.p & Triangle::kFlagsConvex0));
-            ends++;
+    for (int p = 0; p + 1 < (int)mesh._pathIdxs.size(); p++)
+        for (int i = mesh._pathIdxs[p]; i < mesh._pathIdxs[p + 1]; i++) {
+            Triangle& t = mesh._tris[i];
+            if (!(t.flags & Triangle::kHull))
+                continue;
+            if (near(meshPoint(scene, p, t.x0, t.y0), 212.64f, 127.493f, 510, 1e-3f)) {
+                CHECK(!(t.flags & Triangle::kFlagsConvex0));
+                ends++;
+            }
+            if (near(meshPoint(scene, p, t.x2, t.y2), 212.64f, 127.493f, 510, 1e-3f)) {
+                CHECK(!(t.flags & Triangle::kFlagsConvex2));
+                ends++;
+            }
         }
-        if (near(meshPoint(mesh, t.p, t.x2, t.y2), 212.64f, 127.493f, 510, 1e-3f)) {
-            CHECK(!(t.p & Triangle::kFlagsConvex2));
-            ends++;
-        }
-    }
     CHECK(ends == 2);
 }
 

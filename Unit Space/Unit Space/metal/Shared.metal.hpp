@@ -78,6 +78,7 @@ struct Bounds {
 #define kTriangleDilationMaxBevel	64.0
 #define kTriangleFilterWidth    0.5
 
+// A triangle of a path, which knows nothing of the path: a mesh's _pathIdxs say whose it is.
 struct Triangle {
     enum Flags : unsigned int {
         kFlagsEdge0 = 1U << 31,
@@ -86,39 +87,43 @@ struct Triangle {
         kFlagsConvex0 = 1U << 28,
         kFlagsConvex1 = 1U << 27,
         kFlagsConvex2 = 1U << 26,
-        kFlagsMask = ~(kFlagsEdge0 | kFlagsEdge1 | kFlagsEdge2 | kFlagsConvex0 | kFlagsConvex1 | kFlagsConvex2),
     };
     // A hull triangle is a quadratic's p0 -> c -> p2, and is the only triangle that evaluates that curve.
     // Concave curves bow into the fill, so their chord is the outer edge and c is interior.
     // kControlN: vertex N is a concave curve's control point. Its miter insets the interior pass and sets t, as every
     // vertex's did before curves, but it has no corner, so the edge pass ignores it.
-    enum Curves : unsigned int { kHull = 1, kConcave = 2, kControl0 = 4, kControl1 = 8, kControl2 = 16 };
+    enum Curves : unsigned int { kHull = 1, kConcave = 2, kControl0 = 4, kControl1 = 8, kControl2 = 16, kCurvesMask = 31 };
     
-    Triangle(int p, bool ef0, bool ef1, bool ef2,
+    Triangle(unsigned int curves, bool ef0, bool ef1, bool ef2,
              bool convex0, bool convex1, bool convex2,
 			 float x0, float y0, float x1, float y1, float x2, float y2,
 			 float ix0, float iy0, float ix1, float iy1, float ix2, float iy2)
-    : p((unsigned int)p | (ef0 ? kFlagsEdge0 : 0) | (ef1 ? kFlagsEdge1 : 0) | (ef2 ? kFlagsEdge2 : 0) | (convex0 ? kFlagsConvex0 : 0) | (convex1 ? kFlagsConvex1 : 0) | (convex2 ? kFlagsConvex2 : 0)),
+    : flags(curves | (ef0 ? kFlagsEdge0 : 0) | (ef1 ? kFlagsEdge1 : 0) | (ef2 ? kFlagsEdge2 : 0) | (convex0 ? kFlagsConvex0 : 0) | (convex1 ? kFlagsConvex1 : 0) | (convex2 ? kFlagsConvex2 : 0)),
     x0(x0 < 0 ? 0 : x0 > kUnsignedShortMax ? kUnsignedShortMax : x0), y0(y0 < 0 ? 0 : y0 > kUnsignedShortMax ? kUnsignedShortMax : y0),
     x1(x1 < 0 ? 0 : x1 > kUnsignedShortMax ? kUnsignedShortMax : x1), y1(y1 < 0 ? 0 : y1 > kUnsignedShortMax ? kUnsignedShortMax : y1),
     x2(x2 < 0 ? 0 : x2 > kUnsignedShortMax ? kUnsignedShortMax : x2), y2(y2 < 0 ? 0 : y2 > kUnsignedShortMax ? kUnsignedShortMax : y2),
-    ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1), ix2(ix2), iy2(iy2), curves(0), tx0(0), ty0(0), tx2(0), ty2(0)
+    ix0(ix0), iy0(iy0), ix1(ix1), iy1(iy1), ix2(ix2), iy2(iy2), tx0(0), ty0(0), tx2(0), ty2(0)
     {}
-    unsigned int p;
+    unsigned int flags;                     // its polygon edges and convex corners (Flags), and its curves (Curves)
     unsigned short x0, y0, x1, y1, x2, y2;
     float ix0, iy0, ix1, iy1, ix2, iy2;     // miters; zero for interior vertices, which have no corner
-    unsigned int curves;
     // Hull triangles: quantised points the neighbouring segments' tangents head toward at v0 and v2. Joins use the
     // neighbours' tangents rather than their chords, which differ for curves and would bump the join.
     // Polygon triangles with a control vertex: its curve's quantised end points, p0 and p2.
     unsigned short tx0, ty0, tx2, ty2;
 };
 
-// An interior mesh vertex: quantised position within its path's bounds plus its miter vector.
+// The edge pass draws a stream of these, in order: which instance draws which triangle, so instances of a path share
+// its triangles.
+struct TriangleInstance {
+    unsigned int instance, triangle;
+};
+
+// An interior mesh vertex: quantised position within its path's bounds plus its miter vector. Each path triangle has
+// three, which every instance of the path draws.
 struct MeshVertex {
     MeshVertex() {}
-    MeshVertex(unsigned int p, unsigned short x, unsigned short y, float ix, float iy) : p(p), x(x), y(y), ix(ix), iy(iy), t(0) {}
-    unsigned int p;
+    MeshVertex(unsigned short x, unsigned short y, float ix, float iy) : x(x), y(y), ix(ix), iy(iy), t(0) {}
     unsigned short x, y;
     float ix, iy;
     float t;        // its triangle's solveTriangle() threshold
@@ -149,6 +154,7 @@ struct MeshState {
     bool                useStrokeColor;     // debug: edges in the state's stroke colour
 	int                 colorsSize;
     int                 baseTriangle;       // debug: an interior call's first triangle, as primitive_id restarts per draw
+    int                 triangleInstances;  // interior calls: the interior stream's length, as they draw it from its end
 };
 
 struct State {

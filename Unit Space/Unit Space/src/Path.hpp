@@ -9,8 +9,8 @@
 
 struct Path {
     Path() {}
-    Path(bool closed, bool evenOdd, RGBA8 color, vector<SubPath> subpaths) : _color(color), _closed(closed), _evenOdd(evenOdd) { for (SubPath& s : subpaths) addSubPath(s); }
-    Path(bool closed, bool evenOdd, RGBA8 color) : _color(color), _closed(closed), _evenOdd(evenOdd) {}
+    Path(bool closed, bool evenOdd, vector<SubPath> subpaths) : _closed(closed), _evenOdd(evenOdd) { for (SubPath& s : subpaths) addSubPath(s); }
+    Path(bool closed, bool evenOdd) : _closed(closed), _evenOdd(evenOdd) {}
     
     void addSubPath(SubPath& s) {
         if (s._quadratics.count() / 2 > 2) {
@@ -45,11 +45,9 @@ struct Path {
             begin = (end + stride - 1) / stride * stride;
         }
     }
-    RGBA8                       _color;
     bool                        _closed, _evenOdd;
     bool                        _outline = false;   // a stroke expanded into a filled outline, which crosses itself
     float                       _penWidth = 0;      // an outline's stroke width
-    int                         _source = -1;       // the index of the SVG shape it came from, if any
     Bounds                      _bounds;
     vector<SubPath>             _subPaths;
 };

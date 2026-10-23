@@ -37,10 +37,15 @@ static inline float4 clipPosition(float2 p, float z, constant State& state) {
 
 vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                                           const device MeshVertex *verts [[buffer(8)]], const device MeshPath *paths [[buffer(9)]],
-                                                          uint vid [[vertex_id]])
+                                                          const device TriangleInstance *instances [[buffer(10)]],
+                                                          uint vertexId [[vertex_id]])
 {
-    const device MeshVertex& v = verts[vid];
-    uint p = v.p;
+    // The interior stream from its end, so opaque paths draw front to back: each instance draws its path's interior
+    // triangles' vertices.
+    uint iid = vertexId / 3;
+    TriangleInstance instance = instances[meshState.triangleInstances - 1 - iid];
+    const device MeshVertex& v = verts[instance.triangle * 3 + vertexId - iid * 3];
+    uint p = instance.instance;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
     
@@ -78,9 +83,10 @@ fragment float4 interior_indexed_fragment_main(IndexedInteriorFragment vert [[st
 fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorFragment vert [[stage_in]], float3 b [[barycentric_coord]],
                                                      uint pid [[primitive_id]],
                                                      constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
-                                                     const device uchar *edges [[buffer(2)]])
+                                                     const device uchar *edges [[buffer(2)]],
+                                                     const device TriangleInstance *instances [[buffer(3)]])
 {
-    uchar e = meshState.showTriangles ? 7 : edges[meshState.baseTriangle + pid];
+    uchar e = meshState.showTriangles ? 7 : edges[instances[meshState.triangleInstances - 1 - (meshState.baseTriangle + pid)].triangle];
     float w = max(1.0, state.width);
     float d = simpleBarycentricDistance(b.z, b.x, e & 1, e & 2, e & 4);
     return vert.color * saturate(w - d);
@@ -130,12 +136,14 @@ static inline bool2 alongEdge(float2 iv, float2 v, float2 t) {
 vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], constant MeshState& meshState[[buffer(1)]],
                                        const device Triangle *tris [[buffer(8)]],
                                        const device MeshPath *paths [[buffer(9)]],
+                                       const device TriangleInstance *instances [[buffer(10)]],
                                        uint vertexId [[vertex_id]])
 {
     // Drawn as one non-instanced stream of 3 vertices per triangle: one instance per triangle is much slower.
     uint iid = vertexId / 3, vid = vertexId - iid * 3;
-    const device Triangle& tri = tris[iid];
-    uint p = tri.p & Triangle::kFlagsMask, curves = tri.curves;
+    TriangleInstance instance = instances[iid];
+    const device Triangle& tri = tris[instance.triangle];
+    uint p = instance.instance, flags = tri.flags, curves = flags & Triangle::kCurvesMask;
     AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
     float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
     Bounds bounds = paths[p].bounds;
@@ -159,8 +167,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     // any corner of a triangular contour) needs only one of its lines, as the other edge is the previous corner's. Its
     // other slot gets a bevel through its vertex, perpendicular to its miter, which ends a sharp tip's coverage there.
     uint convex = Triangle::kFlagsConvex0 | Triangle::kFlagsConvex1 | Triangle::kFlagsConvex2;
-    bool owned = !(curves & Triangle::kHull) && (tri.p & convex) == convex;
-    bool e01 = tri.p & Triangle::kFlagsEdge0, e12 = tri.p & Triangle::kFlagsEdge1, e20 = tri.p & Triangle::kFlagsEdge2;
+    bool owned = !(curves & Triangle::kHull) && (flags & convex) == convex;
+    bool e01 = flags & Triangle::kFlagsEdge0, e12 = flags & Triangle::kFlagsEdge1, e20 = flags & Triangle::kFlagsEdge2;
     bool bevel0 = owned && e20 && e01, bevel1 = owned && e01 && e12, bevel2 = owned && e12 && e20;
     
     const float f = kTriangleFilterWidth;
@@ -234,7 +242,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         k2 = select(k2, float2(dot(iv2 * rsqrt(dot(iv2, iv2)), pos - v2), k2.y), bevel2);
         vert.d0 = k0.x, vert.d1 = k0.y, vert.d2 = k1.x, vert.d3 = k1.y, vert.d4 = k2.x, vert.d5 = k2.y;
     }
-    vert.convex = ((tri.p >> 26) & 7) | (curves << 3) | (lines << 8);
+    vert.convex = ((flags >> 26) & 7) | (curves << 3) | (lines << 8);
     
     uint rgba8 = uint(color.r) | uint(color.g) << 8 | uint(color.b) << 16 | uint(color.a) << 24;
     vert.color = select(rgba8, pack_float_to_unorm4x8(float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a)), meshState.useStrokeColor);

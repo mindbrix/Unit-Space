@@ -12,8 +12,9 @@
 // One mesh's buffers. The layer draws several meshes, each call naming its own, over the one paths buffer.
 @interface MeshBuffers : NSObject
 @property (nonatomic, strong) id <MTLBuffer> trisBuffer;
+@property (nonatomic, strong) id <MTLBuffer> triangleInstancesBuffer;
+@property (nonatomic, strong) id <MTLBuffer> interiorInstancesBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorVertsBuffer;
-@property (nonatomic, strong) id <MTLBuffer> interiorIdxsBuffer;
 @property (nonatomic, strong) id <MTLBuffer> interiorEdgesBuffer;
 @end
 
@@ -155,7 +156,7 @@
     Call *end = calls + count;
     for (Call *call = calls; call < end; call++) {
         size_t instanceCount = call->instanceCount, baseInstance = call->baseInstance;
-        BOOL drawIndexed = NO, debug = call->meshState.showTriangles || call->meshState.showPolygons;
+        BOOL interior = NO, debug = call->meshState.showTriangles || call->meshState.showPolygons;
         MeshBuffers *buffers = _meshes[call->mesh];
         if (instanceCount == 0 || buffers.trisBuffer == nil)
             continue;
@@ -164,17 +165,21 @@
 				[commandEncoder setRenderPipelineState:_meshTrianglePipelineState];
 				[commandEncoder setVertexBuffer:buffers.trisBuffer offset:0 atIndex:8];
 				[commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
+				[commandEncoder setVertexBuffer:buffers.triangleInstancesBuffer offset:0 atIndex:10];
                 break;
             case kCallTypeMeshInteriorIndexed:
-                if (buffers.interiorIdxsBuffer == nil)
+                if (buffers.interiorVertsBuffer == nil)
                     continue;
                 debug = debug && _meshInteriorDebugPipelineState != nil;
                 [commandEncoder setRenderPipelineState:debug ? _meshInteriorDebugPipelineState : _meshInteriorIndexedPipelineState];
                 [commandEncoder setVertexBuffer:buffers.interiorVertsBuffer offset:0 atIndex:8];
                 [commandEncoder setVertexBuffer:_pathsBuffer offset:0 atIndex:9];
-                if (debug)
+                [commandEncoder setVertexBuffer:buffers.interiorInstancesBuffer offset:0 atIndex:10];
+                if (debug) {
                     [commandEncoder setFragmentBuffer:buffers.interiorEdgesBuffer offset:0 atIndex:2];
-                drawIndexed = YES;
+                    [commandEncoder setFragmentBuffer:buffers.interiorInstancesBuffer offset:0 atIndex:3];
+                }
+                interior = YES;
                 break;
         }
 		
@@ -185,15 +190,11 @@
 		[commandEncoder setFragmentBytes:& state length:sizeof(State) atIndex:0];
 		[commandEncoder setFragmentBytes:& call->meshState length:sizeof(MeshState) atIndex:1];
 	
-        if (drawIndexed) {
-            // Index buffer triangles are counter-clockwise in path space; a mirroring CTM flips them.
+        if (interior) {
+            // Interior triangles are counter-clockwise in path space; a mirroring CTM flips them.
             [commandEncoder setCullMode:MTLCullModeBack];
             [commandEncoder setFrontFacingWinding:AffineTransformArea(call->state.CTM) < 0 ? MTLWindingClockwise : MTLWindingCounterClockwise];
-            [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                       indexCount:instanceCount * 3
-                                        indexType:MTLIndexTypeUInt32
-                                      indexBuffer:buffers.interiorIdxsBuffer
-                                indexBufferOffset:baseInstance * 3 * sizeof(uint32_t)];
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
             [commandEncoder setCullMode:MTLCullModeNone];
         } else
             [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:baseInstance * 3 vertexCount:instanceCount * 3];
@@ -216,15 +217,24 @@
                                                                                           options:MTLResourceStorageModeManaged];
 }
 
+// A buffer that is the mesh's own page-aligned memory, not a copy of it: it keeps a reference to the memory until Metal
+// releases it, so the mesh can be emptied or triangulated again while frames that use it are in flight.
+template<typename T>
+static id<MTLBuffer> newBuffer(id<MTLDevice> device, Memory<T, true>& memory) {
+    if (memory.pagedSize() == 0)
+        return nil;
+    Memory<T, true> kept = memory;
+    return [device newBufferWithBytesNoCopy:memory.get() length:memory.pagedSize() options:MTLResourceStorageModeShared
+                                deallocator:^(void *, NSUInteger) { (void)kept; }];
+}
+
 - (void)uploadMesh:(Mesh &)mesh index:(NSUInteger)index {
-    auto buffer = [&](size_t length, const void *bytes) {
-        return length == 0 ? nil : [self.device newBufferWithBytes:bytes length:length options:MTLResourceStorageModeShared];
-    };
     MeshBuffers *buffers = _meshes[index];
-    buffers.trisBuffer = buffer(mesh._tris.pagedSize(), mesh._tris.get());
-    buffers.interiorVertsBuffer = buffer(mesh._interiorVerts.pagedSize(), mesh._interiorVerts.get());
-    buffers.interiorIdxsBuffer = buffer(mesh._interiorIdxs.pagedSize(), mesh._interiorIdxs.get());
-    buffers.interiorEdgesBuffer = buffer(mesh._interiorEdges.pagedSize(), mesh._interiorEdges.get());
+    buffers.trisBuffer = newBuffer(self.device, mesh._tris);
+    buffers.triangleInstancesBuffer = newBuffer(self.device, mesh._triangleInstances);
+    buffers.interiorInstancesBuffer = newBuffer(self.device, mesh._interiorInstances);
+    buffers.interiorVertsBuffer = newBuffer(self.device, mesh._interiorVerts);
+    buffers.interiorEdgesBuffer = newBuffer(self.device, mesh._interiorEdges);
 }
 
 - (void)reservePaths:(size_t)count {

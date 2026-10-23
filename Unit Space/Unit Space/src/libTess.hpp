@@ -530,12 +530,11 @@ struct libTess {
     // from vertices (curves' ends, neighbours' tangents) are on the same grid.
     static unsigned short quantise(float v) { return (unsigned short)(v < 0 ? 0 : v > kUnsignedShortMax ? kUnsignedShortMax : v); }
     
-    static void writeTriangle(vector<Triangle>& tris, int p, const Point *v, const Vector *m, const bool *convex,
+    static void writeTriangle(vector<Triangle>& tris, const Point *v, const Vector *m, const bool *convex,
                               bool ef0, bool ef1, bool ef2, unsigned int curves, float lx, float ly, float rw, float rh) {
-        tris.emplace_back(p, ef0, ef1, ef2, convex[0], convex[1], convex[2],
+        tris.emplace_back(curves, ef0, ef1, ef2, convex[0], convex[1], convex[2],
                           (v[0].x - lx) * rw, (v[0].y - ly) * rh, (v[1].x - lx) * rw, (v[1].y - ly) * rh, (v[2].x - lx) * rw, (v[2].y - ly) * rh,
                           m[0].x, m[0].y, m[1].x, m[1].y, m[2].x, m[2].y);
-        tris.back().curves = curves;
     }
     
     // Splits paths into contiguous divisions of about equal cost: begins[i] is division i's first path, begins[divisions]
@@ -561,8 +560,8 @@ struct libTess {
         if (size == 0)
             return;
         
-        for (p = 0; p < size; p++)
-            mesh._timeline.basePaths().emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
+        for (Instance& instance : scene._instances)
+            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, scene._paths[instance.path]._bounds);
         
         // Balance the divisions by cost: stroke outlines cross themselves, so their segments cost about three times as much.
         vector<int64_t> costs(size, 0);
@@ -581,74 +580,104 @@ struct libTess {
                 triangulateRange(triss[idx], imiterss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
             });
         }
-        for (base = i = 0; i < divisions; base += (int)tris[i].size(), i++) {
+        // The mesh's arrays are allocated once, at their size, and each division is freed as it is copied, so the
+        // triangles are held about once rather than twice.
+        size_t total = 0;
+        for (i = 0; i < divisions; i++)
+            total += tris[i].size();
+        Triangle *dst = total ? mesh._tris.new_ptr(total) : nullptr;
+        mesh._interiorMiters.reserve(total * 6);
+        for (base = i = 0; i < divisions; i++) {
             if (tris[i].size())
-                memcpy(mesh._tris.new_ptr(tris[i].size()), & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
+                memcpy(dst + base, & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
             mesh._interiorMiters.insert(mesh._interiorMiters.end(), imiters[i].begin(), imiters[i].end());
             for (int idx : idxs[i])
-                mesh._idxs.emplace_back(base + idx);
+                mesh._pathIdxs.emplace_back(base + idx);
+            base += (int)tris[i].size();
+            vector<Triangle>().swap(tris[i]), vector<float>().swap(imiters[i]);
         }
-        mesh._idxs.emplace_back((int)mesh._tris.count());
-        writeIndexedInterior(mesh);
+        mesh._pathIdxs.emplace_back((int)mesh._tris.count());
+        writeInterior(mesh, scene, 0);
+        writeTriangleInstances(mesh, scene, 0, (int)scene._instances.size(), 0);
     }
     
-    // Triangulates scene paths [begin, end) alone, as when one is being edited. The triangles keep their scene path
-    // indices, so the mesh's paths cover the whole scene, but its _idxs start at begin.
+    // Triangulates the paths of scene instances [begin, end) alone, as when they are being edited. Their paths are
+    // contiguous, as a shape adds them. The triangles keep their scene path indices and the stream its scene instance
+    // indices, so the mesh's paths cover the whole scene, but its _pathIdxs start at the first path and its _idxs at begin.
     static void triangulatePaths(Mesh& mesh, Scene& scene, int begin, int end) {
         mesh.empty();
-        for (int p = 0; p < (int)scene._paths.size(); p++)
-            mesh._timeline.basePaths().emplace_back(scene._paths[p]._color, scene._CTMs[p], scene._paths[p]._bounds);
+        for (Instance& instance : scene._instances)
+            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, scene._paths[instance.path]._bounds);
+        int first = scene._instances[begin].path, last = first;
+        for (int i = begin; i < end; i++)
+            first = std::min(first, scene._instances[i].path), last = std::max(last, scene._instances[i].path);
         vector<Triangle> tris;
-        triangulateRange(tris, mesh._interiorMiters, mesh._idxs, scene, begin, end);
+        triangulateRange(tris, mesh._interiorMiters, mesh._pathIdxs, scene, first, last + 1);
         if (tris.size())
             memcpy(mesh._tris.new_ptr(tris.size()), & tris[0], tris.size() * sizeof(tris[0]));
-        mesh._idxs.emplace_back((int)mesh._tris.count());
-        writeIndexedInterior(mesh);
+        mesh._pathIdxs.emplace_back((int)mesh._tris.count());
+        writeInterior(mesh, scene, first);
+        writeTriangleInstances(mesh, scene, begin, end, first);
     }
     
-    // Each triangle writes its own vertices: a vertex carries its triangle's threshold, below, which neighbouring
-    // triangles rarely share, so sharing vertices saved only 1-3% of them for far more time than it saved. Triangles
-    // are written in reverse so opaque paths draw front to back, and wound counter-clockwise so
-    // back-face culling drops triangles that the miter inset has inverted. Hull triangles extend outside the fill,
-    // so they are written degenerate: the interior pass must never paint them. The debug outlines need each triangle's
-    // polygon edges, which shared vertices cannot carry, so they go in a byte per triangle in index buffer order.
-    // Triangles the inset would collapse at the current scale are left to the edge pass, as solveTriangle() decides.
-    // Each vertex carries its triangle's threshold, so the pass clips a triangle away whole.
-    static void writeIndexedInterior(Mesh& mesh) {
-        size_t ntris = mesh._tris.count(), i;
-        if (ntris == 0)
-            return;
-        unsigned int *idx = mesh._interiorIdxs.new_ptr(ntris * 3);
-        unsigned char *edges = mesh._interiorEdges.new_ptr(ntris);
-        vector<MeshPath>& paths = mesh._timeline.basePaths();
-        for (i = 0; i < ntris; i++) {
-            Triangle& t = mesh._tris[ntris - 1 - i];
-            unsigned int p = t.p & Triangle::kFlagsMask;
-            const float *im = & mesh._interiorMiters[(ntris - 1 - i) * 6];
-            MeshVertex v[3] = { { p, t.x0, t.y0, im[0], im[1] }, { p, t.x1, t.y1, im[2], im[3] }, { p, t.x2, t.y2, im[4], im[5] } };
-            bool e0 = t.p & Triangle::kFlagsEdge0, e1 = t.p & Triangle::kFlagsEdge1, e2 = t.p & Triangle::kFlagsEdge2;
-            if (t.curves & Triangle::kHull)
-                v[1] = v[2] = v[0], e0 = e1 = e2 = false;
-            else if (int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0) < 0)
-                std::swap(v[1], v[2]), std::swap(e0, e2);   // edges v0 v2, v2 v1, v1 v0
-            *edges++ = e0 | e1 << 1 | e2 << 2;
-            float tt = 0;
-            if (!(t.curves & Triangle::kHull)) {
-                const Bounds& b = paths[p].bounds;
-                float sx = (b.ux - b.lx) / kUnsignedShortMax, sy = (b.uy - b.ly) / kUnsignedShortMax;
-                tt = solveTriangle(b.lx + v[0].x * sx, b.ly + v[0].y * sy, Vector(v[0].ix, v[0].iy),
-                                   b.lx + v[1].x * sx, b.ly + v[1].y * sy, Vector(v[1].ix, v[1].iy),
-                                   b.lx + v[2].x * sx, b.ly + v[2].y * sy, Vector(v[2].ix, v[2].iy));
+    // The stream of scene instances [begin, end): each draws its path's triangles, whose _pathIdxs start at path pathBase.
+    static void writeTriangleInstances(Mesh& mesh, Scene& scene, int begin, int end, int pathBase) {
+        vector<int> paths;
+        for (int i = begin; i < end; i++)
+            paths.push_back(scene._instances[i].path - pathBase);
+        mesh.writeTriangleInstances(paths.data(), (int)paths.size(), begin);
+    }
+    
+    // Each path's interior: its triangles but its hulls, which extend outside the fill, so the interior pass must never
+    // paint them. Each triangle writes its own three vertices, which every instance of its path draws: a vertex carries
+    // its triangle's threshold, below, which neighbouring triangles rarely share, so sharing vertices saved only 1-3% of
+    // them for far more time than it saved. They are wound counter-clockwise so back-face culling drops triangles that
+    // the miter inset has inverted. The debug outlines need each triangle's polygon edges, which shared vertices cannot
+    // carry, so they go in a byte per triangle. Triangles the inset would collapse at the current scale are left to the
+    // edge pass, as solveTriangle() decides. Each vertex carries its triangle's threshold, so the pass clips a triangle
+    // away whole. Each path's edges per unit of its interior's area decide whether an instance draws it at all.
+    // The mesh's paths start at scene path pathBase.
+    static void writeInterior(Mesh& mesh, Scene& scene, int pathBase) {
+        // Its vertices and edges are allocated once, at their size.
+        size_t total = 0;
+        for (size_t i = 0; i < mesh._tris.count(); i++)
+            total += !(mesh._tris[i].flags & Triangle::kHull);
+        MeshVertex *dst = total ? mesh._interiorVerts.new_ptr(total * 3) : nullptr;
+        unsigned char *flags = total ? mesh._interiorEdges.new_ptr(total) : nullptr;
+        int count = 0;
+        for (size_t p = 0; p + 1 < mesh._pathIdxs.size(); p++) {
+            mesh._interiorPathIdxs.emplace_back(count);
+            Path& path = scene._paths[pathBase + p];
+            const Bounds& b = path._bounds;
+            float sx = (b.ux - b.lx) / kUnsignedShortMax, sy = (b.uy - b.ly) / kUnsignedShortMax;
+            double area = 0;
+            size_t edges = 0;
+            for (SubPath& s : path._subPaths)
+                edges += s._quadratics.count() / 4;
+            for (int i = mesh._pathIdxs[p]; i < mesh._pathIdxs[p + 1]; i++) {
+                Triangle& t = mesh._tris[i];
+                if (t.flags & Triangle::kHull)
+                    continue;
+                const float *im = & mesh._interiorMiters[size_t(i) * 6];
+                MeshVertex v[3] = { { t.x0, t.y0, im[0], im[1] }, { t.x1, t.y1, im[2], im[3] }, { t.x2, t.y2, im[4], im[5] } };
+                bool e0 = t.flags & Triangle::kFlagsEdge0, e1 = t.flags & Triangle::kFlagsEdge1, e2 = t.flags & Triangle::kFlagsEdge2;
+                int64_t cross = int64_t(t.x1 - t.x0) * (t.y2 - t.y0) - int64_t(t.y1 - t.y0) * (t.x2 - t.x0);
+                if (cross < 0)
+                    std::swap(v[1], v[2]), std::swap(e0, e2);   // edges v0 v2, v2 v1, v1 v0
+                area += std::abs(double(cross)) * 0.5;
+                *flags++ = e0 | e1 << 1 | e2 << 2;
+                float tt = solveTriangle(b.lx + v[0].x * sx, b.ly + v[0].y * sy, Vector(v[0].ix, v[0].iy),
+                                         b.lx + v[1].x * sx, b.ly + v[1].y * sy, Vector(v[1].ix, v[1].iy),
+                                         b.lx + v[2].x * sx, b.ly + v[2].y * sy, Vector(v[2].ix, v[2].iy));
+                for (int k = 0; k < 3; k++)
+                    *dst = v[k], (dst++)->t = tt;
+                count++;
             }
-            // A hull is one vertex, three times over.
-            int count = t.curves & Triangle::kHull ? 1 : 3;
-            unsigned int base = (unsigned int)mesh._interiorVerts.count();
-            MeshVertex *dst = mesh._interiorVerts.new_ptr(count);
-            for (int k = 0; k < count; k++)
-                dst[k] = v[k], dst[k].t = tt;
-            for (int k = 0; k < 3; k++)
-                *idx++ = base + (count == 3 ? k : 0);
+            mesh._interiorDensities.push_back(area > 0 ? float(edges / area) : INFINITY);
         }
+        mesh._interiorPathIdxs.emplace_back(count);
+        // The vertices carry the miters now, so the triangles' copy goes.
+        vector<float>().swap(mesh._interiorMiters);
     }
     
     // Triangulates each path's inner polygon, and adds one hull triangle per curve. On the outer polygon a convex curve
@@ -682,13 +711,14 @@ struct libTess {
             // The path's own tessellators, which reset() frees with everything they allocated. Their buckets hold as many
             // items as the path has vertices, as libTess advises, not its defaults of hundreds, which most paths leave
             // largely unused: the arena does not recycle them as malloc did, so they would only spread its memory out.
+            // The boundary tessellator is done with once its contours are copied out, so the Delaunay one is made after
+            // it, in the same memory: a path holds one tessellator at a time.
             arena.reset();
             alloc.meshEdgeBucketSize = alloc.meshVertexBucketSize = alloc.meshFaceBucketSize = std::max(1, pv.bases.back());
             alloc.dictNodeBucketSize = alloc.regionBucketSize = alloc.meshVertexBucketSize;
-            TESStesselator *tess = tessNewTess(& alloc), *dst = tessNewTess(& alloc);
-            if (tess == nullptr || dst == nullptr)
+            TESStesselator *tess = tessNewTess(& alloc);
+            if (tess == nullptr)
                 continue;
-            tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             addPathContours(tess, path);
             if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
                 continue;
@@ -767,6 +797,12 @@ struct libTess {
                 }
             }
             resolveCrossings(contours);
+            
+            arena.reset();
+            TESStesselator *dst = tessNewTess(& alloc);
+            if (dst == nullptr)
+                continue;
+            tessSetOption(dst, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
             
             points.resize(0), curveEdge.resize(0), nextPoint.resize(0), hulls.resize(0);
             for (vector<ContourSegment>& c : contours) {
@@ -880,7 +916,7 @@ struct libTess {
                         TESSindex a = di[k], b = di[(k + 1) % 3];
                         ef[k] = a != TESS_UNDEF && b != TESS_UNDEF && (nextPoint[a] == (int)b ? !curveEdge[a] : nextPoint[b] == (int)a && !curveEdge[b]);
                     }
-                    writeTriangle(_tris, p, v, m, convex, ef[0], ef[1], ef[2], curves, lx, ly, rw, rh);
+                    writeTriangle(_tris, v, m, convex, ef[0], ef[1], ef[2], curves, lx, ly, rw, rh);
                     // Its first control point's curve, so the edge pass can bound the polygon along that curve's hull edges
                     // with the curve itself: its control's p0 and p2.
                     if (curves) {
@@ -916,7 +952,7 @@ struct libTess {
                 bool end = turn(h.p2.x - cx, h.p2.y - cy, h.tnx - h.p2.x, h.tny - h.p2.y);
                 convex[0] = h.concave ? end : start, convex[2] = h.concave ? start : end;
                 _imiters.insert(_imiters.end(), 6, 0.f);
-                writeTriangle(_tris, p, v, m, convex, !h.concave, !h.concave, h.concave,
+                writeTriangle(_tris, v, m, convex, !h.concave, !h.concave, h.concave,
                               Triangle::kHull | (h.concave ? Triangle::kConcave : 0), lx, ly, rw, rh);
                 Triangle& t = _tris.back();
                 float t0x = h.concave ? h.tnx : h.tpx, t0y = h.concave ? h.tny : h.tpy, t2x = h.concave ? h.tpx : h.tnx, t2y = h.concave ? h.tpy : h.tny;

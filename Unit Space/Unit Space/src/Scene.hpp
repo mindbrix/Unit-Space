@@ -15,20 +15,40 @@
 #import "nanosvg.h"
 
 
+// A path drawn with a transform and a paint. A scene draws its instances in order, and instances of one path share its
+// triangles.
+struct Instance {
+    int                 path;
+    AffineTransform     ctm;
+    RGBA8               color;
+    int                 source;     // the index of the SVG shape it came from, or -1
+};
+
 struct Scene {
-    void addPath(Path& path, AffineTransform *CTM = nullptr) {
-        if (path._subPaths.size() != 0) {
-            // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
-            float limit = vertexMergeLimit(path._bounds);
-            for (SubPath& s : path._subPaths)
-                s.mergeVertices(limit, true);
-            if (_paths.size() == 0)
-                _bounds = path._bounds;
-            _bounds.unite(path._bounds);
-            _paths.emplace_back(path);
-            AffineTransform identity = { 1, 0, 0, 1, 0, 0 };
-            _CTMs.emplace_back(CTM ? *CTM : identity);
+    // Adds a path to be drawn by instances, returning its index, or -1 if it has no subpaths.
+    int addPath(Path& path) {
+        if (path._subPaths.size() == 0)
+            return -1;
+        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
+        float limit = vertexMergeLimit(path._bounds);
+        for (SubPath& s : path._subPaths)
+            s.mergeVertices(limit, true);
+        _paths.emplace_back(path);
+        return (int)_paths.size() - 1;
+    }
+    // Draws path (an index from addPath()) next, unless it is -1.
+    void addInstance(int path, RGBA8 color, int source = -1, AffineTransform ctm = { 1, 0, 0, 1, 0, 0 }) {
+        if (path < 0)
+            return;
+        const Bounds& b = _paths[path]._bounds;
+        for (int k = 0; k < 4; k++) {
+            float x = k & 1 ? b.ux : b.lx, y = k & 2 ? b.uy : b.ly;
+            float tx = x * ctm.a + y * ctm.c + ctm.tx, ty = x * ctm.b + y * ctm.d + ctm.ty;
+            if (_instances.size() == 0 && k == 0)
+                _bounds = Bounds(tx, ty, tx, ty);
+            _bounds.unite(Bounds(tx, ty, tx, ty));
         }
+        _instances.push_back({ path, ctm, color, source });
     }
     void addSVG(const void *bytes, size_t size) {
         char *data = (char *)malloc(size + 1);
@@ -63,11 +83,10 @@ struct Scene {
     // so it can be edited and added again.
     void addShape(NSVGshape *shape, float height, int source) {
         bool filled = shape->fill.type != NSVG_PAINT_NONE, stroked = shape->stroke.type != NSVG_PAINT_NONE && shape->strokeWidth > 0;
-        Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD, filled ? paintColor(shape->fill, shape->opacity) : RGBA8());
+        Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD);
         // Strokes are filled outlines (nonzero), painted over the fill.
-        Path strokePath(true, false, stroked ? paintColor(shape->stroke, shape->opacity) : RGBA8());
+        Path strokePath(true, false);
         strokePath._outline = true, strokePath._penWidth = shape->strokeWidth;
-        p._source = strokePath._source = source;
         Stroke stroke(strokePath, shape->strokeWidth,
                       shape->strokeLineJoin == NSVG_JOIN_ROUND ? Stroke::kRound : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? Stroke::kBevel : Stroke::kMiter,
                       shape->strokeLineCap == NSVG_CAP_ROUND ? Stroke::kRoundCap : shape->strokeLineCap == NSVG_CAP_SQUARE ? Stroke::kSquare : Stroke::kButt,
@@ -104,13 +123,13 @@ struct Scene {
             }
         }
         if (filled)
-            addPath(p);
+            addInstance(addPath(p), paintColor(shape->fill, shape->opacity), source);
         if (stroked)
-            addPath(strokePath);
+            addInstance(addPath(strokePath), paintColor(shape->stroke, shape->opacity), source);
     }
-    void empty() { _paths.resize(0), _CTMs.resize(0); }
+    void empty() { _paths.resize(0), _instances.resize(0); }
     
     vector<Path>            _paths;
-    vector<AffineTransform> _CTMs;
+    vector<Instance>        _instances;
     Bounds                  _bounds;
 };

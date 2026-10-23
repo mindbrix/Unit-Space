@@ -59,8 +59,7 @@ struct EditHandle {
 @property(nonatomic) NSInteger hoverPath, selectedPath;
 @property(nonatomic) Mesh editMesh;             // the selected shape's paths while its points are edited
 @property(nonatomic) int editBegin, editEnd;    // those paths' scene indices, which the scene's mesh leaves out
-@property(nonatomic) Mesh handleTemplates;      // a dot and a line, triangulated once, which every handle copies
-@property(nonatomic) Mesh handleMesh;
+@property(nonatomic) Mesh handleMesh;           // a line and a dot, triangulated once, which every handle draws as an instance
 @property(nonatomic) vector<EditHandle> handles;
 @property(nonatomic) vector<EditPoint> editPoints;
 @property(nonatomic) EditPoint dragPoint;       // the point being dragged: its path is null when none is
@@ -344,18 +343,18 @@ struct EditHandle {
     float x = u.x, y = u.y;
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float sx = x * inv.a + y * inv.c + inv.tx, sy = x * inv.b + y * inv.d + inv.ty;
-    for (NSInteger i = (NSInteger)_scene._paths.size() - 1; i >= 0; i--) {
-        AffineTransform m = AffineTransformInvert(_scene._CTMs[i]);
-        if (_scene._paths[i].contains(sx * m.a + sy * m.c + m.tx, sx * m.b + sy * m.d + m.ty))
+    for (NSInteger i = (NSInteger)_scene._instances.size() - 1; i >= 0; i--) {
+        AffineTransform m = AffineTransformInvert(_scene._instances[i].ctm);
+        if (_scene._paths[_scene._instances[i].path].contains(sx * m.a + sy * m.c + m.tx, sx * m.b + sy * m.d + m.ty))
             return i;
     }
     return -1;
 }
 
 - (NSVGshape *)sourceShape:(NSInteger)p {
-    if (p < 0 || p >= (NSInteger)_scene._paths.size())
+    if (p < 0 || p >= (NSInteger)_scene._instances.size())
         return nullptr;
-    int source = _scene._paths[p]._source;
+    int source = _scene._instances[p].source;
     NSVGshape *shape = _svgImage && source >= 0 ? _svgImage->shapes : nullptr;
     for (int i = 0; shape && i < source; i++)
         shape = shape->next;
@@ -363,7 +362,7 @@ struct EditHandle {
 }
 
 - (NSString *)describePath:(NSInteger)p {
-    Path& path = _scene._paths[p];
+    Path& path = _scene._paths[_scene._instances[p].path];
     size_t quadratics = 0;
     for (SubPath& s : path._subPaths)
         quadratics += s._quadratics.count() / 4;
@@ -372,11 +371,11 @@ struct EditHandle {
     Mesh& mesh = edited ? _editMesh : _mesh;
     int k = int(edited ? p - _editBegin : p), base = mesh._idxs[k], end = mesh._idxs[k + 1], hulls = 0;
     for (int i = base; i < end; i++)
-        hulls += (mesh._tris[i].curves & Triangle::kHull) != 0;
+        hulls += (mesh._tris[mesh._triangleInstances[i].triangle].flags & Triangle::kHull) != 0;
     NSVGshape *shape = [self sourceShape:p];
-    NSString *source = shape ? [NSString stringWithFormat:@" · shape %d \"%s\"", path._source, shape->id] : @"";
+    NSString *source = shape ? [NSString stringWithFormat:@" · shape %d \"%s\"", _scene._instances[p].source, shape->id] : @"";
     return [NSString stringWithFormat:@"Path %ld of %zu%@ · %s · %zu subpaths, %zu quadratics · %d triangles, %d hulls · bounds %g %g %g %g",
-            (long)p, _scene._paths.size(), source, path._outline ? "stroke" : "fill", path._subPaths.size(), quadratics, end - base, hulls,
+            (long)p, _scene._instances.size(), source, path._outline ? "stroke" : "fill", path._subPaths.size(), quadratics, end - base, hulls,
             path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy];
 }
 
@@ -465,22 +464,22 @@ static bool closesOnStart(NSVGpath *path) {
     NSVGshape *shape = [self editedShape];
     if (!shape)
         return;
-    int source = _scene._paths[_selectedPath]._source, begin = (int)_selectedPath, end = begin + 1;
-    while (begin > 0 && _scene._paths[begin - 1]._source == source)
+    int source = _scene._instances[_selectedPath].source, begin = (int)_selectedPath, end = begin + 1;
+    while (begin > 0 && _scene._instances[begin - 1].source == source)
         begin--;
-    while (end < (int)_scene._paths.size() && _scene._paths[end]._source == source)
+    while (end < (int)_scene._instances.size() && _scene._instances[end].source == source)
         end++;
     Scene edited;
     edited.addShape(shape, _svgImage->height, source);
-    if (edited._paths.size() != size_t(end - begin)) {
+    if (edited._instances.size() != size_t(end - begin)) {
         // A path came or went (it lost all its subpaths, or regained them): the scene's indices change.
         NSInteger selected = _selectedPath - begin;
         _scene.empty();
         _scene.addImage(_svgImage);
         [self triangulate];
-        for (int p = 0; p < (int)_scene._paths.size(); p++)
-            if (_scene._paths[p]._source == source) {
-                _selectedPath = std::min(p + selected, (NSInteger)_scene._paths.size() - 1);
+        for (int p = 0; p < (int)_scene._instances.size(); p++)
+            if (_scene._instances[p].source == source) {
+                _selectedPath = std::min(p + selected, (NSInteger)_scene._instances.size() - 1);
                 break;
             }
         [self updateHandles];
@@ -489,8 +488,9 @@ static bool closesOnStart(NSVGpath *path) {
     }
     vector<MeshPath>& base = _mesh._timeline.basePaths();
     for (int p = begin; p < end; p++) {
-        _scene._paths[p] = edited._paths[p - begin];
-        base[p] = MeshPath(_scene._paths[p]._color, _scene._CTMs[p], _scene._paths[p]._bounds);
+        Instance& instance = _scene._instances[p], &e = edited._instances[p - begin];
+        _scene._paths[instance.path] = edited._paths[e.path], instance.color = e.color;
+        base[p] = MeshPath(instance.color, instance.ctm, _scene._paths[instance.path]._bounds);
     }
     libTess::triangulatePaths(_editMesh, _scene, begin, end);
     [self.metalLayer uploadMesh:_editMesh index:1];
@@ -518,10 +518,10 @@ static bool closesOnStart(NSVGpath *path) {
     }
     float square[10] = { 0, -0.5, 1, -0.5, 1, 0.5, 0, 0.5, 0, -0.5 };
     Scene templates;
-    Path line(true, false, RGBA8::Black(), { SubPath(square, 5, SubPath::kLine) });
-    Path dot(true, false, RGBA8::Black(), { SubPath(circle, 17, SubPath::kQuadratic) });
-    templates.addPath(line), templates.addPath(dot);
-    libTess::triangulatePaths(_handleTemplates, templates, 0, 2);
+    Path line(true, false, { SubPath(square, 5, SubPath::kLine) });
+    Path dot(true, false, { SubPath(circle, 17, SubPath::kQuadratic) });
+    templates.addInstance(templates.addPath(line), RGBA8::Black()), templates.addInstance(templates.addPath(dot), RGBA8::Black());
+    libTess::triangulatePaths(_handleMesh, templates, 0, 2);
 }
 
 // The selected shape's handles: lines from end points to their curves' controls, the controls, then the end points.
@@ -554,19 +554,13 @@ static bool closesOnStart(NSVGpath *path) {
     _handles.insert(_handles.end(), controls.begin(), controls.end());
     _handles.insert(_handles.end(), points.begin(), points.end());
     
-    // Each handle copies its template's triangles as its own path, after the scene's.
-    _handleMesh.empty();
-    int N = (int)_scene._paths.size();
-    for (size_t k = 0; k < _handles.size(); k++) {
-        int t = _handles[k].kind == EditHandle::kLine ? 0 : 1, begin = _handleTemplates._idxs[t], end = _handleTemplates._idxs[t + 1];
-        _handleMesh._idxs.emplace_back((int)_handleMesh._tris.count());
-        Triangle *tris = _handleMesh._tris.new_ptr(end - begin);
-        for (int i = begin; i < end; i++) {
-            tris[i - begin] = _handleTemplates._tris[i];
-            tris[i - begin].p = (tris[i - begin].p & ~Triangle::kFlagsMask) | unsigned(N + k);
-        }
-    }
-    _handleMesh._idxs.emplace_back((int)_handleMesh._tris.count());
+    // Each handle is an instance of its template, after the scene's. Handles draw no interior, so the templates' own
+    // interior, which the mesh keeps, is never drawn.
+    int N = (int)_scene._instances.size();
+    vector<int> templates;
+    for (EditHandle& h : _handles)
+        templates.push_back(h.kind == EditHandle::kLine ? 0 : 1);
+    _handleMesh.writeTriangleInstances(templates.data(), (int)templates.size(), N);
     [self.metalLayer uploadMesh:_handleMesh index:2];
     [self.metalLayer reservePaths:N + _handles.size()];
 }
@@ -575,8 +569,8 @@ static bool closesOnStart(NSVGpath *path) {
 - (void)writeHandlePaths:(MeshPath *)paths {
     AffineTransform view = self.viewCTM;
     float k = std::sqrt(std::abs(AffineTransformArea(view))), pixels = self.layer.contentsScale;
-    vector<MeshPath>& templates = _handleTemplates._timeline.basePaths();
-    MeshPath *path = paths + _scene._paths.size();
+    vector<MeshPath>& templates = _handleMesh._timeline.basePaths();
+    MeshPath *path = paths + _scene._instances.size();
     for (EditHandle& h : _handles) {
         if (h.kind == EditHandle::kDot) {
             float r = h.size * pixels / k;
@@ -617,13 +611,14 @@ static bool closesOnStart(NSVGpath *path) {
         }
         [d appendString:path->closed ? @" Z " : @" "];
     }
-    NSString *paint = _scene._paths[p]._outline
+    bool outline = _scene._paths[_scene._instances[p].path]._outline;
+    NSString *paint = outline
         ? [NSString stringWithFormat:@"fill=\"none\" stroke=\"%@\" stroke-width=\"%.9g\" stroke-linejoin=\"%s\" stroke-linecap=\"%s\" stroke-miterlimit=\"%g\"",
            hex(shape->stroke), shape->strokeWidth, shape->strokeLineJoin == NSVG_JOIN_ROUND ? "round" : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? "bevel" : "miter",
            shape->strokeLineCap == NSVG_CAP_ROUND ? "round" : shape->strokeLineCap == NSVG_CAP_SQUARE ? "square" : "butt", shape->miterLimit]
         : [NSString stringWithFormat:@"fill=\"%@\" fill-rule=\"%s\"", hex(shape->fill), shape->fillRule == NSVG_FILLRULE_EVENODD ? "evenodd" : "nonzero"];
     NSMutableString *dashes = [NSMutableString string];
-    for (int i = 0; _scene._paths[p]._outline && i < shape->strokeDashCount; i++)
+    for (int i = 0; outline && i < shape->strokeDashCount; i++)
         [dashes appendFormat:@"%@%.9g", i ? @" " : @" stroke-dasharray=\"", shape->strokeDashArray[i]];
     if (dashes.length)
         [dashes appendFormat:@"\" stroke-dashoffset=\"%.9g\"", shape->strokeDashOffset];
@@ -668,17 +663,17 @@ static bool closesOnStart(NSVGpath *path) {
     meshState.showPolygons = _showPolygons;
     meshState.showTriangles = _showTriangles;
     meshState.useStrokeColor = _useStrokeColor;
-    int N = (int)_scene._paths.size();
+    int N = (int)_scene._instances.size();
     meshState.colorsSize = N + (int)_handles.size();
     
     _mesh._calls.resize(0);
 	MeshPath *path = & paths[0];
-	for (int i = 0; i < _scene._paths.size(); i++, path++)
-		path->color = _showColors ? _scene._paths[i]._color : RGBA8::Black();
+	for (int i = 0; i < _scene._instances.size(); i++, path++)
+		path->color = _showColors ? _scene._instances[i].color : RGBA8::Black();
     // Debug: the inspected path in red, and with solo on, every other path transparent.
     NSInteger inspected = self.inspectedPath;
     if (inspected != -1) {
-        for (int i = 0; _solo && i < _scene._paths.size(); i++)
+        for (int i = 0; _solo && i < _scene._instances.size(); i++)
             paths[i].color.a = 0;
         paths[inspected].color = RGBA8::Red();
     }
