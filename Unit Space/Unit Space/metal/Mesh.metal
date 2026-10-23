@@ -151,13 +151,13 @@ fragment float4 interior_indexed_debug_fragment_main(IndexedInteriorFragment ver
 
 #pragma mark - Triangle
 
-// Kept small: every scalar here is written out per vertex, and output size measurably limits this pass.
-// d0..d5 are two edge lines per corner. A hull triangle instead carries the line at p0 its curve meets (d0), the
+// Kept small: every scalar here is written out per vertex, and output size measurably limits this pass, so d0..d5 are
+// half. They are two edge lines per corner. A hull triangle instead carries the line at p0 its curve meets (d0), the
 // curve's Loop-Blinn (u, v) (d1, d2) and the line at p2 (d3).
 struct TriangleVertex
 {
     float4 position [[position]];
-    float d0, d1, d2, d3, d4, d5;
+    half d0, d1, d2, d3, d4, d5;
     uint convex [[flat]];   // bits 2..0: Triangle::kFlagsConvex0..2; bits 7..3: Triangle::curves; bits 13..8: which of
                             // d0..d5 are a concave curve's chord, which the curve replaces.
     uint color [[flat]];    // RGBA8, r in the low byte, not premultiplied
@@ -261,8 +261,11 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         vert.d3 = select(cornerDistances(iv2, v2, select(v1, v0, concave) - v2, pos).y, dot(n2, pos - v2), dot(t2, t2) > 0);
         // Which side of each join's bisector (the miter) we are on: positive is this curve's side, where the curve
         // alone is the boundary. Neighbours' lines only apply beyond it, where sharp corners let the hull overhang.
+        // Only the sides' signs are read, but unit bisectors keep them pixel distances however long the miter. A zero
+        // miter (no corner) stays zero.
         float2 q0 = select(v1, v2, concave) - v0, q2 = select(v1, v0, concave) - v2;
-        float2 b0 = float2(-iv0.y, iv0.x), b2 = float2(-iv2.y, iv2.x);
+        float l0 = dot(iv0, iv0), l2 = dot(iv2, iv2);
+        float2 b0 = select(float2(-iv0.y, iv0.x) * rsqrt(l0), 0, l0 == 0), b2 = select(float2(-iv2.y, iv2.x) * rsqrt(l2), 0, l2 == 0);
         vert.d4 = dot(select(-b0, b0, dot(b0, q0) >= 0), pos - v0);
         vert.d5 = dot(select(-b2, b2, dot(b2, q2) >= 0), pos - v2);
     } else {
