@@ -5,7 +5,7 @@
 //  Created by Nigel Barber on 21/06/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-#import "Algorithms.hpp"
+#import "Shared.metal.hpp"
 #import <vector>
 
 constexpr int kPointStride = 2 * sizeof(float);
@@ -23,6 +23,24 @@ static inline float vertexMergeLimit(const Bounds& b) {
 static inline float coordinateLimit() { static const float limit = std::sqrt(std::sqrt(FLT_MAX / 64)); return limit; }
 static inline float isLeft(const float *P0, const float *P1, const float *P2) {
     return (P1[0] - P0[0]) * (P2[1] - P0[1]) - (P2[0] -  P0[0]) * (P1[1] - P0[1]);
+}
+
+static void boundsLimits(float *limits, const float *begin, const float *end, size_t stride) {
+    float maxX = -FLT_MAX, maxY = -FLT_MAX, minX= FLT_MAX, minY= FLT_MAX;
+    
+    for (auto it = begin; it < end; it = (float *)((char *)it + stride)) {
+        if (it[0] > maxX) maxX = it[0];
+        if (it[0] < minX) minX = it[0];
+        if (it[1] > maxY) maxY = it[1];
+        if (it[1] < minY) minY = it[1];
+    }
+    limits[0] = minX;  limits[1] = minY;  limits[2] = maxX;  limits[3] = maxY;
+}
+
+static Bounds BoundsFromFloats(const float *begin, const float *end) {
+    Bounds b;
+    boundsLimits(& b.lx, begin, end, kPointStride);
+    return b;
 }
 
 // http://geomalgorithms.com/a03-_inclusion.html

@@ -36,7 +36,6 @@
 		E97D7603211498600015388A /* Library.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Library.metal; sourceTree = "<group>"; };
 		E97D7604211498600015388A /* Mesh.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Mesh.metal; sourceTree = "<group>"; };
 		E97D760A2114989D0015388A /* Shared.metal.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Shared.metal.hpp; sourceTree = "<group>"; };
-		E97D760C2114995A0015388A /* Algorithms.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Algorithms.hpp; sourceTree = "<group>"; };
 		E97D760D2114995A0015388A /* libTess.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = libTess.hpp; sourceTree = "<group>"; };
 		E97D760E2114995A0015388A /* Memory.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Memory.hpp; sourceTree = "<group>"; };
 		E97D760F2114995A0015388A /* Mesh.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Mesh.hpp; sourceTree = "<group>"; };
@@ -114,7 +113,6 @@
 		E97D760B2114995A0015388A /* src */ = {
 			isa = PBXGroup;
 			children = (
-				E97D760C2114995A0015388A /* Algorithms.hpp */,
 				E97D760D2114995A0015388A /* libTess.hpp */,
 				E97D760E2114995A0015388A /* Memory.hpp */,
 				E97D760F2114995A0015388A /* Mesh.hpp */,

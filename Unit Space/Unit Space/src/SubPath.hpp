@@ -34,6 +34,10 @@ static inline bool isStraightCubic(const float *p) {
     return aw * aw <= kStraightSine2 * (ax * ax + ay * ay) * lw && bw * bw <= kStraightSine2 * (bx * bx + by * by) * lw;
 }
 
+static inline float lerp(float t, float n0, float n1) {
+    return (1.f - t) * n0 + t * n1;
+}
+
 // Splits cubic c at t (de Casteljau): a covers [0, t] and b [t, 1]. b may be c.
 static inline void splitCubic(const float *c, float t, float *a, float *b) {
     for (int k = 0; k < 2; k++) {

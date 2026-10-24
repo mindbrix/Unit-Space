@@ -441,6 +441,16 @@ private:
         for (int i = 0, j = (int)s.size() / 2 - 1; i < j; i++, j--)
             std::swap(s[i * 2], s[j * 2]), std::swap(s[i * 2 + 1], s[j * 2 + 1]);
     }
+    
+    static float pointsSignedArea(const float *begin, const float *end, size_t stride) {
+        double sum = 0.0;
+        auto prev = (const float *)((char *)end - stride);
+        for (auto it = begin; it < end; it = (float *)((char *)it + stride)) {
+            sum += (double)prev[0] * (double)it[1] - (double)prev[1] * (double)it[0];
+            prev = it;
+        }
+        return sum * 0.5;
+    }
 
     // Closes the chain back to its start and adds it. Stroke bodies already wind clockwise by construction; separate
     // pieces (orient) are made to.

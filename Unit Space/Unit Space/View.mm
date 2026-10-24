@@ -9,7 +9,6 @@
 #import "View.h"
 #import "MetalLayer.h"
 #import "VGAffineTransform.h"
-#import "Algorithms.hpp"
 #import "SVG.hpp"
 #import "libTess.hpp"
 
