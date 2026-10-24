@@ -65,6 +65,31 @@ static inline float2 turned(float2 v, AffineTransform CTM) {
     return float2(v.x * CTM.a + v.y * CTM.c, v.x * CTM.b + v.y * CTM.d);
 }
 
+static inline float2 transformed(float x, float y, AffineTransform t) {
+    return turned(float2(x, y), t) + float2(t.tx, t.ty);
+}
+
+// An instance's triangle in device space: its vertices, and its corners' miters, zero where there is no corner. Returns
+// the transform from the triangle's quantised coordinates, which also places its tangent points.
+static inline AffineTransform deviceTriangle(const device Triangle& tri, const device MeshPath& path, constant State& state,
+                                             thread float2& v0, thread float2& v1, thread float2& v2,
+                                             thread float2& iv0, thread float2& iv1, thread float2& iv2) {
+    AffineTransform CTM = AffineTransformConcat(path.ctm, state.CTM);
+    Bounds bounds = path.bounds;
+    float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
+    AffineTransform T = AffineTransformConcat({ width, 0, 0, height, bounds.lx, bounds.ly }, CTM);
+    v0 = transformed(tri.x0, tri.y0, T), v1 = transformed(tri.x1, tri.y1, T), v2 = transformed(tri.x2, tri.y2, T);
+    
+    const device float *iv = & tri.ix0;
+    float2 m0 = float2(iv[0], iv[1]), m1 = float2(iv[2], iv[3]), m2 = float2(iv[4], iv[5]);    // path space
+    if (isSimilarity(CTM)) {
+        float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+        iv0 = turned(m0, CTM) * rscale, iv1 = turned(m1, CTM) * rscale, iv2 = turned(m2, CTM) * rscale;
+    } else
+        iv0 = deviceMiter(m0, CTM), iv1 = deviceMiter(m1, CTM), iv2 = deviceMiter(m2, CTM);
+    return T;
+}
+
 // The interior is the edge triangles themselves, drawn from the end of the stream, so opaque paths draw front to back,
 // each corner inset along its dilation miter by the filter width: the opaque fill stops where the edge pass's coverage
 // reaches 1. A corner's inset keeps the filter width from both its edges whichever of its triangles it lands in, but a
@@ -82,23 +107,10 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     TriangleInstance instance = instances[meshState.triangleInstances - 1 - iid];
     const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance;
-    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    Bounds bounds = paths[p].bounds;
-    float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
-    float tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
-    float2 v0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
-    float2 v1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
-    float2 v2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
-    
+    float2 v0, v1, v2, iv0, iv1, iv2;
+    deviceTriangle(tri, paths[p], state, v0, v1, v2, iv0, iv1, iv2);
     const float f = kTriangleFilterWidth;
-    const device float *iv = & tri.ix0;
-    float2 pm0 = float2(iv[0], iv[1]), pm1 = float2(iv[2], iv[3]), pm2 = float2(iv[4], iv[5]), iv0, iv1, iv2;    // path space
-    if (isSimilarity(CTM)) {
-        float rscale = rsqrt(max(1e-12, abs(CTM.a * CTM.d - CTM.b * CTM.c)));
-        iv0 = turned(pm0, CTM) * (rscale * f), iv1 = turned(pm1, CTM) * (rscale * f), iv2 = turned(pm2, CTM) * (rscale * f);
-    } else
-        iv0 = deviceMiter(pm0, CTM) * f, iv1 = deviceMiter(pm1, CTM) * f, iv2 = deviceMiter(pm2, CTM) * f;
+    iv0 *= f, iv1 *= f, iv2 *= f;
     
     // The inset triangle's doubled area at inset s in [0, 1] is A0 + s (B + s C).
     float2 e1 = v1 - v0, e2 = v2 - v0, m1 = iv1 - iv0, m2 = iv2 - iv0;
@@ -201,22 +213,10 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     TriangleInstance instance = instances[iid];
     const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance, flags = tri.flags, curves = flags & Triangle::kCurvesMask;
-    AffineTransform CTM = AffineTransformConcat(paths[p].ctm, state.CTM);
-    Bounds bounds = paths[p].bounds;
-    float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    float a = width * CTM.a, b = width * CTM.b, c = height * CTM.c, d = height * CTM.d;
-    float tx = bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx, ty = bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty;
-    float2 v0 = { tri.x0 * a + tri.y0 * c + tx, tri.x0 * b + tri.y0 * d + ty };
-    float2 v1 = { tri.x1 * a + tri.y1 * c + tx, tri.x1 * b + tri.y1 * d + ty };
-    float2 v2 = { tri.x2 * a + tri.y2 * c + tx, tri.x2 * b + tri.y2 * d + ty };
-    
-    const device float *iv = & tri.ix0;
-    float2 pm0 = float2(iv[0], iv[1]), pm1 = float2(iv[2], iv[3]), pm2 = float2(iv[4], iv[5]), iv0, iv1, iv2;    // path space
-    if (isSimilarity(CTM)) {
-        float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
-        iv0 = turned(pm0, CTM) * rscale, iv1 = turned(pm1, CTM) * rscale, iv2 = turned(pm2, CTM) * rscale;
-    } else
-        iv0 = deviceMiter(pm0, CTM), iv1 = deviceMiter(pm1, CTM), iv2 = deviceMiter(pm2, CTM);
+    float2 v0, v1, v2, iv0, iv1, iv2;
+    AffineTransform T = deviceTriangle(tri, paths[p], state, v0, v1, v2, iv0, iv1, iv2);
+    // Hulls: the neighbours' tangent points. Polygon triangles with a control vertex: its curve's ends.
+    float2 cp0 = transformed(tri.tx0, tri.ty0, T), cp2 = transformed(tri.tx2, tri.ty2, T);
     // Control points have no corner here: no dilation and no lines.
     iv0 = select(iv0, 0, bool(curves & Triangle::kControl0));
     iv1 = select(iv1, 0, bool(curves & Triangle::kControl1));
@@ -252,8 +252,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         float2 uv = loopBlinn(pos, v0, v1, v2);
         // The neighbours' tangent lines at the joins. A convex hull runs p0 -> c -> p2, so its predecessor arrives
         // along v0 -> t0 with the fill on the right; a concave hull is reversed, so the sides swap.
-        float2 t0 = float2(tri.tx0 * a + tri.ty0 * c + tx, tri.tx0 * b + tri.ty0 * d + ty) - v0;
-        float2 t2 = float2(tri.tx2 * a + tri.ty2 * c + tx, tri.tx2 * b + tri.ty2 * d + ty) - v2;
+        float2 t0 = cp0 - v0, t2 = cp2 - v2;
         float2 e0 = t0 * rsqrt(dot(t0, t0)), e2 = t2 * rsqrt(dot(t2, t2));
         float2 n0 = select(float2(e0.y, -e0.x), float2(-e0.y, e0.x), concave), n2 = select(float2(-e2.y, e2.x), float2(e2.y, -e2.x), concave);
         vert.d0 = select(cornerDistances(iv0, v0, select(v1, v2, concave) - v0, pos).y, dot(n0, pos - v0), dot(t0, t0) > 0);
@@ -278,7 +277,6 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         bool c0 = curves & Triangle::kControl0, c1 = curves & Triangle::kControl1, c2 = curves & Triangle::kControl2;
         bool k0c = c0, k1c = c1 && !c0, k2c = c2 && !c0 && !c1, any = k0c || k1c || k2c;
         float2 vc = select(select(v2, v1, k1c), v0, k0c);
-        float2 cp0 = float2(tri.tx0 * a + tri.ty0 * c + tx, tri.tx0 * b + tri.ty0 * d + ty), cp2 = float2(tri.tx2 * a + tri.ty2 * c + tx, tri.tx2 * b + tri.ty2 * d + ty);
         // Which corners are the curve's ends (their positions are quantised identically), and the chord from each.
         bool p00 = tri.x0 == tri.tx0 && tri.y0 == tri.ty0, p01 = tri.x1 == tri.tx0 && tri.y1 == tri.ty0, p02 = tri.x2 == tri.tx0 && tri.y2 == tri.ty0;
         bool p20 = tri.x0 == tri.tx2 && tri.y0 == tri.ty2, p21 = tri.x1 == tri.tx2 && tri.y1 == tri.ty2, p22 = tri.x2 == tri.tx2 && tri.y2 == tri.ty2;
