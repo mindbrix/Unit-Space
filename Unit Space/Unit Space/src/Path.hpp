@@ -7,6 +7,9 @@
 //
 #import "Shared.metal.hpp"
 #import <vector>
+#import <algorithm>
+#import <cmath>
+using namespace std;
 
 constexpr int kPointStride = 2 * sizeof(float);
 // Points closer than this in both coordinates are one vertex to libTess, which merges them after its union. Paths merge
