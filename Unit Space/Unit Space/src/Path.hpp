@@ -5,103 +5,114 @@
 //  Created by Nigel Barber on 21/06/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-#import "SubPath.hpp"
+#import "Algorithms.hpp"
+#import <vector>
 
-// Contours of quadratic chains (p0, c, p1, c, p2 ...), one after another in _points.
+constexpr int kPointStride = 2 * sizeof(float);
+// Points closer than this in both coordinates are one vertex to libTess, which merges them after its union. Paths merge
+// theirs first (mergeVertices()), so no curve loses the vertex it ends on. A fraction of the extent, plus float resolution
+// at the bounds' magnitude.
+static inline float vertexMergeLimit(const Bounds& b) {
+    float extent = std::max(b.ux - b.lx, b.uy - b.ly);
+    float magnitude = std::max(std::max(std::abs(b.lx), std::abs(b.ux)), std::max(std::abs(b.ly), std::abs(b.uy)));
+    return extent * 1e-5f + magnitude * 1e-6f;
+}
+// The largest coordinate magnitude geometry may have. Straightness and turn tests compare squared cross products with
+// products of squared lengths: fourth powers of differences, each up to twice it, so 64 times its fourth power at most.
+// Beyond it they overflow, curves test as straight, and further on the tessellator's own products fail too.
+static inline float coordinateLimit() { static const float limit = std::sqrt(std::sqrt(FLT_MAX / 64)); return limit; }
+static inline float isLeft(const float *P0, const float *P1, const float *P2) {
+    return (P1[0] - P0[0]) * (P2[1] - P0[1]) - (P2[0] -  P0[0]) * (P1[1] - P0[1]);
+}
+
+// http://geomalgorithms.com/a03-_inclusion.html
+//
+static size_t pointInPolygon(const float *p, const float *polygon, size_t n, size_t stride) {
+    size_t wn = 0; auto mul = stride / sizeof(float);
+    for (auto i = 0; i < n; i++) {
+        auto p0 = polygon + i * mul; auto p1 = polygon + ((i + 1) % n) * mul;
+        if (p0[1] <= p[1]) {
+            if (p1[1] > p[1] && isLeft(p0, p1, p) > 0.0f)  ++wn;
+        } else {
+            if (p1[1] <= p[1] && isLeft(p0, p1, p) < 0.0f)  --wn;
+        }
+    }
+    return wn;
+}
+
+// A path: contours of float points, each lines through them or a chain of quadratics (p0, c, p1, c, p2 ...) or cubics
+// (p0, c, c, p1, c, c, p2 ...), open or closed, and how they are drawn: filled by their winding, or stroked by a pen.
 struct Path {
+    enum Kind { kLines, kQuadratics, kCubics };
+    enum Join { kMiter, kRound, kBevel };
+    enum Cap { kButt, kRoundCap, kSquare };
+    struct Contour {
+        size_t first;       // its first float in _points
+        int npoints;
+        Kind kind;
+        bool closed;
+    };
+    
     Path() {}
-    Path(bool closed, bool evenOdd) : _closed(closed), _evenOdd(evenOdd) {}
-
-    // Each add converts one contour, which is kept if it lies within coordinateLimit() and has a quadratic.
-    // tangents: cubics convert to tangent-preserving quadratics (see splitCubics).
-    void addCubics(const float *points, int npoints, bool tangents = false) {
+    explicit Path(bool evenOdd) : _evenOdd(evenOdd) {}
+    
+    // A contour is kept if its points are finite and within coordinateLimit(), and bounds the path.
+    void add(Kind kind, const float *points, int npoints, bool closed) {
+        for (int i = 0; i < npoints * 2; i++)
+            if (!std::isfinite(points[i]))
+                return;
         Bounds b;
-        if (!begin(points, npoints, b))
+        float limit = coordinateLimit();
+        boundsLimits(& b.lx, points, points + npoints * 2, kPointStride);
+        if (!(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit))
             return;
-        QuadraticChain chain(_points);
-        splitCubics(points, npoints, kSplitCubicPrecision, vertexMergeLimit(b), tangents, chain);
-        end(b);
+        _bounds = _contours.empty() ? b : _bounds.united(b);
+        _contours.push_back({ _points.size(), npoints, kind, closed });
+        _points.insert(_points.end(), points, points + npoints * 2);
     }
-    void addQuadratics(const float *points, int npoints) {
-        Bounds b;
-        if (!begin(points, npoints, b))
-            return;
-        if (npoints > 2)
-            subdivideQuadratics(points, npoints, _points);
-        end(b);
+    // Room for contours of npoints points in all, which spares the growth of adding them one by one.
+    void reserve(int npoints, int ncontours) {
+        _points.reserve(_points.size() + npoints * 2), _contours.reserve(_contours.size() + ncontours);
     }
-    void addLines(const float *points, int npoints) {
-        Bounds b;
-        if (!begin(points, npoints, b))
-            return;
-        float x0 = points[0], y0 = points[1], x1, y1;
-        _points.push_back(x0), _points.push_back(y0);
-        for (int i = 1; i < npoints; i++, x0 = x1, y0 = y1) {
-            x1 = points[i * 2], y1 = points[i * 2 + 1];
-            _points.push_back((x0 + x1) * 0.5), _points.push_back((y0 + y1) * 0.5);
-            _points.push_back(x1), _points.push_back(y1);
+    // Strokes it instead of filling it: a pen width wide, with its joins, caps and dashes (on, off, ...), whose pattern
+    // each contour starts offset into. A stroke's outline fills by nonzero winding.
+    void stroke(float width, Join join, Cap cap, float miterLimit, const float *dashes = nullptr, int ndashes = 0, float offset = 0) {
+        _strokeWidth = width, _join = join, _cap = cap, _miterLimit = miterLimit;
+        _dashes.assign(dashes, dashes + ndashes), _dashOffset = offset;
+    }
+    bool stroked() const { return _strokeWidth > 0; }
+    
+    const float *points(int i) const { return _points.data() + _contours[i].first; }
+    float *points(int i) { return _points.data() + _contours[i].first; }
+    // After its points move.
+    void updateBounds() {
+        for (int i = 0; i < (int)_contours.size(); i++) {
+            Bounds b;
+            boundsLimits(& b.lx, points(i), points(i) + _contours[i].npoints * 2, kPointStride);
+            _bounds = i ? _bounds.united(b) : b;
         }
-        end(b);
     }
-    // Merges each contour's vertices (mergeContour()) and closes the gaps they leave.
-    void mergeVertices(float limit, bool closed = true) {
-        size_t size = 0;
-        _flat = true;
-        for (int i = 0; i < contours(); i++) {
-            size_t first = _contours[i], count = contourSize(i);
-            if (size != first)
-                memmove(_points.data() + size, _points.data() + first, count * sizeof(float));
-            bool flat;
-            _contours[i] = size, size += mergeContour(_points.data() + size, count, limit, closed, & flat);
-            _flat = _flat && flat;
-        }
-        _points.resize(size);
-    }
-    void clear() { _points.resize(0), _contours.resize(0); }
-
-    int contours() const { return (int)_contours.size(); }
-    // Contour i's floats, from _points[_contours[i]].
-    size_t contourSize(int i) const { return (i + 1 < contours() ? _contours[i + 1] : _points.size()) - _contours[i]; }
-
+    // Whether its contours' polygon (lines through their on-curve points) holds a point, by its winding.
     bool contains(float x, float y) {
         if (!_bounds.contains(x, y))
             return false;
         float p[2] = { x, y };
         int wn = 0;
-        for (int i = 0; i < contours(); i++)
-            wn += (int)pointInPolygon(p, _points.data() + _contours[i], contourSize(i) / 4 + 1, kPointStride * 2);
-        return _evenOdd ? wn & 1 : wn;
-    }
-    bool                        _closed, _evenOdd;
-    bool                        _outline = false;   // a stroke expanded into a filled outline, which crosses itself
-    bool                        _flat = false;      // only lines, which mergeVertices() decides
-    float                       _penWidth = 0;      // an outline's stroke width
-    Bounds                      _bounds;
-    vector<float>               _points;            // every contour's quadratics
-    vector<size_t>              _contours;          // each contour's first float in _points
-    // An SVG shape's fill or stroke has no contours of its own: Scene::convert() makes them from the shape's points when
-    // they are needed, and its bounds are those points' until then.
-    const struct NSVGshape     *_shape = nullptr;
-    float                       _height = 0;        // the shape's image height, about which y flips
-
-private:
-    // Starts a contour from points, unless they lie beyond coordinateLimit(), with their bounds.
-    bool begin(const float *points, int npoints, Bounds& b) {
-        boundsLimits(& b.lx, points, points + npoints * 2, kPointStride);
-        float limit = coordinateLimit();
-        if (!(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit))
-            return false;
-        _contours.push_back(_points.size());
-        return true;
-    }
-    // Keeps the contour begun if it has a quadratic, uniting its points' bounds with the path's.
-    void end(const Bounds& b) {
-        if (_points.size() - _contours.back() < 6) {
-            _points.resize(_contours.back()), _contours.pop_back();
-            return;
+        for (int i = 0; i < (int)_contours.size(); i++) {
+            int step = _contours[i].kind == kCubics ? 3 : _contours[i].kind == kQuadratics ? 2 : 1;
+            wn += (int)pointInPolygon(p, points(i), (_contours[i].npoints - 1) / step + 1, kPointStride * step);
         }
-        if (_contours.size() == 1)
-            _bounds = b;
-        _bounds.unite(b);
+        return _evenOdd && !stroked() ? wn & 1 : wn;
     }
+    
+    vector<float>               _points;
+    vector<Contour>             _contours;
+    Bounds                      _bounds;            // its contours' points'
+    bool                        _evenOdd = false;
+    float                       _strokeWidth = 0;   // zero for a fill
+    Join                        _join = kMiter;
+    Cap                         _cap = kButt;
+    float                       _miterLimit = 4;
+    vector<float>               _dashes;
+    float                       _dashOffset = 0;
 };

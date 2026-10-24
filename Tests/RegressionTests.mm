@@ -14,7 +14,7 @@
 #include <chrono>
 #include <map>
 #include <string>
-#include "Scene.hpp"
+#include "SVG.hpp"
 #include "libTess.hpp"
 
 extern char **environ;
@@ -25,14 +25,14 @@ static int failures = 0;
 static Scene sceneFromSVG(const std::string& body) {
     std::string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\">" + body + "</svg>";
     Scene scene;
-    scene.addSVG(svg.data(), svg.size());
+    SVG::addSVG(scene, svg.data(), svg.size());
     return scene;
 }
 static Scene sceneFromFile(const char *path) {
     NSData *data = [NSData dataWithContentsOfFile:@(path)];
     Scene scene;
     if (data)
-        scene.addSVG(data.bytes, data.length);
+        SVG::addSVG(scene, data.bytes, data.length);
     return scene;
 }
 static size_t floats(const Path& path) {
@@ -42,7 +42,7 @@ static size_t floats(const Path& path) {
 static size_t floats(Scene& scene) {
     size_t n = 0;
     for (Path& p : scene._paths)
-        n += floats(Scene::convert(p));
+        n += floats(libTess::convert(p));
     return n;
 }
 static uint64_t fnv(const void *bytes, size_t size, uint64_t h = 1469598103934665603ull) {
@@ -83,11 +83,11 @@ static void testHugeStrokeWidth() {
     Scene scene = sceneFromSVG("<path d=\"M0 0 C10 0 0 10 10 10\" fill=\"none\" stroke=\"black\" stroke-width=\"1e30\"/>");
     float limit = coordinateLimit();
     for (Path& path : scene._paths) {
-        Path converted = Scene::convert(path);
-        for (int i = 0; i < converted.contours(); i++) {
+        Path converted = libTess::convert(path);
+        for (int i = 0; i < (int)converted._contours.size(); i++) {
             Bounds b;
-            const float *q = converted._points.data() + converted._contours[i];
-            boundsLimits(& b.lx, q, q + converted.contourSize(i), kPointStride);
+            const float *q = converted.points(i);
+            boundsLimits(& b.lx, q, q + converted._contours[i].npoints * 2, kPointStride);
             CHECK(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit);
         }
     }
@@ -137,7 +137,7 @@ static void testDashProgress() {
 static void testDots() {
     Scene scene = sceneFromSVG("<path d=\"M0 50 C30 0 70 100 100 50\" fill=\"none\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-dasharray=\"0 4\"/>");
     CHECK(scene._paths.size() == 1);
-    CHECK(scene._paths.size() == 1 && Scene::convert(scene._paths[0]).contours() > 10);
+    CHECK(scene._paths.size() == 1 && libTess::convert(scene._paths[0])._contours.size() > 10);
 }
 
 #pragma mark - Pipeline invariants
@@ -153,10 +153,13 @@ static void testSceneImmutable() {
     libTess::triangulate(second, scene);
     CHECK(meshHash(first) == meshHash(second));
 }
-// SVG paths are converted as they are triangulated, so an edit's mesh converts its paths as the whole scene's does.
+// Paths keep their contours as added, and convert as they are triangulated, so an edit's mesh converts its paths as the
+// whole scene's does.
 static void testDeferredConversion() {
     Scene scene = sceneFromSVG("<path d=\"M0 0 C10 0 0 10 10 10 Z\" fill=\"red\" stroke=\"black\" stroke-width=\"2\"/>");
-    CHECK(scene._paths.size() == 2 && scene._paths[0]._contours.empty() && scene._paths[1]._contours.empty());
+    CHECK(scene._paths.size() == 2 && scene._paths[0]._contours.size() == 1 && scene._paths[0]._contours[0].kind == Path::kCubics);
+    CHECK(scene._paths.size() == 2 && !scene._paths[0].stroked() && scene._paths[1].stroked());
+    CHECK(scene._paths.size() == 2 && scene._paths[0]._points == scene._paths[1]._points);
     if (scene._paths.size() != 2)
         return;
     Mesh whole, edit;
@@ -208,7 +211,7 @@ static void testSmoothJoinsUnsplit() {
     Scene scene = sceneFromSVG("<circle cx=\"50\" cy=\"50\" r=\"40\"/><ellipse cx=\"50\" cy=\"50\" rx=\"40\" ry=\"10\" transform=\"rotate(30 50 50)\"/>");
     CHECK(scene._paths.size() == 2);
     for (Path& path : scene._paths) {
-        Path converted = Scene::convert(path), refined = converted;
+        Path converted = libTess::convert(path), refined = converted;
         libTess::refineChords(refined);
         CHECK(floats(refined) == floats(converted));
     }
@@ -220,7 +223,7 @@ static void testSlitLobesSplit() {
     CHECK(scene._paths.size() == 1);
     if (scene._paths.size() != 1)
         return;
-    Path converted = Scene::convert(scene._paths[0]), refined = converted;
+    Path converted = libTess::convert(scene._paths[0]), refined = converted;
     libTess::refineChords(refined);
     CHECK(floats(refined) > floats(converted));
 }
@@ -230,7 +233,7 @@ static void testLoopLensSplit() {
     CHECK(scene._paths.size() == 1);
     if (scene._paths.size() != 1)
         return;
-    Path converted = Scene::convert(scene._paths[0]), refined = converted;
+    Path converted = libTess::convert(scene._paths[0]), refined = converted;
     libTess::refineChords(refined);
     CHECK(floats(refined) > floats(converted));
 }

@@ -5,22 +5,8 @@
 //  Created by Nigel Barber on 21/06/2018.
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
-#import "Memory.hpp"
-#import <vector>
+#import "Path.hpp"
 
-constexpr int kPointStride = 2 * sizeof(float);
-// Points closer than this in both coordinates are one vertex to libTess, which merges them after its union. Paths merge
-// theirs first (Scene::addPath), so no curve loses the vertex it ends on. A fraction of the extent, plus float resolution
-// at the bounds' magnitude.
-static inline float vertexMergeLimit(const Bounds& b) {
-    float extent = std::max(b.ux - b.lx, b.uy - b.ly);
-    float magnitude = std::max(std::max(std::abs(b.lx), std::abs(b.ux)), std::max(std::abs(b.ly), std::abs(b.uy)));
-    return extent * 1e-5f + magnitude * 1e-6f;
-}
-// The largest coordinate magnitude geometry may have. Straightness and turn tests compare squared cross products with
-// products of squared lengths: fourth powers of differences, each up to twice it, so 64 times its fourth power at most.
-// Beyond it they overflow, curves test as straight, and further on the tessellator's own products fail too.
-static inline float coordinateLimit() { static const float limit = std::sqrt(std::sqrt(FLT_MAX / 64)); return limit; }
 // Edges are anti-aliased as implicit quadratics, so curves are no longer flattened into chords. Cubics still split
 // finely: where two curves run close, a coarse quadratic strays across the gap between them. Quadratics split only to
 // bound their turn, which bounds the size of their hull triangles (drawn and blended by the edge pass) and keeps
@@ -231,25 +217,6 @@ static void splitCubics(const float *src, int npoints, const float precision, fl
     quadratics.end(c[6], c[7]);
 }
 
-static inline float isLeft(const float *P0, const float *P1, const float *P2) {
-    return (P1[0] - P0[0]) * (P2[1] - P0[1]) - (P2[0] -  P0[0]) * (P1[1] - P0[1]);
-}
-
-// http://geomalgorithms.com/a03-_inclusion.html
-//
-static size_t pointInPolygon(const float *p, const float *polygon, size_t n, size_t stride) {
-    size_t wn = 0; auto mul = stride / sizeof(float);
-    for (auto i = 0; i < n; i++) {
-        auto p0 = polygon + i * mul; auto p1 = polygon + ((i + 1) % n) * mul;
-        if (p0[1] <= p[1]) {
-            if (p1[1] > p[1] && isLeft(p0, p1, p) > 0.0f)  ++wn;
-        } else {
-            if (p1[1] <= p[1] && isLeft(p0, p1, p) < 0.0f)  --wn;
-        }
-    }
-    return wn;
-}
-
 // Subdivides each of a chain's quadratics (subdivideQuadratic()) into out.
 static void subdivideQuadratics(const float *points, int npoints, vector<float>& out) {
     out.push_back(points[0]), out.push_back(points[1]);
@@ -268,10 +235,9 @@ static void subdivideQuadratics(const float *points, int npoints, vector<float>&
 // includes a line doubling back on the one before, a spike enclosing nothing, and the closing line libTess adds
 // from a closed subpath's end to its start.
 // It writes the merged quadratics over the contour's own, as it never writes ahead of what it has yet to read, and
-// returns their floats. flat: whether they are only lines.
-static size_t mergeContour(float *q, size_t count, float limit, bool closed, bool *flat) {
+// returns their floats.
+static size_t mergeContour(float *q, size_t count, float limit, bool closed) {
     int n = ((int)count - 2) / 4;
-    *flat = false;
     if (n < 2)
         return count;
     auto near = [&](const float *a, const float *b) { return std::abs(a[0] - b[0]) < limit && std::abs(a[1] - b[1]) < limit; };
@@ -341,9 +307,60 @@ static size_t mergeContour(float *q, size_t count, float limit, bool closed, boo
         else
             moved = false;
     }
-    // Lines carry their chord's exact midpoint as control, so a contour of only those has no curve.
-    *flat = true;
-    for (size_t i = 0; *flat && i + 6 <= size; i += 4)
-        *flat = q[i + 2] == (q[i] + q[i + 4]) * 0.5f && q[i + 3] == (q[i + 1] + q[i + 5]) * 0.5f;
     return size;
+}
+
+// Appends a contour as a quadratic chain to out, if it lies within coordinateLimit() and makes a quadratic: cubics split
+// (tangents: tangent-preserving, see splitCubics), quadratics subdivided, and lines with their midpoints as controls.
+// out's bounds unite with its points'.
+static void appendQuadratics(Path& out, const float *points, int npoints, Path::Kind kind, bool tangents) {
+    Bounds b;
+    float limit = coordinateLimit();
+    boundsLimits(& b.lx, points, points + npoints * 2, kPointStride);
+    if (!(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit))
+        return;
+    vector<float>& q = out._points;
+    size_t first = q.size();
+    if (kind == Path::kCubics) {
+        QuadraticChain chain(q);
+        splitCubics(points, npoints, kSplitCubicPrecision, vertexMergeLimit(b), tangents, chain);
+    } else if (kind == Path::kQuadratics) {
+        if (npoints > 2)
+            subdivideQuadratics(points, npoints, q);
+    } else {
+        float x0 = points[0], y0 = points[1], x1, y1;
+        q.push_back(x0), q.push_back(y0);
+        for (int i = 1; i < npoints; i++, x0 = x1, y0 = y1) {
+            x1 = points[i * 2], y1 = points[i * 2 + 1];
+            q.push_back((x0 + x1) * 0.5), q.push_back((y0 + y1) * 0.5), q.push_back(x1), q.push_back(y1);
+        }
+    }
+    if (q.size() - first < 6) {
+        q.resize(first);
+        return;
+    }
+    out._contours.push_back({ first, int(q.size() - first) / 2, Path::kQuadratics, true });
+    out._bounds = out._contours.size() == 1 ? b : out._bounds.united(b);
+}
+
+// Merges the vertices of each of a quadratic path's contours (mergeContour()), closing the gaps they leave.
+static void mergeVertices(Path& path, float limit, bool closed) {
+    size_t size = 0;
+    for (Path::Contour& c : path._contours) {
+        float *q = path._points.data();
+        if (size != c.first)
+            memmove(q + size, q + c.first, c.npoints * 2 * sizeof(float));
+        c.first = size, c.npoints = int(mergeContour(q + size, c.npoints * 2, limit, closed)) / 2, size += c.npoints * 2;
+    }
+    path._points.resize(size);
+}
+
+// Whether a quadratic path is only lines: their controls are their chords' exact midpoints, as lines are written.
+static bool isFlat(const Path& path) {
+    const vector<float>& q = path._points;
+    for (const Path::Contour& c : path._contours)
+        for (size_t i = c.first; i + 6 <= c.first + c.npoints * 2; i += 4)
+            if (q[i + 2] != (q[i] + q[i + 4]) * 0.5f || q[i + 3] != (q[i + 1] + q[i + 5]) * 0.5f)
+                return false;
+    return true;
 }

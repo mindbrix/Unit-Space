@@ -77,6 +77,7 @@
 		E9EEAD8E200BC76C00F2BFB2 /* View.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = View.h; sourceTree = "<group>"; };
 		E9EEAD8F200BC76C00F2BFB2 /* View.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = View.mm; sourceTree = "<group>"; };
 		E9EEAD99200BE9F700F2BFB2 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		E9FCD170308CE96600E4B93E /* SVG.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SVG.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +124,7 @@
 				E97D76132114995A0015388A /* Scene.hpp */,
 				E90B12A23083DDE40017C78C /* Stroke.hpp */,
 				E97D76142114995A0015388A /* SubPath.hpp */,
+				E9FCD170308CE96600E4B93E /* SVG.hpp */,
 				E97D7616211499E20015388A /* VGAffineTransform.h */,
 				E97D7617211499E20015388A /* VGAffineTransform.m */,
 			);

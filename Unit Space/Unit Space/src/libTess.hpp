@@ -9,6 +9,8 @@
 #import <dispatch/dispatch.h>
 
 #import "Scene.hpp"
+#import "Stroke.hpp"
+#import "Mesh.hpp"
 #import <vector>
 #import <unordered_map>
 #import <atomic>
@@ -70,9 +72,32 @@ struct libTess {
         size_t block = 0, used = 0;
     };
     
+    // A path as triangulation needs it: closed quadratic contours, a stroke's being its outline, with their vertices
+    // merged, and the path's drawing parameters. It only reads the path, so paths can convert in parallel.
+    static Path convert(const Path& path) {
+        Path outline = path.stroked() ? Stroke::outline(path) : Path(), out(path._evenOdd);
+        const Path& in = path.stroked() ? outline : path;
+        out.stroke(path._strokeWidth, path._join, path._cap, path._miterLimit, path._dashes.data(), (int)path._dashes.size(), path._dashOffset);
+        out._bounds = path._bounds;
+        for (int i = 0; i < (int)in._contours.size(); i++)
+            appendQuadratics(out, in.points(i), in._contours[i].npoints, in._contours[i].kind, false);
+        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly. A
+        // fill's limit is from its own points; an outline's from its converted bounds.
+        mergeVertices(out, vertexMergeLimit(path.stroked() ? out._bounds : path._bounds), true);
+        return out;
+    }
+    // A path's share of the work of triangulating: its points, three times over for strokes, whose outlines cross
+    // themselves.
+    static int64_t cost(const Path& path) {
+        int64_t n = 0;
+        for (const Path::Contour& c : path._contours)
+            n += c.npoints;
+        return n * (path.stroked() ? 3 : 1);
+    }
+    
     static void addPathContours(TESStesselator *dst, Path& path) {
-        for (int i = 0; i < path.contours(); i++)
-            tessAddContour(dst, 2, path._points.data() + path._contours[i], kPointStride * 2, (int)path.contourSize(i) / 4 + 1);
+        for (int i = 0; i < (int)path._contours.size(); i++)
+            tessAddContour(dst, 2, path.points(i), kPointStride * 2, path._contours[i].npoints / 2 + 1);
     }
         
     // The path quadratic joining two contour vertices, if there is one.
@@ -86,9 +111,9 @@ struct libTess {
     struct PathVertices {
         PathVertices(Path& path) : path(path) {
             int base = 0;
-            for (int i = 0; i < path.contours(); i++) {
+            for (Path::Contour& c : path._contours) {
                 bases.push_back(base);
-                base += (int)path.contourSize(i) / 4 + 1;
+                base += c.npoints / 2 + 1;
             }
             bases.push_back(base);
         }
@@ -100,8 +125,8 @@ struct libTess {
                 return seg;
             // Most paths have no merged vertices, so only index positions once a lookup misses.
             if (!indexed) {
-                for (int sp = 0; sp < path.contours(); sp++) {
-                    const float *q = path._points.data() + path._contours[sp];
+                for (int sp = 0; sp < (int)path._contours.size(); sp++) {
+                    const float *q = path.points(sp);
                     for (int i = 0; i < bases[sp + 1] - bases[sp]; i++)
                         positions[key(q[i * 4], q[i * 4 + 1])].push_back(bases[sp] + i);
                 }
@@ -126,7 +151,7 @@ struct libTess {
                 return seg;
             la = (int)a - bases[sp], lb = (int)b - bases[sp];
             int n = bases[sp + 1] - bases[sp];
-            const float *q = path._points.data() + path._contours[sp];
+            const float *q = path.points(sp);
             // A closed contour repeats its first point last, and the tessellator may merge them to either index,
             // so count its vertices modulo the n - 1 distinct ones.
             int m = n > 2 && q[0] == q[(n - 1) * 4] && q[1] == q[(n - 1) * 4 + 1] ? n - 1 : 0;
@@ -350,9 +375,9 @@ struct libTess {
         };
         vector<Piece> pieces;
         vector<int> bases;      // each contour's first piece
-        for (int si = 0; si < path.contours(); si++) {
-            const float *q = path._points.data() + path._contours[si];
-            int n = (int)(path.contourSize(si) - 2) / 4;
+        for (int si = 0; si < (int)path._contours.size(); si++) {
+            const float *q = path.points(si);
+            int n = (path._contours[si].npoints - 1) / 2;
             bases.push_back((int)pieces.size());
             for (int k = 0; k <= n; k++) {
                 // The tessellator closes each contour back to its first point, a line.
@@ -416,21 +441,22 @@ struct libTess {
                 out.insert(out.end(), pieces[i].q + 2, pieces[i].q + 6);
         };
         vector<float> refined;
-        for (int si = 0; si < path.contours(); si++) {
-            const float *q = path._points.data() + path._contours[si];
-            int n = (int)(path.contourSize(si) - 2) / 4;
+        for (int si = 0; si < (int)path._contours.size(); si++) {
+            Path::Contour& c = path._contours[si];
+            const float *q = path.points(si);
+            int n = (c.npoints - 1) / 2;
             bool changed = false;
             for (int k = 0; k < n && !changed; k++)
                 changed = pieces[bases[si] + k].child >= 0;
             size_t first = refined.size();
             if (!changed)
-                refined.insert(refined.end(), q, q + path.contourSize(si));
+                refined.insert(refined.end(), q, q + c.npoints * 2);
             else {
                 refined.push_back(q[0]), refined.push_back(q[1]);
                 for (int k = 0; k < n; k++)
                     write(refined, bases[si] + k);
             }
-            path._contours[si] = first;
+            c.first = first, c.npoints = int(refined.size() - first) / 2;
         }
         path._points.swap(refined);
     }
@@ -510,7 +536,7 @@ struct libTess {
         // Balance the divisions by cost, which converting each path as it is triangulated is part of.
         vector<int64_t> costs(size, 0);
         for (p = 0; p < size; p++)
-            costs[p] = scene.cost(p);
+            costs[p] = cost(scene._paths[p]);
         int begins[divisions + 1], *b = begins;
         balanceDivisions(costs, divisions, begins);
         vector<Triangle> tris[divisions], *triss = tris;
@@ -616,21 +642,20 @@ struct libTess {
         vector<int> same;
         unordered_map<uint64_t, int> heads;
         for (int p = begin; p < end; p++) {
-            // Converted here, in parallel, and freed once triangulated (or a copy, which shares its quadratics until
-            // refineChords() replaces them): the scene keeps its paths as built, so triangulating it again (after every
-            // edit) gives the same mesh.
-            Path path = Scene::convert(scene._paths[p]);
+            // Converted here, in parallel, and freed once triangulated: the scene keeps its paths as built, so
+            // triangulating it again (after every edit) gives the same mesh.
+            Path path = convert(scene._paths[p]);
             float lx, ly, rw, rh;
             lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
             ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
             
             _idxs.emplace_back((int)_tris.size()), _bounds.push_back(path._bounds), _edges.push_back(0);
-            for (int i = 0; i < path.contours(); i++)
-                _edges.back() += path.contourSize(i) / 4;
+            for (Path::Contour& c : path._contours)
+                _edges.back() += c.npoints / 2;
             
             // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
             // Only curves are split, so a path of lines alone is left as it is.
-            if (!path._flat)
+            if (!isFlat(path))
                 refineChords(path);
             PathVertices pv(path);
             // The path's own tessellators, which reset() frees with everything they allocated. Their buckets hold as many
@@ -645,7 +670,7 @@ struct libTess {
             if (tess == nullptr)
                 continue;
             addPathContours(tess, path);
-            if (!tessTesselate(tess, path._evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
+            if (!tessTesselate(tess, path._evenOdd && !path.stroked() ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, TESS_BOUNDARY_CONTOURS, 0, 0, kTESSNormal))
                 continue;
             const float *verts = tessGetVertices(tess);
             const TESSindex *indices = tessGetVertexIndices(tess);
@@ -681,8 +706,8 @@ struct libTess {
                 // join at the default limit is still about half the pen), so remove such tips until none are left. A tip
                 // must be sharp (its miter longer than kTriangleDilationMax) as well as narrow: next to a short edge, any
                 // corner is narrow at that edge's end, as where a stroke's inner offsets meet.
-                if (path._outline && path._penWidth > 0) {
-                    const float minWidth = 0.1f * path._penWidth;
+                if (path.stroked()) {
+                    const float minWidth = 0.1f * path._strokeWidth;
                     for (bool removed = true; removed && kept.size() > 3; ) {
                         removed = false;
                         for (size_t k = 0; k < kept.size() && kept.size() > 3; ) {
@@ -707,7 +732,7 @@ struct libTess {
                 // Overlapping stroke pieces also leave islands and holes far smaller than the pen, which no stroke can
                 // have. Their spiky vertices become constraints inside the fill, and their near-reversing miters wreck
                 // the triangles around them, so they go too.
-                float pen = path._outline ? 0.25f * path._penWidth : 0;
+                float pen = path.stroked() ? 0.25f * path._strokeWidth : 0;
                 if (n < 3 || std::abs(area) * 0.5f < std::max(eps * eps, pen * pen))
                     continue;
                 contours.emplace_back(n);

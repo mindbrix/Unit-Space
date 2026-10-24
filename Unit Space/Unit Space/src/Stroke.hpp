@@ -4,7 +4,7 @@
 //
 //  Strokes become filled outlines, so they share the fill pipeline: tessellation, hull curves and edge AA.
 //
-#import "Path.hpp"
+#import "SubPath.hpp"
 
 // Expands a subpath's quadratics into closed contours whose nonzero union is the stroke.
 //  - Each side is one chain of offset quadratics: tangent-preserving, and split until their midpoints are within
@@ -18,8 +18,36 @@
 //    throughout or not at all.
 // Every contour winds clockwise (the body lies right of the left side's travel), so overlaps union rather than cancel.
 struct Stroke {
-    enum Join { kMiter, kRound, kBevel };
-    enum Cap { kButt, kRoundCap, kSquare };
+    typedef Path::Join Join;
+    typedef Path::Cap Cap;
+    
+    // A stroked path's outline: closed quadratic contours. Each contour's centreline converts to tangent-preserving
+    // quadratics, so smooth joins stay smooth, and merges within its own points' limit.
+    static Path outline(const Path& path) {
+        Path out, centre;
+        Stroke stroke(out, path._strokeWidth, path._join, path._cap, path._miterLimit);
+        if (path._dashes.size())
+            stroke.setDashes(path._dashes.data(), (int)path._dashes.size(), path._dashOffset);
+        for (int i = 0; i < (int)path._contours.size(); i++) {
+            const Path::Contour& contour = path._contours[i];
+            const float *pts = path.points(i);
+            Bounds b;
+            boundsLimits(& b.lx, pts, pts + contour.npoints * 2, kPointStride);
+            float limit = vertexMergeLimit(b);
+            centre._points.resize(0), centre._contours.resize(0);
+            appendQuadratics(centre, pts, contour.npoints, contour.kind, true);
+            mergeVertices(centre, limit, contour.closed);
+            // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
+            bool point = centre._points.empty() && contour.npoints > 0;
+            for (int k = 1; point && k < contour.npoints; k++)
+                point = pts[k * 2] == pts[0] && pts[k * 2 + 1] == pts[1];
+            if (point)
+                stroke.addSubPath(pts, 1, contour.closed, limit);
+            else
+                stroke.addSubPath(centre._points.data(), (int)centre._points.size() / 2, contour.closed, limit);
+        }
+        return out;
+    }
 
     Stroke(Path& out, float width, Join join, Cap cap, float miterLimit) : out(out), w(width * 0.5f), miterLimit(miterLimit), join(join), cap(cap) {
         tolerance = std::max(1e-4f, std::min(kSplitCubicPrecision, 0.02f * w));
@@ -331,9 +359,9 @@ private:
     void addJoin(vector<float>& s, Piece& a, Piece& b, float d) {
         float cross = a.t2x * b.t0y - a.t2y * b.t0x, dot = a.t2x * b.t0x + a.t2y * b.t0y;
         float px = a.x2, py = a.y2, bx = px + d * b.n0x, by = py + d * b.n0y;
-        if (join == kRound)
+        if (join == Path::kRound)
             arcTo(s, px, py, bx, by, cross > 0 ? 1.f : -1.f);   // the normal turns with the tangent
-        else if (join == kMiter && dot > -0.9999f && 1.f / std::sqrt((1.f + dot) * 0.5f) <= miterLimit) {
+        else if (join == Path::kMiter && dot > -0.9999f && 1.f / std::sqrt((1.f + dot) * 0.5f) <= miterLimit) {
             // Miter length / width is 1 / cos(turn / 2), and its tip lies along the bisector of the two normals.
             float nx = a.n2x + b.n0x, ny = a.n2y + b.n0y, rl = 1.f / std::sqrt(nx * nx + ny * ny), m = d / std::sqrt((1.f + dot) * 0.5f);
             lineTo(s, px + nx * rl * m, py + ny * rl * m), lineTo(s, bx, by);
@@ -344,9 +372,9 @@ private:
     // A cap at (x, y) facing outward along (tx, ty), continuing the chain from the left of the outward direction to its right.
     void addCap(float x, float y, float tx, float ty) {
         float nx = -ty * w, ny = tx * w;
-        if (cap == kSquare)
+        if (cap == Path::kSquare)
             lineTo(chain, x + nx + tx * w, y + ny + ty * w), lineTo(chain, x - nx + tx * w, y - ny + ty * w), lineTo(chain, x - nx, y - ny);
-        else if (cap == kRoundCap)
+        else if (cap == Path::kRoundCap)
             arcTo(chain, x, y, x - nx, y - ny, -1.f, true);
         else
             lineTo(chain, x - nx, y - ny);
@@ -355,11 +383,11 @@ private:
     // A zero-length subpath: a circle for round caps, an axis-aligned square for square ones (it has no direction), and
     // nothing for butt caps.
     void addDot(float x, float y) {
-        if (cap == kRoundCap) {
+        if (cap == Path::kRoundCap) {
             chain.assign({ x + w, y });
             arcTo(chain, x, y, x - w, y, -1.f, true), arcTo(chain, x, y, x + w, y, -1.f, true);
             addContour();
-        } else if (cap == kSquare) {
+        } else if (cap == Path::kSquare) {
             chain.assign({ x - w, y - w });
             lineTo(chain, x - w, y + w), lineTo(chain, x + w, y + w), lineTo(chain, x + w, y - w);
             addContour();
@@ -424,7 +452,7 @@ private:
             return;
         if (orient && pointsSignedArea(chain.data(), chain.data() + chain.size(), kPointStride) > 0)
             reverse(chain);
-        out.addQuadratics(chain.data(), npoints);
+        out.add(Path::kQuadratics, chain.data(), npoints, true);
     }
 
     Path& out;
