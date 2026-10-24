@@ -608,7 +608,12 @@ struct libTess {
             _idxs.emplace_back((int)_tris.size());
             
             // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
-            refineChords(path);
+            // Only curves are split, so a path of lines alone is left as it is.
+            bool flat = true;
+            for (SubPath& s : path._subPaths)
+                flat = flat && s._flat;
+            if (!flat)
+                refineChords(path);
             PathVertices pv(path);
             // The path's own tessellators, which reset() frees with everything they allocated. Their buckets hold as many
             // items as the path has vertices, as libTess advises, not its defaults of hundreds, which most paths leave

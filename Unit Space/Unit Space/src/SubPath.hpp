@@ -329,6 +329,10 @@ struct SubPath {
             else
                 moved = false;
         }
+        // Lines carry their chord's exact midpoint as control, so a subpath of only those has no curve.
+        _flat = true;
+        for (size_t i = 0; _flat && i + 6 <= out.size(); i += 4)
+            _flat = out[i + 2] == (out[i] + out[i + 4]) * 0.5f && out[i + 3] == (out[i + 1] + out[i + 5]) * 0.5f;
         Memory<float> merged;
         memcpy(merged.new_ptr(out.size()), out.data(), out.size() * sizeof(float));
         _quadratics = merged;
@@ -360,6 +364,7 @@ struct SubPath {
     }
     
     Memory<float>               _quadratics;
+    bool                        _flat = false;      // only lines, which mergeVertices() decides
     float                       _area;
     Bounds                      _bounds;
 };
