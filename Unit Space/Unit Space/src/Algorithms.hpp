@@ -27,14 +27,8 @@ static void boundsLimits(float *limits, const float *begin, const float *end, si
     limits[0] = minX;  limits[1] = minY;  limits[2] = maxX;  limits[3] = maxY;
 }
 
-inline void encodeBits(float *n, uint32_t mask, uint32_t value) {
-    *n += copysign(1e-9, *n);
-    auto ptr = (uint32_t *)n;
-    *ptr = (*ptr & ~mask) | (value & mask);
-}
-
 inline float lerp(float t, float n0, float n1) {
-    return n0 + t * (n1 - n0);
+    return (1.f - t) * n0 + t * n1;
 }
 
 static float pointsSignedArea(const float *begin, const float *end, size_t stride) {
@@ -76,36 +70,4 @@ static Vector miterVector(float x, float y, float px, float py, float nx, float 
     dot = dot > limit ? dot : limit;
     dot = left ? -dot : dot;
     return { mx / dot, my / dot };
-}
-
-// http://www.codercorner.com/RadixSortRevisited.htm
-template<typename T>
-static void radixSort(T *out, T *in, int n, int shift) {
-    union { unsigned int ix; float x; };
-    int counts[256];
-    memset(counts, 0, sizeof(counts));
-    for (int i = 0; i < n; i++) {
-        x = *(float *)(in + i);
-        counts[(ix >> shift) & 0xFF]++;
-    }
-    for (int i = 1; i < 256; i++)
-        counts[i] += counts[i - 1];
-    
-    for (int i = n - 1; i >= 0; i--) {
-        x = *(float *)(in + i);
-        out[counts[(ix >> shift) & 0xFF] - 1] = in[i];
-        counts[(ix >> shift) & 0xFF]--;
-    }
-}
-template<typename T>
-static void radixSort(T *begin, T *end) {
-    int n = int(end - begin);
-    void *mem0 = malloc(n * sizeof(T)), *mem1 = malloc(n * sizeof(T));
-    T *out0 = (T *)mem0, *out1 = (T *)mem1;
-    radixSort(out0, begin, n, 0);
-    radixSort(out1, out0, n, 8);
-    radixSort(out0, out1, n, 16);
-    radixSort(begin, out0, n, 24);
-    free(mem0);
-    free(mem1);
 }
