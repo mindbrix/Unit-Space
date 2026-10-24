@@ -27,6 +27,12 @@ static void boundsLimits(float *limits, const float *begin, const float *end, si
     limits[0] = minX;  limits[1] = minY;  limits[2] = maxX;  limits[3] = maxY;
 }
 
+static Bounds BoundsFromFloats(const float *begin, const float *end) {
+    Bounds b;
+    boundsLimits(& b.lx, begin, end, 2 * sizeof(float));
+    return b;
+}
+
 inline float lerp(float t, float n0, float n1) {
     return (1.f - t) * n0 + t * n1;
 }

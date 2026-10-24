@@ -314,9 +314,8 @@ static size_t mergeContour(float *q, size_t count, float limit, bool closed) {
 // (tangents: tangent-preserving, see splitCubics), quadratics subdivided, and lines with their midpoints as controls.
 // out's bounds unite with its points'.
 static void appendQuadratics(Path& out, const float *points, int npoints, Path::Kind kind, bool tangents) {
-    Bounds b;
+    Bounds b = BoundsFromFloats(points, points + npoints * 2);
     float limit = coordinateLimit();
-    boundsLimits(& b.lx, points, points + npoints * 2, kPointStride);
     if (!(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit))
         return;
     vector<float>& q = out._points;

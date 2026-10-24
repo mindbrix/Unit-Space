@@ -61,9 +61,10 @@ struct Path {
         for (int i = 0; i < npoints * 2; i++)
             if (!std::isfinite(points[i]))
                 return;
-        Bounds b;
+        
         float limit = coordinateLimit();
-        boundsLimits(& b.lx, points, points + npoints * 2, kPointStride);
+        Bounds b = BoundsFromFloats(points, points + npoints * 2);
+        
         if (!(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit))
             return;
         _bounds = _contours.empty() ? b : _bounds.united(b);
@@ -87,8 +88,7 @@ struct Path {
     // After its points move.
     void updateBounds() {
         for (int i = 0; i < (int)_contours.size(); i++) {
-            Bounds b;
-            boundsLimits(& b.lx, points(i), points(i) + _contours[i].npoints * 2, kPointStride);
+            Bounds b = BoundsFromFloats(points(i), points(i) + _contours[i].npoints * 2);
             _bounds = i ? _bounds.united(b) : b;
         }
     }

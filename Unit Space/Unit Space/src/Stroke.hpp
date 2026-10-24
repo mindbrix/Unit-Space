@@ -31,8 +31,7 @@ struct Stroke {
         for (int i = 0; i < (int)path._contours.size(); i++) {
             const Path::Contour& contour = path._contours[i];
             const float *pts = path.points(i);
-            Bounds b;
-            boundsLimits(& b.lx, pts, pts + contour.npoints * 2, kPointStride);
+            Bounds b = BoundsFromFloats(pts, pts + contour.npoints * 2);
             float limit = vertexMergeLimit(b);
             centre._points.resize(0), centre._contours.resize(0);
             appendQuadratics(centre, pts, contour.npoints, contour.kind, true);
