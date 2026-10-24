@@ -129,11 +129,12 @@ struct _Size { float w, h; };
 
 struct MeshPath {
     MeshPath() {}
-    MeshPath(RGBA8 color, AffineTransform ctm, Bounds bounds) : color(color), ctm(ctm), bounds(bounds) {}
+    MeshPath(RGBA8 color, AffineTransform ctm, Bounds bounds, float strokeWidth = 0) : color(color), ctm(ctm), bounds(bounds), strokeWidth(strokeWidth) {}
     
     RGBA8               color;
     AffineTransform     ctm;
     Bounds              bounds;
+    float               strokeWidth;    // a stroke's pen width in path units, or zero for a fill
 };
 
 struct MeshState {

@@ -69,12 +69,15 @@ static inline float2 transformed(float x, float y, AffineTransform t) {
     return turned(float2(x, y), t) + float2(t.tx, t.ty);
 }
 
-// An instance's triangle in device space: its vertices, and its corners' miters, zero where there is no corner. Returns
-// the transform from the triangle's quantised coordinates, which also places its tangent points.
+// An instance's triangle in device space: its vertices, its corners' miters, zero where there is no corner, and its
+// path's alpha: a stroke under a pixel wide is drawn a pixel wide, faded by its width, as Rasterizer's are, and anything
+// else has alpha 1. Returns the transform from the triangle's quantised coordinates, which also places its tangent points.
 static inline AffineTransform deviceTriangle(const device Triangle& tri, const device MeshPath& path, constant State& state,
                                              thread float2& v0, thread float2& v1, thread float2& v2,
-                                             thread float2& iv0, thread float2& iv1, thread float2& iv2) {
+                                             thread float2& iv0, thread float2& iv1, thread float2& iv2, thread float& alpha) {
     AffineTransform CTM = AffineTransformConcat(path.ctm, state.CTM);
+    float det = abs(CTM.a * CTM.d - CTM.b * CTM.c), w = path.strokeWidth * sqrt(det);
+    alpha = w > 0 ? min(w, 1.0f) : 1.0f;
     Bounds bounds = path.bounds;
     float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
     AffineTransform T = AffineTransformConcat({ width, 0, 0, height, bounds.lx, bounds.ly }, CTM);
@@ -83,7 +86,7 @@ static inline AffineTransform deviceTriangle(const device Triangle& tri, const d
     const device float *iv = & tri.ix0;
     float2 m0 = float2(iv[0], iv[1]), m1 = float2(iv[2], iv[3]), m2 = float2(iv[4], iv[5]);    // path space
     if (isSimilarity(CTM)) {
-        float rscale = rsqrt(abs(CTM.a * CTM.d - CTM.b * CTM.c));
+        float rscale = rsqrt(det);
         iv0 = turned(m0, CTM) * rscale, iv1 = turned(m1, CTM) * rscale, iv2 = turned(m2, CTM) * rscale;
     } else
         iv0 = deviceMiter(m0, CTM), iv1 = deviceMiter(m1, CTM), iv2 = deviceMiter(m2, CTM);
@@ -108,7 +111,8 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance;
     float2 v0, v1, v2, iv0, iv1, iv2;
-    deviceTriangle(tri, paths[p], state, v0, v1, v2, iv0, iv1, iv2);
+    float alpha;
+    deviceTriangle(tri, paths[p], state, v0, v1, v2, iv0, iv1, iv2, alpha);
     const float f = kTriangleFilterWidth;
     iv0 *= f, iv1 *= f, iv2 *= f;
     
@@ -116,7 +120,7 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     float2 e1 = v1 - v0, e2 = v2 - v0, m1 = iv1 - iv0, m2 = iv2 - iv0;
     float A0 = e1.x * e2.y - e1.y * e2.x, B = e1.x * m2.y - e1.y * m2.x + m1.x * e2.y - m1.y * e2.x, C = m1.x * m2.y - m1.y * m2.x;
     float sv = -B / (2.0 * C), Av = A0 + sv * (B + sv * C);
-    bool whole = !(tri.flags & Triangle::kHull) && abs(A0) > 2.0 * f * f && A0 * (A0 + B + C) > 0.0 && !(sv > 0.0 && sv < 1.0 && A0 * Av <= 0.0);
+    bool whole = alpha == 1 && !(tri.flags & Triangle::kHull) && abs(A0) > 2.0 * f * f && A0 * (A0 + B + C) > 0.0 && !(sv > 0.0 && sv < 1.0 && A0 * Av <= 0.0);
     // A long miter must be a convex corner's, and keep its vertex inside the triangle, on the inner side of each edge as
     // the triangle's winding (A0's sign) has it.
     float2 q[3] = { v0 + iv0, v1 + iv1, v2 + iv2 }, v[3] = { v0, v1, v2 }, m[3] = { iv0, iv1, iv2 };
@@ -171,7 +175,8 @@ struct TriangleVertex
     float4 position [[position]];
     half d0, d1, d2, d3, d4, d5;
     uint convex [[flat]];   // bits 2..0: Triangle::kFlagsConvex0..2; bits 7..3: Triangle::curves; bits 13..8: which of
-                            // d0..d5 are a concave curve's chord, which the curve replaces.
+                            // d0..d5 are a concave curve's chord, which the curve replaces; bits 21..14: the path's
+                            // alpha (deviceTriangle()), in 255ths.
     uint color [[flat]];    // RGBA8, r in the low byte, not premultiplied
 };
 
@@ -214,7 +219,8 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     const device Triangle& tri = tris[instance.triangle];
     uint p = instance.instance, flags = tri.flags, curves = flags & Triangle::kCurvesMask;
     float2 v0, v1, v2, iv0, iv1, iv2;
-    AffineTransform T = deviceTriangle(tri, paths[p], state, v0, v1, v2, iv0, iv1, iv2);
+    float alpha;
+    AffineTransform T = deviceTriangle(tri, paths[p], state, v0, v1, v2, iv0, iv1, iv2, alpha);
     // Hulls: the neighbours' tangent points. Polygon triangles with a control vertex: its curve's ends.
     float2 cp0 = transformed(tri.tx0, tri.ty0, T), cp2 = transformed(tri.tx2, tri.ty2, T);
     // Control points have no corner here: no dilation and no lines.
@@ -230,11 +236,12 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     bool e01 = flags & Triangle::kFlagsEdge0, e12 = flags & Triangle::kFlagsEdge1, e20 = flags & Triangle::kFlagsEdge2;
     bool bevel0 = owned && e20 && e01, bevel1 = owned && e01 && e12, bevel2 = owned && e12 && e20;
     
-    const float f = kTriangleFilterWidth;
+    // A thin stroke's boundary moves out to make it a pixel wide, so its dilation does too.
+    const float f = kTriangleFilterWidth, D = f + 0.5 * (1.0 - alpha);
     float s0 = min(1.0, (bevel0 ? kTriangleDilationMaxBevel : kTriangleDilationMax) * rsqrt(dot(iv0, iv0)));
     float s1 = min(1.0, (bevel1 ? kTriangleDilationMaxBevel : kTriangleDilationMax) * rsqrt(dot(iv1, iv1)));
     float s2 = min(1.0, (bevel2 ? kTriangleDilationMaxBevel : kTriangleDilationMax) * rsqrt(dot(iv2, iv2)));
-    float2 p0 = v0 - iv0 * (s0 * f), p1 = v1 - iv1 * (s1 * f), p2 = v2 - iv2 * (s2 * f);
+    float2 p0 = v0 - iv0 * (s0 * D), p1 = v1 - iv1 * (s1 * D), p2 = v2 - iv2 * (s2 * D);
     
     float visible = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x) > 0;
     float2 pos = visible * select(select(p2, p1, vid == 1), p0, vid == 0);
@@ -284,9 +291,9 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         // Each corner's first line is the one along t: the chord at the curve's ends.
         float2 t0 = select(v1 - v0, select(cp0, cp2, p00) - v0, e0), t1 = select(v0 - v1, select(cp0, cp2, p01) - v1, e1);
         float2 t2 = select(v1 - v2, select(cp0, cp2, p02) - v2, e2);
-        float2 k0 = cornerDistances(iv0, v0, t0, pos) - f * (1 - s0);
-        float2 k1 = cornerDistances(iv1, v1, t1, pos) - f * (1 - s1);
-        float2 k2 = cornerDistances(iv2, v2, t2, pos) - f * (1 - s2);
+        float2 k0 = cornerDistances(iv0, v0, t0, pos) - D * (1 - s0);
+        float2 k1 = cornerDistances(iv1, v1, t1, pos) - D * (1 - s1);
+        float2 k2 = cornerDistances(iv2, v2, t2, pos) - D * (1 - s2);
         bool2 a0 = select(bool2(false), alongEdge(iv0, v0, t0), bool2(e0));
         bool2 a1 = select(bool2(false), alongEdge(iv1, v1, t1), bool2(e1));
         bool2 a2 = select(bool2(false), alongEdge(iv2, v2, t2), bool2(e2));
@@ -302,7 +309,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
         k2 = select(k2, float2(dot(iv2 * rsqrt(dot(iv2, iv2)), pos - v2), k2.y), bevel2);
         vert.d0 = k0.x, vert.d1 = k0.y, vert.d2 = k1.x, vert.d3 = k1.y, vert.d4 = k2.x, vert.d5 = k2.y;
     }
-    vert.convex = ((flags >> 26) & 7) | (curves << 3) | (lines << 8);
+    vert.convex = ((flags >> 26) & 7) | (curves << 3) | (lines << 8) | uint(alpha * 255.0 + 0.5) << 14;
     
     uint rgba8 = uint(color.r) | uint(color.g) << 8 | uint(color.b) << 16 | uint(color.a) << 24;
     vert.color = select(rgba8, pack_float_to_unorm4x8(float4(state.strokeColor.r, state.strokeColor.g, state.strokeColor.b, state.strokeColor.a)), meshState.useStrokeColor);
@@ -327,7 +334,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
 {
     const float f = kTriangleFilterWidth;
     float d0 = vert.d0, d1 = vert.d1, d2 = vert.d2, d3 = vert.d3, d4 = vert.d4, d5 = vert.d5;
-    uint curves = (vert.convex >> 3) & 31, lines = vert.convex >> 8;
+    uint curves = (vert.convex >> 3) & 31, lines = (vert.convex >> 8) & 63;
+    float alpha = float(vert.convex >> 14) / 255.0;
     bool hull = curves & Triangle::kHull, c0 = curves & Triangle::kControl0, c1 = curves & Triangle::kControl1 && !c0;
     // The curve's Loop-Blinn (u, v): a hull's d1, d2, or a polygon triangle's in its first control vertex's distances.
     float su = select(select(select(d4, d2, c1), d0, c0), d1, hull);
@@ -354,6 +362,8 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
         float l4 = select(select(d4, dq, bool(lines & 16)), 1e6, k2), l5 = select(select(d5, dq, bool(lines & 32)), 1e6, k2);
         m = min(corner(convex0, l0, l1), min(corner(convex1, l2, l3), corner(convex2, l4, l5)));
     }
+    // A thin stroke's boundary is out by what it lacks of a pixel's width, half each side.
+    m += 0.5 * (1.0 - alpha);
     float winding = (clamp(m, -f, f) + f) * 0.5 / f;
     // Debug: the polygon view draws the edges as usual, continued inside as the interior outlines straight edges (which
     // it covers), so curves get the same line. The band the edge pass covers along curves' chords is further in.
@@ -362,5 +372,5 @@ fragment float4 triangle_fragment_main(TriangleVertex vert [[stage_in]], constan
     float4 color = unpack_unorm4x8_to_float(vert.color);
     // The edge pass blends premultiplied colour (source factor one), so translucent paths must be premultiplied.
     color.rgb *= color.a;
-    return color * winding;
+    return color * (winding * alpha);
 }

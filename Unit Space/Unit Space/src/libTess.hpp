@@ -629,7 +629,7 @@ struct libTess {
         for (Instance& instance : scene._instances) {
             int p = instance.path - pathBase;
             bool own = p >= 0 && p < (int)mesh._pathBounds.size();
-            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, own ? mesh._pathBounds[p] : scene._paths[instance.path]._bounds);
+            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, own ? mesh._pathBounds[p] : scene._paths[instance.path]._bounds, scene._paths[instance.path]._strokeWidth);
         }
         mesh.writeBounds();
     }
