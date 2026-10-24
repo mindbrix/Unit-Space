@@ -50,4 +50,8 @@ struct Path {
     float                       _penWidth = 0;      // an outline's stroke width
     Bounds                      _bounds;
     vector<SubPath>             _subPaths;
+    // An SVG shape's fill or stroke has no subpaths of its own: Scene::convert() makes them from the shape's points when
+    // they are needed, and its bounds are those points' until then.
+    const struct NSVGshape     *_shape = nullptr;
+    float                       _height = 0;        // the shape's image height, about which y flips
 };

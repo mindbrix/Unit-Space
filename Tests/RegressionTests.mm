@@ -35,16 +35,17 @@ static Scene sceneFromFile(const char *path) {
         scene.addSVG(data.bytes, data.length);
     return scene;
 }
-static size_t floats(Path& path) {
+static size_t floats(Path path) {
     size_t n = 0;
     for (SubPath& s : path._subPaths)
         n += s._quadratics.count();
     return n;
 }
+// The scene's paths' floats, as converted for triangulation.
 static size_t floats(Scene& scene) {
     size_t n = 0;
     for (Path& p : scene._paths)
-        n += floats(p);
+        n += floats(Scene::convert(p));
     return n;
 }
 static uint64_t fnv(const void *bytes, size_t size, uint64_t h = 1469598103934665603ull) {
@@ -63,8 +64,8 @@ static size_t hulls(Mesh& mesh) {
     return n;
 }
 // A mesh vertex's position in path space, from its path's bounds.
-static Vector meshPoint(Scene& scene, int p, unsigned short x, unsigned short y) {
-    const Bounds& b = scene._paths[p]._bounds;
+static Vector meshPoint(Mesh& mesh, int p, unsigned short x, unsigned short y) {
+    const Bounds& b = mesh._pathBounds[p];
     return Vector(b.lx + x * (b.ux - b.lx) / float(kUnsignedShortMax), b.ly + y * (b.uy - b.ly) / float(kUnsignedShortMax));
 }
 // Scene space flips SVG's y about the image height.
@@ -84,9 +85,11 @@ static void testHugeCoordinates() {
 static void testHugeStrokeWidth() {
     Scene scene = sceneFromSVG("<path d=\"M0 0 C10 0 0 10 10 10\" fill=\"none\" stroke=\"black\" stroke-width=\"1e30\"/>");
     float limit = coordinateLimit();
-    for (Path& path : scene._paths)
-        for (SubPath& s : path._subPaths)
+    for (Path& path : scene._paths) {
+        Path converted = Scene::convert(path);
+        for (SubPath& s : converted._subPaths)
             CHECK(s._bounds.lx >= -limit && s._bounds.ux <= limit && s._bounds.ly >= -limit && s._bounds.uy <= limit);
+    }
     Mesh mesh;
     libTess::triangulate(mesh, scene);
     Scene wide = sceneFromSVG("<path d=\"M0 0 C10 0 0 10 10 10\" fill=\"none\" stroke=\"black\" stroke-width=\"1e9\"/>");
@@ -133,7 +136,7 @@ static void testDashProgress() {
 static void testDots() {
     Scene scene = sceneFromSVG("<path d=\"M0 50 C30 0 70 100 100 50\" fill=\"none\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-dasharray=\"0 4\"/>");
     CHECK(scene._paths.size() == 1);
-    CHECK(scene._paths.size() == 1 && scene._paths[0]._subPaths.size() > 10);
+    CHECK(scene._paths.size() == 1 && Scene::convert(scene._paths[0])._subPaths.size() > 10);
 }
 
 #pragma mark - Pipeline invariants
@@ -148,6 +151,20 @@ static void testSceneImmutable() {
     CHECK(floats(scene) == before);
     libTess::triangulate(second, scene);
     CHECK(meshHash(first) == meshHash(second));
+}
+// SVG paths are converted as they are triangulated, so an edit's mesh converts its paths as the whole scene's does.
+static void testDeferredConversion() {
+    Scene scene = sceneFromSVG("<path d=\"M0 0 C10 0 0 10 10 10 Z\" fill=\"red\" stroke=\"black\" stroke-width=\"2\"/>");
+    CHECK(scene._paths.size() == 2 && scene._paths[0]._subPaths.empty() && scene._paths[1]._subPaths.empty());
+    if (scene._paths.size() != 2)
+        return;
+    Mesh whole, edit;
+    libTess::triangulate(whole, scene);
+    libTess::triangulatePaths(edit, scene, 0, 2);
+    CHECK(whole._tris.count() > 0 && whole._tris.count() == edit._tris.count());
+    CHECK(whole._tris.count() == edit._tris.count() && memcmp(whole._tris.get(), edit._tris.get(), whole._tris.count() * sizeof(Triangle)) == 0);
+    for (int i = 0; i < 2; i++)
+        CHECK(memcmp(& whole._timeline.basePaths()[i], & edit._timeline.basePaths()[i], sizeof(MeshPath)) == 0);
 }
 // Failed allocations throw std::bad_alloc and leave the memory as it was.
 static void testMemoryBadAlloc() {
@@ -190,9 +207,9 @@ static void testSmoothJoinsUnsplit() {
     Scene scene = sceneFromSVG("<circle cx=\"50\" cy=\"50\" r=\"40\"/><ellipse cx=\"50\" cy=\"50\" rx=\"40\" ry=\"10\" transform=\"rotate(30 50 50)\"/>");
     CHECK(scene._paths.size() == 2);
     for (Path& path : scene._paths) {
-        Path refined = path;
+        Path converted = Scene::convert(path), refined = converted;
         libTess::refineChords(refined);
-        CHECK(floats(refined) == floats(path));
+        CHECK(floats(refined) == floats(converted));
     }
 }
 // Curves sharing an end whose hulls overlap beyond it: the slit's two edges cross without their chords crossing, so
@@ -202,9 +219,9 @@ static void testSlitLobesSplit() {
     CHECK(scene._paths.size() == 1);
     if (scene._paths.size() != 1)
         return;
-    Path refined = scene._paths[0];
+    Path converted = Scene::convert(scene._paths[0]), refined = converted;
     libTess::refineChords(refined);
-    CHECK(floats(refined) > floats(scene._paths[0]));
+    CHECK(floats(refined) > floats(converted));
 }
 // A curve crossing a loop's tip twice with no chords crossing: only overlapping hulls reveal it.
 static void testLoopLensSplit() {
@@ -212,9 +229,9 @@ static void testLoopLensSplit() {
     CHECK(scene._paths.size() == 1);
     if (scene._paths.size() != 1)
         return;
-    Path refined = scene._paths[0];
+    Path converted = Scene::convert(scene._paths[0]), refined = converted;
     libTess::refineChords(refined);
-    CHECK(floats(refined) > floats(scene._paths[0]));
+    CHECK(floats(refined) > floats(converted));
 }
 
 #pragma mark - Triangulation
@@ -231,11 +248,11 @@ static void testReversalJoin() {
             Triangle& t = mesh._tris[i];
             if (!(t.flags & Triangle::kHull))
                 continue;
-            if (near(meshPoint(scene, p, t.x0, t.y0), 212.64f, 127.493f, 510, 1e-3f)) {
+            if (near(meshPoint(mesh, p, t.x0, t.y0), 212.64f, 127.493f, 510, 1e-3f)) {
                 CHECK(!(t.flags & Triangle::kFlagsConvex0));
                 ends++;
             }
-            if (near(meshPoint(scene, p, t.x2, t.y2), 212.64f, 127.493f, 510, 1e-3f)) {
+            if (near(meshPoint(mesh, p, t.x2, t.y2), 212.64f, 127.493f, 510, 1e-3f)) {
                 CHECK(!(t.flags & Triangle::kFlagsConvex2));
                 ends++;
             }
@@ -284,6 +301,7 @@ static const Test kTests[] = {
     { "limits: dash progress", testDashProgress, 10 },
     { "limits: dots", testDots, 10 },
     { "pipeline: scene immutable", testSceneImmutable, 10 },
+    { "pipeline: deferred conversion", testDeferredConversion, 10 },
     { "pipeline: Memory bad_alloc", testMemoryBadAlloc, 10 },
     { "pipeline: tessellator allocation failure", testTessellatorAllocationFailure, 10 },
     { "refineChords: smooth joins unsplit", testSmoothJoinsUnsplit, 10 },

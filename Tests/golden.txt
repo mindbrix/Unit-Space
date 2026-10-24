@@ -1,5 +1,5 @@
 # Corpus regression baseline: file, scene floats, triangles, hulls, mesh hash (arm64). Rewrite with ./Tests/run.sh --update.
-SVG/23.svg	87902 44842 16266 58dfe9cd668b8c13
+SVG/23.svg	87902 44842 16266 7bebd213f5e43b54
 SVG/Éclaté_fusée_et_vaisseau_Soyouz.svg	1642160 782461 298252 37c103309cc9c9b9
 SVG/contour.svg	859794 81846 0 d66b7a1e17bb8a07
 SVG/hawaii.svg	810938 433309 167780 7e098eae4a977042

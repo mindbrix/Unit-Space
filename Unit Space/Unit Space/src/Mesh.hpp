@@ -132,6 +132,8 @@ struct Mesh {
     Timeline                            _timeline;
     
     vector<int>                         _pathIdxs;          // each scene path's first triangle in _tris, then their end
+    vector<Bounds>                      _pathBounds;        // each path's bounds as triangulated, which quantise its triangles
+    Bounds                              _bounds;            // its instances' extent
     Memory<Triangle, true>              _tris;              // each path's triangles, once however many instances draw it
     vector<int>                         _idxs;              // each instance's first triangle instance, then their end
     Memory<TriangleInstance, true>      _triangleInstances; // every instance's triangles, in instance order
@@ -159,6 +161,22 @@ struct Mesh {
     
     void empty() {
         _timeline.empty(), _pathIdxs.resize(0), _idxs.resize(0), _tris = Memory<Triangle, true>(), _triangleInstances = Memory<TriangleInstance, true>();
-        _interiorDensities.resize(0), _instancePaths.resize(0);
+        _interiorDensities.resize(0), _instancePaths.resize(0), _pathBounds.resize(0), _bounds = Bounds(0, 0, 0, 0);
+    }
+    
+    // Its instances' extent, from their paths' bounds.
+    void writeBounds() {
+        vector<MeshPath>& paths = _timeline.basePaths();
+        for (size_t i = 0; i < paths.size(); i++) {
+            const Bounds& b = paths[i].bounds;
+            const AffineTransform& ctm = paths[i].ctm;
+            for (int k = 0; k < 4; k++) {
+                float x = k & 1 ? b.ux : b.lx, y = k & 2 ? b.uy : b.ly;
+                float tx = x * ctm.a + y * ctm.c + ctm.tx, ty = x * ctm.b + y * ctm.d + ctm.ty;
+                if (i == 0 && k == 0)
+                    _bounds = Bounds(tx, ty, tx, ty);
+                _bounds.unite(Bounds(tx, ty, tx, ty));
+            }
+        }
     }
 };

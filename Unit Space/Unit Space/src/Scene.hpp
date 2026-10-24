@@ -6,6 +6,7 @@
 //  Copyright © 2018 Phyllotaxis Limited. All rights reserved.
 //
 #import <vector>
+#import <memory>
 #import "Algorithms.hpp"
 #import "Memory.hpp"
 #import "Path.hpp"
@@ -38,18 +39,10 @@ struct Scene {
     }
     // Draws path (an index from addPath()) next, unless it is -1.
     void addInstance(int path, RGBA8 color, int source = -1, AffineTransform ctm = { 1, 0, 0, 1, 0, 0 }) {
-        if (path < 0)
-            return;
-        const Bounds& b = _paths[path]._bounds;
-        for (int k = 0; k < 4; k++) {
-            float x = k & 1 ? b.ux : b.lx, y = k & 2 ? b.uy : b.ly;
-            float tx = x * ctm.a + y * ctm.c + ctm.tx, ty = x * ctm.b + y * ctm.d + ctm.ty;
-            if (_instances.size() == 0 && k == 0)
-                _bounds = Bounds(tx, ty, tx, ty);
-            _bounds.unite(Bounds(tx, ty, tx, ty));
-        }
-        _instances.push_back({ path, ctm, color, source });
+        if (path >= 0)
+            _instances.push_back({ path, ctm, color, source });
     }
+    // Parses an SVG, which the scene keeps, as its paths are its shapes'.
     void addSVG(const void *bytes, size_t size) {
         char *data = (char *)malloc(size + 1);
         if (data == NULL)
@@ -59,11 +52,12 @@ struct Scene {
         struct NSVGimage* image = nsvgParse(data, "px", 96);
         if (image) {
             printf("size: %f x %f\n", image->width, image->height);
+            _image = std::shared_ptr<NSVGimage>(image, nsvgDelete);
             addImage(image);
-            nsvgDelete(image);
         }
         free(data);
     }
+    // Adds an image's shapes, which must outlive the scene's use of them.
     void addImage(NSVGimage *image) {
         int source = 0;
         for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next, source++)
@@ -79,57 +73,108 @@ struct Scene {
         }
         return RGBA8(r / nstops, g / nstops, b / nstops, int(a / nstops * opacity + 0.5f));
     }
-    // Adds an SVG shape's fill path, then its stroke path, flipping y about the image height. The shape is unchanged,
-    // so it can be edited and added again.
+    // Adds an SVG shape's fill path, then its stroke path. Converting them is left to convert(), when they are
+    // triangulated, so they are only the shape and the bounds of its subpaths' points: those convert() keeps, which are
+    // finite and within coordinateLimit(). A shape with none draws nothing. The shape is unchanged, so it can be edited
+    // and added again.
     void addShape(NSVGshape *shape, float height, int source) {
         bool filled = shape->fill.type != NSVG_PAINT_NONE, stroked = shape->stroke.type != NSVG_PAINT_NONE && shape->strokeWidth > 0;
-        Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD);
+        Bounds bounds;
+        bool any = false;
+        float limit = coordinateLimit();
+        vector<float> buffer;
+        for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
+            Bounds b;
+            if (!flipped(path, height, buffer))
+                continue;
+            boundsLimits(& b.lx, buffer.data(), buffer.data() + path->npts * 2, kPointStride);
+            if (b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit)
+                bounds = any ? bounds.united(b) : b, any = true;
+        }
+        if (!any)
+            return;
         // Strokes are filled outlines (nonzero), painted over the fill.
-        Path strokePath(true, false);
+        Path p(shape->paths->closed, shape->fillRule == NSVG_FILLRULE_EVENODD), strokePath(true, false);
         strokePath._outline = true, strokePath._penWidth = shape->strokeWidth;
-        Stroke stroke(strokePath, shape->strokeWidth,
+        for (Path *path : { & p, & strokePath })
+            path->_shape = shape, path->_height = height, path->_bounds = bounds;
+        if (filled)
+            _paths.emplace_back(p), addInstance((int)_paths.size() - 1, paintColor(shape->fill, shape->opacity), source);
+        if (stroked)
+            _paths.emplace_back(strokePath), addInstance((int)_paths.size() - 1, paintColor(shape->stroke, shape->opacity), source);
+    }
+    // A path as triangulation needs it: an SVG shape's fill or stroke converted from the shape's points, else a copy.
+    // It only reads the shape, so paths can convert in parallel.
+    static Path convert(const Path& path) {
+        const NSVGshape *shape = path._shape;
+        if (shape == nullptr)
+            return path;
+        Path p(path._closed, path._evenOdd);
+        p._outline = path._outline, p._penWidth = path._penWidth, p._bounds = path._bounds;
+        Stroke stroke(p, shape->strokeWidth,
                       shape->strokeLineJoin == NSVG_JOIN_ROUND ? Stroke::kRound : shape->strokeLineJoin == NSVG_JOIN_BEVEL ? Stroke::kBevel : Stroke::kMiter,
                       shape->strokeLineCap == NSVG_CAP_ROUND ? Stroke::kRoundCap : shape->strokeLineCap == NSVG_CAP_SQUARE ? Stroke::kSquare : Stroke::kButt,
                       shape->miterLimit);
-        if (shape->strokeDashCount > 0)
+        if (path._outline && shape->strokeDashCount > 0)
             stroke.setDashes(shape->strokeDashArray, shape->strokeDashCount, shape->strokeDashOffset);
         vector<float> buffer;
-        for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
-            // Parser output can be non-finite (degenerate arcs), which would poison bounds and tessellation.
-            bool finite = true;
-            for (int i = 0; i < path->npts * 2; i++)
-                finite &= std::isfinite(path->pts[i]);
-            if (!finite)
+        for (NSVGpath *sp = shape->paths; sp != NULL; sp = sp->next) {
+            if (!flipped(sp, path._height, buffer))
                 continue;
-            buffer.assign(path->pts, path->pts + path->npts * 2);
             float *pts = buffer.data();
-            for (int i = 0; i < path->npts; i++)
-                pts[i * 2 + 1] = height - pts[i * 2 + 1];
-            SubPath s(pts, path->npts, SubPath::kCubic);
-            p.addSubPath(s);
-            if (stroked) {
-                // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth.
-                SubPath c(pts, path->npts, SubPath::kCubic, true);
-                float limit = vertexMergeLimit(c._bounds);
-                c.mergeVertices(limit, path->closed);
-                // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
-                bool point = c._quadratics.count() == 0 && path->npts > 0;
-                for (int i = 1; point && i < path->npts; i++)
-                    point = pts[i * 2] == pts[0] && pts[i * 2 + 1] == pts[1];
-                if (point)
-                    stroke.addSubPath(pts, 1, path->closed, limit);
-                else
-                    stroke.addSubPath(c._quadratics.get(), (int)c._quadratics.count() / 2, path->closed, limit);
+            if (!path._outline) {
+                SubPath s(pts, sp->npts, SubPath::kCubic);
+                p.addSubPath(s);
+                continue;
             }
+            // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth.
+            SubPath c(pts, sp->npts, SubPath::kCubic, true);
+            float limit = vertexMergeLimit(c._bounds);
+            c.mergeVertices(limit, sp->closed);
+            // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
+            bool point = c._quadratics.count() == 0 && sp->npts > 0;
+            for (int i = 1; point && i < sp->npts; i++)
+                point = pts[i * 2] == pts[0] && pts[i * 2 + 1] == pts[1];
+            if (point)
+                stroke.addSubPath(pts, 1, sp->closed, limit);
+            else
+                stroke.addSubPath(c._quadratics.get(), (int)c._quadratics.count() / 2, sp->closed, limit);
         }
-        if (filled)
-            addInstance(addPath(p), paintColor(shape->fill, shape->opacity), source);
-        if (stroked)
-            addInstance(addPath(strokePath), paintColor(shape->stroke, shape->opacity), source);
+        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
+        float limit = vertexMergeLimit(p._bounds);
+        for (SubPath& s : p._subPaths)
+            s.mergeVertices(limit, true);
+        return p;
     }
-    void empty() { _paths.resize(0), _instances.resize(0); }
+    // A path's share of the work of triangulating: its points, three times over for stroke outlines, which cross
+    // themselves.
+    int64_t cost(int p) {
+        Path& path = _paths[p];
+        int64_t n = 0;
+        if (path._shape)
+            for (NSVGpath *sp = path._shape->paths; sp != NULL; sp = sp->next)
+                n += sp->npts;
+        else
+            for (SubPath& s : path._subPaths)
+                n += (int64_t)s._quadratics.count();
+        return n * (path._outline ? 3 : 1);
+    }
+    void empty() { _paths.resize(0), _instances.resize(0), _image = nullptr; }
     
     vector<Path>            _paths;
     vector<Instance>        _instances;
-    Bounds                  _bounds;
+    std::shared_ptr<NSVGimage> _image;  // an image addSVG() parsed, whose shapes its paths are
+    
+private:
+    // A path's points with y flipped about height, unless any is not finite: parser output can be (degenerate arcs),
+    // which would poison bounds and tessellation.
+    static bool flipped(const NSVGpath *path, float height, vector<float>& buffer) {
+        for (int i = 0; i < path->npts * 2; i++)
+            if (!std::isfinite(path->pts[i]))
+                return false;
+        buffer.assign(path->pts, path->pts + path->npts * 2);
+        for (int i = 0; i < path->npts; i++)
+            buffer[i * 2 + 1] = height - buffer[i * 2 + 1];
+        return true;
+    }
 };

@@ -501,23 +501,21 @@ struct libTess {
         if (size == 0)
             return;
         
-        for (Instance& instance : scene._instances)
-            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, scene._paths[instance.path]._bounds);
-        
-        // Balance the divisions by cost: stroke outlines cross themselves, so their segments cost about three times as much.
+        // Balance the divisions by cost, which converting each path as it is triangulated is part of.
         vector<int64_t> costs(size, 0);
         for (p = 0; p < size; p++)
-            for (SubPath& s : scene._paths[p]._subPaths)
-                costs[p] += (int64_t)s._quadratics.count() * (scene._paths[p]._outline ? 3 : 1);
+            costs[p] = scene.cost(p);
         int begins[divisions + 1], *b = begins;
         balanceDivisions(costs, divisions, begins);
         vector<Triangle> tris[divisions], *triss = tris;
         vector<int> idxs[divisions], *idxss = idxs;
+        vector<Bounds> bounds[divisions], *boundss = bounds;
+        vector<size_t> edges[divisions], *edgess = edges;
         if (divisions == 1)
-            triangulateRange(tris[0], idxss[0], scene, 0, size);
+            triangulateRange(tris[0], idxss[0], bounds[0], edges[0], scene, 0, size);
         else {
             dispatch_apply(divisions, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t idx) {
-                triangulateRange(triss[idx], idxss[idx], scene, b[idx], b[idx + 1]);
+                triangulateRange(triss[idx], idxss[idx], boundss[idx], edgess[idx], scene, b[idx], b[idx + 1]);
             });
         }
         // The mesh's arrays are allocated once, at their size, and each division is freed as it is copied, so the
@@ -531,11 +529,15 @@ struct libTess {
                 memcpy(dst + base, & tris[i][0], tris[i].size() * sizeof(tris[i][0]));
             for (int idx : idxs[i])
                 mesh._pathIdxs.emplace_back(base + idx);
+            mesh._pathBounds.insert(mesh._pathBounds.end(), bounds[i].begin(), bounds[i].end());
+            if (i)
+                edges[0].insert(edges[0].end(), edges[i].begin(), edges[i].end());
             base += (int)tris[i].size();
             vector<Triangle>().swap(tris[i]);
         }
         mesh._pathIdxs.emplace_back((int)mesh._tris.count());
-        writeInteriorDensities(mesh, scene, 0);
+        writeBasePaths(mesh, scene, 0);
+        writeInteriorDensities(mesh, edges[0]);
         writeTriangleInstances(mesh, scene, 0, (int)scene._instances.size(), 0);
     }
     
@@ -544,18 +546,29 @@ struct libTess {
     // indices, so the mesh's paths cover the whole scene, but its _pathIdxs start at the first path and its _idxs at begin.
     static void triangulatePaths(Mesh& mesh, Scene& scene, int begin, int end) {
         mesh.empty();
-        for (Instance& instance : scene._instances)
-            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, scene._paths[instance.path]._bounds);
         int first = scene._instances[begin].path, last = first;
         for (int i = begin; i < end; i++)
             first = std::min(first, scene._instances[i].path), last = std::max(last, scene._instances[i].path);
         vector<Triangle> tris;
-        triangulateRange(tris, mesh._pathIdxs, scene, first, last + 1);
+        vector<size_t> edges;
+        triangulateRange(tris, mesh._pathIdxs, mesh._pathBounds, edges, scene, first, last + 1);
         if (tris.size())
             memcpy(mesh._tris.new_ptr(tris.size()), & tris[0], tris.size() * sizeof(tris[0]));
         mesh._pathIdxs.emplace_back((int)mesh._tris.count());
-        writeInteriorDensities(mesh, scene, first);
+        writeBasePaths(mesh, scene, first);
+        writeInteriorDensities(mesh, edges);
         writeTriangleInstances(mesh, scene, begin, end, first);
+    }
+    
+    // Every scene instance's colour, transform and path bounds, which quantise its triangles: as converted for the mesh's
+    // paths, which start at scene path pathBase, and as the scene has them for others, which the mesh does not draw.
+    static void writeBasePaths(Mesh& mesh, Scene& scene, int pathBase) {
+        for (Instance& instance : scene._instances) {
+            int p = instance.path - pathBase;
+            bool own = p >= 0 && p < (int)mesh._pathBounds.size();
+            mesh._timeline.basePaths().emplace_back(instance.color, instance.ctm, own ? mesh._pathBounds[p] : scene._paths[instance.path]._bounds);
+        }
+        mesh.writeBounds();
     }
     
     // The stream of scene instances [begin, end): each draws its path's triangles, whose _pathIdxs start at path pathBase.
@@ -566,14 +579,12 @@ struct libTess {
         mesh.writeTriangleInstances(paths.data(), (int)paths.size(), begin);
     }
     
-    // Each path's edges per quantised unit of its interior's area (its triangles but its hulls, which lie outside the
-    // fill), which decide whether an instance draws its interior at all. The mesh's paths start at scene path pathBase.
-    static void writeInteriorDensities(Mesh& mesh, Scene& scene, int pathBase) {
+    // Each path's edges (its converted quadratics) per quantised unit of its interior's area (its triangles but its hulls,
+    // which lie outside the fill), which decide whether an instance draws its interior at all.
+    static void writeInteriorDensities(Mesh& mesh, const vector<size_t>& pathEdges) {
         for (size_t p = 0; p + 1 < mesh._pathIdxs.size(); p++) {
             double area = 0;
-            size_t edges = 0;
-            for (SubPath& s : scene._paths[pathBase + p]._subPaths)
-                edges += s._quadratics.count() / 4;
+            size_t edges = pathEdges[p];
             for (int i = mesh._pathIdxs[p]; i < mesh._pathIdxs[p + 1]; i++) {
                 Triangle& t = mesh._tris[i];
                 if (!(t.flags & Triangle::kHull))
@@ -586,7 +597,8 @@ struct libTess {
     // Triangulates each path's inner polygon, and adds one hull triangle per curve. On the outer polygon a convex curve
     // runs p0 -> c -> p2 and a concave curve along its chord, so every curve lies inside its own hull triangle. The inner
     // polygon cuts those off: chords for convex curves, p0 -> c -> p2 for concave ones.
-    static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, Scene& scene, int begin, int end) {
+    // Each path's first triangle goes in _idxs, its bounds as converted in _bounds and its quadratics in _edges.
+    static void triangulateRange(vector<Triangle>& _tris, vector<int>& _idxs, vector<Bounds>& _bounds, vector<size_t>& _edges, Scene& scene, int begin, int end) {
         Arena arena;
         TESSalloc alloc = arena.tessAlloc();
         vector<Point> points;
@@ -598,14 +610,17 @@ struct libTess {
         vector<int> same;
         unordered_map<uint64_t, int> heads;
         for (int p = begin; p < end; p++) {
-            // A copy, which refineChords() changes: the scene keeps its paths as built, so triangulating it again (after
-            // every edit) gives the same mesh. Copies share their quadratics until refineChords() replaces them.
-            Path path = scene._paths[p];
+            // Converted here, in parallel, and freed once triangulated (or a copy, which shares its quadratics until
+            // refineChords() replaces them): the scene keeps its paths as built, so triangulating it again (after every
+            // edit) gives the same mesh.
+            Path path = Scene::convert(scene._paths[p]);
             float lx, ly, rw, rh;
             lx = path._bounds.lx, rw = kUnsignedShortMax / (path._bounds.ux - lx);
             ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
             
-            _idxs.emplace_back((int)_tris.size());
+            _idxs.emplace_back((int)_tris.size()), _bounds.push_back(path._bounds), _edges.push_back(0);
+            for (SubPath& s : path._subPaths)
+                _edges.back() += s._quadratics.count() / 4;
             
             // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
             // Only curves are split, so a path of lines alone is left as it is.

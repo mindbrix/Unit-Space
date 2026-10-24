@@ -335,7 +335,8 @@ struct EditHandle {
     [self redraw];
 }
 
-// The topmost path whose polygon (its quadratics' chords) holds a point in window coordinates.
+// The topmost path whose polygon (its quadratics' chords) holds a point in window coordinates. Only paths whose
+// triangulated bounds hold it are converted to test.
 - (NSInteger)pathAt:(NSPoint)location {
     if (_cube)
         return -1;
@@ -343,9 +344,11 @@ struct EditHandle {
     float x = u.x, y = u.y;
     AffineTransform inv = AffineTransformInvert(self.viewCTM);
     float sx = x * inv.a + y * inv.c + inv.tx, sy = x * inv.b + y * inv.d + inv.ty;
-    for (NSInteger i = (NSInteger)_scene._instances.size() - 1; i >= 0; i--) {
+    vector<MeshPath>& base = _mesh._timeline.basePaths();
+    for (NSInteger i = std::min((NSInteger)_scene._instances.size(), (NSInteger)base.size()) - 1; i >= 0; i--) {
         AffineTransform m = AffineTransformInvert(_scene._instances[i].ctm);
-        if (_scene._paths[_scene._instances[i].path].contains(sx * m.a + sy * m.c + m.tx, sx * m.b + sy * m.d + m.ty))
+        float px = sx * m.a + sy * m.c + m.tx, py = sx * m.b + sy * m.d + m.ty;
+        if (base[i].bounds.contains(px, py) && Scene::convert(_scene._paths[_scene._instances[i].path]).contains(px, py))
             return i;
     }
     return -1;
@@ -362,7 +365,7 @@ struct EditHandle {
 }
 
 - (NSString *)describePath:(NSInteger)p {
-    Path& path = _scene._paths[_scene._instances[p].path];
+    Path path = Scene::convert(_scene._paths[_scene._instances[p].path]);
     size_t quadratics = 0;
     for (SubPath& s : path._subPaths)
         quadratics += s._quadratics.count() / 4;
@@ -486,13 +489,15 @@ static bool closesOnStart(NSVGpath *path) {
         [self updateInspector];
         return;
     }
-    vector<MeshPath>& base = _mesh._timeline.basePaths();
     for (int p = begin; p < end; p++) {
         Instance& instance = _scene._instances[p], &e = edited._instances[p - begin];
         _scene._paths[instance.path] = edited._paths[e.path], instance.color = e.color;
-        base[p] = MeshPath(instance.color, instance.ctm, _scene._paths[instance.path]._bounds);
     }
+    // The paths' bounds come from converting them, so the scene's mesh takes them from the edit's.
     libTess::triangulatePaths(_editMesh, _scene, begin, end);
+    vector<MeshPath>& base = _mesh._timeline.basePaths();
+    for (int p = begin; p < end; p++)
+        base[p] = _editMesh._timeline.basePaths()[p];
     [self.metalLayer uploadMesh:_editMesh index:1];
     _editBegin = begin, _editEnd = end;
     [self updateHandles];
@@ -822,7 +827,9 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
 - (void)setSvgData:(NSData *)svgData {
     _svgData = svgData;
     
-    // The source paths Core Graphics draws: nanosvg's own, before Scene converts them. It parses in place, so a copy.
+    // The source paths Core Graphics draws: nanosvg's own, which the scene's paths are converted from, so the scene goes
+    // first. It parses in place, so a copy.
+    _scene.empty();
     if (_svgImage)
         nsvgDelete(_svgImage), _svgImage = nullptr;
     if (_svgData) {
@@ -833,10 +840,8 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
             free(data);
         }
     }
-    if (_svgImage) {
-        _scene.empty();
+    if (_svgImage)
         _scene.addImage(_svgImage);
-    }
     [self triangulate];
     [self redraw];
 }
@@ -869,7 +874,7 @@ static void setPaintColor(CGContextRef ctx, NSVGpaint& paint, float opacity, boo
     float px = self.layer.contentsScale, sv = std::sqrt(std::abs(float(g.a * g.d - g.b * g.c)));
     simd_float3x3 view = simd_matrix(simd_make_float3(g.a, g.b, 0), simd_make_float3(g.c, g.d, 0), simd_make_float3(g.tx * px, g.ty * px, 1));
     simd_float3x3 unscale = simd_matrix(simd_make_float3(1 / sv, 0, 0), simd_make_float3(0, 1 / sv, 0), simd_make_float3(0, 0, 1));
-    Bounds b = _scene._bounds;
+    Bounds b = _mesh._bounds;
     float k = S / std::max(b.ux - b.lx, b.uy - b.ly);
     uniforms.CTM = { k * sv, 0, 0, k * sv, ((S - (b.ux - b.lx) * k) * 0.5f - b.lx * k) * sv, ((S - (b.uy - b.ly) * k) * 0.5f - b.ly * k) * sv };
     float t = float([NSDate date].timeIntervalSinceReferenceDate - _cubeStart), ay = 0.7f * t, ax = 0.45f * t;
