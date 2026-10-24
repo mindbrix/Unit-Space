@@ -64,12 +64,47 @@ static inline void cubicPoint(const float *c, float t, float *p) {
     p[0] = b0 * c[0] + b1 * c[2] + b2 * c[4] + b3 * c[6], p[1] = b0 * c[1] + b1 * c[3] + b2 * c[5] + b3 * c[7];
 }
 
+// Splits quadratic q at t = 1/2 until each piece turns by at most a right angle, when its legs' dot product is not
+// negative, appending the pieces' controls and ends.
+static void subdivideQuadratic(vector<float>& quadratics, const float *q, int depth) {
+    float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3];
+    if (depth < 8 && ax * bx + ay * by < 0) {
+        float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
+        float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
+        const float a[6] = { q[0], q[1], x01, y01, x, y }, b[6] = { x, y, x12, y12, q[4], q[5] };
+        subdivideQuadratic(quadratics, a, depth + 1), subdivideQuadratic(quadratics, b, depth + 1);
+    } else
+        quadratics.push_back(q[2]), quadratics.push_back(q[3]), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
+}
+
+// A chain of quadratics, written to out as splitCubics() makes them, a start point and control at a time: each is
+// subdivided (subdivideQuadratic()) once its end, the next one's start, arrives. A chain of none writes nothing.
+struct QuadraticChain {
+    QuadraticChain(vector<float>& out) : out(out) {}
+    void add(float x, float y, float cx, float cy) {
+        if (count++ == 0)
+            out.push_back(x), out.push_back(y);
+        else
+            end(x, y);
+        p[0] = x, p[1] = y, p[2] = cx, p[3] = cy;
+    }
+    void end(float x, float y) {
+        if (count == 0)
+            return;
+        const float q[6] = { p[0], p[1], p[2], p[3], x, y };
+        subdivideQuadratic(out, q, 0);
+    }
+    vector<float>& out;
+    float p[4];
+    int count = 0;
+};
+
 // Appends a cubic piece's start point and quadratic control. The control is the intersection of the piece's end
 // tangents, so consecutive quadratics join with the cubic's own tangents (G1) rather than kinking at every split.
 // When the tangents are parallel, meet behind an end, or would move the curve's midpoint by more than allowance from
 // the least-error control (3(p1 + p2) - p0 - p3) / 4, the piece is halved instead, using that control at depth. A zero
 // allowance always uses the least-error control.
-static void appendCubicPiece(Memory<float>& quadratics, const float *p, float allowance, int depth) {
+static void appendCubicPiece(QuadraticChain& quadratics, const float *p, float allowance, int depth) {
     float mx = (3.f * (p[2] + p[4]) - p[0] - p[6]) * 0.25f, my = (3.f * (p[3] + p[5]) - p[1] - p[7]) * 0.25f;
     float ax = p[2] - p[0], ay = p[3] - p[1], bx = p[6] - p[4], by = p[7] - p[5];
     if (ax == 0 && ay == 0) ax = p[4] - p[0], ay = p[5] - p[1];
@@ -77,7 +112,7 @@ static void appendCubicPiece(Memory<float>& quadratics, const float *p, float al
     float wx = p[6] - p[0], wy = p[7] - p[1], den = ax * by - ay * bx;
     // Nearly straight pieces (lines arrive from nanosvg as cubics) are drawn as lines, so their joins need no tangents.
     if (allowance == 0 || isStraightCubic(p)) {
-        quadratics.push_back(p[0]), quadratics.push_back(p[1]), quadratics.push_back(mx), quadratics.push_back(my);
+        quadratics.add(p[0], p[1], mx, my);
         return;
     }
     float s = den == 0 ? -1 : (wx * by - wy * bx) / den, u = den == 0 ? -1 : (ax * wy - ay * wx) / den;
@@ -90,13 +125,12 @@ static void appendCubicPiece(Memory<float>& quadratics, const float *p, float al
         appendCubicPiece(quadratics, a, allowance, depth + 1), appendCubicPiece(quadratics, b, allowance, depth + 1);
         return;
     }
-    quadratics.push_back(p[0]), quadratics.push_back(p[1]);
-    quadratics.push_back(fits ? cx : mx), quadratics.push_back(fits ? cy : my);
+    quadratics.add(p[0], p[1], fits ? cx : mx, fits ? cy : my);
 }
 
 // Appends one convex cubic as quadratics, in the fewest equal pieces whose error is within tolerance: a piece covering
 // 1/n of the cubic has 1/n^3 of its third difference, and its error as one quadratic is that over the multiplier.
-static void appendCubic(Memory<float>& quadratics, const float *cubic, float tolerance, float allowance) {
+static void appendCubic(QuadraticChain& quadratics, const float *cubic, float tolerance, float allowance) {
     constexpr float multiplier = 10.3923048454; // 18/sqrt(3)
     float dx = cubic[6] + 3.f * (cubic[2] - cubic[4]) - cubic[0], dy = cubic[7] + 3.f * (cubic[3] - cubic[5]) - cubic[1];
     float r = std::sqrt(dx * dx + dy * dy) / (tolerance * multiplier);
@@ -168,8 +202,7 @@ static int cubicInflections(const float *c, float tolerance, float *ts) {
 // Converts a chain of cubics (p0, c, c, p1, c, c, p2 ...) to quadratics (p0, c, p1, c, p2 ...). tangents: keep the
 // cubics' tangents (see cubicTolerances), and the spikes of straight cubics, as stroke centrelines need. limit: the
 // chain's vertex merge limit.
-static Memory<float> splitCubics(const float *src, int npoints, const float precision, float limit, bool tangents) {
-    Memory<float> quadratics;
+static void splitCubics(const float *src, int npoints, const float precision, float limit, bool tangents, QuadraticChain& quadratics) {
     float c[8] = { 0, 0, 0, 0, 0, 0, src[0], src[1] }, head[8], ts[3], tolerance, allowance;
     for (int i = 0; i < npoints - 1; i += 3) {
         c[0] = c[6], c[1] = c[7];
@@ -195,8 +228,7 @@ static Memory<float> splitCubics(const float *src, int npoints, const float prec
             appendCubic(quadratics, head, tolerance, allowance);
         }
     }
-    quadratics.push_back(c[6]), quadratics.push_back(c[7]);
-    return quadratics;
+    quadratics.end(c[6], c[7]);
 }
 
 static inline float isLeft(const float *P0, const float *P1, const float *P2) {
@@ -218,153 +250,100 @@ static size_t pointInPolygon(const float *p, const float *polygon, size_t n, siz
     return wn;
 }
 
-struct SubPath {
-    enum Type { kLine, kQuadratic, kCubic };
-    
-    SubPath() {}
-    // tangents: cubics convert to tangent-preserving quadratics (see splitCubics).
-    // Subpaths beyond coordinateLimit() are left empty, so paths drop them.
-    SubPath(const float *points, const int npoints, Type type, bool tangents = false) {
-        _area = pointsSignedArea(points, points + npoints * 2, kPointStride);
-        boundsLimits(& _bounds.lx, points, points + npoints * 2, kPointStride);
-        float limit = coordinateLimit();
-        if (!(_bounds.lx >= -limit && _bounds.ux <= limit && _bounds.ly >= -limit && _bounds.uy <= limit))
-            return;
-        if (type == kCubic) {
-            Memory<float> quadratics = splitCubics(points, npoints, kSplitCubicPrecision, vertexMergeLimit(_bounds), tangents);
-            const int nfloats = (int)quadratics.count();
-            if (nfloats > 5)
-                _quadratics = subdivideQuadratics(& quadratics[0], nfloats / 2);
-        } else if (type == kQuadratic) {
-            if (npoints > 2)
-                _quadratics = subdivideQuadratics(points, npoints);
-        } else {
-            float x0, y0, x1, y1;
-            x0 = points[0], y0 = points[1];
-            _quadratics.push_back(x0), _quadratics.push_back(y0);
-            for (int i = 1; i < npoints; i++, x0 = x1, y0 = y1) {
-                x1 = points[i * 2], y1 = points[i * 2 + 1];
-                _quadratics.push_back((x0 + x1) * 0.5), _quadratics.push_back((y0 + y1) * 0.5);
-                _quadratics.push_back(x1), _quadratics.push_back(y1);
-            }
+// Subdivides each of a chain's quadratics (subdivideQuadratic()) into out.
+static void subdivideQuadratics(const float *points, int npoints, vector<float>& out) {
+    out.push_back(points[0]), out.push_back(points[1]);
+    for (int i = 1; i + 1 < npoints; i += 2)
+        subdivideQuadratic(out, points + i * 2 - 2, 0);
+}
+
+// Merges each run of on-curve points closer than limit into its first, as libTess would, dropping the quadratics
+// between them. The gap fades along the quadratic after (its control moves half as far), so lines stay straight. In a
+// closed contour a run reaching the end wraps through the start, so the start moves onto its first point instead (an
+// edge skewed by an ULP leaves the sweep in libTess nowhere to put its crossings); in an open one the last
+// quadratic has none after it, so the one before takes its end.
+// A quadratic whose control lies within limit of its chord is a line, its control moved to the chord's midpoint, so
+// no near-straight curve leaves a control vertex beside its end for libTess. Consecutive lines join while every
+// vertex between stays within limit of the joined line, so neither moves the outline further than limit. That
+// includes a line doubling back on the one before, a spike enclosing nothing, and the closing line libTess adds
+// from a closed subpath's end to its start.
+// It writes the merged quadratics over the contour's own, as it never writes ahead of what it has yet to read, and
+// returns their floats. flat: whether they are only lines.
+static size_t mergeContour(float *q, size_t count, float limit, bool closed, bool *flat) {
+    int n = ((int)count - 2) / 4;
+    *flat = false;
+    if (n < 2)
+        return count;
+    auto near = [&](const float *a, const float *b) { return std::abs(a[0] - b[0]) < limit && std::abs(a[1] - b[1]) < limit; };
+    // Moves an end point, its quadratic's control moving half as far.
+    auto moveOnto = [](float *point, float *control, const float *to) {
+        control[0] += (to[0] - point[0]) * 0.5f, control[1] += (to[1] - point[1]) * 0.5f, point[0] = to[0], point[1] = to[1];
+    };
+    auto straighten = [](float *quad) { quad[2] = (quad[0] + quad[4]) * 0.5f, quad[3] = (quad[1] + quad[5]) * 0.5f; };
+    // Whether x lies within limit of the line through a and b.
+    auto onLine = [&](const float *a, const float *x, const float *b) {
+        float bx = b[0] - a[0], by = b[1] - a[1], cross = bx * (x[1] - a[1]) - by * (x[0] - a[0]);
+        return cross * cross < limit * limit * (bx * bx + by * by);
+    };
+    // Whether x lies within limit of the line through a and b, and projects strictly between them.
+    auto between = [&](const float *a, const float *x, const float *b) {
+        float bx = b[0] - a[0], by = b[1] - a[1], dot = bx * (x[0] - a[0]) + by * (x[1] - a[1]);
+        return onLine(a, x, b) && dot > 0 && dot < bx * bx + by * by;
+    };
+    size_t size = 2;    // the merged floats so far, from q
+    auto last = [&]() { return q + size - 2; };
+    int run = -1;  // the first vertex of the current run of joined lines
+    // A run's first vertex can be the merged end point that its joins move, so it is kept.
+    float first[2];
+    for (int k = 0; k < n; k++) {
+        const float *e = q + k * 4 + 4;
+        float *p = last();
+        if (near(p, e) && (k + 1 < n || closed))
+            continue;
+        if (near(p, e) && size > 2) {
+            moveOnto(p, p - 2, e);
+            continue;
         }
-    }
-    
-    // Merges each run of on-curve points closer than limit into its first, as libTess would, dropping the quadratics
-    // between them. The gap fades along the quadratic after (its control moves half as far), so lines stay straight. In a
-    // closed subpath a run reaching the end wraps through the start, so the start moves onto its first point instead (an
-    // edge skewed by an ULP leaves the sweep in libTess nowhere to put its crossings); in an open one the last
-    // quadratic has none after it, so the one before takes its end.
-    // A quadratic whose control lies within limit of its chord is a line, its control moved to the chord's midpoint, so
-    // no near-straight curve leaves a control vertex beside its end for libTess. Consecutive lines join while every
-    // vertex between stays within limit of the joined line, so neither moves the outline further than limit. That
-    // includes a line doubling back on the one before, a spike enclosing nothing, and the closing line libTess adds
-    // from a closed subpath's end to its start.
-    void mergeVertices(float limit, bool closed) {
-        const float *q = _quadratics.get();
-        int n = ((int)_quadratics.count() - 2) / 4;
-        if (n < 2)
-            return;
-        auto near = [&](const float *a, const float *b) { return std::abs(a[0] - b[0]) < limit && std::abs(a[1] - b[1]) < limit; };
-        // Moves an end point, its quadratic's control moving half as far.
-        auto moveOnto = [](float *point, float *control, const float *to) {
-            control[0] += (to[0] - point[0]) * 0.5f, control[1] += (to[1] - point[1]) * 0.5f, point[0] = to[0], point[1] = to[1];
-        };
-        auto straighten = [](float *quad) { quad[2] = (quad[0] + quad[4]) * 0.5f, quad[3] = (quad[1] + quad[5]) * 0.5f; };
-        // Whether x lies within limit of the line through a and b.
-        auto onLine = [&](const float *a, const float *x, const float *b) {
-            float bx = b[0] - a[0], by = b[1] - a[1], cross = bx * (x[1] - a[1]) - by * (x[0] - a[0]);
-            return cross * cross < limit * limit * (bx * bx + by * by);
-        };
-        // Whether x lies within limit of the line through a and b, and projects strictly between them.
-        auto between = [&](const float *a, const float *x, const float *b) {
-            float bx = b[0] - a[0], by = b[1] - a[1], dot = bx * (x[0] - a[0]) + by * (x[1] - a[1]);
-            return onLine(a, x, b) && dot > 0 && dot < bx * bx + by * by;
-        };
-        std::vector<float> out(q, q + 2);
-        auto last = [&]() { return out.data() + out.size() - 2; };
-        int run = -1;  // the first vertex of the current run of joined lines
-        for (int k = 0; k < n; k++) {
-            const float *e = q + k * 4 + 4;
-            float *p = last();
-            if (near(p, e) && (k + 1 < n || closed))
-                continue;
-            if (near(p, e) && out.size() > 2) {
-                moveOnto(p, p - 2, e);
+        float quad[6] = { e[-4], e[-3], e[-2], e[-1], e[0], e[1] };
+        moveOnto(quad, quad + 2, p);
+        bool line = between(quad, quad + 2, quad + 4);
+        if (line)
+            straighten(quad);
+        if (size > 2 && line && between(p - 4, p - 2, p)) {
+            bool on = true;
+            for (int j = run < 0 ? k : run; on && j <= k; j++)
+                on = onLine(p - 4, j == run ? first : q + j * 4, e);
+            if (on) {
+                if (run < 0)
+                    run = k, first[0] = q[k * 4], first[1] = q[k * 4 + 1];
+                // A spike folding back within limit of where it started goes altogether.
+                if (near(p - 4, e) && k + 1 < n)
+                    size -= 4, run = -1;
+                else
+                    p[0] = e[0], p[1] = e[1], straighten(p - 4);
                 continue;
             }
-            float quad[6] = { e[-4], e[-3], e[-2], e[-1], e[0], e[1] };
-            moveOnto(quad, quad + 2, p);
-            bool line = between(quad, quad + 2, quad + 4);
-            if (line)
-                straighten(quad);
-            if (out.size() > 2 && line && between(p - 4, p - 2, p)) {
-                bool on = true;
-                for (int j = run < 0 ? k : run; on && j <= k; j++)
-                    on = onLine(p - 4, q + j * 4, e);
-                if (on) {
-                    run = run < 0 ? k : run;
-                    // A spike folding back within limit of where it started goes altogether.
-                    if (near(p - 4, e) && k + 1 < n)
-                        out.resize(out.size() - 4), run = -1;
-                    else
-                        p[0] = e[0], p[1] = e[1], straighten(p - 4);
-                    continue;
-                }
-            }
-            run = -1;
-            out.insert(out.end(), quad + 2, quad + 6);
         }
-        // Closing on the start can bring the vertex before within limit of it in turn, so repeat until nothing moves.
-        for (bool moved = closed; moved && out.size() > 6; ) {
-            float *start = out.data(), *end = last();
-            bool closes = end[0] == start[0] && end[1] == start[1];
-            moved = true;
-            if (near(closes ? end - 4 : end, start)) {
-                if (closes)
-                    out.resize(out.size() - 4), start = out.data(), end = last();
-                moveOnto(start, start + 2, end);
-            } else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
-                end[0] = start[0], end[1] = start[1], straighten(end - 4);
-            else
-                moved = false;
-        }
-        // Lines carry their chord's exact midpoint as control, so a subpath of only those has no curve.
-        _flat = true;
-        for (size_t i = 0; _flat && i + 6 <= out.size(); i += 4)
-            _flat = out[i + 2] == (out[i] + out[i + 4]) * 0.5f && out[i + 3] == (out[i + 1] + out[i + 5]) * 0.5f;
-        Memory<float> merged;
-        memcpy(merged.new_ptr(out.size()), out.data(), out.size() * sizeof(float));
-        _quadratics = merged;
+        run = -1;
+        memcpy(q + size, quad + 2, 4 * sizeof(float)), size += 4;
     }
-    
-    int pointWinding(float x, float y) {
-        float p[2] = { x, y };
-        return (int)pointInPolygon(p, _quadratics.get(), (int)_quadratics.count() / 4 + 1, kPointStride * 2);
+    // Closing on the start can bring the vertex before within limit of it in turn, so repeat until nothing moves.
+    for (bool moved = closed; moved && size > 6; ) {
+        float *start = q, *end = last();
+        bool closes = end[0] == start[0] && end[1] == start[1];
+        moved = true;
+        if (near(closes ? end - 4 : end, start)) {
+            if (closes)
+                size -= 4, end = last();
+            moveOnto(start, start + 2, end);
+        } else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
+            end[0] = start[0], end[1] = start[1], straighten(end - 4);
+        else
+            moved = false;
     }
-    
-    // Splits each quadratic at t = 1/2 until it turns by at most a right angle, when its legs' dot product is not negative.
-    static Memory<float> subdivideQuadratics(const float *points, int npoints) {
-        Memory<float> quadratics;
-        quadratics.push_back(points[0]), quadratics.push_back(points[1]);
-        for (int i = 1; i + 1 < npoints; i += 2)
-            subdivideQuadratic(quadratics, points + i * 2 - 2, 0);
-        return quadratics;
-    }
-    
-    static void subdivideQuadratic(Memory<float>& quadratics, const float *q, int depth) {
-        float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3];
-        if (depth < 8 && ax * bx + ay * by < 0) {
-            float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
-            float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
-            const float a[6] = { q[0], q[1], x01, y01, x, y }, b[6] = { x, y, x12, y12, q[4], q[5] };
-            subdivideQuadratic(quadratics, a, depth + 1), subdivideQuadratic(quadratics, b, depth + 1);
-        } else
-            quadratics.push_back(q[2]), quadratics.push_back(q[3]), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
-    }
-    
-    Memory<float>               _quadratics;
-    bool                        _flat = false;      // only lines, which mergeVertices() decides
-    float                       _area;
-    Bounds                      _bounds;
-};
+    // Lines carry their chord's exact midpoint as control, so a contour of only those has no curve.
+    *flat = true;
+    for (size_t i = 0; *flat && i + 6 <= size; i += 4)
+        *flat = q[i + 2] == (q[i] + q[i + 4]) * 0.5f && q[i + 3] == (q[i + 1] + q[i + 5]) * 0.5f;
+    return size;
+}

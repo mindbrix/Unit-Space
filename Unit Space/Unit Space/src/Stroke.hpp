@@ -424,8 +424,7 @@ private:
             return;
         if (orient && pointsSignedArea(chain.data(), chain.data() + chain.size(), kPointStride) > 0)
             reverse(chain);
-        SubPath s(chain.data(), npoints, SubPath::kQuadratic);
-        out.addSubPath(s);
+        out.addQuadratics(chain.data(), npoints);
     }
 
     Path& out;

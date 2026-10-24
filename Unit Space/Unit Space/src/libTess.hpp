@@ -71,8 +71,8 @@ struct libTess {
     };
     
     static void addPathContours(TESStesselator *dst, Path& path) {
-        for (SubPath& s : path._subPaths)
-            tessAddContour(dst, 2, s._quadratics.get(), kPointStride * 2, (int)s._quadratics.count() / 4 + 1);
+        for (int i = 0; i < path.contours(); i++)
+            tessAddContour(dst, 2, path._points.data() + path._contours[i], kPointStride * 2, (int)path.contourSize(i) / 4 + 1);
     }
         
     // The path quadratic joining two contour vertices, if there is one.
@@ -82,13 +82,13 @@ struct libTess {
         float cx, cy;
     };
     
-    // Maps tessellator input vertices back to a path's quadratics. Each subpath adds its on-curve points in order.
+    // Maps tessellator input vertices back to a path's quadratics. Each contour adds its on-curve points in order.
     struct PathVertices {
-        PathVertices(Path& path) {
+        PathVertices(Path& path) : path(path) {
             int base = 0;
-            for (SubPath& s : path._subPaths) {
-                bases.push_back(base), subPaths.push_back(& s);
-                base += (int)s._quadratics.count() / 4 + 1;
+            for (int i = 0; i < path.contours(); i++) {
+                bases.push_back(base);
+                base += (int)path.contourSize(i) / 4 + 1;
             }
             bases.push_back(base);
         }
@@ -100,9 +100,11 @@ struct libTess {
                 return seg;
             // Most paths have no merged vertices, so only index positions once a lookup misses.
             if (!indexed) {
-                for (int sp = 0; sp < (int)subPaths.size(); sp++)
+                for (int sp = 0; sp < path.contours(); sp++) {
+                    const float *q = path._points.data() + path._contours[sp];
                     for (int i = 0; i < bases[sp + 1] - bases[sp]; i++)
-                        positions[key(subPaths[sp]->_quadratics[i * 4], subPaths[sp]->_quadratics[i * 4 + 1])].push_back(bases[sp] + i);
+                        positions[key(q[i * 4], q[i * 4 + 1])].push_back(bases[sp] + i);
+                }
                 indexed = true;
             }
             auto ia = positions.find(key(pa[0], pa[1])), ib = positions.find(key(pb[0], pb[1]));
@@ -114,7 +116,7 @@ struct libTess {
                         return seg;
             return seg;
         }
-        // The segment joining input vertices a and b, if they are neighbours on the same subpath.
+        // The segment joining input vertices a and b, if they are neighbours on the same contour.
         Segment segment(TESSindex a, TESSindex b) {
             Segment seg;
             if (a == TESS_UNDEF || b == TESS_UNDEF)
@@ -124,8 +126,8 @@ struct libTess {
                 return seg;
             la = (int)a - bases[sp], lb = (int)b - bases[sp];
             int n = bases[sp + 1] - bases[sp];
-            const float *q = subPaths[sp]->_quadratics.get();
-            // A closed subpath repeats its first point last, and the tessellator may merge them to either index,
+            const float *q = path._points.data() + path._contours[sp];
+            // A closed contour repeats its first point last, and the tessellator may merge them to either index,
             // so count its vertices modulo the n - 1 distinct ones.
             int m = n > 2 && q[0] == q[(n - 1) * 4] && q[1] == q[(n - 1) * 4 + 1] ? n - 1 : 0;
             if (m)
@@ -142,9 +144,9 @@ struct libTess {
             memcpy(& ux, & x, 4), memcpy(& uy, & y, 4);
             return (uint64_t)ux << 32 | uy;
         }
+        Path& path;
         bool indexed = false;
         vector<int> bases;
-        vector<SubPath *> subPaths;
         unordered_map<uint64_t, vector<int>> positions;
     };
     
@@ -347,10 +349,10 @@ struct libTess {
             p.ly = std::min(std::min(p.q[1], p.q[3]), p.q[5]), p.uy = std::max(std::max(p.q[1], p.q[3]), p.q[5]);
         };
         vector<Piece> pieces;
-        vector<int> bases;      // each subpath's first piece
-        for (int si = 0; si < (int)path._subPaths.size(); si++) {
-            const float *q = path._subPaths[si]._quadratics.get();
-            int n = (int)(path._subPaths[si]._quadratics.count() - 2) / 4;
+        vector<int> bases;      // each contour's first piece
+        for (int si = 0; si < path.contours(); si++) {
+            const float *q = path._points.data() + path._contours[si];
+            int n = (int)(path.contourSize(si) - 2) / 4;
             bases.push_back((int)pieces.size());
             for (int k = 0; k <= n; k++) {
                 // The tessellator closes each contour back to its first point, a line.
@@ -406,27 +408,31 @@ struct libTess {
             }
             pairs.swap(next);
         }
-        // Each changed subpath is written once, its segments' pieces in order.
-        std::function<void(Memory<float>&, int)> write = [&](Memory<float>& out, int i) {
+        // The contours are written again, each changed one's segments from their pieces in order.
+        std::function<void(vector<float>&, int)> write = [&](vector<float>& out, int i) {
             if (pieces[i].child >= 0)
                 write(out, pieces[i].child), write(out, pieces[i].child + 1);
             else
-                out.push_back(pieces[i].q[2]), out.push_back(pieces[i].q[3]), out.push_back(pieces[i].q[4]), out.push_back(pieces[i].q[5]);
+                out.insert(out.end(), pieces[i].q + 2, pieces[i].q + 6);
         };
-        for (int si = 0; si < (int)path._subPaths.size(); si++) {
-            SubPath& sp = path._subPaths[si];
-            int n = (int)(sp._quadratics.count() - 2) / 4;
+        vector<float> refined;
+        for (int si = 0; si < path.contours(); si++) {
+            const float *q = path._points.data() + path._contours[si];
+            int n = (int)(path.contourSize(si) - 2) / 4;
             bool changed = false;
             for (int k = 0; k < n && !changed; k++)
                 changed = pieces[bases[si] + k].child >= 0;
+            size_t first = refined.size();
             if (!changed)
-                continue;
-            Memory<float> refined;
-            refined.push_back(sp._quadratics[0]), refined.push_back(sp._quadratics[1]);
-            for (int k = 0; k < n; k++)
-                write(refined, bases[si] + k);
-            sp._quadratics = refined;
+                refined.insert(refined.end(), q, q + path.contourSize(si));
+            else {
+                refined.push_back(q[0]), refined.push_back(q[1]);
+                for (int k = 0; k < n; k++)
+                    write(refined, bases[si] + k);
+            }
+            path._contours[si] = first;
         }
+        path._points.swap(refined);
     }
     
     // A vertex of the triangulation. Corners sit on the outer polygon and anti-alias its two edges there, which head
@@ -619,15 +625,12 @@ struct libTess {
             ly = path._bounds.ly, rh = kUnsignedShortMax / (path._bounds.uy - ly);
             
             _idxs.emplace_back((int)_tris.size()), _bounds.push_back(path._bounds), _edges.push_back(0);
-            for (SubPath& s : path._subPaths)
-                _edges.back() += s._quadratics.count() / 4;
+            for (int i = 0; i < path.contours(); i++)
+                _edges.back() += path.contourSize(i) / 4;
             
             // A curve split by a crossing would otherwise draw as its chord. Stroke outlines cross themselves throughout.
             // Only curves are split, so a path of lines alone is left as it is.
-            bool flat = true;
-            for (SubPath& s : path._subPaths)
-                flat = flat && s._flat;
-            if (!flat)
+            if (!path._flat)
                 refineChords(path);
             PathVertices pv(path);
             // The path's own tessellators, which reset() frees with everything they allocated. Their buckets hold as many

@@ -367,8 +367,8 @@ struct EditHandle {
 - (NSString *)describePath:(NSInteger)p {
     Path path = Scene::convert(_scene._paths[_scene._instances[p].path]);
     size_t quadratics = 0;
-    for (SubPath& s : path._subPaths)
-        quadratics += s._quadratics.count() / 4;
+    for (int i = 0; i < path.contours(); i++)
+        quadratics += path.contourSize(i) / 4;
     // An edited path's triangles are in the edit mesh, whose indices start at its first path.
     bool edited = p >= _editBegin && p < _editEnd;
     Mesh& mesh = edited ? _editMesh : _mesh;
@@ -378,7 +378,7 @@ struct EditHandle {
     NSVGshape *shape = [self sourceShape:p];
     NSString *source = shape ? [NSString stringWithFormat:@" · shape %d \"%s\"", _scene._instances[p].source, shape->id] : @"";
     return [NSString stringWithFormat:@"Path %ld of %zu%@ · %s · %zu subpaths, %zu quadratics · %d triangles, %d hulls · bounds %g %g %g %g",
-            (long)p, _scene._instances.size(), source, path._outline ? "stroke" : "fill", path._subPaths.size(), quadratics, end - base, hulls,
+            (long)p, _scene._instances.size(), source, path._outline ? "stroke" : "fill", (size_t)path.contours(), quadratics, end - base, hulls,
             path._bounds.lx, path._bounds.ly, path._bounds.ux, path._bounds.uy];
 }
 
@@ -523,8 +523,8 @@ static bool closesOnStart(NSVGpath *path) {
     }
     float square[10] = { 0, -0.5, 1, -0.5, 1, 0.5, 0, 0.5, 0, -0.5 };
     Scene templates;
-    Path line(true, false, { SubPath(square, 5, SubPath::kLine) });
-    Path dot(true, false, { SubPath(circle, 17, SubPath::kQuadratic) });
+    Path line(true, false), dot(true, false);
+    line.addLines(square, 5), dot.addQuadratics(circle, 17);
     templates.addInstance(templates.addPath(line), RGBA8::Black()), templates.addInstance(templates.addPath(dot), RGBA8::Black());
     libTess::triangulatePaths(_handleMesh, templates, 0, 2);
 }

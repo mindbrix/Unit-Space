@@ -35,11 +35,8 @@ static Scene sceneFromFile(const char *path) {
         scene.addSVG(data.bytes, data.length);
     return scene;
 }
-static size_t floats(Path path) {
-    size_t n = 0;
-    for (SubPath& s : path._subPaths)
-        n += s._quadratics.count();
-    return n;
+static size_t floats(const Path& path) {
+    return path._points.size();
 }
 // The scene's paths' floats, as converted for triangulation.
 static size_t floats(Scene& scene) {
@@ -87,8 +84,12 @@ static void testHugeStrokeWidth() {
     float limit = coordinateLimit();
     for (Path& path : scene._paths) {
         Path converted = Scene::convert(path);
-        for (SubPath& s : converted._subPaths)
-            CHECK(s._bounds.lx >= -limit && s._bounds.ux <= limit && s._bounds.ly >= -limit && s._bounds.uy <= limit);
+        for (int i = 0; i < converted.contours(); i++) {
+            Bounds b;
+            const float *q = converted._points.data() + converted._contours[i];
+            boundsLimits(& b.lx, q, q + converted.contourSize(i), kPointStride);
+            CHECK(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit);
+        }
     }
     Mesh mesh;
     libTess::triangulate(mesh, scene);
@@ -136,7 +137,7 @@ static void testDashProgress() {
 static void testDots() {
     Scene scene = sceneFromSVG("<path d=\"M0 50 C30 0 70 100 100 50\" fill=\"none\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-dasharray=\"0 4\"/>");
     CHECK(scene._paths.size() == 1);
-    CHECK(scene._paths.size() == 1 && Scene::convert(scene._paths[0])._subPaths.size() > 10);
+    CHECK(scene._paths.size() == 1 && Scene::convert(scene._paths[0]).contours() > 10);
 }
 
 #pragma mark - Pipeline invariants
@@ -155,7 +156,7 @@ static void testSceneImmutable() {
 // SVG paths are converted as they are triangulated, so an edit's mesh converts its paths as the whole scene's does.
 static void testDeferredConversion() {
     Scene scene = sceneFromSVG("<path d=\"M0 0 C10 0 0 10 10 10 Z\" fill=\"red\" stroke=\"black\" stroke-width=\"2\"/>");
-    CHECK(scene._paths.size() == 2 && scene._paths[0]._subPaths.empty() && scene._paths[1]._subPaths.empty());
+    CHECK(scene._paths.size() == 2 && scene._paths[0]._contours.empty() && scene._paths[1]._contours.empty());
     if (scene._paths.size() != 2)
         return;
     Mesh whole, edit;

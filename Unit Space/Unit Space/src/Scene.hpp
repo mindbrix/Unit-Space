@@ -26,14 +26,12 @@ struct Instance {
 };
 
 struct Scene {
-    // Adds a path to be drawn by instances, returning its index, or -1 if it has no subpaths.
+    // Adds a path to be drawn by instances, returning its index, or -1 if it has no contours.
     int addPath(Path& path) {
-        if (path._subPaths.size() == 0)
+        if (path._contours.empty())
             return -1;
         // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
-        float limit = vertexMergeLimit(path._bounds);
-        for (SubPath& s : path._subPaths)
-            s.mergeVertices(limit, true);
+        path.mergeVertices(vertexMergeLimit(path._bounds));
         _paths.emplace_back(path);
         return (int)_paths.size() - 1;
     }
@@ -82,12 +80,14 @@ struct Scene {
         Bounds bounds;
         bool any = false;
         float limit = coordinateLimit();
-        vector<float> buffer;
         for (NSVGpath *path = shape->paths; path != NULL; path = path->next) {
             Bounds b;
-            if (!flipped(path, height, buffer))
+            if (!finite(path))
                 continue;
-            boundsLimits(& b.lx, buffer.data(), buffer.data() + path->npts * 2, kPointStride);
+            // Flipping y about height reverses the order of y, rounding included, so the flipped points' bounds are
+            // the points' bounds flipped.
+            boundsLimits(& b.lx, path->pts, path->pts + path->npts * 2, kPointStride);
+            b = Bounds(b.lx, height - b.uy, b.ux, height - b.ly);
             if (b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit)
                 bounds = any ? bounds.united(b) : b, any = true;
         }
@@ -118,32 +118,33 @@ struct Scene {
         if (path._outline && shape->strokeDashCount > 0)
             stroke.setDashes(shape->strokeDashArray, shape->strokeDashCount, shape->strokeDashOffset);
         vector<float> buffer;
+        Path centre;
         for (NSVGpath *sp = shape->paths; sp != NULL; sp = sp->next) {
             if (!flipped(sp, path._height, buffer))
                 continue;
             float *pts = buffer.data();
             if (!path._outline) {
-                SubPath s(pts, sp->npts, SubPath::kCubic);
-                p.addSubPath(s);
+                p.addCubics(pts, sp->npts);
                 continue;
             }
-            // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth.
-            SubPath c(pts, sp->npts, SubPath::kCubic, true);
-            float limit = vertexMergeLimit(c._bounds);
-            c.mergeVertices(limit, sp->closed);
+            // The stroke's centreline keeps the cubics' tangents, so smooth joins stay smooth, and merges within its own
+            // points' limit.
+            Bounds b;
+            boundsLimits(& b.lx, pts, pts + sp->npts * 2, kPointStride);
+            float limit = vertexMergeLimit(b);
+            centre.clear(), centre.addCubics(pts, sp->npts, true), centre.mergeVertices(limit, sp->closed);
             // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
-            bool point = c._quadratics.count() == 0 && sp->npts > 0;
+            bool point = centre._points.empty() && sp->npts > 0;
             for (int i = 1; point && i < sp->npts; i++)
                 point = pts[i * 2] == pts[0] && pts[i * 2 + 1] == pts[1];
             if (point)
                 stroke.addSubPath(pts, 1, sp->closed, limit);
             else
-                stroke.addSubPath(c._quadratics.get(), (int)c._quadratics.count() / 2, sp->closed, limit);
+                stroke.addSubPath(centre._points.data(), (int)centre._points.size() / 2, sp->closed, limit);
         }
-        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly.
-        float limit = vertexMergeLimit(p._bounds);
-        for (SubPath& s : p._subPaths)
-            s.mergeVertices(limit, true);
+        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly. A
+        // fill's limit is from its shape's points, which its contours are; an outline's from its own bounds.
+        p.mergeVertices(vertexMergeLimit(path._outline ? p._bounds : path._bounds));
         return p;
     }
     // A path's share of the work of triangulating: its points, three times over for stroke outlines, which cross
@@ -155,8 +156,7 @@ struct Scene {
             for (NSVGpath *sp = path._shape->paths; sp != NULL; sp = sp->next)
                 n += sp->npts;
         else
-            for (SubPath& s : path._subPaths)
-                n += (int64_t)s._quadratics.count();
+            n = (int64_t)path._points.size();
         return n * (path._outline ? 3 : 1);
     }
     void empty() { _paths.resize(0), _instances.resize(0), _image = nullptr; }
@@ -166,12 +166,18 @@ struct Scene {
     std::shared_ptr<NSVGimage> _image;  // an image addSVG() parsed, whose shapes its paths are
     
 private:
-    // A path's points with y flipped about height, unless any is not finite: parser output can be (degenerate arcs),
-    // which would poison bounds and tessellation.
-    static bool flipped(const NSVGpath *path, float height, vector<float>& buffer) {
+    // Whether a path's points are all finite: parser output can be not (degenerate arcs), which would poison bounds and
+    // tessellation.
+    static bool finite(const NSVGpath *path) {
         for (int i = 0; i < path->npts * 2; i++)
             if (!std::isfinite(path->pts[i]))
                 return false;
+        return true;
+    }
+    // A path's points with y flipped about height, unless any is not finite.
+    static bool flipped(const NSVGpath *path, float height, vector<float>& buffer) {
+        if (!finite(path))
+            return false;
         buffer.assign(path->pts, path->pts + path->npts * 2);
         for (int i = 0; i < path->npts; i++)
             buffer[i * 2 + 1] = height - buffer[i * 2 + 1];
