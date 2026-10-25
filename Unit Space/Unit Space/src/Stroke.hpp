@@ -231,15 +231,6 @@ private:
         pushPiece(rest);
     }
 
-    // Splits quadratic q at t: a covers [0, t] and b [t, 1]. b may be q.
-    static void splitQuadratic(const float *q, float t, float *a, float *b) {
-        for (int k = 0; k < 2; k++) {
-            float p01 = lerp(t, q[k], q[2 + k]), p12 = lerp(t, q[2 + k], q[4 + k]), p = lerp(t, p01, p12);
-            a[k] = q[k], a[2 + k] = p01, a[4 + k] = p;
-            b[4 + k] = q[4 + k], b[2 + k] = p12, b[k] = p;
-        }
-    }
-
     void pushPiece(const float *q) {
         float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3], wx = q[4] - q[0], wy = q[5] - q[1];
         if (wx * wx + wy * wy == 0 && ax * ax + ay * ay == 0)

@@ -1,14 +1,14 @@
 # Corpus regression baseline: file, scene floats, triangles, hulls, mesh hash (arm64). Rewrite with ./Tests/run.sh --update.
-SVG/23.svg	87026 43365 15628 4b2884de84ffb244
-SVG/Éclaté_fusée_et_vaisseau_Soyouz.svg	1640524 768273 292272 95ef9bb529162a80
+SVG/23.svg	96342 47514 16978 379f1ca2596ef37e
+SVG/Éclaté_fusée_et_vaisseau_Soyouz.svg	1657984 773539 293829 ba52642c47ffa899
 SVG/contour.svg	859794 81846 0 76bd1089cc359b93
-SVG/hawaii.svg	724200 374698 144332 cac82e12c3b7fe8a
-SVG/nano.svg	344 182 64 d90b6244a453f9b6
-SVG/paper-2.svg	729608 372666 129922 528853cf4badeea0
-SVG/paris-30k.svg	4949076 1070643 210311 1a8929143632959c
-SVG/reschart.svg	31828 6635 329 57eb4e24a8ba24ae
-Tests/cases/loop-lens.svg	250 177 67 5bbc04f3484aa3e8
-Tests/cases/slit-lobes.svg	238 151 60 da31a20de83ea176
-Tests/cases/slit-reflex-inset.svg	250 148 60 6fc064c644db917a
-Tests/cases/slit-reversal-join.svg	250 132 54 992068a90c36758f
-Tests/cases/slit-tangent-facets.svg	266 141 58 2a78f9d2ae25b918
+SVG/hawaii.svg	791404 411327 158596 cbbe6a1a570de8f8
+SVG/nano.svg	344 182 64 39ca69487144051c
+SVG/paper-2.svg	721688 367895 128036 eae789d4b967b9ed
+SVG/paris-30k.svg	4949076 1070643 210311 497b73f034583bda
+SVG/reschart.svg	32032 6586 310 d3885bce3ceb0fb6
+Tests/cases/loop-lens.svg	242 173 65 58f2d317263d3f27
+Tests/cases/slit-lobes.svg	230 147 58 6be9761f29de2d6d
+Tests/cases/slit-reflex-inset.svg	222 135 55 def86fe1033b5561
+Tests/cases/slit-reversal-join.svg	222 119 49 577a3ff682cbfbcd
+Tests/cases/slit-tangent-facets.svg	242 142 59 e00e679391461cf7

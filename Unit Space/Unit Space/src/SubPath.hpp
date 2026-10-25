@@ -48,6 +48,15 @@ static inline void splitCubic(const float *c, float t, float *a, float *b) {
     }
 }
 
+// Splits quadratic q at t (de Casteljau): a covers [0, t] and b [t, 1]. b may be q.
+static inline void splitQuadratic(const float *q, float t, float *a, float *b) {
+    for (int k = 0; k < 2; k++) {
+        float p01 = lerp(t, q[k], q[2 + k]), p12 = lerp(t, q[2 + k], q[4 + k]), p = lerp(t, p01, p12);
+        a[k] = q[k], a[2 + k] = p01, a[4 + k] = p;
+        b[4 + k] = q[4 + k], b[2 + k] = p12, b[k] = p;
+    }
+}
+
 // The point at t on cubic c.
 static inline void cubicPoint(const float *c, float t, float *p) {
     float u = 1 - t, b0 = u * u * u, b1 = 3.f * u * u * t, b2 = 3.f * u * t * t, b3 = t * t * t;
@@ -60,12 +69,11 @@ static inline void cubicPoint(const float *c, float t, float *p) {
 static void subdivideQuadratic(vector<float>& quadratics, const float *q) {
     float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3];
     if (ax * bx + ay * by < 0) {
-        float la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by), t = la / (la + lb);
-        float x01 = lerp(t, q[0], q[2]), y01 = lerp(t, q[1], q[3]), x12 = lerp(t, q[2], q[4]), y12 = lerp(t, q[3], q[5]);
-        quadratics.push_back(x01), quadratics.push_back(y01), quadratics.push_back(lerp(t, x01, x12)), quadratics.push_back(lerp(t, y01, y12));
-        quadratics.push_back(x12), quadratics.push_back(y12), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
+        float la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by), a[6], b[6];
+        splitQuadratic(q, la / (la + lb), a, b);
+        quadratics.insert(quadratics.end(), a + 2, a + 6), quadratics.insert(quadratics.end(), b + 2, b + 6);
     } else
-        quadratics.push_back(q[2]), quadratics.push_back(q[3]), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
+        quadratics.insert(quadratics.end(), q + 2, q + 6);
 }
 
 // A chain of quadratics, written to out as splitCubics() makes them, a start point and control at a time: each is
