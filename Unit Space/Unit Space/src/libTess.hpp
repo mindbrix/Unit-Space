@@ -79,11 +79,12 @@ struct libTess {
         const Path& in = path.stroked() ? outline : path;
         out.stroke(path._strokeWidth, path._join, path._cap, path._miterLimit, path._dashes.data(), (int)path._dashes.size(), path._dashOffset);
         out._bounds = path._bounds;
+        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly. It is
+        // the grid of the bounds the triangles quantise to: a fill's own, an outline's.
+        float limit = vertexMergeLimit(in._bounds);
         for (int i = 0; i < (int)in._contours.size(); i++)
-            appendQuadratics(out, in.points(i), in._contours[i].npoints, in._contours[i].kind, false);
-        // libTess sees closed contours, merging vertices within this of each other, so merge them first, cleanly. A
-        // fill's limit is from its own points; an outline's from its converted bounds.
-        mergeVertices(out, vertexMergeLimit(path.stroked() ? out._bounds : path._bounds), true);
+            appendQuadratics(out, in.points(i), in._contours[i].npoints, in._contours[i].kind, false, limit);
+        mergeVertices(out, limit, true, true);
         return out;
     }
     // A path's share of the work of triangulating: its points, three times over for strokes, whose outlines cross
@@ -187,15 +188,18 @@ struct libTess {
     // the chord's midpoint, as lines are written. Measuring a line's turn instead would overrule it, as short legs
     // cannot resolve kLineTurnSine: rounding the midpoint alone turns a chord under a hundred float steps by more.
     // The legs turn by more than the limit if they turn back, or if the sine of their turn, |a x b| / (|a| |b|), exceeds it.
-    static bool isCurved(float x0, float y0, float cx, float cy, float x2, float y2) {
-        if (cx == (x0 + x2) * 0.5f && cy == (y0 + y2) * 0.5f)
+    // A control within limit, the path's vertex merge limit, of its chord's line is a line too: the triangles cannot
+    // resolve it, and its hull would quantise collinear, or wound the other way.
+    static bool isCurved(float x0, float y0, float cx, float cy, float x2, float y2, float limit) {
+        float wx = x2 - x0, wy = y2 - y0, h = wx * (cy - y0) - wy * (cx - x0);
+        if ((cx == (x0 + x2) * 0.5f && cy == (y0 + y2) * 0.5f) || h * h <= limit * limit * (wx * wx + wy * wy))
             return false;
         float ax = cx - x0, ay = cy - y0, bx = x2 - cx, by = y2 - cy, cross = ax * by - ay * bx;
         return (ax != 0 || ay != 0) && (bx != 0 || by != 0)
             && (ax * bx + ay * by <= 0 || cross * cross > kLineTurnSine * kLineTurnSine * (ax * ax + ay * ay) * (bx * bx + by * by));
     }
-    static void classify(ContourSegment& s, float ex, float ey) {
-        s.curved = isCurved(s.x, s.y, s.cx, s.cy, ex, ey);
+    static void classify(ContourSegment& s, float ex, float ey, float limit) {
+        s.curved = isCurved(s.x, s.y, s.cx, s.cy, ex, ey, limit);
         s.concave = s.curved && (ex - s.x) * (s.cy - s.y) - (ey - s.y) * (s.cx - s.x) > 0;
     }
     
@@ -260,7 +264,7 @@ struct libTess {
     
     // Inner polygon edges must not cross, or the interior pass paints outside the fill: concave curves in thin features
     // can reach across them. Split the curves involved at t = 1/2 until nothing crosses, then fall back to lines.
-    static void resolveCrossings(vector<vector<ContourSegment>>& contours) {
+    static void resolveCrossings(vector<vector<ContourSegment>>& contours, float limit) {
         struct InnerEdge { float x0, y0, x1, y1, lx, ux; int contour, seg; };
         auto orient = [](float ax, float ay, float bx, float by, float cx, float cy) { return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); };
         auto crosses = [&](const InnerEdge& a, const InnerEdge& b) {
@@ -307,7 +311,7 @@ struct libTess {
                     else {
                         float x01 = (sg.x + sg.cx) * 0.5f, y01 = (sg.y + sg.cy) * 0.5f, x12 = (sg.cx + e.x) * 0.5f, y12 = (sg.cy + e.y) * 0.5f;
                         ContourSegment a = { sg.x, sg.y, x01, y01, false, false }, b = { (x01 + x12) * 0.5f, (y01 + y12) * 0.5f, x12, y12, false, false };
-                        classify(a, b.x, b.y), classify(b, e.x, e.y);
+                        classify(a, b.x, b.y, limit), classify(b, e.x, e.y, limit);
                         split.push_back(a), split.push_back(b);
                     }
                 }
@@ -324,6 +328,7 @@ struct libTess {
     // none. Each round splits the paired curves and keeps the halves' pairs whose hulls still overlap: those that no
     // longer do never will. Curves that separate drop out, and genuinely overlapping contours keep their crossings.
     static void refineChords(Path& path) {
+        const float limit = vertexMergeLimit(path._bounds);
         // Points that coincide are tested as such: fused multiply-adds leave a point's orientation against an edge
         // through it a rounding error rather than zero.
         auto orient = [](const float *a, const float *b, const float *c) { return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]); };
@@ -383,7 +388,7 @@ struct libTess {
                 // The tessellator closes each contour back to its first point, a line.
                 const float *a = q + k * 4, *b = k < n ? a + 4 : q;
                 Piece p = {{ a[0], a[1], k < n ? a[2] : (a[0] + b[0]) * 0.5f, k < n ? a[3] : (a[1] + b[1]) * 0.5f, b[0], b[1] }};
-                setBounds(p), p.child = -1, p.curved = k < n && isCurved(p.q[0], p.q[1], p.q[2], p.q[3], p.q[4], p.q[5]);
+                setBounds(p), p.child = -1, p.curved = k < n && isCurved(p.q[0], p.q[1], p.q[2], p.q[3], p.q[4], p.q[5], limit);
                 pieces.push_back(p);
             }
         }
@@ -414,7 +419,7 @@ struct libTess {
                     float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
                     Piece h0 = {{ a[0], a[1], x01, y01, x, y }}, h1 = {{ x, y, x12, y12, a[4], a[5] }};
                     for (Piece *h : { &h0, &h1 })
-                        setBounds(*h), h->child = -1, h->curved = isCurved(h->q[0], h->q[1], h->q[2], h->q[3], h->q[4], h->q[5]);
+                        setBounds(*h), h->child = -1, h->curved = isCurved(h->q[0], h->q[1], h->q[2], h->q[3], h->q[4], h->q[5], limit);
                     pieces[i].child = (int)pieces.size();
                     pieces.push_back(h0), pieces.push_back(h1);
                 }
@@ -777,10 +782,10 @@ struct libTess {
                     Segment q = pv.segment(indices[ia], indices[ib], a, b);
                     c[i] = { a[0], a[1], q.found ? q.cx : a[0], q.found ? q.cy : a[1], false, false };
                     if (q.found)
-                        classify(c[i], b[0], b[1]);
+                        classify(c[i], b[0], b[1], eps);
                 }
             }
-            resolveCrossings(contours);
+            resolveCrossings(contours, eps);
             
             arena.reset();
             TESStesselator *dst = tessNewTess(& alloc);

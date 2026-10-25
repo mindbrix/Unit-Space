@@ -16,7 +16,7 @@
 #endif
 // A cubic's quadratic approximation may stray by kSplitCubicPrecision path units, or by kSplitCubicRelative of the
 // cubic's own control polygon length if that is smaller: small glyphs need far tighter tolerances than maps.
-constexpr float kSplitCubicPrecision = 0.25, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE;
+constexpr float kSplitCubicPrecision = 0.1, kSplitCubicRelative = SPLIT_CUBIC_RELATIVE;
 // Cubics whose relative tolerance is below kCubicTangentSize of kSplitCubicPrecision (control polygons shorter than
 // 5 units: glyphs) split into tangent-preserving quadratics, which may stray kCubicTangentSlack times further.
 constexpr float kCubicTangentSize = 0.2, kCubicTangentSlack = 1;
@@ -54,15 +54,16 @@ static inline void cubicPoint(const float *c, float t, float *p) {
     p[0] = b0 * c[0] + b1 * c[2] + b2 * c[4] + b3 * c[6], p[1] = b0 * c[1] + b1 * c[3] + b2 * c[5] + b3 * c[7];
 }
 
-// Splits quadratic q at t = 1/2 until each piece turns by at most a right angle, when its legs' dot product is not
-// negative, appending the pieces' controls and ends.
-static void subdivideQuadratic(vector<float>& quadratics, const float *q, int depth) {
+// Splits quadratic q so that each piece turns by at most a right angle, when its legs' dot product is not negative,
+// appending the pieces' controls and ends. Its tangent, (1 - t) a + t b from its legs a and b, turns by less than a
+// half turn, and at t = |a| / (|a| + |b|) runs along a / |a| + b / |b|, bisecting it, so one split there is enough.
+static void subdivideQuadratic(vector<float>& quadratics, const float *q) {
     float ax = q[2] - q[0], ay = q[3] - q[1], bx = q[4] - q[2], by = q[5] - q[3];
-    if (depth < 8 && ax * bx + ay * by < 0) {
-        float x01 = (q[0] + q[2]) * 0.5f, y01 = (q[1] + q[3]) * 0.5f, x12 = (q[2] + q[4]) * 0.5f, y12 = (q[3] + q[5]) * 0.5f;
-        float x = (x01 + x12) * 0.5f, y = (y01 + y12) * 0.5f;
-        const float a[6] = { q[0], q[1], x01, y01, x, y }, b[6] = { x, y, x12, y12, q[4], q[5] };
-        subdivideQuadratic(quadratics, a, depth + 1), subdivideQuadratic(quadratics, b, depth + 1);
+    if (ax * bx + ay * by < 0) {
+        float la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by), t = la / (la + lb);
+        float x01 = lerp(t, q[0], q[2]), y01 = lerp(t, q[1], q[3]), x12 = lerp(t, q[2], q[4]), y12 = lerp(t, q[3], q[5]);
+        quadratics.push_back(x01), quadratics.push_back(y01), quadratics.push_back(lerp(t, x01, x12)), quadratics.push_back(lerp(t, y01, y12));
+        quadratics.push_back(x12), quadratics.push_back(y12), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
     } else
         quadratics.push_back(q[2]), quadratics.push_back(q[3]), quadratics.push_back(q[4]), quadratics.push_back(q[5]);
 }
@@ -82,7 +83,7 @@ struct QuadraticChain {
         if (count == 0)
             return;
         const float q[6] = { p[0], p[1], p[2], p[3], x, y };
-        subdivideQuadratic(out, q, 0);
+        subdivideQuadratic(out, q);
     }
     vector<float>& out;
     float p[4];
@@ -225,7 +226,7 @@ static void splitCubics(const float *src, int npoints, const float precision, fl
 static void subdivideQuadratics(const float *points, int npoints, vector<float>& out) {
     out.push_back(points[0]), out.push_back(points[1]);
     for (int i = 1; i + 1 < npoints; i += 2)
-        subdivideQuadratic(out, points + i * 2 - 2, 0);
+        subdivideQuadratic(out, points + i * 2 - 2);
 }
 
 // Merges each run of on-curve points closer than limit into its first, as libTess would, dropping the quadratics
@@ -237,10 +238,11 @@ static void subdivideQuadratics(const float *points, int npoints, vector<float>&
 // no near-straight curve leaves a control vertex beside its end for libTess. Consecutive lines join while every
 // vertex between stays within limit of the joined line, so neither moves the outline further than limit. That
 // includes a line doubling back on the one before, a spike enclosing nothing, and the closing line libTess adds
-// from a closed subpath's end to its start.
+// from a closed subpath's end to its start. Only for lines: a stroke centreline keeps its curves, as straightening one
+// turns its end tangents, which its stroke's sides follow at its width.
 // It writes the merged quadratics over the contour's own, as it never writes ahead of what it has yet to read, and
 // returns their floats.
-static size_t mergeContour(float *q, size_t count, float limit, bool closed) {
+static size_t mergeContour(float *q, size_t count, float limit, bool closed, bool lines) {
     int n = ((int)count - 2) / 4;
     if (n < 2)
         return count;
@@ -276,7 +278,7 @@ static size_t mergeContour(float *q, size_t count, float limit, bool closed) {
         }
         float quad[6] = { e[-4], e[-3], e[-2], e[-1], e[0], e[1] };
         moveOnto(quad, quad + 2, p);
-        bool line = between(quad, quad + 2, quad + 4);
+        bool line = lines && between(quad, quad + 2, quad + 4);
         if (line)
             straighten(quad);
         if (size > 2 && line && between(p - 4, p - 2, p)) {
@@ -306,7 +308,7 @@ static size_t mergeContour(float *q, size_t count, float limit, bool closed) {
             if (closes)
                 size -= 4, end = last();
             moveOnto(start, start + 2, end);
-        } else if (!closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
+        } else if (lines && !closes && between(end - 4, end - 2, end) && onLine(end - 4, end, start))
             end[0] = start[0], end[1] = start[1], straighten(end - 4);
         else
             moved = false;
@@ -315,9 +317,9 @@ static size_t mergeContour(float *q, size_t count, float limit, bool closed) {
 }
 
 // Appends a contour as a quadratic chain to out, if it lies within coordinateLimit() and makes a quadratic: cubics split
-// (tangents: tangent-preserving, see splitCubics), quadratics subdivided, and lines with their midpoints as controls.
-// out's bounds unite with its points'.
-static void appendQuadratics(Path& out, const float *points, int npoints, Path::Kind kind, bool tangents) {
+// (tangents: tangent-preserving, see splitCubics) no finer than the vertex merge limit of the path it is drawn in,
+// quadratics subdivided, and lines with their midpoints as controls. out's bounds unite with its points'.
+static void appendQuadratics(Path& out, const float *points, int npoints, Path::Kind kind, bool tangents, float mergeLimit) {
     Bounds b = BoundsFromFloats(points, points + npoints * 2);
     float limit = coordinateLimit();
     if (!(b.lx >= -limit && b.ux <= limit && b.ly >= -limit && b.uy <= limit))
@@ -326,7 +328,7 @@ static void appendQuadratics(Path& out, const float *points, int npoints, Path::
     size_t first = q.size();
     if (kind == Path::kCubics) {
         QuadraticChain chain(q);
-        splitCubics(points, npoints, kSplitCubicPrecision, vertexMergeLimit(b), tangents, chain);
+        splitCubics(points, npoints, kSplitCubicPrecision, mergeLimit, tangents, chain);
     } else if (kind == Path::kQuadratics) {
         if (npoints > 2)
             subdivideQuadratics(points, npoints, q);
@@ -346,14 +348,15 @@ static void appendQuadratics(Path& out, const float *points, int npoints, Path::
     out._bounds = out._contours.size() == 1 ? b : out._bounds.united(b);
 }
 
-// Merges the vertices of each of a quadratic path's contours (mergeContour()), closing the gaps they leave.
-static void mergeVertices(Path& path, float limit, bool closed) {
+// Merges the vertices of each of a quadratic path's contours (mergeContour()), closing the gaps they leave, and if lines,
+// straightens and joins its lines.
+static void mergeVertices(Path& path, float limit, bool closed, bool lines) {
     size_t size = 0;
     for (Path::Contour& c : path._contours) {
         float *q = path._points.data();
         if (size != c.first)
             memmove(q + size, q + c.first, c.npoints * 2 * sizeof(float));
-        c.first = size, c.npoints = int(mergeContour(q + size, c.npoints * 2, limit, closed)) / 2, size += c.npoints * 2;
+        c.first = size, c.npoints = int(mergeContour(q + size, c.npoints * 2, limit, closed, lines)) / 2, size += c.npoints * 2;
     }
     path._points.resize(size);
 }

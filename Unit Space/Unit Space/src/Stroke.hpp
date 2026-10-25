@@ -22,20 +22,22 @@ struct Stroke {
     typedef Path::Cap Cap;
     
     // A stroked path's outline: closed quadratic contours. Each contour's centreline converts to tangent-preserving
-    // quadratics, so smooth joins stay smooth, and merges within its own points' limit.
+    // quadratics, so smooth joins stay smooth, and merges within the path's own vertex merge limit: its directions place
+    // the offsets, so it keeps its own resolution however wide the stroke. The offsets need be no finer than the grid of
+    // the outline's bounds, the path's outset by half the width, which its triangles quantise to.
     static Path outline(const Path& path) {
         Path out, centre;
-        Stroke stroke(out, path._strokeWidth, path._join, path._cap, path._miterLimit);
+        float hw = path._strokeWidth * 0.5f, limit = vertexMergeLimit(path._bounds);
+        Bounds b = path._bounds;
+        Stroke stroke(out, path._strokeWidth, path._join, path._cap, path._miterLimit, vertexMergeLimit(Bounds(b.lx - hw, b.ly - hw, b.ux + hw, b.uy + hw)));
         if (path._dashes.size())
             stroke.setDashes(path._dashes.data(), (int)path._dashes.size(), path._dashOffset);
         for (int i = 0; i < (int)path._contours.size(); i++) {
             const Path::Contour& contour = path._contours[i];
             const float *pts = path.points(i);
-            Bounds b = BoundsFromFloats(pts, pts + contour.npoints * 2);
-            float limit = vertexMergeLimit(b);
             centre._points.resize(0), centre._contours.resize(0);
-            appendQuadratics(centre, pts, contour.npoints, contour.kind, true);
-            mergeVertices(centre, limit, contour.closed);
+            appendQuadratics(centre, pts, contour.npoints, contour.kind, true, limit);
+            mergeVertices(centre, limit, contour.closed, false);
             // A zero-length subpath (M x y l 0 0) converts to no quadratics, but still strokes as a cap-shaped dot.
             bool point = centre._points.empty() && contour.npoints > 0;
             for (int k = 1; point && k < contour.npoints; k++)
@@ -48,8 +50,9 @@ struct Stroke {
         return out;
     }
 
-    Stroke(Path& out, float width, Join join, Cap cap, float miterLimit) : out(out), w(width * 0.5f), miterLimit(miterLimit), join(join), cap(cap) {
-        tolerance = std::max(1e-4f, std::min(kSplitCubicPrecision, 0.02f * w));
+    // Offsets are made no finer than limit, the outline's vertex merge limit.
+    Stroke(Path& out, float width, Join join, Cap cap, float miterLimit, float limit) : out(out), w(width * 0.5f), miterLimit(miterLimit), join(join), cap(cap) {
+        tolerance = std::max(limit, std::min(kSplitCubicPrecision, 0.02f * w));
     }
 
     // Dash lengths (on, off, ...) and the distance into the pattern at which each subpath starts.
@@ -69,6 +72,7 @@ struct Stroke {
     // whose period is within limit is finer than vertices can resolve, which would merge its dashes away, so the chain
     // strokes solid. Coarser periods each advance the arc length by many float steps, so dashing always progresses.
     void addSubPath(const float *q, int npoints, bool closed, float limit) {
+        centreLimit = limit;
         if (dashes.size() == 0 || npoints < 3 || period <= limit)
             addSolid(q, npoints, closed);
         else
@@ -230,7 +234,7 @@ private:
     // Splits quadratic q at t: a covers [0, t] and b [t, 1]. b may be q.
     static void splitQuadratic(const float *q, float t, float *a, float *b) {
         for (int k = 0; k < 2; k++) {
-            float p01 = q[k] + t * (q[2 + k] - q[k]), p12 = q[2 + k] + t * (q[4 + k] - q[2 + k]), p = p01 + t * (p12 - p01);
+            float p01 = lerp(t, q[k], q[2 + k]), p12 = lerp(t, q[2 + k], q[4 + k]), p = lerp(t, p01, p12);
             a[k] = q[k], a[2 + k] = p01, a[4 + k] = p;
             b[4 + k] = q[4 + k], b[2 + k] = p12, b[k] = p;
         }
@@ -251,11 +255,15 @@ private:
     }
 
     // Whether offsetting by d folds the piece back on itself: it turns toward that side, with a radius of curvature below
-    // |d|, 2 |A + E/2|^3 / |A x E| at its middle, and so throughout (see addPiece).
-    static bool folds(const Piece& p, float d) {
+    // |d|, 2 |A + E/2|^3 / |A x E| at its middle, and so throughout (see addPiece). A piece whose control lies within the
+    // centreline's merge limit of its chord, |A x E| / |W| with W its chord, is straight, as libTess::isCurved() has it:
+    // a line's control is its chord's float midpoint, which leaves E a float step from zero, and pieces split from a
+    // curve can be too short for float to resolve their curvature. That rounding would otherwise make them fold, and
+    // put the centre of curvature their fold reaches to anywhere.
+    bool folds(const Piece& p, float d) const {
         float ax = p.cx - p.x0, ay = p.cy - p.y0, ex = p.x2 - 2.f * p.cx + p.x0, ey = p.y2 - 2.f * p.cy + p.y0, cross = ax * ey - ay * ex;
-        float mx = ax + 0.5f * ex, my = ay + 0.5f * ey, m2 = mx * mx + my * my;
-        return cross != 0 && (cross > 0) == (d > 0) && 2.f * m2 * std::sqrt(m2) < std::abs(d * cross);
+        float mx = ax + 0.5f * ex, my = ay + 0.5f * ey, m2 = mx * mx + my * my, wx = p.x2 - p.x0, wy = p.y2 - p.y0;
+        return cross * cross > centreLimit * centreLimit * (wx * wx + wy * wy) && (cross > 0) == (d > 0) && 2.f * m2 * std::sqrt(m2) < std::abs(d * cross);
     }
 
     // The chain along one side, offset by d (positive is left), through every piece and join. Folded pieces follow the
@@ -471,5 +479,5 @@ private:
     vector<Piece> pieces;
     vector<bool> sharp;
     vector<float> chain, dashes;
-    float period = 0, dashOffset = 0;
+    float period = 0, dashOffset = 0, centreLimit = 0;     // centreLimit: the centreline's vertex merge limit
 };

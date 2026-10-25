@@ -12,13 +12,14 @@
 using namespace std;
 
 constexpr int kPointStride = 2 * sizeof(float);
-// Points closer than this in both coordinates are one vertex to libTess, which merges them after its union. Paths merge
-// theirs first (mergeVertices()), so no curve loses the vertex it ends on. A fraction of the extent, plus float resolution
-// at the bounds' magnitude.
+// The finest detail a path with these bounds can be drawn with: its triangles' vertices are quantised to kUnsignedShortMax
+// steps across its bounds, so conversions need make nothing finer. Points closer than this in both coordinates are one
+// vertex to libTess, which merges them after its union. Paths merge theirs first (mergeVertices()), so no curve loses the
+// vertex it ends on. A step of the grid, plus float resolution at the bounds' magnitude.
 static inline float vertexMergeLimit(const Bounds& b) {
     float extent = std::max(b.ux - b.lx, b.uy - b.ly);
     float magnitude = std::max(std::max(std::abs(b.lx), std::abs(b.ux)), std::max(std::abs(b.ly), std::abs(b.uy)));
-    return extent * 1e-5f + magnitude * 1e-6f;
+    return extent / float(kUnsignedShortMax) + magnitude * 1e-6f;
 }
 // The largest coordinate magnitude geometry may have. Straightness and turn tests compare squared cross products with
 // products of squared lengths: fourth powers of differences, each up to twice it, so 64 times its fourth power at most.
