@@ -755,10 +755,13 @@ struct libTess {
                     }
                 }
                 n = (int)kept.size();
+                // Relative to its first vertex: products of absolute coordinates cancel to the float resolution at their
+                // magnitude, which far from the origin exceeds a sliver's area, so it would survive the test below.
                 float area = 0;
+                const float *o = verts + (base + kept[0]) * 2;
                 for (i = 0; i < n; i++) {
                     const float *a = verts + (base + kept[i]) * 2, *b = verts + (base + kept[(i + 1) % n]) * 2;
-                    area += a[0] * b[1] - a[1] * b[0];
+                    area += (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
                 }
                 // Overlapping stroke pieces also leave islands and holes far smaller than the pen, which no stroke can
                 // have. Their spiky vertices become constraints inside the fill, and their near-reversing miters wreck
