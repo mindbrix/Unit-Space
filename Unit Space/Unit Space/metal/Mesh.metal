@@ -80,7 +80,12 @@ static inline AffineTransform deviceTriangle(const device Triangle& tri, const d
     alpha = w > 0 ? min(w, 1.0f) : 1.0f;
     Bounds bounds = path.bounds;
     float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
-    AffineTransform T = AffineTransformConcat({ width, 0, 0, height, bounds.lx, bounds.ly }, CTM);
+    AffineTransform T = {
+        CTM.a * width, CTM.b * width,
+        CTM.c * height, CTM.d * height,
+        bounds.lx * CTM.a + bounds.ly * CTM.c + CTM.tx,
+        bounds.lx * CTM.b + bounds.ly * CTM.d + CTM.ty
+    };
     v0 = transformed(tri.x0, tri.y0, T), v1 = transformed(tri.x1, tri.y1, T), v2 = transformed(tri.x2, tri.y2, T);
     
     const device float *iv = & tri.ix0;
