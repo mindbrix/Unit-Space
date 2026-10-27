@@ -76,7 +76,7 @@ static inline AffineTransform deviceTriangle(const device Triangle& tri, const d
                                              thread float2& v0, thread float2& v1, thread float2& v2,
                                              thread float2& iv0, thread float2& iv1, thread float2& iv2, thread float& alpha) {
     AffineTransform CTM = AffineTransformConcat(path.ctm, state.CTM);
-    float det = abs(CTM.a * CTM.d - CTM.b * CTM.c), w = path.strokeWidth * sqrt(det);
+    float det = abs(CTM.a * CTM.d - CTM.b * CTM.c), rscale = rsqrt(det), w = path.strokeWidth / rscale;
     alpha = w > 0 ? min(w, 1.0f) : 1.0f;
     Bounds bounds = path.bounds;
     float width = (bounds.ux - bounds.lx) / kUnsignedShortMax, height = (bounds.uy - bounds.ly) / kUnsignedShortMax;
@@ -86,7 +86,6 @@ static inline AffineTransform deviceTriangle(const device Triangle& tri, const d
     const device float *iv = & tri.ix0;
     float2 m0 = float2(iv[0], iv[1]), m1 = float2(iv[2], iv[3]), m2 = float2(iv[4], iv[5]);    // path space
     if (isSimilarity(CTM)) {
-        float rscale = rsqrt(det);
         iv0 = turned(m0, CTM) * rscale, iv1 = turned(m1, CTM) * rscale, iv2 = turned(m2, CTM) * rscale;
     } else
         iv0 = deviceMiter(m0, CTM), iv1 = deviceMiter(m1, CTM), iv2 = deviceMiter(m2, CTM);
