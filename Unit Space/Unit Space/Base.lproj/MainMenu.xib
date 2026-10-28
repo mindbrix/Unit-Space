@@ -703,6 +703,12 @@ DQ
                                     <action selector="toggleCube:" target="-1" id="Cub-Ac-tTg"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Toggle Fern" keyEquivalent="f" id="Frn-Mi-tTg">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleFern:" target="-1" id="Frn-Ac-tTg"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Toggle Timer" keyEquivalent=" " id="7jz-7I-Qc3">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

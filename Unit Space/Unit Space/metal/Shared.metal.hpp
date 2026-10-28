@@ -144,6 +144,7 @@ struct MeshState {
     bool                showTriangles;      // debug: outline every interior triangle
     bool                useStrokeColor;     // debug: edges in the state's stroke colour
 	int                 colorsSize;
+    int                 depthBase;          // the call's paths' first depth slot: each copy of a repeated scene has its own
     int                 baseTriangle;       // debug: an interior call's first triangle, as primitive_id restarts per draw
     int                 triangleInstances;  // interior calls: the stream's length, as they draw it from its end
 };

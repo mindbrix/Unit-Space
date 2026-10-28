@@ -14,6 +14,13 @@
 
 constexpr float kScrollLineDelta = 10;
 
+// The fern's seeds. Each frond repeats the scene up to kFernCopies times, every copy the last one turned and scaled by
+// kFernScale about the scene's centre, then moved up by kFernStep of the scene's height, so the copies curl along a
+// spiral. The turn sways by kFernSway either side of kFernTurn, kFernSwayRate radians a second, each frond a step behind
+// the last, so a wave runs round the spray. The spray's kFernFronds fronds are turned evenly round the scene's bottom centre.
+constexpr float kFernTurn = 0.12f, kFernSway = 0.06f, kFernSwayRate = 1.2f, kFernScale = 0.8f, kFernStep = 0.8f;
+constexpr int kFernFronds = 12, kFernCopies = 14;
+
 
 using namespace std;
 
@@ -53,6 +60,8 @@ struct EditHandle {
 @property(nonatomic) BOOL solo;                 // debug: only the inspected path is drawn
 @property(nonatomic) BOOL perspective;          // the page tilted back in perspective
 @property(nonatomic) BOOL cube;                 // the scene on the faces of a turning cube
+@property(nonatomic) BOOL fern;                 // the scene repeated as a swaying spray of fronds
+@property(nonatomic) double fernStart;          // when the fern started swaying
 @property(nonatomic) BOOL timer;                // the timeline animates the paths
 @property(nonatomic) double cubeStart;          // when the cube started turning
 @property(nonatomic) CGAffineTransform cubeView;    // the view transform then: gestures since move the cube on screen
@@ -122,9 +131,9 @@ struct EditHandle {
 	[_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
 }
 
-// The display link runs while the timeline or the cube animates.
+// The display link runs while the timeline, the cube or the fern animates.
 - (void)updateDisplayLink {
-    if (!(_timer || _cube))
+    if (!(_timer || _cube || _fern))
         [self stopTimer];
     else if (!_displayLink)
         [self resetTimer];
@@ -146,6 +155,16 @@ struct EditHandle {
     [self updateInspector];
     [self updateDisplayLink];
     [self redraw];
+}
+
+- (IBAction)toggleFern:(id)sender {
+    [self commitEdit];
+    _fern = !_fern;
+    _fernStart = [NSDate date].timeIntervalSinceReferenceDate;
+    _hoverPath = _selectedPath = -1;
+    [self updateHandles];
+    [self updateInspector];
+    [self updateDisplayLink];
 }
 
 - (void)timerFired {
@@ -333,7 +352,7 @@ struct EditHandle {
 // The topmost path whose polygon (its quadratics' chords) holds a point in window coordinates. Only paths whose
 // triangulated bounds hold it are converted to test.
 - (NSInteger)pathAt:(NSPoint)location {
-    if (_cube)
+    if (_cube || _fern)
         return -1;
     CGPoint u = [self unproject:location];
     float x = u.x, y = u.y;
@@ -406,7 +425,7 @@ static bool closesOnStart(const float *pts, int npoints) {
 // The edit point under a location in window coordinates, the nearest within kHandleHitRadius, or -1.
 - (NSInteger)editPointAt:(NSPoint)location {
     Path *path = [self editedPath];
-    if (_cube || !path)
+    if (_cube || _fern || !path)
         return -1;
     NSPoint v = [self convertPoint:location fromView:nil];
     float x = v.x * self.layer.contentsScale, y = v.y * self.layer.contentsScale, r = kHandleHitRadius * self.layer.contentsScale, best = r * r;
@@ -645,7 +664,7 @@ static bool closesOnStart(const float *pts, int npoints) {
     uniforms.strokeColor = { 0, 0, 0, 1 };
     uniforms.width = 0;
     
-    MeshState meshState;
+    MeshState meshState = {};
     meshState.showEdgeTriangles = _showEdgeTriangles;
     meshState.showInterior = _showInterior;
     meshState.showPolygons = _showPolygons;
@@ -677,6 +696,10 @@ static bool closesOnStart(const float *pts, int npoints) {
     for (simd_float3 corner : { simd_make_float3(0, 0, 1), simd_make_float3(pw, 0, 1), simd_make_float3(0, ph, 1), simd_make_float3(pw, ph, 1) }) {
         simd_float3 h = simd_mul(inverse, corner);
         clipBounds.unite(Bounds(h.x / h.z, h.y / h.z, h.x / h.z, h.y / h.z));
+    }
+    if (_fern) {
+        [self writeFernCalls:paths count:N clipBounds:clipBounds uniforms:uniforms meshState:meshState];
+        return;
     }
     Mesh::writePathCalls(_mesh, paths, N, clipBounds, uniforms, meshState, 0, 0, _editBegin, _editEnd);
     if (_editEnd == _editBegin && _handles.size() == 0)
@@ -863,6 +886,36 @@ static bool closesOnStart(const float *pts, int npoints) {
         simd_float3x3 face = simd_matrix(column(u, 0), column(v, 0), column(c - (u + v) * (S * 0.5f), 1));
         uniforms.perspective = simd_mul(view, simd_mul(face, unscale));
         Mesh::writePathCalls(_mesh, paths, n, Bounds(0, 0, S * sv, S * sv), uniforms, meshState);
+    }
+}
+
+// The scene as a fern: a spray of fronds, each the scene repeated through its seed transform S, which turns, scales and
+// moves each copy from the last (kFernTurn and the rest), after the spray's own seed R, which turns frond f by f / kFernFronds
+// of a turn about the scene's bottom centre: copy k of frond f is S^k then R^f. Each frond's S turns by its own sway. A
+// frond stops after kFernCopies, or sooner where its copies would be under a pixel across, as nothing smaller can be drawn.
+// Each copy draws the scene's paths with its transform before the view's, in its own depth range, so copies paint over
+// the ones before them.
+- (void)writeFernCalls:(MeshPath *)paths count:(int)n clipBounds:(Bounds)clipBounds uniforms:(State)uniforms meshState:(MeshState)meshState {
+    Bounds b = _mesh._bounds;
+    float w = b.ux - b.lx, h = b.uy - b.ly, cx = (b.lx + b.ux) * 0.5f, cy = (b.ly + b.uy) * 0.5f;
+    AffineTransform view = uniforms.CTM;
+    float pixels = std::max(w, h) * std::sqrt(std::abs(AffineTransformArea(view)));
+    float t = float([NSDate date].timeIntervalSinceReferenceDate - _fernStart);
+    vector<AffineTransform> copies;
+    for (int f = 0; f < kFernFronds; f++) {
+        float a = f * 2 * float(M_PI) / kFernFronds, rc = std::cos(a), rs = std::sin(a);
+        float turn = kFernTurn + kFernSway * std::sin(kFernSwayRate * t - a), c = kFernScale * std::cos(turn), s = kFernScale * std::sin(turn);
+        AffineTransform S = { c, s, -s, c, cx - (c * cx - s * cy), cy - (s * cx + c * cy) + kFernStep * h };
+        AffineTransform m = { rc, rs, -rs, rc, cx - (rc * cx - rs * b.ly), b.ly - (rs * cx + rc * b.ly) };
+        float size = pixels;
+        for (int k = 0; k < kFernCopies && size >= 1; k++, size *= kFernScale)
+            copies.push_back(m), m = AffineTransformConcat(S, m);
+    }
+    meshState.colorsSize = n * (int)copies.size();
+    for (size_t i = 0; i < copies.size(); i++) {
+        uniforms.CTM = AffineTransformConcat(copies[i], view);
+        meshState.depthBase = n * (int)i;
+        Mesh::writePathCalls(_mesh, paths, n, clipBounds, uniforms, meshState);
     }
 }
 

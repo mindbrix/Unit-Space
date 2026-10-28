@@ -142,7 +142,7 @@ vertex IndexedInteriorVertex interior_indexed_vertex_main(constant State &state 
     RGBA8 color = paths[p].color;
     IndexedInteriorVertex vert;
     vert.clip[0] = whole ? 1.0 : -1e9;
-    float z = (p * 2 + 2) / float(meshState.colorsSize * 2 + 2);
+    float z = ((p + meshState.depthBase) * 2 + 2) / float(meshState.colorsSize * 2 + 2);
     vert.position = clipPosition(pos, z, state);
     vert.color = float4(float(color.r) / 255.0, float(color.g) / 255.0, float(color.b) / 255.0, float(color.a) / 255.0);
     return vert;
@@ -251,7 +251,7 @@ vertex TriangleVertex mesh_vertex_main(constant State &state [[buffer(0)]], cons
     float2 pos = visible * select(select(p2, p1, vid == 1), p0, vid == 0);
     
     RGBA8 color = paths[p].color;
-    float z = (p * 2 + 1) / float(meshState.colorsSize * 2 + 2);
+    float z = ((p + meshState.depthBase) * 2 + 1) / float(meshState.colorsSize * 2 + 2);
     TriangleVertex vert;
     vert.position = clipPosition(pos, z, state);
     
